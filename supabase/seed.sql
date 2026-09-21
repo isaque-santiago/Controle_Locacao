@@ -11,4 +11,5 @@ insert into itens_manutencao (nome, intervalo_km, intervalo_dias) values
   ('Pneu traseiro', 10000, null),
   ('Vela de ignição', 8000, null),
   ('Fluido de freio', null, 365),
-  ('Revisão geral', 5000, 180);
+  ('Revisão geral', 5000, 180)
+on conflict (nome) do nothing;
