@@ -13,6 +13,8 @@ def _apenas_digitos_cpf(cpf: str) -> str:
 
 
 def _validar_dados(dados: dict) -> None:
+    if not dados.get("nome", "").strip():
+        raise ValueError("Informe o nome do cliente.")
     if not validar_cpf(dados.get("cpf", "")):
         raise ValueError("CPF inválido.")
     for campo in ("telefone", "whatsapp"):
@@ -44,7 +46,7 @@ def criar(dados: dict) -> dict:
 
 def atualizar(cliente_id: str, dados: dict) -> dict:
     dados = dict(dados)
-    if {"cpf", "telefone", "whatsapp"} & dados.keys():
+    if {"nome", "cpf", "telefone", "whatsapp"} & dados.keys():
         cliente_atual = obter(cliente_id)
         if cliente_atual is None:
             raise ValueError("Cliente não encontrado.")

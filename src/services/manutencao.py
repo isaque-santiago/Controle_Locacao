@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Optional
 
 from src.domain.manutencao_regras import calcular_proxima_manutencao, calcular_situacao
+from src.domain.valores import hoje_br
 from src.repositories import (
     configuracoes,
     itens_manutencao,
@@ -30,7 +31,7 @@ def atualizar_item_catalogo(item_id: str, dados: dict) -> dict:
 def listar_plano_moto(moto_id: str) -> list:
     """Plano da moto com a próxima km/data e a situação já calculadas."""
     config = configuracoes.obter()
-    hoje = date.today()
+    hoje = hoje_br()
     alerta_km = config["alerta_manutencao_km"]
     alerta_dias = config["alerta_manutencao_dias"]
 
@@ -40,7 +41,9 @@ def listar_plano_moto(moto_id: str) -> list:
         item = linha["item"]
         intervalo_km = linha["intervalo_km"] or item["intervalo_km"]
         intervalo_dias = linha["intervalo_dias"] or item["intervalo_dias"]
-        ultima_data = date.fromisoformat(linha["ultima_data"]) if linha["ultima_data"] else None
+        ultima_data = (
+            date.fromisoformat(linha["ultima_data"]) if linha["ultima_data"] else None
+        )
 
         proxima = calcular_proxima_manutencao(
             ultima_km=linha["ultima_km"],
@@ -83,12 +86,20 @@ def aplicar_plano_padrao(moto_id: str) -> dict:
     return moto_plano_manutencao.aplicar_plano_padrao_via_rpc(moto_id)
 
 
+def atualizar_plano(plano_id, dados):
+    return moto_plano_manutencao.atualizar(plano_id, dados)
+
+
 def listar_manutencoes(moto_id: Optional[str] = None):
     return manutencoes.listar(moto_id)
 
 
 def obter_manutencao(manutencao_id: str):
     return manutencoes.obter(manutencao_id)
+
+
+def finalizar(manutencao_id, status, data_saida, km):
+    return manutencoes.finalizar(manutencao_id, status, data_saida, km)
 
 
 def registrar_manutencao(

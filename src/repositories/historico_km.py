@@ -1,20 +1,13 @@
 """CRUD da tabela historico_km."""
 
 from src.db import get_client
+from src.repositories.consultas import todos
 
 TABELA = "historico_km"
 
 
 def listar_por_moto(moto_id: str):
-    resposta = (
-        get_client()
-        .table(TABELA)
-        .select("*")
-        .eq("moto_id", moto_id)
-        .order("data", desc=True)
-        .execute()
-    )
-    return resposta.data
+    return todos(TABELA, "data", filtros={"moto_id": moto_id})
 
 
 def criar(dados: dict):

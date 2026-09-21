@@ -1,18 +1,23 @@
 """CRUD da tabela clientes."""
 
 from src.db import get_client
+from src.repositories.consultas import todos
 
 TABELA = "clientes"
 
 
 def listar():
-    resposta = get_client().table(TABELA).select("*").order("nome").execute()
-    return resposta.data
+    return todos(TABELA, ordem="nome")
 
 
 def obter(cliente_id: str):
     resposta = (
-        get_client().table(TABELA).select("*").eq("id", cliente_id).maybe_single().execute()
+        get_client()
+        .table(TABELA)
+        .select("*")
+        .eq("id", cliente_id)
+        .maybe_single()
+        .execute()
     )
     return resposta.data if resposta else None
 

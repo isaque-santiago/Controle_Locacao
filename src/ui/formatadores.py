@@ -2,16 +2,27 @@
 
 
 def formatar_moeda(valor) -> str:
-    raise NotImplementedError
+    from decimal import Decimal
+
+    numero = f"{Decimal(str(valor or 0)):,.2f}"
+    return "R$ " + numero.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def formatar_data(data) -> str:
-    raise NotImplementedError
+    from datetime import date, datetime
+
+    if not data:
+        return "—"
+    if isinstance(data, (date, datetime)):
+        return data.strftime("%d/%m/%Y")
+    return date.fromisoformat(str(data)[:10]).strftime("%d/%m/%Y")
 
 
 def formatar_placa(placa: str) -> str:
-    raise NotImplementedError
+    placa = placa.upper().replace("-", "")
+    return placa[:3] + "-" + placa[3:] if len(placa) == 7 else placa
 
 
 def mascarar_cpf(cpf: str) -> str:
-    raise NotImplementedError
+    digitos = "".join(c for c in cpf if c.isdigit())
+    return "***." + digitos[3:6] + ".***-**" if len(digitos) == 11 else "***"

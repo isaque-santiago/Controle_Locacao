@@ -6,3 +6,4 @@ python-dateutil
 pydantic
 openpyxl
 pytest
+tzdata

@@ -1,6 +1,7 @@
 """Login, logout e guarda de página (require_login)."""
 
 import streamlit as st
+from time import time
 
 from src.db import clear_session_tokens, get_client, set_session_tokens
 
@@ -16,13 +17,12 @@ def login(email: str, senha: str) -> None:
     resposta = get_client().auth.sign_in_with_password(
         {"email": email, "password": senha}
     )
-    set_session_tokens(
-        resposta.session.access_token, resposta.session.refresh_token
-    )
+    set_session_tokens(resposta.session.access_token, resposta.session.refresh_token)
     st.session_state[_CHAVE_USUARIO] = {
         "id": resposta.user.id,
         "email": resposta.user.email,
     }
+    st.session_state["ultima_atividade"] = time()
 
 
 def logout() -> None:
@@ -31,7 +31,8 @@ def logout() -> None:
     except Exception:
         pass
     clear_session_tokens()
-    st.session_state.pop(_CHAVE_USUARIO, None)
+    for chave in list(st.session_state):
+        del st.session_state[chave]
 
 
 def _exibir_formulario_login() -> None:
@@ -51,9 +52,17 @@ def _exibir_formulario_login() -> None:
 
 def require_login() -> None:
     """Bloqueia a página até o dono estar autenticado; exibe login se não estiver."""
+    if (
+        esta_autenticado()
+        and time() - st.session_state.get("ultima_atividade", 0) > 1800
+    ):
+        logout()
+        st.info("A sessão expirou por inatividade. Entre novamente.")
     if not esta_autenticado():
         _exibir_formulario_login()
         st.stop()
+
+    st.session_state["ultima_atividade"] = time()
 
     with st.sidebar:
         st.caption(st.session_state[_CHAVE_USUARIO]["email"])

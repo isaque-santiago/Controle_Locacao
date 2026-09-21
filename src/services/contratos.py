@@ -8,6 +8,28 @@ from src.domain.agenda_cobrancas import gerar_agenda
 from src.repositories import contratos
 
 
+def listar():
+    return contratos.listar()
+
+
+def criar_com_vistoria(dados, vistoria):
+    if dados["data_fim_prevista"] < dados["data_inicio"]:
+        raise ValueError("O fim do contrato deve ser igual ou posterior ao início.")
+    previa_agenda(
+        date.fromisoformat(dados["data_inicio"]),
+        dados["periodicidade"],
+        Decimal(dados["valor_periodo"]),
+        date.fromisoformat(dados["data_fim_prevista"]),
+    )
+    return contratos.criar_com_vistoria(dados, vistoria)
+
+
+def encerrar_com_vistoria(contrato_id, data, vistoria, caucao_devolvida):
+    return contratos.encerrar_com_vistoria(
+        contrato_id, data, vistoria, caucao_devolvida
+    )
+
+
 def previa_agenda(
     data_inicio: date,
     periodicidade: str,
@@ -33,7 +55,9 @@ def criar_contrato(
         "moto_id": moto_id,
         "cliente_id": cliente_id,
         "data_inicio": data_inicio.isoformat(),
-        "data_fim_prevista": data_fim_prevista.isoformat() if data_fim_prevista else None,
+        "data_fim_prevista": (
+            data_fim_prevista.isoformat() if data_fim_prevista else None
+        ),
         "periodicidade": periodicidade,
         "valor_periodo": str(valor_periodo),
         "caucao_valor": str(caucao_valor),

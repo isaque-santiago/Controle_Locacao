@@ -2,8 +2,6 @@
 
 import streamlit as st
 
-from src.auth import require_login
+from src.ui.dashboard import exibir
 
-require_login()
-
-st.title("Dashboard")
+exibir()

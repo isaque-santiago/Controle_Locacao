@@ -23,6 +23,8 @@ def obter(moto_id: str):
 def criar(dados: dict) -> dict:
     """Valida e normaliza a placa antes de cadastrar a moto."""
     dados = dict(dados)
+    if not dados.get("marca", "").strip() or not dados.get("modelo", "").strip():
+        raise ValueError("Informe marca e modelo.")
     if not validar_placa(dados.get("placa", "")):
         raise ValueError("Placa inválida. Use o formato ABC1234 ou ABC1D23.")
     dados["placa"] = _normalizar_placa(dados["placa"])
@@ -39,6 +41,8 @@ def criar(dados: dict) -> dict:
 
 def atualizar(moto_id: str, dados: dict) -> dict:
     dados = dict(dados)
+    if "km_atual" in dados:
+        raise ValueError("Use o registro de quilometragem para alterar o km.")
     if "placa" in dados:
         if not validar_placa(dados["placa"]):
             raise ValueError("Placa inválida. Use o formato ABC1234 ou ABC1D23.")
@@ -70,3 +74,7 @@ def atualizar_km(
         )
 
     return historico_km.criar({"moto_id": moto_id, "km": km, "origem": origem})
+
+
+def historico(moto_id):
+    return historico_km.listar_por_moto(moto_id)

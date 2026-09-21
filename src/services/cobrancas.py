@@ -38,6 +38,10 @@ def registrar_pagamento(
     forma: str = "pix",
     observacoes: Optional[str] = None,
 ) -> dict:
+    if valor <= 0 or multa_juros < 0:
+        raise ValueError(
+            "O principal deve ser positivo e os encargos não podem ser negativos."
+        )
     dados = {
         "cobranca_id": cobranca_id,
         "data_pagamento": data_pagamento.isoformat(),
@@ -51,3 +55,7 @@ def registrar_pagamento(
 
 def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:
     return cobrancas.gerar_pendentes_via_rpc(horizonte_dias)
+
+
+def historico_pagamentos(cobranca_id):
+    return pagamentos.listar_por_cobranca(cobranca_id)
