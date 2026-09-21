@@ -51,8 +51,16 @@ Divisão de trabalho: backend (`src/domain`, `src/repositories`, `src/services`,
       `domain/encargos.py` prontos e testados (encargos de 2% multa + 1%/mês
       pro rata; 1ª cobrança antecipada na data de início; contratos sempre com
       prazo definido). RPCs `rpc_criar_contrato`, `rpc_encerrar_contrato` e
-      `rpc_gerar_cobrancas_pendentes` em `supabase/migrations/0004_rpc.sql`,
-      com repositórios e services de Contratos e Cobranças prontos. Falta
-      aplicar a migration num projeto Supabase real, rodar o roteiro manual
-      de verificação (seção 9 do plano) e a interface
+      `rpc_gerar_cobrancas_pendentes` em
+      `supabase/migrations/20260921120300_rpc.sql`, aplicadas no Supabase, com
+      repositórios e services de Contratos e Cobranças prontos. Falta rodar o
+      roteiro manual de verificação (seção 9 do plano) e a interface
       (`pages/4_Contratos.py`, `pages/5_Cobrancas.py`).
+- [ ] **Fase 3 — Manutenção:** `domain/manutencao_regras.py` pronto e testado
+      (próxima km/data e situação em_dia/proxima/vencida, o que vencer
+      primeiro). RPCs `rpc_aplicar_plano_padrao` e `rpc_registrar_manutencao`
+      em `supabase/migrations/20260921130000_rpc_manutencao.sql` (aplicar no
+      Supabase), com repositórios e services de catálogo, plano por moto,
+      alertas e registro de manutenção prontos. Falta aplicar a migration,
+      rodar o roteiro manual e a interface (`pages/6_Manutencao.py`, aba de
+      plano na ficha da moto).
