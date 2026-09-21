@@ -64,3 +64,10 @@ Divisão de trabalho: backend (`src/domain`, `src/repositories`, `src/services`,
       alertas e registro de manutenção prontos. Falta aplicar a migration,
       rodar o roteiro manual e a interface (`pages/6_Manutencao.py`, aba de
       plano na ficha da moto).
+- [ ] **Fase 4 — Documentos e vencimentos:** `domain/documentos.py` pronto e
+      testado (sugestão do documento do ano seguinte ao regularizar um
+      documento de renovação anual: IPVA, licenciamento, seguro). Repositório
+      e service de `documentos_moto` prontos, com upload de comprovante e URL
+      assinada de curta duração no bucket privado `documentos`. Alertas de
+      documentos e CNH já cobertos por `services/alertas.py` (Fase 3). Falta a
+      interface (`pages/7_Documentos.py`).
