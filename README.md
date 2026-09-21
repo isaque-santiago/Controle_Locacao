@@ -34,3 +34,16 @@ pytest
 ## Estrutura
 
 Ver seção 3 do plano ([Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md)).
+
+## Status
+
+Divisão de trabalho: backend (`src/domain`, `src/repositories`, `src/services`,
+`supabase/migrations`, testes) e frontend (`pages/`, `src/ui`) em paralelo.
+
+- [x] **Fase 0 — Fundação:** estrutura de pastas, login/logout com sessão
+      Supabase (`src/auth.py`, `src/db.py`).
+- [ ] **Fase 1 — Cadastros de motos e clientes:** validadores de CPF, placa e
+      telefone prontos e testados (`src/domain/validadores.py`); repositórios
+      e services de Motos e Clientes prontos, com validação, normalização de
+      placa/CPF e atualização de km com confirmação quando o valor é menor
+      que o atual. Falta a interface (`pages/2_Motos.py`, `pages/3_Clientes.py`).
