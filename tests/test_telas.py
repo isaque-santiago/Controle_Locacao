@@ -19,6 +19,15 @@ def test_pagina_sem_login_nao_acessa_dados(arquivo):
     app = AppTest.from_file(str(RAIZ / arquivo), default_timeout=20).run()
     assert not app.exception
     assert app.title[0].value == "Entrar"
+    assert any(entrada.label == "E-mail" for entrada in app.text_input)
+    assert any(entrada.label == "Senha" for entrada in app.text_input)
+    assert any(botao.label == "Entrar no painel" for botao in app.button)
+
+
+def test_login_exige_email_e_senha():
+    app = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=20).run()
+    next(botao for botao in app.button if botao.label == "Entrar no painel").click().run()
+    assert [erro.value for erro in app.error] == ["Informe o e-mail e a senha."]
 
 
 @pytest.mark.parametrize(

@@ -37,11 +37,9 @@ def logout() -> None:
 
 
 def _exibir_formulario_login() -> None:
-    st.title("Entrar")
-    with st.form("form_login"):
-        email = st.text_input("E-mail")
-        senha = st.text_input("Senha", type="password")
-        enviado = st.form_submit_button("Entrar")
+    from src.ui.login import exibir
+
+    enviado, email, senha = exibir()
 
     if enviado:
         if not email.strip() or not senha:
