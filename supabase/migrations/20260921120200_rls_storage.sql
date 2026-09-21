@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0003_rls_storage.sql : RLS em todas as tabelas + buckets privados
+-- 20260921120200_rls_storage.sql : RLS em todas as tabelas + buckets privados
 -- Sistema de usuário único: qualquer usuário autenticado é o dono.
 -- (Desative o cadastro público em Authentication > Providers > Email)
 -- =====================================================================

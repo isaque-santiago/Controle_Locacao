@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0002_views.sql : cobranças com situação, alertas e resultado por moto
+-- 20260921120100_views.sql : cobranças com situação, alertas e resultado por moto
 -- Todas as views usam security_invoker = true para respeitar o RLS.
 -- =====================================================================
 

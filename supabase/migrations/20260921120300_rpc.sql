@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0004_rpc.sql : RPCs de contrato e cobrança (transação única)
+-- 20260921120300_rpc.sql : RPCs de contrato e cobrança (transação única)
 -- =====================================================================
 
 -- Soma um período a uma data, com a mesma regra usada em domain/agenda_cobrancas.py

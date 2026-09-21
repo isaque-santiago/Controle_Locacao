@@ -1,5 +1,5 @@
 -- =====================================================================
--- 0001_schema.sql : tabelas, índices e triggers
+-- 20260921120000_schema.sql : tabelas, índices e triggers
 -- =====================================================================
 
 create or replace function hoje_br() returns date
