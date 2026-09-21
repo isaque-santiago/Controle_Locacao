@@ -1,21 +1,42 @@
-"""CRUD da tabela cobrancas."""
+"""Leitura da tabela cobrancas (via vw_cobrancas, com saldo e situação) e RPCs."""
 
 from src.db import get_client
 
 TABELA = "cobrancas"
+VIEW = "vw_cobrancas"
 
 
 def listar():
-    raise NotImplementedError
+    resposta = get_client().table(VIEW).select("*").order("vencimento").execute()
+    return resposta.data
+
+
+def listar_por_contrato(contrato_id: str):
+    resposta = (
+        get_client()
+        .table(VIEW)
+        .select("*")
+        .eq("contrato_id", contrato_id)
+        .order("vencimento")
+        .execute()
+    )
+    return resposta.data
 
 
 def obter(cobranca_id: str):
-    raise NotImplementedError
-
-
-def criar(dados: dict):
-    raise NotImplementedError
+    resposta = get_client().table(VIEW).select("*").eq("id", cobranca_id).maybe_single().execute()
+    return resposta.data if resposta else None
 
 
 def atualizar(cobranca_id: str, dados: dict):
-    raise NotImplementedError
+    resposta = get_client().table(TABELA).update(dados).eq("id", cobranca_id).execute()
+    return resposta.data[0]
+
+
+def gerar_pendentes_via_rpc(horizonte_dias: int = 30) -> dict:
+    resposta = (
+        get_client()
+        .rpc("rpc_gerar_cobrancas_pendentes", {"p_horizonte_dias": horizonte_dias})
+        .execute()
+    )
+    return resposta.data
