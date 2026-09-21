@@ -6,8 +6,17 @@ TABELA = "historico_km"
 
 
 def listar_por_moto(moto_id: str):
-    raise NotImplementedError
+    resposta = (
+        get_client()
+        .table(TABELA)
+        .select("*")
+        .eq("moto_id", moto_id)
+        .order("data", desc=True)
+        .execute()
+    )
+    return resposta.data
 
 
 def criar(dados: dict):
-    raise NotImplementedError
+    resposta = get_client().table(TABELA).insert(dados).execute()
+    return resposta.data[0]
