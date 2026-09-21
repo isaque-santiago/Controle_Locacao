@@ -71,3 +71,12 @@ Divisão de trabalho: backend (`src/domain`, `src/repositories`, `src/services`,
       assinada de curta duração no bucket privado `documentos`. Alertas de
       documentos e CNH já cobertos por `services/alertas.py` (Fase 3). Falta a
       interface (`pages/7_Documentos.py`).
+- [ ] **Fase 5 — Vistorias:** `domain/vistorias.py` pronto e testado
+      (checklist padrão de 15 itens e comparação entrega x devolução, item a
+      item). RPC `rpc_registrar_vistoria` em
+      `supabase/migrations/20260921140000_rpc_vistoria.sql` (aplicar no
+      Supabase) grava a vistoria e o km no histórico numa transação; o índice
+      único (contrato_id, tipo) garante uma vistoria de cada tipo por
+      contrato. Repositórios e service prontos, com upload de fotos e URL
+      assinada no bucket privado `vistorias`. Falta aplicar a migration,
+      rodar o roteiro manual e a interface (`pages/8_Vistorias.py`).
