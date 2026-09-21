@@ -2,6 +2,7 @@
 
 import streamlit as st
 from time import time
+from supabase_auth.errors import AuthApiError
 
 from src.db import clear_session_tokens, get_client, set_session_tokens
 
@@ -43,11 +44,21 @@ def _exibir_formulario_login() -> None:
         enviado = st.form_submit_button("Entrar")
 
     if enviado:
+        if not email.strip() or not senha:
+            st.error("Informe o e-mail e a senha.")
+            return
         try:
-            login(email, senha)
+            login(email.strip(), senha)
             st.rerun()
-        except Exception:
+        except AuthApiError:
             st.error("E-mail ou senha inválidos.")
+        except (RuntimeError, KeyError) as erro:
+            st.error(f"O aplicativo não está configurado: {erro}")
+        except Exception:
+            st.error(
+                "Não foi possível acessar o Supabase. Confira os segredos do "
+                "aplicativo e tente novamente."
+            )
 
 
 def require_login() -> None:
