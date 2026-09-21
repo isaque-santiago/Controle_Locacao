@@ -1,0 +1,28 @@
+-- =====================================================================
+-- 0004_rpc.sql : RPCs PL/pgSQL (transação única para operações
+-- que mexem em mais de uma tabela). A implementar nas Fases 2 e 3.
+--
+-- rpc_criar_contrato(payload jsonb)
+--   Valida moto disponível e cliente ativo; insere o contrato; grava
+--   historico_km (origem 'contrato'); muda a moto para 'alugada'; gera
+--   cobrança de caução (se houver) e a agenda inicial de cobranças.
+--
+-- rpc_encerrar_contrato(contrato_id, data, km_final, caucao_devolvida)
+--   Exige km_final >= km_inicial; fecha o contrato; cancela cobranças
+--   'aberta' com vencimento posterior à data de encerramento e sem
+--   pagamento; grava historico_km; muda a moto para 'disponivel'.
+--
+-- rpc_gerar_cobrancas_pendentes(horizonte_dias int default 30)
+--   Idempotente. Para contratos ativos, cria as cobranças que faltam
+--   até hoje + horizonte, sem duplicar (chave contrato + número).
+--
+-- rpc_registrar_manutencao(payload jsonb)
+--   Insere a manutenção e seus itens; soma custo_pecas; se concluída,
+--   atualiza ultima_km/ultima_data em moto_plano_manutencao para cada
+--   item com item_id; grava historico_km; ajusta status da moto; se
+--   cobrar_do_cliente, cria cobrança tipo 'dano' no contrato vigente.
+--
+-- rpc_aplicar_plano_padrao(moto_id)
+--   Cria as linhas de moto_plano_manutencao para os itens ativos do
+--   catálogo, com baseline ultima_km = km_atual e ultima_data = hoje.
+-- =====================================================================
