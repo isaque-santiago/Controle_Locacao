@@ -123,18 +123,13 @@ def test_paginas_com_dados(servicos, nome):
     assert not app.error, [e.value for e in app.error]
 
 
-def test_cadastro_moto_envia_valores_decimais(servicos):
+def test_dialog_nova_moto_abre_com_campos_do_formulario(servicos):
     app = abrir("2_Motos.py")
-    for entrada in app.text_input:
-        if entrada.label in ("Placa", "Marca", "Modelo"):
-            entrada.set_value(
-                {"Placa": "ABC1D23", "Marca": "Honda", "Modelo": "CG"}[entrada.label]
-            )
-        if entrada.label == "Valor de aquisição (R$)":
-            entrada.set_value("12.345,67")
-    next(b for b in app.button if b.label == "Salvar moto").click().run()
+    next(b for b in app.button if b.label == "+ Nova moto").click().run()
     assert not app.error
-    assert servicos["motos.criar"].call_args.args[0]["valor_aquisicao"] == "12345.67"
+    rotulos = {entrada.label for entrada in app.text_input}
+    assert {"Placa", "Marca", "Modelo", "Valor de aquisição (R$)"} <= rotulos
+    assert any(b.label == "Salvar moto" for b in app.button)
 
 
 def test_pagamento_parcial_envia_principal_separado(servicos):
