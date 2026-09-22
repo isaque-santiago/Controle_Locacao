@@ -3,7 +3,7 @@
 import streamlit as st
 from src.services import dashboard, alertas, cobrancas
 from src.domain.valores import hoje_br
-from src.ui.componentes import cabecalho, proteger, tabela
+from src.ui.componentes import cabecalho, proteger, tabela, painel_selos, barra_ocupacao
 from src.ui.formatadores import formatar_moeda
 
 
@@ -14,20 +14,26 @@ def exibir():
         dados = dashboard.resumo()
         frota = dados["frota"]
         colunas = st.columns(4)
+        contagem = {}
         for coluna, status in zip(
             colunas, ["disponivel", "alugada", "manutencao", "inativa"]
         ):
-            coluna.metric(
-                status.capitalize(), sum(m["status"] == status for m in frota)
-            )
+            contagem[status] = sum(m["status"] == status for m in frota)
+            coluna.metric(status.capitalize(), contagem[status])
         ativas = sum(m["status"] != "inativa" for m in frota)
-        alugadas = sum(m["status"] == "alugada" for m in frota)
+        alugadas = contagem.get("alugada", 0)
         st.metric(
             "Ocupação da frota ativa",
             f"{100 * alugadas / ativas:.1f}%" if ativas else "—",
         )
-        if ativas:
-            st.progress(alugadas / ativas)
+        barra_ocupacao(
+            [
+                ("Disponível", contagem.get("disponivel", 0), "disponivel"),
+                ("Alugada", contagem.get("alugada", 0), "alugada"),
+                ("Manutenção", contagem.get("manutencao", 0), "manutencao"),
+                ("Inativa", contagem.get("inativa", 0), "inativa"),
+            ]
+        )
         for coluna, (titulo, campo) in zip(
             st.columns(4),
             [
@@ -63,6 +69,16 @@ def exibir():
             ("CNHs", alertas.listar_cnh()),
         ]:
             st.subheader(titulo)
-            tabela(
-                [r for r in registros if r["situacao"] not in ("ok", "em_dia")], titulo
+            pendentes = [r for r in registros if r["situacao"] not in ("ok", "em_dia")]
+            painel_selos(
+                [
+                    (
+                        situacao.replace("_", " ").capitalize(),
+                        sum(r["situacao"] == situacao for r in pendentes),
+                        situacao,
+                    )
+                    for situacao in ("vencida", "vencido", "proxima", "a_vencer")
+                    if any(r["situacao"] == situacao for r in pendentes)
+                ]
             )
+            tabela(pendentes, titulo)
