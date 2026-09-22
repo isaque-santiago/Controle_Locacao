@@ -23,7 +23,6 @@ _SITUACOES = {
     "manutencao": "amarelo",
     "em_dia": "verde",
     "ok": "verde",
-    "ativo": "verde",
     "disponivel": "verde",
     "paga": "verde",
     "inativa": "cinza",
@@ -223,6 +222,78 @@ def barra_ocupacao(segmentos):
         f"""
         <div style="display:flex;height:8px;border-radius:2px;overflow:hidden;margin:.6rem 0 .5rem;">{barra}</div>
         <div style="margin-bottom:.75rem;">{legenda}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def chip_placa(placa, tamanho="normal"):
+    """Chip mono de placa (fundo grafite-900), como nas tabelas do mockup."""
+    fonte = "18px" if tamanho == "grande" else "12px"
+    padding = "8px 14px" if tamanho == "grande" else "3px 8px"
+    return (
+        f'<span class="mono" style="background:#1E2227;color:#FAFAF9;padding:{padding};'
+        f'border-radius:{"5px" if tamanho == "grande" else "4px"};font-weight:600;'
+        f'font-size:{fonte};letter-spacing:0.05em;">{formatar_placa(placa)}</span>'
+    )
+
+
+def selo_situacao(texto, situacao):
+    """Bolinha de 6-8px colorida + texto — o selo de status padrão das tabelas."""
+    borda = CORES_STATUS_BORDA.get(situacao)
+    cor_texto = CORES_STATUS_TEXTO.get(situacao)
+    pontinho = borda or "#1E2227"
+    estilo_cor = f"color:{cor_texto};" if cor_texto else ""
+    return (
+        f'<div style="display:flex;align-items:center;gap:6px;{estilo_cor}">'
+        f'<span style="width:6px;height:6px;border-radius:50%;background:{pontinho};'
+        f'display:inline-block;flex-shrink:0;"></span>{texto}</div>'
+    )
+
+
+def tabela_html(cabecalhos, linhas, alinhar_direita=None):
+    """Tabela somente leitura, hairline entre linhas, sem zebra — para abas sem
+    ação por linha (Plano de manutenção, Histórico, Contratos...). Cada célula
+    de `linhas` já vem pronta como HTML (use selo_situacao/chip_placa/mono)."""
+    alinhar_direita = alinhar_direita or set()
+    ultimo = len(cabecalhos) - 1
+
+    def celula(i, conteudo, tag, borda):
+        padding = "20px" if i in (0, ultimo) else "12px"
+        alinhamento = "text-align:right;" if i in alinhar_direita else ""
+        return (
+            f'<{tag} style="padding:12px {padding};{borda}{alinhamento}'
+            f'{"font-weight:500;color:#585F66;" if tag == "th" else ""}">{conteudo}</{tag}>'
+        )
+
+    ths = "".join(
+        celula(i, c, "th", "border-bottom:1px solid rgba(30,34,39,0.12);")
+        for i, c in enumerate(cabecalhos)
+    )
+    if not linhas:
+        corpo = (
+            f'<tr><td colspan="{len(cabecalhos)}" style="padding:16px 20px;'
+            f'color:#585F66;font-size:13px;">Nenhum registro encontrado.</td></tr>'
+        )
+    else:
+        corpo = ""
+        for indice, linha in enumerate(linhas):
+            borda = (
+                "border-bottom:1px solid rgba(30,34,39,0.12);"
+                if indice < len(linhas) - 1
+                else ""
+            )
+            corpo += "<tr>" + "".join(
+                celula(i, valor, "td", borda) for i, valor in enumerate(linha)
+            ) + "</tr>"
+    st.markdown(
+        f"""
+        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr>{ths}</tr></thead>
+            <tbody>{corpo}</tbody>
+          </table>
+        </div>
         """,
         unsafe_allow_html=True,
     )

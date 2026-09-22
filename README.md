@@ -62,6 +62,21 @@ lateral, e o rodapé da barra lateral (avatar, nome, botão Sair) segue o
 padrão visual do mockup. As demais páginas ainda não foram revisadas contra
 seus artboards — trabalho em andamento, uma página por vez.
 
+Reconstrução de Motos (22/09/2026), conferida contra `Motos.dc.html` e
+`MotoFicha.dc.html`: lista com pílulas de filtro por status, busca, chip de
+placa mono e paginação de 7 por página; cadastro/edição movidos para modais
+(`st.dialog`), como pedem os demais formulários de passo único do plano; a
+ficha da moto virou uma visão própria (navegação `‹ Motos` / `→` na lista,
+sem recarregar página) com faixa de dados rápidos e 6 abas — Resumo (contrato
+ativo, dados da moto, quilometragem), Plano de manutenção, Histórico,
+Documentos (com ação "Regularizar"), Contratos e Financeiro (receita, custos
+e custo por km). Novos componentes reutilizáveis em `componentes.py`:
+`chip_placa`, `selo_situacao` e `tabela_html`. Corrigido também um bug
+anterior: as classes CSS `.rotulo`/`.mono`/`.campo` usadas no HTML injetado
+do Dashboard não tinham regra correspondente no tema global — só o seletor de
+tag (`h1,h2,h3`) pegava por acidente; várias leituras em mono no Dashboard
+podiam não estar com a fonte certa.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
