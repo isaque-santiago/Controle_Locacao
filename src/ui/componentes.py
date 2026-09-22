@@ -9,30 +9,41 @@ import streamlit as st
 from postgrest.exceptions import APIError
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa, mascarar_cpf
 
-# Tokens de cor de Arquivos/Design_UI.md — a cor de status é a única que "grita".
-CORES_STATUS = {
-    "vencido": "#D64545",
-    "vencida": "#D64545",
-    "atrasada": "#D64545",
-    "atrasado": "#D64545",
-    "bloqueado": "#D64545",
-    "proxima": "#F2B705",
-    "a_vencer": "#F2B705",
-    "manutencao": "#F2B705",
-    "em_dia": "#2F9E6E",
-    "ok": "#2F9E6E",
-    "ativo": "#2F9E6E",
-    "disponivel": "#2F9E6E",
-    "paga": "#2F9E6E",
-    "aberta": "#585F66",
-    "aberto": "#585F66",
-    "alugada": "#585F66",
-    "inativa": "#9AA0A6",
-    "inativo": "#9AA0A6",
-    "cancelada": "#9AA0A6",
-    "cancelado": "#9AA0A6",
-    "encerrado": "#9AA0A6",
+# Tokens de cor do mockup navegável (Arquivos/Design_UI.md, seção 1) — a cor de
+# status é a única que "grita"; estados neutros/operacionais (alugada, aberta)
+# não recebem tinta, só o selo (bolinha) — conforme Motos.dc.html e Cobrancas.dc.html.
+_SITUACOES = {
+    "vencido": "vermelho",
+    "vencida": "vermelho",
+    "atrasada": "vermelho",
+    "atrasado": "vermelho",
+    "bloqueado": "vermelho",
+    "proxima": "amarelo",
+    "a_vencer": "amarelo",
+    "manutencao": "amarelo",
+    "em_dia": "verde",
+    "ok": "verde",
+    "ativo": "verde",
+    "disponivel": "verde",
+    "paga": "verde",
+    "inativa": "cinza",
+    "inativo": "cinza",
+    "cancelada": "cinza",
+    "cancelado": "cinza",
+    "encerrado": "cinza",
 }
+# Cor do selo/borda (dot, círculo tracejado, segmento de barra): tom puro do token.
+CORES_BORDA = {
+    "vermelho": "#D64545",
+    "amarelo": "#F2B705",
+    "verde": "#2F9E6E",
+    "cinza": "#9AA0A6",
+}
+# Cor do texto: igual à borda, exceto o amarelo — usa o tom escuro do mockup
+# (#8a6600) para manter contraste legível sobre fundo claro.
+CORES_TEXTO = {**CORES_BORDA, "amarelo": "#8a6600"}
+CORES_STATUS_BORDA = {chave: CORES_BORDA[cor] for chave, cor in _SITUACOES.items()}
+CORES_STATUS_TEXTO = {chave: CORES_TEXTO[cor] for chave, cor in _SITUACOES.items()}
 
 
 @contextmanager
@@ -129,7 +140,7 @@ def tabela(linhas, chave="tabela", colunas=None):
         cor = None
         for coluna in ("Situacao", "Status"):
             if coluna in linha:
-                cor = CORES_STATUS.get(
+                cor = CORES_STATUS_TEXTO.get(
                     str(linha[coluna]).lstrip("● ").replace(" ", "_")
                 )
         return [f"color: {cor}; font-weight: 600" if cor else "" for _ in linha]
@@ -150,38 +161,52 @@ def tabela(linhas, chave="tabela", colunas=None):
 
 
 def painel_selos(itens):
-    """Selos circulares tracejados (adesivo de vistoria) para alertas.
+    """Selos circulares tracejados (adesivo de vistoria) para alertas — como em
+    Main.dc.html: círculo de 40px, borda tracejada no tom puro, número no tom
+    escuro (amarelo) ou puro (vermelho) para manter contraste.
 
-    itens: lista de (rótulo, quantidade, situação), situação em CORES_STATUS.
+    itens: lista de (rótulo, quantidade, situação), situação em CORES_STATUS_BORDA.
     """
     if not itens:
         return
     blocos = "".join(
         f"""
-        <div style="display:flex;flex-direction:column;align-items:center;gap:.45rem;min-width:5.5rem;">
-          <div style="width:3.4rem;height:3.4rem;border-radius:50%;border:2px dashed {CORES_STATUS.get(situacao, '#9AA0A6')};
+        <div style="display:flex;align-items:center;gap:.6rem;min-width:11rem;">
+          <div style="width:40px;height:40px;flex-shrink:0;border-radius:50%;
+                      border:2px dashed {CORES_STATUS_BORDA.get(situacao, '#9AA0A6')};
                       display:flex;align-items:center;justify-content:center;
-                      font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:1.2rem;
-                      color:{CORES_STATUS.get(situacao, '#9AA0A6')};">
+                      font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;
+                      color:{CORES_STATUS_TEXTO.get(situacao, '#585F66')};">
             {quantidade}
           </div>
-          <span style="font-size:.78rem;color:#585F66;text-align:center;">{rotulo}</span>
+          <span style="font-size:.8rem;color:#585F66;">{rotulo}</span>
         </div>
         """
         for rotulo, quantidade, situacao in itens
     )
     st.markdown(
-        f'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin:.75rem 0 1.25rem;">{blocos}</div>',
+        f'<div style="display:flex;gap:1.25rem;flex-wrap:wrap;margin:.75rem 0 1.25rem;">{blocos}</div>',
         unsafe_allow_html=True,
     )
+
+
+# Cores da barra de ocupação da frota — como em Main.dc.html: alugada é
+# grafite-900 (estado dominante, não é um alerta), as demais seguem o token
+# de situação de fato (verde/amarelo/cinza).
+CORES_OCUPACAO = {
+    "alugada": "#1E2227",
+    "disponivel": "#2F9E6E",
+    "manutencao": "#F2B705",
+    "inativa": "#9AA0A6",
+}
 
 
 def barra_ocupacao(segmentos):
     """Barra segmentada (medidor de combustível) em vez de gráfico de biblioteca.
 
-    segmentos: lista de (rótulo, quantidade, situação), situação em CORES_STATUS.
+    segmentos: lista de (rótulo, quantidade, status), status em CORES_OCUPACAO.
     """
-    partes = [(r, q, CORES_STATUS.get(s, "#9AA0A6")) for r, q, s in segmentos if q]
+    partes = [(r, q, CORES_OCUPACAO.get(s, "#9AA0A6")) for r, q, s in segmentos if q]
     if not partes:
         st.caption("Sem motos cadastradas para exibir ocupação.")
         return
@@ -190,13 +215,13 @@ def barra_ocupacao(segmentos):
     )
     legenda = "".join(
         f'<span style="display:inline-flex;align-items:center;gap:.4rem;margin-right:1.2rem;'
-        f'font-size:.8rem;color:#585F66;"><span style="width:8px;height:8px;border-radius:50%;'
+        f'font-size:.8rem;color:#585F66;"><span style="width:8px;height:8px;border-radius:2px;'
         f'background:{cor};display:inline-block;"></span>{rotulo} ({q})</span>'
         for rotulo, q, cor in partes
     )
     st.markdown(
         f"""
-        <div style="display:flex;height:.65rem;border-radius:4px;overflow:hidden;background:#EEF0F0;margin:.6rem 0 .5rem;">{barra}</div>
+        <div style="display:flex;height:8px;border-radius:2px;overflow:hidden;margin:.6rem 0 .5rem;">{barra}</div>
         <div style="margin-bottom:.75rem;">{legenda}</div>
         """,
         unsafe_allow_html=True,
