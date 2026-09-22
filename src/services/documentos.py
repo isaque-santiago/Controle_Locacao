@@ -2,8 +2,11 @@
 
 from datetime import date
 
+from src.domain.arquivos import validar_arquivo
 from src.domain.documentos import sugerir_proximo_documento
 from src.repositories import documentos_moto
+
+_EXTENSOES_PERMITIDAS = (".pdf", ".png", ".jpg", ".jpeg")
 
 
 def listar_por_moto(moto_id: str):
@@ -29,6 +32,7 @@ def atualizar(documento_id: str, dados: dict) -> dict:
 def anexar_comprovante(
     documento_id: str, moto_id: str, nome_arquivo: str, conteudo: bytes, content_type: str
 ) -> dict:
+    validar_arquivo(nome_arquivo, conteudo, _EXTENSOES_PERMITIDAS)
     caminho = documentos_moto.upload_comprovante(
         moto_id, documento_id, nome_arquivo, conteudo, content_type
     )
