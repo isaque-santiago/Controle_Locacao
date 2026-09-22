@@ -5,10 +5,12 @@ from typing import Optional
 
 from postgrest.exceptions import APIError
 
+from src.domain.arquivos import validar_arquivo
 from src.domain.vistorias import checklist_inicial, comparar_checklists
 from src.repositories import vistoria_fotos, vistorias
 
 _CODIGO_VIOLACAO_UNICIDADE = "23505"
+_EXTENSOES_PERMITIDAS = (".jpg", ".jpeg", ".png")
 
 
 def listar_por_contrato(contrato_id: str):
@@ -67,6 +69,7 @@ def anexar_foto(
     content_type: str,
     legenda: Optional[str] = None,
 ) -> dict:
+    validar_arquivo(nome_arquivo, conteudo, _EXTENSOES_PERMITIDAS)
     caminho = vistoria_fotos.upload_foto(vistoria_id, nome_arquivo, conteudo, content_type)
     return vistoria_fotos.criar(
         {"vistoria_id": vistoria_id, "storage_path": caminho, "legenda": legenda}
