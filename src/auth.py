@@ -4,7 +4,14 @@ import streamlit as st
 from time import time
 from supabase_auth.errors import AuthApiError
 
-from src.db import clear_session_tokens, get_client, set_session_tokens
+from src.db import (
+    clear_session_tokens,
+    get_client,
+    get_refresh_token_cookie,
+    marcar_atividade_cookie,
+    sessao_ativa_no_cookie,
+    set_session_tokens,
+)
 
 _CHAVE_USUARIO = "usuario"
 
@@ -24,6 +31,7 @@ def login(email: str, senha: str) -> None:
         "email": resposta.user.email,
     }
     st.session_state["ultima_atividade"] = time()
+    marcar_atividade_cookie()
 
 
 def logout() -> None:
@@ -34,6 +42,30 @@ def logout() -> None:
     clear_session_tokens()
     for chave in list(st.session_state):
         del st.session_state[chave]
+
+
+def _tentar_restaurar_sessao() -> bool:
+    """Restaura a sessão a partir do cookie do navegador após um refresh."""
+    refresh_token = get_refresh_token_cookie()
+    if not refresh_token or not sessao_ativa_no_cookie():
+        clear_session_tokens()
+        return False
+    try:
+        resposta = get_client().auth.refresh_session(refresh_token)
+    except Exception:
+        clear_session_tokens()
+        return False
+    if not resposta.session or not resposta.user:
+        clear_session_tokens()
+        return False
+    set_session_tokens(resposta.session.access_token, resposta.session.refresh_token)
+    st.session_state[_CHAVE_USUARIO] = {
+        "id": resposta.user.id,
+        "email": resposta.user.email,
+    }
+    st.session_state["ultima_atividade"] = time()
+    marcar_atividade_cookie()
+    return True
 
 
 def _exibir_formulario_login() -> None:
@@ -61,6 +93,9 @@ def _exibir_formulario_login() -> None:
 
 def require_login() -> None:
     """Bloqueia a página até o dono estar autenticado; exibe login se não estiver."""
+    if not esta_autenticado():
+        _tentar_restaurar_sessao()
+
     if (
         esta_autenticado()
         and time() - st.session_state.get("ultima_atividade", 0) > 1800
@@ -72,6 +107,7 @@ def require_login() -> None:
         st.stop()
 
     st.session_state["ultima_atividade"] = time()
+    marcar_atividade_cookie()
 
     email = st.session_state[_CHAVE_USUARIO]["email"]
     nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
