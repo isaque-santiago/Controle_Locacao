@@ -62,6 +62,13 @@ lateral, e o rodapé da barra lateral (avatar, nome, botão Sair) segue o
 padrão visual do mockup. As demais páginas ainda não foram revisadas contra
 seus artboards — trabalho em andamento, uma página por vez.
 
+Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
+Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
+tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
+navegador (`streamlit-cookies-controller`) e a sessão é restaurada automaticamente a
+partir dele; um segundo cookie, renovado a cada requisição e com validade de 30
+minutos, mantém a regra de expiração por inatividade mesmo entre refreshes.
+
 Validação local em 21/09/2026:
 
 - Testes pytest de regras, exportação, paginação, login e telas com serviços simulados.
