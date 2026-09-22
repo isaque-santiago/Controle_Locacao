@@ -88,6 +88,15 @@ def servicos():
             "motos.criar": MOTO,
             "clientes.criar": CLIENTE,
             "cobrancas.registrar_pagamento": {},
+            "configuracoes.obter": {
+                "multa_atraso_percentual": 2,
+                "juros_mensal_percentual": 1,
+                "carencia_dias": 0,
+                "alerta_manutencao_km": 300,
+                "alerta_manutencao_dias": 15,
+                "alerta_documento_dias": 30,
+                "alerta_cnh_dias": 30,
+            },
         }
         mocks = {
             nome: pilha.enter_context(

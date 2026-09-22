@@ -25,6 +25,7 @@ _SITUACOES = {
     "ok": "verde",
     "disponivel": "verde",
     "paga": "verde",
+    "ativo_cliente": "verde",
     "inativa": "cinza",
     "inativo": "cinza",
     "cancelada": "cinza",
