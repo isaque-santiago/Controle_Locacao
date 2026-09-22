@@ -16,10 +16,12 @@ def finalizar(manutencao_id, status, data_saida, km):
         .rpc(
             "rpc_finalizar_manutencao",
             {
-                "p_id": manutencao_id,
-                "p_status": status,
-                "p_data": data_saida.isoformat(),
-                "p_km": km,
+                "payload": {
+                    "id": manutencao_id,
+                    "status": status,
+                    "data": data_saida.isoformat(),
+                    "km": km,
+                }
             },
         )
         .execute()

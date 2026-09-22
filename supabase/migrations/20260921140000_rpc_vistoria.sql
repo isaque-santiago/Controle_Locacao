@@ -15,6 +15,10 @@
 --   "checklist": {"farol_dianteiro": "ok", ...}, "avarias": text|null,
 --   "observacoes": text|null
 -- }
+--
+-- ATENÇÃO — SUPERADA: redefinida em 20260921151000_fluxos_contratos.sql
+-- (adiciona checagem de contrato/moto compatíveis e km não decrescente).
+-- O comportamento em produção é o do arquivo mais recente.
 -- ---------------------------------------------------------------------
 create or replace function rpc_registrar_vistoria(payload jsonb) returns jsonb
 security invoker

@@ -115,6 +115,11 @@ end $$;
 -- ---------------------------------------------------------------------
 -- rpc_encerrar_contrato: fecha o contrato, cancela cobranças de locação
 -- em aberto com vencimento futuro, grava o km final e libera a moto.
+--
+-- ATENÇÃO — SUPERADA: redefinida em 20260921151000_fluxos_contratos.sql
+-- (adiciona checagem de km final >= km inicial/atual e só cancela
+-- cobranças sem pagamento). A versão aqui é só o histórico de como
+-- começou; o comportamento em produção é o do arquivo mais recente.
 -- ---------------------------------------------------------------------
 create or replace function rpc_encerrar_contrato(
   p_contrato_id       uuid,
