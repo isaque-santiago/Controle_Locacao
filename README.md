@@ -77,6 +77,19 @@ do Dashboard não tinham regra correspondente no tema global — só o seletor d
 tag (`h1,h2,h3`) pegava por acidente; várias leituras em mono no Dashboard
 podiam não estar com a fonte certa.
 
+Reconstrução de Clientes (22/09/2026), conferida contra `Clientes.dc.html` e
+`ClienteFicha.dc.html`: lista com pílulas de filtro por status, busca por
+nome/CPF, avatar com inicial (grafite-900 quando ativo, grafite-500 quando
+não), selo de validade da CNH por cliente (novo `src/domain/cnh_regras.py`,
+com testes, pois a view `vw_alertas_cnh` só alerta clientes com contrato
+ativo — a lista mostra a validade de todos) e moto atual via chip de placa;
+cadastro/edição em modal. Ficha com faixa de dados rápidos e 3 abas — Resumo
+(contrato ativo, dados pessoais, situação financeira), Contratos e
+Pagamentos. Corrigida uma inconsistência de paleta encontrada nesta revisão:
+"ativo" é neutro para contrato (confirmado em `MotoFicha`/`ClienteFicha`),
+mas verde para cliente — os dois usos agora têm chaves de situação
+diferentes (`ativo` vs `ativo_cliente`) na paleta compartilhada.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
