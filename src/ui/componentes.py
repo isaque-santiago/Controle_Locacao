@@ -7,7 +7,32 @@ from math import ceil
 import pandas as pd
 import streamlit as st
 from postgrest.exceptions import APIError
-from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
+from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa, mascarar_cpf
+
+# Tokens de cor de Arquivos/Design_UI.md — a cor de status é a única que "grita".
+CORES_STATUS = {
+    "vencido": "#D64545",
+    "vencida": "#D64545",
+    "atrasada": "#D64545",
+    "atrasado": "#D64545",
+    "bloqueado": "#D64545",
+    "proxima": "#F2B705",
+    "a_vencer": "#F2B705",
+    "manutencao": "#F2B705",
+    "em_dia": "#2F9E6E",
+    "ok": "#2F9E6E",
+    "ativo": "#2F9E6E",
+    "disponivel": "#2F9E6E",
+    "paga": "#2F9E6E",
+    "aberta": "#585F66",
+    "aberto": "#585F66",
+    "alugada": "#585F66",
+    "inativa": "#9AA0A6",
+    "inativo": "#9AA0A6",
+    "cancelada": "#9AA0A6",
+    "cancelado": "#9AA0A6",
+    "encerrado": "#9AA0A6",
+}
 
 
 @contextmanager
@@ -67,6 +92,10 @@ def tabela(linhas, chave="tabela", colunas=None):
                 continue
             if nome == "cpf":
                 valor = mascarar_cpf(valor or "")
+            elif nome == "placa":
+                valor = formatar_placa(valor) if valor else valor
+            elif nome in {"situacao", "status"} and valor:
+                valor = f"● {str(valor).replace('_', ' ')}"
             elif isinstance(valor, Decimal) or nome in {
                 "valor",
                 "saldo",
@@ -96,24 +125,106 @@ def tabela(linhas, chave="tabela", colunas=None):
         registros.append(registro)
     quadro = pd.DataFrame(registros)
 
-    def cor(linha):
-        cores = {
-            "vencido": "#7f1d1d",
-            "vencida": "#7f1d1d",
-            "atrasada": "#7f1d1d",
-            "proxima": "#713f12",
-            "a_vencer": "#713f12",
-            "em_dia": "#14532d",
-            "ok": "#14532d",
-            "inativa": "#374151",
-        }
-        fundo = cores.get(linha.get("Situacao", linha.get("Status", "")))
-        return [
-            f"background-color: {fundo}; color: white" if fundo else "" for _ in linha
-        ]
+    def estilo_linha(linha):
+        cor = None
+        for coluna in ("Situacao", "Status"):
+            if coluna in linha:
+                cor = CORES_STATUS.get(
+                    str(linha[coluna]).lstrip("● ").replace(" ", "_")
+                )
+        return [f"color: {cor}; font-weight: 600" if cor else "" for _ in linha]
 
-    st.dataframe(
-        quadro.style.apply(cor, axis=1), hide_index=True, use_container_width=True
+    estilizado = quadro.style.apply(estilo_linha, axis=1)
+    if "Placa" in quadro.columns:
+        estilizado = estilizado.set_properties(
+            subset=["Placa"],
+            **{
+                "background-color": "#1E2227",
+                "color": "#FAFAF9",
+                "font-family": "'IBM Plex Mono', monospace",
+                "font-weight": "600",
+                "letter-spacing": "0.03em",
+            },
+        )
+    st.dataframe(estilizado, hide_index=True, use_container_width=True)
+
+
+def painel_selos(itens):
+    """Selos circulares tracejados (adesivo de vistoria) para alertas.
+
+    itens: lista de (rótulo, quantidade, situação), situação em CORES_STATUS.
+    """
+    if not itens:
+        return
+    blocos = "".join(
+        f"""
+        <div style="display:flex;flex-direction:column;align-items:center;gap:.45rem;min-width:5.5rem;">
+          <div style="width:3.4rem;height:3.4rem;border-radius:50%;border:2px dashed {CORES_STATUS.get(situacao, '#9AA0A6')};
+                      display:flex;align-items:center;justify-content:center;
+                      font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:1.2rem;
+                      color:{CORES_STATUS.get(situacao, '#9AA0A6')};">
+            {quantidade}
+          </div>
+          <span style="font-size:.78rem;color:#585F66;text-align:center;">{rotulo}</span>
+        </div>
+        """
+        for rotulo, quantidade, situacao in itens
+    )
+    st.markdown(
+        f'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin:.75rem 0 1.25rem;">{blocos}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def barra_ocupacao(segmentos):
+    """Barra segmentada (medidor de combustível) em vez de gráfico de biblioteca.
+
+    segmentos: lista de (rótulo, quantidade, situação), situação em CORES_STATUS.
+    """
+    partes = [(r, q, CORES_STATUS.get(s, "#9AA0A6")) for r, q, s in segmentos if q]
+    if not partes:
+        st.caption("Sem motos cadastradas para exibir ocupação.")
+        return
+    barra = "".join(
+        f'<div style="flex:{q};background:{cor};"></div>' for _, q, cor in partes
+    )
+    legenda = "".join(
+        f'<span style="display:inline-flex;align-items:center;gap:.4rem;margin-right:1.2rem;'
+        f'font-size:.8rem;color:#585F66;"><span style="width:8px;height:8px;border-radius:50%;'
+        f'background:{cor};display:inline-block;"></span>{rotulo} ({q})</span>'
+        for rotulo, q, cor in partes
+    )
+    st.markdown(
+        f"""
+        <div style="display:flex;height:.65rem;border-radius:4px;overflow:hidden;background:#EEF0F0;margin:.6rem 0 .5rem;">{barra}</div>
+        <div style="margin-bottom:.75rem;">{legenda}</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def indicador_etapas(atual, rotulos):
+    """Assistente (wizard): círculos numerados conectados por linha — só usado em Novo contrato."""
+    itens = ""
+    for i, rotulo in enumerate(rotulos, start=1):
+        concluido = i <= atual
+        cor_fundo = "#1E2227" if concluido else "transparent"
+        cor_borda = "#1E2227" if concluido else "#9AA0A6"
+        cor_texto = "#FAFAF9" if concluido else "#9AA0A6"
+        if i > 1:
+            cor_linha = "#1E2227" if i <= atual else "#9AA0A6"
+            itens += f'<div style="flex:1;height:2px;background:{cor_linha};margin-top:1.05rem;"></div>'
+        itens += f"""
+        <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;">
+          <div style="width:2.1rem;height:2.1rem;border-radius:50%;background:{cor_fundo};
+                      border:2px solid {cor_borda};display:flex;align-items:center;justify-content:center;
+                      color:{cor_texto};font-family:'IBM Plex Mono',monospace;font-weight:600;">{i}</div>
+          <span style="font-size:.72rem;color:#585F66;white-space:nowrap;">{rotulo}</span>
+        </div>
+        """
+    st.markdown(
+        f'<div style="display:flex;align-items:flex-start;margin:1rem 0 1.5rem;">{itens}</div>',
+        unsafe_allow_html=True,
     )
 
 

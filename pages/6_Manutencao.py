@@ -4,7 +4,14 @@ import streamlit as st
 
 from src.services import manutencao, motos, alertas
 from src.domain.valores import hoje_br, decimal_br
-from src.ui.componentes import cabecalho, proteger, selecionar, tabela, sucesso
+from src.ui.componentes import (
+    cabecalho,
+    proteger,
+    selecionar,
+    tabela,
+    sucesso,
+    painel_selos,
+)
 
 cabecalho("Manutenção")
 with proteger():
@@ -14,7 +21,19 @@ with proteger():
     frota = motos.listar()
     itens = manutencao.listar_catalogo()
     with avisos:
-        tabela(alertas.listar_manutencao(), "alertas_man")
+        alertas_manutencao = alertas.listar_manutencao()
+        painel_selos(
+            [
+                (
+                    situacao.replace("_", " ").capitalize(),
+                    sum(a["situacao"] == situacao for a in alertas_manutencao),
+                    situacao,
+                )
+                for situacao in ("vencida", "proxima")
+                if any(a["situacao"] == situacao for a in alertas_manutencao)
+            ]
+        )
+        tabela(alertas_manutencao, "alertas_man")
         historico = manutencao.listar_manutencoes()
         tabela(historico, "historico_man")
         aberta = selecionar(

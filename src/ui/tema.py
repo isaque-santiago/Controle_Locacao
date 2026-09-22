@@ -16,7 +16,7 @@ def aplicar():
     [data-testid="stSidebar"] a, [data-testid="stSidebar"] p {color:#FAFAF9;}
     [data-testid="stSidebarNav"] a[aria-current="page"] {border-left:3px solid #F2B705; background:#2B3036;}
     button[kind="primary"] {background:#1E2227; border-color:#1E2227; color:#FAFAF9;}
-    [data-baseweb="tab-highlight"] {background:#585F66;}
+    [data-baseweb="tab-highlight"] {background:#1E2227;}
     .block-container {padding-top:2rem;}
     @media (max-width:640px) {
       .block-container {padding:1rem;}

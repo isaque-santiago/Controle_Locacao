@@ -5,8 +5,17 @@ import streamlit as st
 from datetime import timedelta
 from src.services import contratos, motos, clientes, cobrancas, vistorias, manutencao
 from src.domain.valores import hoje_br, decimal_br
-from src.ui.componentes import cabecalho, proteger, selecionar, tabela, sucesso
+from src.ui.componentes import (
+    cabecalho,
+    proteger,
+    selecionar,
+    tabela,
+    sucesso,
+    indicador_etapas,
+)
 from src.ui.vistorias import campos, preparar
+
+ETAPAS = ["Cliente", "Moto", "Condições", "Vistoria de entrega"]
 
 cabecalho("Contratos")
 with proteger():
@@ -31,28 +40,49 @@ with proteger():
     )
     novo, ficha = st.tabs(["Novo contrato", "Ficha e encerramento"])
     with novo:
-        moto = selecionar(
-            "Moto disponível",
-            [m for m in frota if m["status"] == "disponivel"],
-            lambda m: m["placa"],
-            "contrato_moto",
-        )
-        cliente = selecionar(
-            "Cliente ativo",
-            [c for c in pessoas if c["status"] == "ativo"],
-            lambda c: c["nome"],
-            "contrato_cliente",
-        )
-        if moto and cliente:
-            atrasadas = [
-                c
-                for c in cobrancas.listar()
-                if c["cliente_id"] == cliente["id"] and c["situacao"] == "atrasada"
-            ]
-            if atrasadas:
-                st.warning(
-                    "Este cliente possui cobranças em atraso. Confira a página Cobranças antes de contratar."
-                )
+        etapa = st.session_state.setdefault("contrato_etapa", 1)
+        indicador_etapas(etapa, ETAPAS)
+
+        if etapa == 1:
+            cliente = selecionar(
+                "Cliente ativo",
+                [c for c in pessoas if c["status"] == "ativo"],
+                lambda c: c["nome"],
+                "contrato_cliente",
+            )
+            if cliente:
+                atrasadas = [
+                    c
+                    for c in cobrancas.listar()
+                    if c["cliente_id"] == cliente["id"] and c["situacao"] == "atrasada"
+                ]
+                if atrasadas:
+                    st.warning(
+                        "Este cliente possui cobranças em atraso. Confira a página Cobranças antes de contratar."
+                    )
+            if st.button("Avançar", type="primary", disabled=not cliente):
+                st.session_state["contrato_cliente_id"] = cliente["id"]
+                st.session_state["contrato_etapa"] = 2
+                st.rerun()
+
+        elif etapa == 2:
+            moto = selecionar(
+                "Moto disponível",
+                [m for m in frota if m["status"] == "disponivel"],
+                lambda m: m["placa"],
+                "contrato_moto",
+            )
+            voltar, avancar = st.columns(2)
+            if voltar.button("Voltar"):
+                st.session_state["contrato_etapa"] = 1
+                st.rerun()
+            if avancar.button("Avançar", type="primary", disabled=not moto):
+                st.session_state["contrato_moto_id"] = moto["id"]
+                st.session_state["contrato_etapa"] = 3
+                st.rerun()
+
+        elif etapa == 3:
+            moto = next(m for m in frota if m["id"] == st.session_state["contrato_moto_id"])
             inicio = st.date_input("Início", hoje_br(), format="DD/MM/YYYY")
             fim = st.date_input(
                 "Fim previsto", hoje_br() + timedelta(days=30), format="DD/MM/YYYY"
@@ -71,27 +101,56 @@ with proteger():
                     ),
                     "previa",
                 )
+            voltar, avancar = st.columns(2)
+            if voltar.button("Voltar", key="voltar_3"):
+                st.session_state["contrato_etapa"] = 2
+                st.rerun()
+            if avancar.button("Avançar", type="primary", key="avancar_3"):
+                st.session_state["contrato_condicoes"] = {
+                    "data_inicio": inicio.isoformat(),
+                    "data_fim_prevista": fim.isoformat(),
+                    "periodicidade": periodicidade,
+                    "valor_periodo": str(decimal_br(valor, positivo=True)),
+                    "caucao_valor": str(decimal_br(caucao)),
+                }
+                st.session_state["contrato_etapa"] = 4
+                st.rerun()
+
+        elif etapa == 4:
+            moto = next(m for m in frota if m["id"] == st.session_state["contrato_moto_id"])
+            cliente = next(c for c in pessoas if c["id"] == st.session_state["contrato_cliente_id"])
+            condicoes = st.session_state["contrato_condicoes"]
+            st.caption(f"Cliente: {cliente['nome']} • Moto: {moto['placa']}")
             st.subheader("Vistoria de entrega")
             with st.form("novo_contrato_" + moto["id"]):
                 vistoria = campos("entrega", moto["km_atual"])
-                if st.form_submit_button(
+                col_voltar, col_confirmar = st.columns(2)
+                voltar = col_voltar.form_submit_button("Voltar")
+                confirmar = col_confirmar.form_submit_button(
                     "Criar contrato e registrar entrega", type="primary"
+                )
+            if voltar:
+                st.session_state["contrato_etapa"] = 3
+                st.rerun()
+            if confirmar:
+                dados_vistoria = preparar(vistoria)
+                contratos.criar_com_vistoria(
+                    {
+                        "moto_id": moto["id"],
+                        "cliente_id": cliente["id"],
+                        "km_inicial": dados_vistoria["km"],
+                        **condicoes,
+                    },
+                    dados_vistoria,
+                )
+                for chave in (
+                    "contrato_etapa",
+                    "contrato_cliente_id",
+                    "contrato_moto_id",
+                    "contrato_condicoes",
                 ):
-                    dados_vistoria = preparar(vistoria)
-                    contratos.criar_com_vistoria(
-                        {
-                            "moto_id": moto["id"],
-                            "cliente_id": cliente["id"],
-                            "data_inicio": inicio.isoformat(),
-                            "data_fim_prevista": fim.isoformat(),
-                            "periodicidade": periodicidade,
-                            "valor_periodo": str(decimal_br(valor, positivo=True)),
-                            "caucao_valor": str(decimal_br(caucao)),
-                            "km_inicial": dados_vistoria["km"],
-                        },
-                        dados_vistoria,
-                    )
-                    sucesso()
+                    st.session_state.pop(chave, None)
+                sucesso()
             st.caption("Após salvar, anexe as fotos na página Vistorias.")
     with ficha:
         contrato = selecionar("Contrato", registros, rotulo, "ficha_contrato")

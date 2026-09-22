@@ -42,6 +42,14 @@ cobranças, manutenção, documentos, Dashboard, relatórios, configurações e 
 As regras existentes foram complementadas com transações para entrega/devolução,
 conclusão de manutenção, plano automático de motos e proteção de pagamentos.
 
+Revisão de fidelidade visual ao `Arquivos/Design_UI.md` (22/09/2026): paleta de
+status corrigida para os tokens exatos do documento, chip de placa em mono no
+padrão do plano, selos circulares tracejados para alertas (Dashboard e
+Manutenção), barra de ocupação segmentada substituindo a barra padrão do
+Streamlit e assistente em 4 etapas (Cliente, Moto, Condições, Vistoria de
+entrega) na criação de contrato. Pendências conhecidas continuam as da seção 6
+do `Design_UI.md`: modo escuro e validação em layout mobile.
+
 Validação local em 21/09/2026:
 
 - Testes pytest de regras, exportação, paginação, login e telas com serviços simulados.
