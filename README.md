@@ -94,11 +94,19 @@ Validação local em 21/09/2026:
   custo total e resultado financeiro.
 - `seed_demo.sql` executado duas vezes, sem duplicar o cenário.
 
-**Aceite externo pendente:** aplicar migrations no Supabase de destino, conferir RLS
-com usuário real, uploads/URLs assinadas, executar o roteiro manual, revisar celular
-no aplicativo publicado e confirmar deploy. O teste local não valida Supabase Auth,
-Storage, infraestrutura ou publicação. Nenhuma fase é declarada homologada apenas
-com base nas telas e testes isolados.
+**Validação em produção (22/09/2026):** as 11 migrations aplicadas no Supabase de
+destino (as 7 mais recentes ficaram pendentes por um tempo — aplicadas via
+`Arquivos/aplicar_migrations_pendentes.sql`, depois `NOTIFY pgrst, 'reload
+schema'` + restart do projeto para o PostgREST reconhecer os objetos novos).
+Login do dono confirmado: RLS e as permissões do papel `authenticated`
+(migration `20260921154000_permissoes_authenticated.sql`) funcionando —
+Dashboard carrega sem erro de permissão.
+
+**Aceite externo ainda pendente:** uploads/URLs assinadas, executar o roteiro
+manual completo (seção abaixo), revisar em celular no aplicativo publicado e
+confirmar deploy no Streamlit Community Cloud. O teste local não valida
+Supabase Storage, infraestrutura ou publicação. Nenhuma fase é declarada
+homologada apenas com base nas telas e testes isolados.
 
 ## Atualização de uma instalação existente
 
