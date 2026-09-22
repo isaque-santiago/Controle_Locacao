@@ -281,12 +281,13 @@ def sucesso():
     st.rerun()
 
 
-def cabecalho(titulo):
+def cabecalho(titulo, exibir_titulo=True):
     from src.auth import require_login
     from src.ui.tema import aplicar
 
     aplicar()
     require_login()
-    st.title(titulo)
+    if exibir_titulo:
+        st.title(titulo)
     if mensagem := st.session_state.pop("mensagem_sucesso", None):
         st.success(mensagem)

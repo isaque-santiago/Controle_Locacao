@@ -41,6 +41,47 @@ def aplicar():
     button[kind="primary"] {background:#1E2227; border-color:#1E2227; color:#FAFAF9;}
     [data-baseweb="tab-highlight"] {background:#1E2227;}
     .block-container {padding-top:2rem;}
+
+    /* Cartão "Hoje" do Dashboard — como em Main.dc.html */
+    .st-key-dashboard_card_hoje {
+      background:#FAFAF9;
+      border:1px solid rgba(30,34,39,.12);
+      border-radius:2px;
+      padding:0 0 4px 0;
+    }
+    .st-key-dashboard_card_hoje [data-testid="stHorizontalBlock"] {
+      padding:8px 20px 8px 20px;
+      border-bottom:1px solid rgba(30,34,39,.12);
+      align-items:center;
+    }
+    .st-key-dashboard_card_hoje [data-testid="stHorizontalBlock"]:last-of-type {
+      border-bottom:none;
+    }
+    .st-key-dashboard_card_hoje button {
+      background:#1E2227 !important;
+      border:none !important;
+      border-radius:6px !important;
+      color:#FAFAF9 !important;
+      width:30px;
+      height:30px;
+      padding:0 !important;
+      min-height:30px;
+    }
+
+    /* Rodapé da sidebar (avatar + nome + Sair) — como em Main.dc.html */
+    .st-key-dashboard_sidebar_rodape {
+      border-top:1px solid rgba(238,240,240,0.12);
+      padding-top:14px;
+      margin-top:8px;
+    }
+    .st-key-dashboard_sidebar_rodape button {
+      background:transparent !important;
+      border:1px solid rgba(238,240,240,0.24) !important;
+      color:#9AA0A6 !important;
+      font-size:12px !important;
+      padding:4px 8px !important;
+      min-height:1.8rem;
+    }
     @media (max-width:640px) {
       .block-container {padding:1rem;}
       [data-testid="stMetricValue"] {font-size:1.5rem;}
