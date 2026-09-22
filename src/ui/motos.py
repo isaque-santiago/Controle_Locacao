@@ -21,6 +21,7 @@ from src.ui.componentes import (
     chip_placa,
     selo_situacao,
     tabela_html,
+    abrir_ficha_contrato,
 )
 from src.ui.formatadores import (
     formatar_data,
@@ -302,7 +303,7 @@ def _card_contrato_ativo(moto_id):
         unsafe_allow_html=True,
     )
     if st.button("Ver contratos →", key="ver_contrato"):
-        st.switch_page("pages/4_Contratos.py")
+        abrir_ficha_contrato(contrato["id"])
 
 
 def _card_dados_moto(moto):

@@ -93,16 +93,15 @@ itens com "·" decorativo fora de listas realmente compactas.
 
 ## 6. Pendências conhecidas
 
-1. **Modo escuro** não foi desenhado — o plano pede tema claro/escuro nativo do Streamlit; hoje só existe a
-   variante clara.
-2. Links "Ver contrato" nas fichas de Moto e Cliente ainda apontam para lugar nenhum (não há navegação direta
-   para uma ficha de contrato específica a partir desses pontos).
-3. Nenhuma tela foi validada em layout mobile — fora de escopo até a Fase 7 do plano.
-4. Os dados de exemplo usados no mockup são fictícios e não foram reconciliados matematicamente entre todas as
+1. A tela de login foi validada em 390 × 844 px. As telas autenticadas ainda precisam de validação mobile no
+   ambiente de homologação com a conta do proprietário.
+2. Os dados de exemplo usados no mockup são fictícios e não foram reconciliados matematicamente entre todas as
    telas (ex.: um mesmo cliente pode aparecer com valores ligeiramente diferentes em telas distintas) — servem
    para validar o padrão visual, não como fonte de verdade numérica.
-5. A tabela de itens dentro do modal "Registrar manutenção" ainda não tem interatividade de
-   adicionar/remover linha (só o visual estático).
+
+Concluído em 22/09/2026: modo escuro no painel autenticado; navegação direta das fichas de Moto e Cliente para o
+contrato selecionado; tabela dinâmica para adicionar ou remover várias peças e serviços livres no registro de
+manutenção.
 
 ## 7. Como continuar em outra sessão
 

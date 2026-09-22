@@ -38,7 +38,10 @@ with proteger():
         ],
         "contratos",
     )
-    novo, ficha = st.tabs(["Novo contrato", "Ficha e encerramento"])
+    aba_inicial = st.session_state.pop("contratos_aba_inicial", None)
+    novo, ficha = st.tabs(
+        ["Novo contrato", "Ficha e encerramento"], default=aba_inicial
+    )
     with novo:
         etapa = st.session_state.setdefault("contrato_etapa", 1)
         indicador_etapas(etapa, ETAPAS)

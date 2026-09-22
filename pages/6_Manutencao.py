@@ -4,6 +4,7 @@ import streamlit as st
 
 from src.services import manutencao, motos, alertas
 from src.domain.valores import hoje_br, decimal_br
+from src.domain.manutencao_regras import preparar_itens_adicionais
 from src.ui.componentes import (
     cabecalho,
     proteger,
@@ -92,8 +93,25 @@ with proteger():
                     quantidade = st.text_input("Quantidade", "1", key=id + "_qtd")
                     valor = st.text_input("Valor unitário (R$)", "0", key=id + "_valor")
                     valores.append((item, quantidade, valor))
-                outro = st.text_input("Outra peça ou serviço (opcional)")
-                outro_valor = st.text_input("Custo da outra peça (R$)", "0")
+                st.caption("Outras peças ou serviços")
+                adicionais = st.data_editor(
+                    [{"descricao": "", "quantidade": "1", "valor_unitario": "0"}],
+                    key="man_itens_adicionais",
+                    num_rows="dynamic",
+                    hide_index=True,
+                    width="stretch",
+                    column_config={
+                        "descricao": st.column_config.TextColumn(
+                            "Descrição", required=False
+                        ),
+                        "quantidade": st.column_config.TextColumn(
+                            "Quantidade", required=False
+                        ),
+                        "valor_unitario": st.column_config.TextColumn(
+                            "Valor unitário (R$)", required=False
+                        ),
+                    },
+                )
                 if st.form_submit_button("Registrar manutenção", type="primary"):
                     if not descricao.strip():
                         raise ValueError("Informe a descrição do serviço.")
@@ -106,14 +124,9 @@ with proteger():
                         }
                         for i, q, v in valores
                     ]
-                    if outro.strip():
-                        lista.append(
-                            {
-                                "descricao": outro,
-                                "quantidade": 1,
-                                "valor_unitario": decimal_br(outro_valor),
-                            }
-                        )
+                    lista.extend(
+                        preparar_itens_adicionais(adicionais.to_dict("records"))
+                    )
                     manutencao.registrar_manutencao(
                         moto["id"],
                         tipo,

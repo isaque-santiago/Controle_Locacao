@@ -2,7 +2,15 @@
 
 from datetime import date
 
-from src.domain.manutencao_regras import calcular_proxima_manutencao, calcular_situacao
+from decimal import Decimal
+
+import pytest
+
+from src.domain.manutencao_regras import (
+    calcular_proxima_manutencao,
+    calcular_situacao,
+    preparar_itens_adicionais,
+)
 
 _ALERTA_KM = 300
 _ALERTA_DIAS = 15
@@ -57,7 +65,6 @@ class TestCalcularSituacao:
             alerta_dias=_ALERTA_DIAS,
         )
         assert situacao == "em_dia"
-
     def test_proxima_por_km_dentro_do_limite(self):
         situacao = calcular_situacao(
             km_atual=5800,
@@ -123,3 +130,41 @@ class TestCalcularSituacao:
             alerta_dias=_ALERTA_DIAS,
         )
         assert situacao == "em_dia"
+
+
+class TestPrepararItensAdicionais:
+    def test_ignora_linha_inicial_vazia_e_converte_varias_linhas(self):
+        resultado = preparar_itens_adicionais(
+            [
+                {"descricao": "", "quantidade": "1", "valor_unitario": "0"},
+                {
+                    "descricao": " Pastilha de freio ",
+                    "quantidade": "2",
+                    "valor_unitario": "35,90",
+                },
+                {
+                    "descricao": "Limpeza",
+                    "quantidade": "1",
+                    "valor_unitario": "20",
+                },
+            ]
+        )
+
+        assert resultado == [
+            {
+                "descricao": "Pastilha de freio",
+                "quantidade": Decimal("2"),
+                "valor_unitario": Decimal("35.90"),
+            },
+            {
+                "descricao": "Limpeza",
+                "quantidade": Decimal("1"),
+                "valor_unitario": Decimal("20"),
+            },
+        ]
+
+    def test_exige_descricao_quando_a_linha_tem_valor(self):
+        with pytest.raises(ValueError, match="descrição"):
+            preparar_itens_adicionais(
+                [{"descricao": "", "quantidade": "2", "valor_unitario": "10"}]
+            )

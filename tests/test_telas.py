@@ -30,6 +30,19 @@ def test_login_exige_email_e_senha():
     assert [erro.value for erro in app.error] == ["Informe o e-mail e a senha."]
 
 
+def test_tema_escuro_injeta_sobrescritas_de_contraste():
+    from src.ui import tema
+
+    with (
+        patch.object(tema.st, "session_state", {"modo_escuro": True}),
+        patch.object(tema.st, "markdown") as markdown,
+    ):
+        tema.aplicar()
+
+    assert markdown.call_count == 2
+    assert "background:#15181C" in markdown.call_args.args[0]
+
+
 @pytest.mark.parametrize(
     "arquivo",
     ["app.py"] + [str(p.relative_to(RAIZ)) for p in (RAIZ / "pages").glob("*.py")],

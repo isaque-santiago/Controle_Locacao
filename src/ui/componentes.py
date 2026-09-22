@@ -340,6 +340,13 @@ def selecionar(titulo, linhas, rotulo, chave):
     return mapa[escolhido]
 
 
+def abrir_ficha_contrato(contrato_id):
+    """Abre a página de contratos com a ficha indicada já selecionada."""
+    st.session_state["ficha_contrato"] = contrato_id
+    st.session_state["contratos_aba_inicial"] = "Ficha e encerramento"
+    st.switch_page("pages/4_Contratos.py")
+
+
 def campo_data(titulo, valor=None, **kwargs):
     return st.date_input(
         titulo,

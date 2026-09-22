@@ -114,6 +114,7 @@ def require_login() -> None:
     inicial = nome[0].upper()
 
     with st.sidebar:
+        st.toggle("Modo escuro", key="modo_escuro")
         with st.container(key="dashboard_sidebar_rodape"):
             col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
             col_perfil.markdown(
