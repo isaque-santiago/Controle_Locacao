@@ -50,6 +50,18 @@ Streamlit e assistente em 4 etapas (Cliente, Moto, Condições, Vistoria de
 entrega) na criação de contrato. Pendências conhecidas continuam as da seção 6
 do `Design_UI.md`: modo escuro e validação em layout mobile.
 
+Reconstrução do Dashboard (22/09/2026), conferida linha a linha contra o
+artboard `Main.dc.html`: faixa de instrumentos como um único painel com quatro
+seções (frota com barra segmentada, recebido no mês com barra de progresso,
+em atraso, manutenção no mês), cartão "Hoje" com ação real de registrar
+pagamento (leva à página Cobranças com a cobrança pré-selecionada) e cartão
+"Alertas" único combinando manutenção, documentos e CNH com os selos
+circulares tracejados de 40px do mockup. `app.py` passou a usar
+`st.navigation`/`st.Page` para eliminar a entrada duplicada "app" da barra
+lateral, e o rodapé da barra lateral (avatar, nome, botão Sair) segue o
+padrão visual do mockup. As demais páginas ainda não foram revisadas contra
+seus artboards — trabalho em andamento, uma página por vez.
+
 Validação local em 21/09/2026:
 
 - Testes pytest de regras, exportação, paginação, login e telas com serviços simulados.

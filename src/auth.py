@@ -73,8 +73,24 @@ def require_login() -> None:
 
     st.session_state["ultima_atividade"] = time()
 
+    email = st.session_state[_CHAVE_USUARIO]["email"]
+    nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
+    inicial = nome[0].upper()
+
     with st.sidebar:
-        st.caption(st.session_state[_CHAVE_USUARIO]["email"])
-        if st.button("Sair"):
-            logout()
-            st.rerun()
+        with st.container(key="dashboard_sidebar_rodape"):
+            col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
+            col_perfil.markdown(
+                f"""
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:28px;height:28px;border-radius:50%;background:#2B3036;
+                              display:flex;align-items:center;justify-content:center;
+                              color:#FAFAF9;font-size:12px;font-weight:600;flex-shrink:0;">{inicial}</div>
+                  <div style="color:#FAFAF9;font-size:13px;">{nome}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if col_sair.button("Sair", key="botao_sair", use_container_width=True):
+                logout()
+                st.rerun()

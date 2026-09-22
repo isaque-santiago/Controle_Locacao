@@ -8,6 +8,15 @@ def formatar_moeda(valor) -> str:
     return "R$ " + numero.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def formatar_moeda_compacta(valor) -> str:
+    """R$ sem centavos, para leituras grandes tipo odômetro (painel do Dashboard)."""
+    from decimal import Decimal, ROUND_HALF_UP
+
+    numero = Decimal(str(valor or 0)).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    texto = f"{numero:,}".replace(",", ".")
+    return "R$ " + texto
+
+
 def formatar_data(data) -> str:
     from datetime import date, datetime
 

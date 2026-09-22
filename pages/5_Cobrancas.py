@@ -10,6 +10,7 @@ from src.ui.formatadores import formatar_moeda, formatar_data
 
 cabecalho("Cobranças")
 with proteger():
+    cobranca_rapida = st.session_state.pop("cobranca_rapida", None)
     registros = cobrancas.listar()
     placas = {m["id"]: m["placa"] for m in motos.listar()}
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
@@ -37,6 +38,8 @@ with proteger():
         if incluir(c)
     ]
     tabela(linhas, "cobrancas")
+    if cobranca_rapida and any(l["id"] == cobranca_rapida for l in linhas):
+        st.session_state["receber"] = cobranca_rapida
     cobranca = selecionar(
         "Cobrança para consultar ou receber",
         linhas,
