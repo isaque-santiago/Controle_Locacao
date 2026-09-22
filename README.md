@@ -187,6 +187,14 @@ Use um projeto de homologação; os passos criam dados.
 pagamentos e documento vencido. Execute apenas em projeto de demonstração, após
 migrations e `seed.sql`. É idempotente pela placa `DEM1A23`; não rode em produção.
 
+`supabase/seed_exemplos.sql` popula um cenário mais completo para explorar o
+sistema: 6 motos (uma em cada status), 5 clientes (ativo, CNH a vencer,
+bloqueado, sem contrato), 3 contratos (2 ativos e 1 encerrado, com vistorias
+de entrega/devolução), cobranças pagas/em aberto/vencida/paga com atraso,
+manutenção preventiva concluída e corretiva em aberto, e documentos vencido/a
+vencer/regularizado. Rode manualmente no SQL Editor após migrations e
+`seed.sql`. É idempotente pela placa `EXA1A11`; não rode em produção.
+
 ## Convenções dos relatórios
 
 Receita usa a data de pagamento e exclui caução. Custo de manutenção considera
