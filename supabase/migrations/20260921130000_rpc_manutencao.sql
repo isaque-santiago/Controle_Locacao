@@ -49,6 +49,11 @@ end $$;
 --   "itens": [{"item_id": uuid|null, "descricao": text, "quantidade": numeric,
 --              "valor_unitario": numeric}, ...]
 -- }
+--
+-- ATENÇÃO — SUPERADA: redefinida em 20260921152000_finalizar_manutencao.sql
+-- (adiciona checagem de km/status da moto e move a validação de
+-- cobrar_do_cliente para dentro do bloco "concluida"). O comportamento em
+-- produção é o do arquivo mais recente.
 -- ---------------------------------------------------------------------
 create or replace function rpc_registrar_manutencao(payload jsonb) returns jsonb
 security invoker
