@@ -59,6 +59,7 @@ def servicos():
             "cobrancas.listar": [COBRANCA],
             "cobrancas.listar_por_contrato": [COBRANCA],
             "cobrancas.historico_pagamentos": [],
+            "cobrancas.historicos_pagamentos": {},
             "cobrancas.calcular_encargos_cobranca": {
                 "multa": Decimal(2),
                 "juros": Decimal(1),
