@@ -4,7 +4,7 @@ import csv
 import json
 from io import BytesIO, StringIO
 from zipfile import ZipFile, ZIP_DEFLATED
-from decimal import Decimal
+from src.domain.configuracoes import validar_configuracao
 from src.repositories import configuracoes
 from src.repositories.consultas import todos
 
@@ -30,10 +30,8 @@ def obter():
     return configuracoes.obter()
 
 
-def atualizar(dados):
-    if any(Decimal(str(v)) < 0 for v in dados.values()):
-        raise ValueError("As configurações não podem ter valores negativos.")
-    return configuracoes.atualizar(dados)
+def atualizar(entrada):
+    return configuracoes.atualizar(validar_configuracao(entrada))
 
 
 def backup():
