@@ -111,6 +111,16 @@ modal. **Limitação conhecida:** o mockup mostra "Prazo indeterminado", mas
 `rpc_criar_contrato_com_vistoria` exige `data_fim_prevista` — por isso o
 "Fim previsto" continua obrigatório no assistente.
 
+Reconstrução de Cobranças (23/09/2026), conferida contra `Cobrancas.dc.html`:
+subtítulo com total em atraso e nº de clientes; abas Hoje, Atrasadas, Próximos 7
+dias e Pagas (com contagem); Atrasadas mostra atraso, original, encargos e total;
+ações por linha: mensagem de cobrança para copiar (popover) e registrar
+pagamento em diálogo, com multa/juros recalculados ao mudar a data. O pagamento
+mantém principal e "multa e juros" em campos separados (como grava a tabela
+`pagamentos`), em vez do campo único "Valor a pagar" do mockup. A aba Pagas
+mostra as 30 mais recentes. Regras de abas/resumo/mensagem em
+`src/domain/painel_cobrancas.py`, testadas em `tests/test_painel_cobrancas.py`.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
