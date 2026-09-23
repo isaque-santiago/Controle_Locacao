@@ -52,3 +52,49 @@ def test_limpeza_remove_cookies_sem_depender_de_leitura_assincrona():
     controlador.remove.assert_any_call("sb_refresh_token")
     controlador.remove.assert_any_call("sb_ultima_atividade")
     controlador.get.assert_not_called()
+
+
+def test_cookie_ganha_secure_atras_de_proxy_https():
+    contexto = MagicMock()
+    contexto.headers = {"x-forwarded-proto": "https"}
+    contexto.url = "http://interno/"
+
+    with patch.object(db.st, "context", contexto):
+        assert db._opcoes_cookie() == {"same_site": "lax", "secure": True}
+
+
+def test_cookie_ganha_secure_quando_a_url_e_https():
+    contexto = MagicMock()
+    contexto.headers = {}
+    contexto.url = "https://app.streamlit.app/"
+
+    with patch.object(db.st, "context", contexto):
+        assert db._opcoes_cookie()["secure"] is True
+
+
+def test_cookie_sem_secure_em_localhost_http():
+    contexto = MagicMock()
+    contexto.headers = {}
+    contexto.url = "http://localhost:8501/"
+
+    with patch.object(db.st, "context", contexto):
+        assert db._opcoes_cookie() == {"same_site": "lax"}
+
+
+def test_cookie_sem_secure_quando_contexto_indisponivel():
+    with patch.object(db.st, "context", new=None):
+        assert db._opcoes_cookie() == {"same_site": "lax"}
+
+
+def test_refresh_token_dura_no_maximo_sete_dias():
+    controlador = MagicMock()
+    contexto = MagicMock()
+    contexto.headers = {}
+    contexto.url = "http://localhost:8501/"
+
+    with patch.object(db.st, "context", contexto), patch(
+        "src.db._get_cookie_controller", return_value=controlador
+    ), patch("src.db.get_client"):
+        db.set_session_tokens("acesso", "refresh")
+
+    assert controlador.set.call_args.kwargs["max_age"] == 60 * 60 * 24 * 7

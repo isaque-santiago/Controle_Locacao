@@ -11,7 +11,31 @@ _CHAVE_COOKIES = "cookie_controller"
 _COOKIE_REFRESH_TOKEN = "sb_refresh_token"
 _COOKIE_ULTIMA_ATIVIDADE = "sb_ultima_atividade"
 _LIMITE_INATIVIDADE_SEGUNDOS = 1800
-_VALIDADE_LEMBRAR_SEGUNDOS = 60 * 60 * 24 * 30
+_VALIDADE_LEMBRAR_SEGUNDOS = 60 * 60 * 24 * 7
+
+
+def _conexao_https() -> bool:
+    """True quando a requisição chegou por HTTPS (direto ou atrás de proxy).
+
+    O Streamlit Cloud atende atrás de um proxy que informa o protocolo em
+    x-forwarded-proto; em localhost (HTTP) devolve False.
+    """
+    try:
+        contexto = st.context
+        protocolo = str(contexto.headers.get("x-forwarded-proto") or "")
+        if protocolo.split(",")[0].strip().lower() == "https":
+            return True
+        return str(contexto.url or "").lower().startswith("https://")
+    except Exception:
+        return False
+
+
+def _opcoes_cookie() -> dict:
+    """Atributos dos cookies de sessão: SameSite=lax e Secure quando em HTTPS."""
+    opcoes = {"same_site": "lax"}
+    if _conexao_https():
+        opcoes["secure"] = True
+    return opcoes
 
 
 def get_client() -> Client:
@@ -37,7 +61,7 @@ def set_session_tokens(access_token: str, refresh_token: str) -> None:
         _COOKIE_REFRESH_TOKEN,
         refresh_token,
         max_age=_VALIDADE_LEMBRAR_SEGUNDOS,
-        same_site="lax",
+        **_opcoes_cookie(),
     )
 
 
@@ -82,7 +106,7 @@ def marcar_atividade_cookie() -> None:
         _COOKIE_ULTIMA_ATIVIDADE,
         "1",
         max_age=_LIMITE_INATIVIDADE_SEGUNDOS,
-        same_site="lax",
+        **_opcoes_cookie(),
     )
 
 
