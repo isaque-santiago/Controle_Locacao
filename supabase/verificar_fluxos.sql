@@ -35,7 +35,8 @@ begin
     'itens', jsonb_build_array(jsonb_build_object('item_id', item, 'descricao', 'Óleo', 'quantidade', 2, 'valor_unitario', 15))));
   assert (select status from motos where id = moto) = 'manutencao', 'Manutenção aberta não bloqueou a moto';
   assert (select custo_total from manutencoes where id = (manutencao->>'manutencao_id')::uuid) = 55, 'Custo incorreto';
-  perform rpc_finalizar_manutencao((manutencao->>'manutencao_id')::uuid, 'concluida', hoje_br(), 160);
+  perform rpc_finalizar_manutencao(jsonb_build_object('id', manutencao->>'manutencao_id',
+    'status', 'concluida', 'data', hoje_br(), 'km', 160));
   assert (select ultima_km from moto_plano_manutencao where moto_id = moto and item_id = item) = 160, 'Item não reiniciado';
   assert (select ultima_km from moto_plano_manutencao where moto_id = moto and item_id = item_outro) = ultima_outra, 'Outro item alterado indevidamente';
   assert (select status from motos where id = moto) = 'disponivel', 'Moto não liberada';
