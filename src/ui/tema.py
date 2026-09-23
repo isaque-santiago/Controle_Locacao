@@ -153,6 +153,17 @@ def aplicar():
       padding:4px 8px !important;
       min-height:1.8rem;
     }
+    /* Configurações — cartões de até 780px, como em Configuracoes.dc.html */
+    .st-key-config_pagina {max-width:780px; gap:20px;}
+    .st-key-config_pagina [data-testid="stForm"] {padding:0; gap:20px;}
+    [class*="st-key-config_card"] {
+      background:#FAFAF9;
+      border:1px solid rgba(30,34,39,.12);
+      border-radius:2px;
+      padding:22px 26px;
+    }
+    [class*="st-key-config_card"] label p {font-size:12px; color:#585F66;}
+    [class*="st-key-config_card"] input {font-family:'IBM Plex Mono', monospace;}
     @media (max-width:640px) {
       .block-container {padding:1rem;}
       [data-testid="stMetricValue"] {font-size:1.5rem;}
@@ -175,8 +186,12 @@ def aplicar():
             [data-testid="stApp"] h1, [data-testid="stApp"] h2,
             [data-testid="stApp"] h3, [data-testid="stApp"] p,
             [data-testid="stApp"] label {color:inherit;}
-            [data-testid="stApp"] [style*="background:#FAFAF9"] {
+            [data-testid="stApp"] [style*="background:#FAFAF9"],
+            [data-testid="stApp"] [class*="st-key-config_card"] {
               background:#24292F !important;
+            }
+            [data-testid="stApp"] [style*="background:#EEF0F0"] {
+              background:#1B1F24 !important;
             }
             [data-testid="stApp"] [style*="color:#1E2227"] {
               color:#E6E8EA !important;

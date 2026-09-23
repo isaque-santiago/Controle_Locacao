@@ -170,6 +170,18 @@ sem caução nem canceladas que vencem no mês, o mesmo "previsto" do Dashboard)
 Cálculos em `src/domain/relatorios.py`, testados em
 `tests/test_relatorios_dominio.py`.
 
+Reconstrução de Configurações (23/09/2026), conferida contra `Configuracoes.dc.html`:
+quatro cartões de até 780px — Encargos por atraso (multa, juros mensal e carência,
+com exemplo calculado: R$ 500,00 vencida há 5 dias), Alertas de manutenção,
+Alertas de documentos e CNH e Backup manual (ZIP de CSVs) — e botão "Salvar
+alterações" no cabeçalho. Percentuais entre 0 e 100 com até duas casas; demais
+campos, inteiros não negativos; erros aparecem em português sem gravar nada.
+O backup é gerado em dois passos (Gerar → Baixar) para não consultar as 14
+tabelas a cada interação. **Decisão a confirmar:** o mockup mostra "Último backup"
+com data/hora, mas o schema não guarda isso; a tela informa apenas o backup gerado
+na sessão atual. O exemplo usa os valores já salvos (o formulário só grava ao salvar).
+Validação em `src/domain/configuracoes.py`, testada em `tests/test_configuracoes.py`.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
