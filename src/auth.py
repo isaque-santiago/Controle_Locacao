@@ -9,6 +9,7 @@ from src.db import (
     get_client,
     get_refresh_token_cookie,
     marcar_atividade_cookie,
+    salvar_tema_escuro_cookie,
     sessao_ativa_no_cookie,
     set_session_tokens,
 )
@@ -91,6 +92,13 @@ def _exibir_formulario_login() -> None:
             )
 
 
+def _salvar_tema_escuro() -> None:
+    """Guarda a escolha do toggle na sessão e no cookie do navegador."""
+    escuro = st.session_state["modo_escuro"]
+    st.session_state["tema_escuro"] = escuro
+    salvar_tema_escuro_cookie(escuro)
+
+
 def require_login() -> None:
     """Bloqueia a página até o dono estar autenticado; exibe login se não estiver."""
     if not esta_autenticado():
@@ -120,9 +128,7 @@ def require_login() -> None:
             "Modo escuro",
             key="modo_escuro",
             value=st.session_state.get("tema_escuro", False),
-            on_change=lambda: st.session_state.update(
-                tema_escuro=st.session_state["modo_escuro"]
-            ),
+            on_change=_salvar_tema_escuro,
         )
         with st.container(key="dashboard_sidebar_rodape"):
             col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
