@@ -122,7 +122,8 @@ def aplicar():
     /* Pílulas de filtro (Motos/Clientes/Contratos — lista, e periodicidade do assistente) */
     .st-key-motos_filtros button, .st-key-clientes_filtros button,
     .st-key-contratos_filtros button, .st-key-contrato_periodicidade button,
-    [class*="st-key-manutencao_filtros"] button, .st-key-documentos_filtros button, [class*="st-key-vistorias_filtros"] button {
+    [class*="st-key-manutencao_filtros"] button, .st-key-documentos_filtros button, [class*="st-key-vistorias_filtros"] button,
+    .st-key-relatorios_filtros button {
       border-radius:20px !important;
       font-size:.8rem !important;
       padding:4px 10px !important;
@@ -131,7 +132,8 @@ def aplicar():
     .st-key-motos_filtros button[kind="secondary"], .st-key-clientes_filtros button[kind="secondary"],
     .st-key-contratos_filtros button[kind="secondary"], .st-key-contrato_periodicidade button[kind="secondary"],
     [class*="st-key-manutencao_filtros"] button[kind="secondary"], .st-key-documentos_filtros button[kind="secondary"],
-    [class*="st-key-vistorias_filtros"] button[kind="secondary"] {
+    [class*="st-key-vistorias_filtros"] button[kind="secondary"],
+    .st-key-relatorios_filtros button[kind="secondary"] {
       background:#FAFAF9 !important;
       border:1px solid rgba(30,34,39,.12) !important;
       color:#1E2227 !important;

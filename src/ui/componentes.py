@@ -240,6 +240,17 @@ def chip_placa(placa, tamanho="normal"):
     )
 
 
+def barra_proporcional(percentual, cor="#2F9E6E"):
+    """Barra de 100px (6px de altura) para tabelas de Relatórios, em vez de gráfico
+    de biblioteca. `percentual` de 0 a 100."""
+    largura = max(0, min(100, int(percentual)))
+    return (
+        '<div style="height:6px;width:100px;border-radius:2px;overflow:hidden;'
+        'background:rgba(30,34,39,0.12);">'
+        f'<div style="height:100%;width:{largura}%;background:{cor};"></div></div>'
+    )
+
+
 def selo_situacao(texto, situacao):
     """Bolinha de 6-8px colorida + texto — o selo de status padrão das tabelas."""
     borda = CORES_STATUS_BORDA.get(situacao)

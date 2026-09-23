@@ -71,6 +71,17 @@ def test_paginas_vazias_autenticadas(arquivo):
         )
         pilha.enter_context(
             patch(
+                "src.services.relatorios.inadimplencia",
+                return_value={
+                    "linhas": [],
+                    "total_atraso": 0,
+                    "clientes": 0,
+                    "percentual_carteira": None,
+                },
+            )
+        )
+        pilha.enter_context(
+            patch(
                 "src.services.configuracoes.obter",
                 return_value={
                     "multa_atraso_percentual": 2,
