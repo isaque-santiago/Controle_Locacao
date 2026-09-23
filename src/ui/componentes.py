@@ -301,7 +301,7 @@ def tabela_html(cabecalhos, linhas, alinhar_direita=None):
             ) + "</tr>"
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;overflow:hidden;">
+        <div class="tabela-leitura" style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;overflow:auto;">
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead><tr>{ths}</tr></thead>
             <tbody>{corpo}</tbody>

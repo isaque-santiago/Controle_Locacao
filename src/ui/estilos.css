@@ -1,0 +1,282 @@
+/* Acabamento compartilhado do painel: grafite, superfícies neutras e foco visível. */
+:root {
+  --painel-superficie: #FAFAF9;
+  --painel-linha: rgba(30,34,39,.12);
+  --painel-texto: #1E2227;
+  --painel-secundario: #585F66;
+}
+.block-container {max-width: 1520px; padding: 2.8rem 2.6rem 4rem;}
+h1 {letter-spacing: -.025em; font-weight: 700 !important;}
+h2, h3 {letter-spacing: -.01em;}
+[data-testid="stSidebarNav"] {padding-top: 1rem;}
+[data-testid="stSidebarNav"]::before {
+  content: "Controle de Locação";
+  display: block;
+  margin: 0 1.5rem 1.4rem;
+  padding: .6rem 0 1.2rem;
+  border-bottom: 2px solid #F2B705;
+  color: #FAFAF9;
+  font: 600 1.5rem 'Barlow Semi Condensed', sans-serif;
+}
+[data-testid="stSidebarNav"] a {margin: 3px .65rem; border-radius: 4px; min-height: 39px;}
+[data-testid="stSidebarNav"] a:hover {background: #2B3036;}
+[data-testid="stSidebarNav"] a span {color: inherit;}
+[data-testid="stSidebar"] label {color: #FAFAF9;}
+button {transition: background-color .15s ease, border-color .15s ease;}
+button[kind="primary"] {min-height: 42px; border-radius: 5px; font-weight: 600;}
+button[kind="secondary"] {border-radius: 5px;}
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 3px solid #B88A00 !important; outline-offset: 3px;
+}
+[data-testid="stTextInput"] [data-baseweb="input"],
+[data-testid="stNumberInput"] [data-baseweb="input"],
+[data-baseweb="select"] > div, [data-testid="stTextArea"] textarea {
+  border: 1px solid var(--painel-linha); border-radius: 5px; min-height: 42px;
+}
+[data-testid="stForm"] {background: var(--painel-superficie); border-radius: 6px; padding: 1.5rem;}
+[data-baseweb="tab-list"] {gap: 1.5rem; border-bottom: 1px solid var(--painel-linha);}
+[data-baseweb="tab"] {padding: .65rem .15rem; font-weight: 500;}
+[data-baseweb="tab"][aria-selected="true"] {font-weight: 600;}
+[data-testid="stMetric"] {background: var(--painel-superficie); border-radius: 6px; border-top: 3px solid #1E2227; padding: 1.25rem;}
+[data-testid="stMetricLabel"] {color: var(--painel-secundario);}
+[class*="st-key-"][class*="_card_"] {border-radius: 6px;}
+.painel-sobretitulo {font-size: .78rem; font-weight: 500; color: var(--painel-secundario); margin-bottom: .6rem;}
+.painel-cabecalho {display: flex; justify-content: space-between; align-items: end; gap: 1rem; padding-bottom: 1.4rem; border-bottom: 1px solid var(--painel-linha);}
+.painel-cabecalho h1 {font-size: 38px !important;}
+.painel-instrumentos {display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 14px;}
+.painel-instrumentos > div {background: var(--painel-superficie); border: 1px solid var(--painel-linha) !important; border-top: 3px solid #1E2227 !important; border-radius: 6px; padding: 22px !important; min-width: 0;}
+.painel-instrumentos .mono {font-size: clamp(24px, 2.2vw, 34px) !important; letter-spacing: -.05em;}
+.painel-instrumentos .rotulo {font-size: 14px !important;}
+.tabela-leitura {border-radius: 6px !important;}
+.tabela-leitura th {background: rgba(128,128,128,.06); text-align: left; white-space: nowrap;}
+.tabela-leitura td {min-width: 90px;}
+.tabela-leitura tbody tr:hover {background: rgba(128,128,128,.055);}
+.login-recursos {display: grid; gap: .85rem; margin-top: 2rem; color: #585F66; font-size: .85rem;}
+.login-simbolo {background: #1E2227; color: #F2B705 !important; border-radius: 6px !important;}
+@media (max-width: 1150px) {
+  .painel-instrumentos {grid-template-columns: repeat(2, minmax(0, 1fr));}
+  .block-container {padding-left: 1.5rem; padding-right: 1.5rem;}
+}
+@media (max-width: 640px) {
+  .block-container {padding: 1.5rem 1rem 3rem;}
+  .painel-cabecalho {align-items: start; flex-direction: column;}
+  .painel-cabecalho h1 {font-size: 32px !important;}
+  .painel-instrumentos {grid-template-columns: 1fr;}
+  .painel-instrumentos > div {padding: 18px !important;}
+  [data-testid="stForm"] {padding: 1rem;}
+}
+@media (prefers-reduced-motion: reduce) {button {transition: none;}}
+
+/* ── Iconografia (gerada; máscaras SVG de traço 1,75px, herdam a cor do estado) ── */
+:root {
+  --ico-dashboard: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 14 4-4'/%3E%3Cpath d='M3.34 19a10 10 0 1 1 17.32 0'/%3E%3C/svg%3E");
+  --ico-motos: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='18.5' cy='17.5' r='3.5'/%3E%3Ccircle cx='5.5' cy='17.5' r='3.5'/%3E%3Ccircle cx='15' cy='5' r='1'/%3E%3Cpath d='M12 17.5V14l-3-3 4-3 2 3h2'/%3E%3C/svg%3E");
+  --ico-clientes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+  --ico-contratos: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3E%3Cpath d='M10 9H8'/%3E%3Cpath d='M16 13H8'/%3E%3Cpath d='M16 17H8'/%3E%3C/svg%3E");
+  --ico-cobrancas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='12' x='2' y='6' rx='2'/%3E%3Ccircle cx='12' cy='12' r='2'/%3E%3Cpath d='M6 12h.01M18 12h.01'/%3E%3C/svg%3E");
+  --ico-manutencao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/%3E%3C/svg%3E");
+  --ico-documentos: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'/%3E%3C/svg%3E");
+  --ico-vistorias: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='8' height='4' x='8' y='2' rx='1' ry='1'/%3E%3Cpath d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/%3E%3Cpath d='m9 14 2 2 4-4'/%3E%3C/svg%3E");
+  --ico-relatorios: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3v18h18'/%3E%3Cpath d='M18 17V9'/%3E%3Cpath d='M13 17V5'/%3E%3Cpath d='M8 17v-3'/%3E%3C/svg%3E");
+  --ico-configuracoes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 4h-7'/%3E%3Cpath d='M10 4H3'/%3E%3Cpath d='M21 12h-9'/%3E%3Cpath d='M8 12H3'/%3E%3Cpath d='M21 20h-5'/%3E%3Cpath d='M12 20H3'/%3E%3Cpath d='M14 2v4'/%3E%3Cpath d='M8 10v4'/%3E%3Cpath d='M16 18v4'/%3E%3C/svg%3E");
+  --ico-seta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='m12 5 7 7-7 7'/%3E%3C/svg%3E");
+  --ico-editar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20h9'/%3E%3Cpath d='M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E");
+  --ico-confirmar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  --ico-abrir: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 3h6v6'/%3E%3Cpath d='M10 14 21 3'/%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3C/svg%3E");
+  --ico-mais: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14'/%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E");
+  --ico-voltar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+  --ico-avancar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E");
+  --ico-fechar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+  --ico-busca: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+  --ico-baixar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3Cpath d='M12 15V3'/%3E%3C/svg%3E");
+  --ico-alerta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
+  --ico-sol: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2'/%3E%3Cpath d='M12 20v2'/%3E%3Cpath d='m4.93 4.93 1.41 1.41'/%3E%3Cpath d='m17.66 17.66 1.41 1.41'/%3E%3Cpath d='M2 12h2'/%3E%3Cpath d='M20 12h2'/%3E%3Cpath d='m6.34 17.66-1.41 1.41'/%3E%3Cpath d='m19.07 4.93-1.41 1.41'/%3E%3C/svg%3E");
+  --ico-sair: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4'/%3E%3Cpath d='m16 17 5-5-5-5'/%3E%3Cpath d='M21 12H9'/%3E%3C/svg%3E");
+}
+
+/* ── Navegação lateral: ícone de traço por página (máscara herda a cor do estado) ── */
+[data-testid="stSidebarNav"] a {padding-left: 3.05rem !important; font-size: .93rem; letter-spacing: .005em;}
+[data-testid="stSidebarNav"] a::before {
+  left: 1.2rem; width: 18px; height: 18px; border-radius: 0; background: #9AA0A6;
+  -webkit-mask: var(--ico-dashboard) center / contain no-repeat; mask: var(--ico-dashboard) center / contain no-repeat;
+  transition: background-color .15s ease;
+}
+[data-testid="stSidebarNav"] a:hover::before {background: #FAFAF9;}
+[data-testid="stSidebarNav"] a[aria-current="page"]::before {background: #F2B705;}
+[data-testid="stSidebarNav"] a:hover {color: #FAFAF9;}
+[data-testid="stSidebarNav"] a[href$="/Motos"]::before {-webkit-mask-image: var(--ico-motos); mask-image: var(--ico-motos);}
+[data-testid="stSidebarNav"] a[href$="/Clientes"]::before {-webkit-mask-image: var(--ico-clientes); mask-image: var(--ico-clientes);}
+[data-testid="stSidebarNav"] a[href$="/Contratos"]::before {-webkit-mask-image: var(--ico-contratos); mask-image: var(--ico-contratos);}
+[data-testid="stSidebarNav"] a[href$="/Cobrancas"]::before {-webkit-mask-image: var(--ico-cobrancas); mask-image: var(--ico-cobrancas);}
+[data-testid="stSidebarNav"] a[href$="/Manutencao"]::before {-webkit-mask-image: var(--ico-manutencao); mask-image: var(--ico-manutencao);}
+[data-testid="stSidebarNav"] a[href$="/Documentos"]::before {-webkit-mask-image: var(--ico-documentos); mask-image: var(--ico-documentos);}
+[data-testid="stSidebarNav"] a[href$="/Vistorias"]::before {-webkit-mask-image: var(--ico-vistorias); mask-image: var(--ico-vistorias);}
+[data-testid="stSidebarNav"] a[href$="/Relatorios"]::before {-webkit-mask-image: var(--ico-relatorios); mask-image: var(--ico-relatorios);}
+[data-testid="stSidebarNav"] a[href$="/Configuracoes"]::before {-webkit-mask-image: var(--ico-configuracoes); mask-image: var(--ico-configuracoes);}
+
+/* ── Botões de ação por linha: o glifo de texto some e entra o ícone de traço ── */
+[class*=" st-key-ficha_"] button, [class*=" st-key-ver_vist_"] button,
+[class*=" st-key-editar_doc_"] button, [class*=" st-key-editar_item_"] button,
+[class*=" st-key-km_"]:not([class*="st-key-km_ficha"]) button,
+[class*=" st-key-regularizar_doc_"] button, [class*=" st-key-concluir_man_"] button,
+[class*=" st-key-comprovante_doc_"] button, [class*=" st-key-pagar_hoje_"] button {
+  position: relative; width: 32px !important; min-width: 32px; height: 32px; min-height: 32px !important;
+  padding: 0 !important; border-radius: 6px !important; overflow: hidden;
+}
+[class*=" st-key-ficha_"] button *, [class*=" st-key-ver_vist_"] button *,
+[class*=" st-key-editar_doc_"] button *, [class*=" st-key-editar_item_"] button *,
+[class*=" st-key-km_"]:not([class*="st-key-km_ficha"]) button *,
+[class*=" st-key-regularizar_doc_"] button *, [class*=" st-key-concluir_man_"] button *,
+[class*=" st-key-comprovante_doc_"] button *, [class*=" st-key-pagar_hoje_"] button * {
+  font-size: 0 !important; color: transparent !important; line-height: 0;
+}
+[class*=" st-key-ficha_"] button::after, [class*=" st-key-ver_vist_"] button::after,
+[class*=" st-key-editar_doc_"] button::after, [class*=" st-key-editar_item_"] button::after,
+[class*=" st-key-km_"]:not([class*="st-key-km_ficha"]) button::after,
+[class*=" st-key-regularizar_doc_"] button::after, [class*=" st-key-concluir_man_"] button::after,
+[class*=" st-key-comprovante_doc_"] button::after, [class*=" st-key-pagar_hoje_"] button::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px;
+  background: #585F66; transition: background-color .15s ease;
+  -webkit-mask: var(--ico-seta) center / contain no-repeat; mask: var(--ico-seta) center / contain no-repeat;
+}
+[class*=" st-key-editar_doc_"] button::after, [class*=" st-key-editar_item_"] button::after,
+[class*=" st-key-km_"]:not([class*="st-key-km_ficha"]) button::after {-webkit-mask-image: var(--ico-editar); mask-image: var(--ico-editar);}
+[class*=" st-key-regularizar_doc_"] button::after, [class*=" st-key-concluir_man_"] button::after,
+[class*=" st-key-pagar_hoje_"] button::after {-webkit-mask-image: var(--ico-confirmar); mask-image: var(--ico-confirmar);}
+[class*=" st-key-comprovante_doc_"] button::after {-webkit-mask-image: var(--ico-abrir); mask-image: var(--ico-abrir);}
+[class*=" st-key-pagar_hoje_"] button::after {background: #FAFAF9;}
+[class*=" st-key-ficha_"] button:hover::after, [class*=" st-key-ver_vist_"] button:hover::after,
+[class*=" st-key-editar_doc_"] button:hover::after, [class*=" st-key-editar_item_"] button:hover::after,
+[class*=" st-key-km_"]:not([class*="st-key-km_ficha"]) button:hover::after,
+[class*=" st-key-regularizar_doc_"] button:hover::after, [class*=" st-key-concluir_man_"] button:hover::after,
+[class*=" st-key-comprovante_doc_"] button:hover::after {background: #1E2227;}
+[class*=" st-key-comprovante_doc_"] button:disabled {opacity: .38;}
+
+/* ── Campos de formulário: o DOM atual do Streamlit usa react-aria (stTextInputRootElement etc.);
+      antes só existia regra para data-baseweb, então o campo ficava do mesmo tom do cartão ── */
+:root {
+  --painel-campo: #FFFFFF;
+  --painel-borda-campo: rgba(30,34,39,.28);
+  --painel-borda-campo-hover: rgba(30,34,39,.5);
+}
+[data-testid="stTextInputRootElement"], [data-testid="stNumberInputContainer"], [data-testid="stDateInputField"],
+[data-testid="stTextAreaRootElement"], [data-baseweb="select"] > div {
+  background: var(--painel-campo) !important; border: 1px solid var(--painel-borda-campo) !important;
+  border-radius: 6px !important; min-height: 42px; transition: border-color .15s ease, box-shadow .15s ease;
+}
+[data-testid="stTextAreaRootElement"] {min-height: 88px;}
+[data-testid="stTextInputRootElement"]:hover, [data-testid="stNumberInputContainer"]:hover, [data-testid="stDateInputField"]:hover,
+[data-testid="stTextAreaRootElement"]:hover, [data-baseweb="select"] > div:hover {border-color: var(--painel-borda-campo-hover) !important;}
+[data-testid="stTextInputRootElement"]:focus-within, [data-testid="stNumberInputContainer"]:focus-within,
+[data-testid="stDateInputField"]:focus-within, [data-testid="stTextAreaRootElement"]:focus-within,
+[data-baseweb="select"] > div:focus-within {
+  border-color: #1E2227 !important; box-shadow: 0 0 0 3px rgba(30,34,39,.14);
+}
+[data-testid="stTextInputRootElement"] input:focus-visible, [data-testid="stNumberInputContainer"] input:focus-visible,
+[data-testid="stTextAreaRootElement"] textarea:focus-visible, [data-testid="stDateInputField"] input:focus-visible {outline: none !important;}
+input, textarea {font-size: .92rem;}
+input::placeholder, textarea::placeholder {color: #9AA0A6; opacity: 1;}
+[data-testid="stWidgetLabel"] p {font-size: .8rem; font-weight: 500; color: var(--painel-secundario); margin-bottom: .1rem;}
+[data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {background: transparent !important; color: #585F66; border-radius: 4px;}
+[data-testid="stNumberInputStepDown"]:hover, [data-testid="stNumberInputStepUp"]:hover {background: rgba(30,34,39,.08) !important; color: #1E2227;}
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {font-size: .82rem; color: var(--painel-secundario);}
+
+/* ── Modal (st.dialog) ── */
+[data-testid="stDialog"] {background: rgba(21,24,28,.58) !important; backdrop-filter: blur(2px);}
+[data-testid="stDialog"] [role="dialog"] {
+  border-radius: 10px; border: 1px solid var(--painel-linha); box-shadow: 0 24px 60px rgba(21,24,28,.34);
+}
+[data-testid="stDialog"] [role="dialog"] h2 {font-family: 'Barlow Semi Condensed', sans-serif !important; font-size: 1.6rem; letter-spacing: -.01em;}
+[data-testid="stDialog"] [data-testid="stForm"] {border: 1px solid var(--painel-linha);}
+
+/* ── Alertas: superfície neutra com faixa lateral na cor do status ── */
+[data-testid="stAlert"] {border-radius: 6px; border: 1px solid var(--painel-linha); border-left-width: 4px; background: var(--painel-superficie);}
+[data-testid="stAlert"]:has([data-testid="stAlertContentError"]) {border-left-color: #D64545;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]) {border-left-color: #F2B705;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]) {border-left-color: #2F9E6E;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) {border-left-color: #585F66;}
+[data-testid="stAlert"] p {color: var(--painel-texto);}
+
+/* ── Selo de status e chip de placa: mesmo corpo de texto da tabela, sem quebra de linha ── */
+div[style*="align-items: center"][style*="gap: 6px"] {font-size: 13px; line-height: 1.3; font-weight: 500; white-space: nowrap;}
+.mono {white-space: nowrap;}
+
+/* ── Cobranças: a coluna de ações da linha é estreita; fixa os dois botões em 34px ── */
+[class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {
+  gap: 6px; flex-wrap: nowrap; justify-content: flex-end; min-width: 78px;
+}
+[class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+  flex: 0 0 34px; min-width: 34px; width: 34px;
+}
+[class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] button {
+  width: 34px !important; min-width: 34px; height: 32px; min-height: 32px !important; padding: 0 !important; justify-content: center;
+}
+[data-testid="stPopoverButton"] [data-testid="stIconMaterial"] {display: none;}
+[class*="st-key-cobrancas_card"] button:hover {border-color: rgba(30,34,39,.45) !important; color: #1E2227 !important;}
+
+/* ── Dashboard "Hoje": valores e datas nunca quebram no meio ── */
+.st-key-dashboard_card_hoje .mono {white-space: nowrap;}
+.st-key-dashboard_card_hoje [data-testid="stMarkdownContainer"] p {white-space: normal;}
+
+/* ── Barra superior: sem o botão Deploy (só ruído para o dono) ── */
+[data-testid="stAppDeployButton"] {display: none;}
+
+/* ── Tipografia de página ── */
+h1 {font-size: 2.1rem !important; line-height: 1.12; margin-bottom: .1rem;}
+h2 {font-size: 1.5rem;}
+h3 {font-size: 1.15rem;}
+[data-baseweb="tab"] {font-size: .92rem;}
+[data-testid="stCode"], [data-testid="stCode"] code {font-family: 'IBM Plex Mono', monospace !important; font-size: .84rem;}
+
+/* ── Interruptor "Modo escuro" da barra lateral ── */
+[data-testid="stSidebar"] label:has(input[role="switch"]) {gap: .6rem; align-items: center;}
+[data-testid="stSidebar"] label:has(input[role="switch"]) > div:not([data-testid]) {
+  background: #3A4149; border: 1px solid #4A525A; border-radius: 999px;
+}
+[data-testid="stSidebar"] label:has(input[role="switch"]:checked) > div:not([data-testid]) {background: #6B7480; border-color: #6B7480;}
+
+/* ── Markdown sem <p> (selo, cartões em <div>): o -16px do Streamlit só compensa a margem do parágrafo;
+      sem ele a coluna colapsa e o conteúdo desce da linha ── */
+[data-testid="stMarkdownContainer"]:has(> div[style]):not(:has(> p)) {margin-bottom: 0 !important;}
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {color: #C9CED3; font-size: .85rem; font-weight: 500;}
+
+:root {--ico-vazio: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='22 12 16 12 14 15 10 15 8 12 2 12'/%3E%3Cpath d='M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'/%3E%3C/svg%3E");}
+
+/* ── Estado vazio: linha de texto solta vira aviso com ícone ── */
+div[style*="padding: 16px 20px"][style*="color: rgb(88, 95, 102)"][style*="font-size: 13px"],
+div[style*="padding: 12px 20px"][style*="color: rgb(88, 95, 102)"][style*="font-size: 13px"] {
+  display: flex; align-items: center; gap: .7rem; padding: 22px 20px !important; font-size: 13.5px !important;
+}
+div[style*="padding: 16px 20px"][style*="color: rgb(88, 95, 102)"][style*="font-size: 13px"]::before,
+div[style*="padding: 12px 20px"][style*="color: rgb(88, 95, 102)"][style*="font-size: 13px"]::before {
+  content: ""; flex: none; width: 20px; height: 20px; background: #9AA0A6;
+  -webkit-mask: var(--ico-vazio) center / contain no-repeat; mask: var(--ico-vazio) center / contain no-repeat;
+}
+
+/* ── Celular: listas em cartão viram tabela com rolagem lateral (cabeçalho e colunas alinhados) ── */
+@media (max-width: 640px) {
+  .st-key-motos_card_lista, .st-key-motos_card_documentos, .st-key-clientes_card_lista, .st-key-contratos_card_lista,
+  .st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-vistorias_card_lista,
+  .st-key-documentos_card_lista, [class*="st-key-cobrancas_card"], .st-key-dashboard_card_hoje {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .st-key-motos_card_lista [data-testid="stHorizontalBlock"], .st-key-motos_card_documentos [data-testid="stHorizontalBlock"],
+  .st-key-clientes_card_lista [data-testid="stHorizontalBlock"], .st-key-contratos_card_lista [data-testid="stHorizontalBlock"],
+  .st-key-manutencao_card_historico [data-testid="stHorizontalBlock"], .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"],
+  .st-key-vistorias_card_lista [data-testid="stHorizontalBlock"], .st-key-documentos_card_lista [data-testid="stHorizontalBlock"],
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"], .st-key-dashboard_card_hoje [data-testid="stHorizontalBlock"] {
+    flex-wrap: nowrap !important; min-width: 720px;
+  }
+  .st-key-motos_card_lista [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-motos_card_documentos [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-clientes_card_lista [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-contratos_card_lista [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-manutencao_card_historico [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-vistorias_card_lista [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-documentos_card_lista [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
+  .st-key-dashboard_card_hoje [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+    min-width: 0 !important; width: auto !important; flex: 1 1 0 !important;
+  }
+}

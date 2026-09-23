@@ -1,8 +1,12 @@
 """Tokens visuais do painel operacional definidos em Arquivos/Design_UI.md."""
 
+from pathlib import Path
+
 import streamlit as st
 
 from src.db import ler_tema_escuro_cookie
+
+_ESTILOS = Path(__file__).with_name("estilos.css").read_text(encoding="utf-8")
 
 
 def tema_escuro_ativo() -> bool:
@@ -186,8 +190,7 @@ def aplicar():
       [data-testid="stMetricValue"] {font-size:1.5rem;}
       [data-testid="stHorizontalBlock"] {flex-wrap:wrap;}
     }
-    </style>
-    """,
+    """ + _ESTILOS + "</style>",
         unsafe_allow_html=True,
     )
     if tema_escuro_ativo():
@@ -202,6 +205,8 @@ _CSS_MODO_ESCURO = """
 :root {
   --e-fundo:#15181C; --e-cartao:#22272D; --e-campo:#2B3138; --e-realce:#343B43;
   --e-linha:rgba(238,240,240,.14); --e-texto:#ECEEF0; --e-texto2:#B4BBC3; --e-texto3:#9BA3AC;
+  --painel-superficie:#22272D; --painel-linha:rgba(238,240,240,.14); --painel-texto:#ECEEF0; --painel-secundario:#B4BBC3;
+  --painel-campo:#2B3138; --painel-borda-campo:rgba(238,240,240,.28); --painel-borda-campo-hover:rgba(238,240,240,.5);
 }
 [data-testid="stApp"] {color-scheme:dark;}
 [data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stMain"] {
@@ -357,5 +362,23 @@ div.react-aria-SelectionIndicator {background:#F2B705 !important; border-color:#
 [data-testid="stPlotlyChart"] .main-svg {background:transparent !important;}
 [data-testid="stPlotlyChart"] text {fill:var(--e-texto2) !important;}
 [data-testid="stPlotlyChart"] .gridlayer path, [data-testid="stPlotlyChart"] .zerolinelayer path {stroke:var(--e-linha) !important;}
+
+/* Acabamento de estilos.css no modo escuro */
+.painel-instrumentos > div {border-top-color:#F2B705 !important;}
+[data-testid="stMetric"] {border-top-color:#F2B705 !important;}
+[data-testid="stSidebarNav"] a:hover {background:#2B3036;}
+.login-recursos {color:var(--e-texto2);}
+.login-simbolo {background:#F2B705 !important; border-color:#F2B705 !important; color:#15181C !important;}
+.tabela-leitura {background:var(--e-cartao) !important; border-color:var(--e-linha) !important;}
+[data-testid="stApp"] [class*=" st-key-ficha_"] button::after, [data-testid="stApp"] [class*=" st-key-ver_vist_"] button::after,
+[data-testid="stApp"] [class*=" st-key-editar_doc_"] button::after, [data-testid="stApp"] [class*=" st-key-editar_item_"] button::after,
+[data-testid="stApp"] [class*=" st-key-km_"] button::after, [data-testid="stApp"] [class*=" st-key-regularizar_doc_"] button::after,
+[data-testid="stApp"] [class*=" st-key-concluir_man_"] button::after, [data-testid="stApp"] [class*=" st-key-comprovante_doc_"] button::after {
+  background:#C9CED3 !important;
+}
+[data-testid="stApp"] [class*=" st-key-pagar_hoje_"] button {background:#ECEEF0 !important;}
+[data-testid="stApp"] [class*=" st-key-pagar_hoje_"] button::after {background:#15181C !important;}
+[data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {color:var(--e-texto2) !important;}
+[data-testid="stDialog"] [role="dialog"] {border-color:var(--e-linha);}
 </style>
 """
