@@ -168,12 +168,30 @@ def aplicar():
     }
     .st-key-dashboard_sidebar_rodape button {
       background:transparent !important;
-      border:1px solid rgba(238,240,240,0.24) !important;
-      color:#9AA0A6 !important;
+      border:1px solid rgba(238,240,240,0.4) !important;
+      color:#ECEEF0 !important;
       font-size:12px !important;
       padding:4px 8px !important;
       min-height:1.8rem;
     }
+    .st-key-dashboard_sidebar_rodape button * {color:#ECEEF0 !important;}
+    .st-key-dashboard_sidebar_rodape button:hover {
+      background:#2B3036 !important;
+      border-color:#F2B705 !important;
+    }
+    /* Botão de fechar a sidebar: o ícone herdava a cor escura do tema claro sobre o fundo grafite */
+    [data-testid="stSidebarCollapseButton"] button, [data-testid="stSidebarCollapseButton"] button *,
+    [data-testid="stSidebarHeader"] button, [data-testid="stSidebarHeader"] button * {
+      color:#ECEEF0 !important;
+    }
+    [data-testid="stSidebarCollapseButton"] button:hover, [data-testid="stSidebarHeader"] button:hover {
+      background:#2B3036 !important;
+    }
+    /* Botões da sidebar: fundo é sempre escuro, então o texto é sempre claro (contraste ≥ 7:1) */
+    [data-testid="stSidebar"] button[kind="tertiary"], [data-testid="stSidebar"] button[kind="tertiary"] * {
+      color:#ECEEF0 !important;
+    }
+    [data-testid="stSidebar"] button[kind="tertiary"]:hover {background:#2B3036 !important;}
     /* Configurações — cartões de até 780px, como em Configuracoes.dc.html */
     .st-key-config_pagina {max-width:780px; gap:20px;}
     .st-key-config_pagina [data-testid="stForm"] {padding:0; gap:20px;}
@@ -333,7 +351,7 @@ button[kind="tertiary"], button[kind="tertiary"] * {color:var(--e-texto2) !impor
   background:#F2B705 !important; color:#15181C !important;
 }
 [data-testid="stApp"] .st-key-dashboard_card_hoje button {background:var(--e-realce) !important;}
-[data-testid="stSidebar"] button[kind="secondary"] {background:transparent; color:#B4BBC3;}
+[data-testid="stSidebar"] button[kind="secondary"] {background:transparent; color:#ECEEF0;}
 
 /* Abas */
 [data-baseweb="tab-list"] {border-bottom:1px solid var(--e-linha);}
