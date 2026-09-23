@@ -40,14 +40,15 @@ def _data_por_extenso(data):
 def _cabecalho_pagina():
     st.markdown(
         f"""
-        <div style="display:flex;align-items:baseline;justify-content:space-between;">
+        <div class="painel-cabecalho">
           <div>
+            <div class="painel-sobretitulo">Visão geral da operação</div>
             <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Dashboard</h1>
             <div style="color:#585F66;font-size:13px;margin-top:2px;">{_data_por_extenso(hoje_br())}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;color:#585F66;font-size:12px;">
             <span style="width:6px;height:6px;border-radius:50%;background:#2F9E6E;display:inline-block;"></span>
-            Cobranças em dia atualizadas agora
+            Cobranças atualizadas nesta consulta
           </div>
         </div>
         """,
@@ -95,7 +96,7 @@ def _faixa_instrumentos(dados, contagem, devedores_count, ordens_concluidas):
 
     st.markdown(
         f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;">
+        <div class="painel-instrumentos">
           <div style="flex:1.3;padding:18px 24px;display:flex;flex-direction:column;gap:10px;border-right:1px solid rgba(30,34,39,0.12);">
             <div class="rotulo" style="font-size:12px;color:#585F66;letter-spacing:0.03em;">frota</div>
             <div style="display:flex;align-items:baseline;gap:8px;">

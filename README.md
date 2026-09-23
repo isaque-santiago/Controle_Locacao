@@ -299,3 +299,7 @@ serviços concluídos, pela data de entrada. Documentos entram na data de regula
 Essas datas representam o controle disponível no sistema; não há uma tabela separada
 de pagamentos a fornecedores. O custo/km representa manutenção dividida pela distância
 registrada. Os cálculos financeiros usam `Decimal`; as células do Excel são numéricas.
+
+## Estilização do painel
+
+O acabamento compartilhado está em `src/ui/estilos.css`, carregado por `src/ui/tema.py`. Mantém a identidade grafite/amarelo, com indicadores responsivos, navegação com ícones, foco visível por teclado, formulários uniformes e tabelas com rolagem horizontal em telas estreitas. O modo escuro redefine as variáveis `--painel-*` e reaproveita a mesma paleta. A tela de entrada apresenta as áreas da operação sem alterar a autenticação.

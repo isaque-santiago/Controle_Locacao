@@ -86,11 +86,11 @@ def exibir() -> tuple[bool, str, str]:
         }
         .login-contexto {
             padding: 2rem 0;
-            max-width: 27rem;
+            max-width: 30rem;
         }
         .login-contexto h2 {
             margin: 0 0 .75rem;
-            font-size: 2.35rem;
+            font-size: clamp(2.35rem, 4vw, 3.8rem);
             line-height: 1.05;
         }
         .login-contexto p {
@@ -112,11 +112,11 @@ def exibir() -> tuple[bool, str, str]:
         div[data-testid="stForm"] {
             background: #FAFAF9;
             border: 1px solid rgba(30,34,39,.12);
-            border-radius: 4px;
-            padding: 1.5rem;
+            border-radius: 6px;
+            padding: 2rem;
         }
         div[data-testid="stTextInput"] input {
-            border-radius: 4px;
+            border-radius: 6px;
         }
         div[data-testid="stFormSubmitButton"] button {
             min-height: 2.75rem;
@@ -155,9 +155,11 @@ def exibir() -> tuple[bool, str, str]:
         st.markdown(
             """
             <div class="login-contexto">
+                <div class="painel-sobretitulo">Gestão de frota simplificada</div>
                 <h2>Sua operação,<br>sob controle.</h2>
                 <p>Acompanhe locações, cobranças, manutenção e documentos da frota em um único painel.</p>
                 <div class="login-trilho"></div>
+                <div class="login-recursos"><span>01 &nbsp; Locações e clientes</span><span>02 &nbsp; Receitas e cobranças</span><span>03 &nbsp; Manutenção e vistorias</span></div>
             </div>
             """,
             unsafe_allow_html=True,
