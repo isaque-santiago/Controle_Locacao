@@ -139,6 +139,19 @@ def aplicar():
       min-height:1.8rem;
       padding:2px 8px !important;
     }
+    /* Placa clicável (Clientes > Contratos): botão com a aparência do chip de placa */
+    .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button {
+      background:#1E2227 !important;
+      border:none !important;
+      border-radius:4px !important;
+      color:#FAFAF9 !important;
+      font-family:"JetBrains Mono", ui-monospace, monospace !important;
+      font-weight:600 !important;
+      letter-spacing:.05em;
+      min-height:0;
+      padding:3px 8px !important;
+    }
+    .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button p { font-size:12px !important; }
 
     /* Pílulas de filtro (Motos/Clientes/Contratos — lista, e periodicidade do assistente) */
     .st-key-motos_filtros button, .st-key-clientes_filtros button,

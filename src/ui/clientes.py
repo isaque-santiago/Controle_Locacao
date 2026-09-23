@@ -353,27 +353,57 @@ def _aba_contratos(cliente):
     registros = [c for c in contratos.listar() if c["cliente_id"] == cliente["id"]]
     registros.sort(key=lambda c: c["data_inicio"], reverse=True)
     frota = {m["id"]: m for m in motos.listar()}
-    linhas = []
-    for c in registros:
-        moto = frota.get(c["moto_id"])
-        moto_html = (
-            f'{chip_placa(moto["placa"])}<span style="margin-left:8px;">{_html(moto["marca"])} {_html(moto["modelo"])}</span>'
-            if moto
-            else "—"
-        )
-        linhas.append(
-            [
-                moto_html,
-                f'<span class="mono">{formatar_data(c["data_inicio"])}</span>',
-                f'<span class="mono">{formatar_data(c["data_encerramento"])}</span>' if c["data_encerramento"] else '<span style="color:#9AA0A6;">—</span>',
+    larguras = [2, 1, 1, 1, 1]
+    with st.container(key="clientes_card_lista"):
+        cab = st.columns(larguras, vertical_alignment="center")
+        for coluna, rotulo in zip(cab, ["Moto", "Início", "Fim", "Status", "Valor / período"]):
+            coluna.markdown(
+                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+                unsafe_allow_html=True,
+            )
+        if not registros:
+            st.markdown(
+                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum registro encontrado.</div>',
+                unsafe_allow_html=True,
+            )
+        for c in registros:
+            moto = frota.get(c["moto_id"])
+            linha = st.columns(larguras, vertical_alignment="center")
+            if moto:
+                col_placa, col_modelo = linha[0].columns([1, 1.6], vertical_alignment="center")
+                if col_placa.button(
+                    formatar_placa_simples(moto),
+                    key=f"placa_contrato_{c['id']}",
+                    help="Abrir contrato",
+                ):
+                    abrir_ficha_contrato(c["id"])
+                col_modelo.markdown(
+                    f'<span style="font-size:13px;">{_html(moto["marca"])} {_html(moto["modelo"])}</span>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                linha[0].markdown("—")
+            linha[1].markdown(
+                f'<span class="mono" style="font-size:13px;">{formatar_data(c["data_inicio"])}</span>',
+                unsafe_allow_html=True,
+            )
+            linha[2].markdown(
+                f'<span class="mono" style="font-size:13px;">{formatar_data(c["data_encerramento"])}</span>'
+                if c["data_encerramento"]
+                else '<span style="color:#9AA0A6;">—</span>',
+                unsafe_allow_html=True,
+            )
+            linha[3].markdown(
                 selo_situacao(
                     {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}[c["status"]],
                     c["status"],
                 ),
-                f'<span class="mono">{formatar_moeda(c["valor_periodo"])}</span>',
-            ]
-        )
-    tabela_html(["Moto", "Início", "Fim", "Status", "Valor / período"], linhas, alinhar_direita={4})
+                unsafe_allow_html=True,
+            )
+            linha[4].markdown(
+                f'<div style="text-align:right;"><span class="mono" style="font-size:13px;">{formatar_moeda(c["valor_periodo"])}</span></div>',
+                unsafe_allow_html=True,
+            )
 
 
 def _aba_pagamentos(parcelas, historicos):
