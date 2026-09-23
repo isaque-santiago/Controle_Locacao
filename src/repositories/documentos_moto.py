@@ -13,6 +13,11 @@ def listar_por_moto(moto_id: str):
     return todos(TABELA, "vencimento", filtros={"moto_id": moto_id})
 
 
+def listar_todos():
+    """Todos os documentos da frota, por vencimento."""
+    return todos(TABELA, "vencimento")
+
+
 def listar_pendentes():
     resposta = (
         get_client()

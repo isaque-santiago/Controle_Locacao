@@ -45,6 +45,17 @@ COBRANCA = {
     "valor_pago": 40,
     "situacao": "atrasada",
 }
+DOCUMENTO = {
+    "id": "d",
+    "tipo": "ipva",
+    "vencimento": "2026-09-01",
+    "regularizado": False,
+    "moto_id": "m",
+    "ano_referencia": 2026,
+    "valor": Decimal("380.00"),
+    "descricao": None,
+    "arquivo_path": None,
+}
 ITEM = {
     "id": "i",
     "nome": "Óleo",
@@ -76,16 +87,8 @@ def servicos():
             "manutencao.listar_catalogo": [ITEM],
             "manutencao.listar_manutencoes": [],
             "manutencao.listar_plano_moto": [],
-            "documentos.listar_por_moto": [
-                {
-                    "id": "d",
-                    "tipo": "ipva",
-                    "vencimento": "2026-09-01",
-                    "regularizado": False,
-                    "moto_id": "m",
-                    "ano_referencia": 2026,
-                }
-            ],
+            "documentos.listar_todos": [DOCUMENTO],
+            "documentos.listar_por_moto": [DOCUMENTO],
             "vistorias.listar_por_contrato": [
                 {"id": "v", "tipo": "entrega", "km": 100, "fotos": [], "data": "2026-09-01T10:00:00+00:00", "nivel_combustivel": "cheio", "checklist": {}}
             ],
