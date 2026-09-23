@@ -358,6 +358,13 @@ def abrir_ficha_contrato(contrato_id):
     st.switch_page("pages/4_Contratos.py")
 
 
+def abrir_ficha_cliente(cliente_id):
+    """Abre a página de clientes com a ficha indicada já selecionada."""
+    st.session_state["clientes_visao"] = "ficha"
+    st.session_state["clientes_id_selecionado"] = cliente_id
+    st.switch_page("pages/3_Clientes.py")
+
+
 def campo_data(titulo, valor=None, **kwargs):
     return st.date_input(
         titulo,
