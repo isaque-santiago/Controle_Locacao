@@ -66,7 +66,9 @@ def servicos():
             "cobrancas.listar_por_contrato": [COBRANCA],
             "cobrancas.historico_pagamentos": [],
             "cobrancas.historicos_pagamentos": {},
+            "cobrancas.configuracao_encargos": {},
             "cobrancas.calcular_encargos_cobranca": {
+                "dias_atraso": 22,
                 "multa": Decimal(2),
                 "juros": Decimal(1),
                 "total": Decimal(63),
@@ -148,17 +150,45 @@ def test_dialog_nova_moto_abre_com_campos_do_formulario(servicos):
     assert any(b.label == "Salvar moto" for b in app.button)
 
 
+def _abrir_dialogo_pagamento():
+    def roteiro():
+        from src.ui.cobrancas import _dialog_pagamento
+
+        _dialog_pagamento(
+            {
+                "id": "c",
+                "tipo": "locacao",
+                "vencimento": "2026-09-01",
+                "saldo": 60,
+                "placa": "ABC1D23",
+                "cliente": "Pessoa teste",
+            }
+        )
+
+    return AppTest.from_function(roteiro, default_timeout=20).run()
+
+
 def test_pagamento_parcial_envia_principal_separado(servicos):
-    app = abrir("5_Cobrancas.py")
+    app = _abrir_dialogo_pagamento()
     next(e for e in app.text_input if e.label == "Principal recebido (R$)").set_value(
         "30,50"
     )
-    next(b for b in app.button if b.label == "Registrar pagamento").click().run()
+    next(b for b in app.button if b.label == "Confirmar pagamento").click().run()
     assert not app.error
     assert servicos["cobrancas.registrar_pagamento"].call_args.args[2:4] == (
         Decimal("30.50"),
         Decimal("3.00"),
     )
+
+
+def test_cobranca_rapida_do_dashboard_abre_o_dialogo_de_pagamento(servicos):
+    app = AppTest.from_file(str(RAIZ / "pages" / "5_Cobrancas.py"), default_timeout=20)
+    app.session_state["usuario"] = {"id": "teste", "email": "teste@example.com"}
+    app.session_state["ultima_atividade"] = time()
+    app.session_state["cobranca_rapida"] = "c"
+    app.run()
+    assert not app.exception
+    assert any(e.label == "Principal recebido (R$)" for e in app.text_input)
 
 
 def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):

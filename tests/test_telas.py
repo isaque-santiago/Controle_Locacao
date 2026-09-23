@@ -53,7 +53,7 @@ def test_paginas_vazias_autenticadas(arquivo):
             "motos": ["listar"],
             "clientes": ["listar"],
             "contratos": ["listar"],
-            "cobrancas": ["listar", "gerar_cobrancas_pendentes"],
+            "cobrancas": ["listar", "gerar_cobrancas_pendentes", "configuracao_encargos"],
             "manutencao": ["listar_catalogo", "listar_manutencoes"],
             "alertas": ["listar_manutencao", "listar_documentos", "listar_cnh"],
         }.items():

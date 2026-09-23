@@ -73,7 +73,9 @@ def aplicar():
 
     /* Cartões de tabela com linha interativa (Motos/Clientes/Contratos — lista/documentos) */
     .st-key-motos_card_lista, .st-key-motos_card_documentos, .st-key-clientes_card_lista,
-    .st-key-contratos_card_lista, .st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo {
+    .st-key-contratos_card_lista, .st-key-manutencao_card_historico,
+    .st-key-manutencao_card_catalogo,
+    [class*="st-key-cobrancas_card"] {
       background:#FAFAF9;
       border:1px solid rgba(30,34,39,.12);
       border-radius:2px;
@@ -84,7 +86,8 @@ def aplicar():
     .st-key-clientes_card_lista [data-testid="stHorizontalBlock"],
     .st-key-contratos_card_lista [data-testid="stHorizontalBlock"],
     .st-key-manutencao_card_historico [data-testid="stHorizontalBlock"],
-    .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"] {
+    .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"],
+    [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] {
       padding:8px 20px;
       border-bottom:1px solid rgba(30,34,39,.12);
       align-items:center;
@@ -94,12 +97,15 @@ def aplicar():
     .st-key-clientes_card_lista [data-testid="stHorizontalBlock"]:last-of-type,
     .st-key-contratos_card_lista [data-testid="stHorizontalBlock"]:last-of-type,
     .st-key-manutencao_card_historico [data-testid="stHorizontalBlock"]:last-of-type,
-    .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"]:last-of-type {
+    .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"]:last-of-type,
+    [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:last-of-type {
       border-bottom:none;
     }
     .st-key-motos_card_lista button, .st-key-motos_card_documentos button,
     .st-key-clientes_card_lista button, .st-key-contratos_card_lista button,
-    .st-key-manutencao_card_historico button, .st-key-manutencao_card_catalogo button {
+    .st-key-manutencao_card_historico button,
+    .st-key-manutencao_card_catalogo button,
+    [class*="st-key-cobrancas_card"] button {
       background:transparent !important;
       border:1px solid rgba(30,34,39,.12) !important;
       border-radius:6px !important;
