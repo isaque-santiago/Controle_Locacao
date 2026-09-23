@@ -10,6 +10,8 @@ _CHAVE_CLIENTE = "supabase_client"
 _CHAVE_COOKIES = "cookie_controller"
 _COOKIE_REFRESH_TOKEN = "sb_refresh_token"
 _COOKIE_ULTIMA_ATIVIDADE = "sb_ultima_atividade"
+_COOKIE_TEMA_ESCURO = "tema_escuro"
+_VALIDADE_TEMA_SEGUNDOS = 60 * 60 * 24 * 365
 _LIMITE_INATIVIDADE_SEGUNDOS = 1800
 _VALIDADE_LEMBRAR_SEGUNDOS = 60 * 60 * 24 * 7
 
@@ -106,6 +108,22 @@ def marcar_atividade_cookie() -> None:
         _COOKIE_ULTIMA_ATIVIDADE,
         "1",
         max_age=_LIMITE_INATIVIDADE_SEGUNDOS,
+        **_opcoes_cookie(),
+    )
+
+
+def ler_tema_escuro_cookie() -> bool:
+    """True se o navegador guardou a preferência de modo escuro."""
+    _, valor = _ler_cookie_da_requisicao(_COOKIE_TEMA_ESCURO)
+    return valor == "1"
+
+
+def salvar_tema_escuro_cookie(escuro: bool) -> None:
+    """Guarda a preferência de modo escuro no navegador, para sobreviver ao F5."""
+    _get_cookie_controller().set(
+        _COOKIE_TEMA_ESCURO,
+        "1" if escuro else "0",
+        max_age=_VALIDADE_TEMA_SEGUNDOS,
         **_opcoes_cookie(),
     )
 

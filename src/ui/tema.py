@@ -2,8 +2,13 @@
 
 import streamlit as st
 
+from src.db import ler_tema_escuro_cookie
+
 
 def aplicar():
+    # Após um F5 a sessão é nova: retoma a preferência guardada no cookie.
+    if "tema_escuro" not in st.session_state:
+        st.session_state["tema_escuro"] = ler_tema_escuro_cookie()
     st.markdown(
         """
     <style>
@@ -173,7 +178,7 @@ def aplicar():
     """,
         unsafe_allow_html=True,
     )
-    if st.session_state.get("modo_escuro", False):
+    if st.session_state.get("tema_escuro", False):
         st.markdown(_CSS_MODO_ESCURO, unsafe_allow_html=True)
 
 
