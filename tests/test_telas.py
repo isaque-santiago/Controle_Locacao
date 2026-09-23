@@ -40,7 +40,7 @@ def test_tema_escuro_injeta_sobrescritas_de_contraste():
         tema.aplicar()
 
     assert markdown.call_count == 2
-    assert "background:#15181C" in markdown.call_args.args[0]
+    assert "--e-fundo:#15181C" in markdown.call_args.args[0]
 
 
 @pytest.mark.parametrize(

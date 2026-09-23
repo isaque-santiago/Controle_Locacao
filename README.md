@@ -48,7 +48,10 @@ padrão do plano, selos circulares tracejados para alertas (Dashboard e
 Manutenção), barra de ocupação segmentada substituindo a barra padrão do
 Streamlit e assistente em 4 etapas (Cliente, Moto, Condições, Vistoria de
 entrega) na criação de contrato. O painel autenticado agora oferece modo escuro
-na barra lateral, com contraste específico para cartões, tabelas e formulários.
+na barra lateral, com paleta própria (fundos em camadas e texto claro com contraste
+mínimo de 4,5:1) para cartões, tabelas, formulários, abas e alertas. As cores inline
+dos módulos são remapeadas por seletores sobre o `style` normalizado pelo navegador
+(`color: rgb(...)`), não pelo hexadecimal escrito no código.
 A tela de login foi validada em viewport mobile de 390 × 844 px; a validação
 mobile autenticada continua dependendo do acesso ao ambiente de homologação.
 
