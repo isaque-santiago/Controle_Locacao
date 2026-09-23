@@ -85,7 +85,7 @@ def servicos():
                 }
             ],
             "vistorias.listar_por_contrato": [
-                {"id": "v", "tipo": "entrega", "km": 100, "fotos": []}
+                {"id": "v", "tipo": "entrega", "km": 100, "fotos": [], "data": "2026-09-01T10:00:00+00:00", "nivel_combustivel": "cheio", "checklist": {}}
             ],
             "vistorias.comparar_entrega_devolucao": {"diferencas": None},
             "alertas.listar_manutencao": [],
@@ -165,10 +165,9 @@ def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):
     app = AppTest.from_file(str(RAIZ / "pages" / "4_Contratos.py"), default_timeout=20)
     app.session_state["usuario"] = {"id": "teste", "email": "teste@example.com"}
     app.session_state["ultima_atividade"] = time()
-    app.session_state["ficha_contrato"] = "ct"
-    app.session_state["contratos_aba_inicial"] = "Ficha e encerramento"
+    app.session_state["contratos_visao"] = "ficha"
+    app.session_state["contratos_id_selecionado"] = "ct"
     app.run()
 
-    seletor = next(e for e in app.selectbox if e.label == "Contrato")
-    assert seletor.value == "ct"
+    assert [t.label for t in app.tabs] == ["Cobranças", "Vistorias", "Manutenções"]
     assert not app.error

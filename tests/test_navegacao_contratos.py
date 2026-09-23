@@ -3,7 +3,7 @@ from unittest.mock import patch
 from src.ui import componentes
 
 
-def test_abrir_ficha_contrato_seleciona_contrato_e_aba():
+def test_abrir_ficha_contrato_seleciona_contrato_na_ficha():
     estado = {}
     with (
         patch.object(componentes.st, "session_state", estado),
@@ -12,7 +12,7 @@ def test_abrir_ficha_contrato_seleciona_contrato_e_aba():
         componentes.abrir_ficha_contrato("contrato-1")
 
     assert estado == {
-        "ficha_contrato": "contrato-1",
-        "contratos_aba_inicial": "Ficha e encerramento",
+        "contratos_visao": "ficha",
+        "contratos_id_selecionado": "contrato-1",
     }
     trocar.assert_called_once_with("pages/4_Contratos.py")
