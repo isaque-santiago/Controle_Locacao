@@ -336,6 +336,12 @@ button[kind="tertiary"], button[kind="tertiary"] * {color:var(--e-texto2) !impor
 [data-baseweb="tab"][aria-selected="true"], [data-baseweb="tab"][aria-selected="true"] p {color:#F2B705 !important;}
 [data-baseweb="tab-highlight"] {background:#F2B705 !important;}
 [data-baseweb="tab-border"] {background:var(--e-linha) !important;}
+/* Abas do Streamlit atual (react-aria): indicador amarelo e trilho discreto */
+.react-aria-TabList {border-bottom:1px solid var(--e-linha) !important; box-shadow:none !important;}
+.react-aria-Tab, .react-aria-Tab * {color:var(--e-texto2) !important; background:transparent !important;}
+.react-aria-Tab:hover, .react-aria-Tab:hover * {color:var(--e-texto) !important;}
+.react-aria-Tab[aria-selected="true"], .react-aria-Tab[aria-selected="true"] * {color:#F2B705 !important;}
+div.react-aria-SelectionIndicator {background:#F2B705 !important; border-color:#F2B705 !important;}
 
 /* Alertas nativos */
 [data-testid="stAlert"] {background:var(--e-cartao) !important; border:1px solid var(--e-linha);}
