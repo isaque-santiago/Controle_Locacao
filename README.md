@@ -86,6 +86,14 @@ ficha de Cliente escapa dados cadastrados antes de inseri-los em HTML, carrega
 históricos financeiros em lote e mantém todos os cálculos monetários em
 `Decimal`.
 
+Reconstrução de Manutenção (23/09/2026), conferida contra `Manutencao.dc.html`:
+cabeçalho com contagem de vencidas/próximas e botão "Registrar manutenção",
+3 abas — Alertas (pílulas Todas/Vencidas/Próximas, chip de placa, restante em
+vermelho quando negativo), Histórico (filtro por tipo, busca por moto/oficina,
+paginação e ação ✓ para concluir/cancelar manutenções abertas) e Catálogo
+(interruptor de ativo, edição por ícone). O registro virou modal com prévia ao
+vivo de custo de peças e total; a lógica está em `src/ui/manutencao.py`.
+
 Reconstrução de Clientes (22/09/2026), conferida contra `Clientes.dc.html` e
 `ClienteFicha.dc.html`: lista com pílulas de filtro por status, busca por
 nome/CPF, avatar com inicial (grafite-900 quando ativo, grafite-500 quando
