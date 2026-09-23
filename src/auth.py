@@ -13,6 +13,7 @@ from src.db import (
     sessao_ativa_no_cookie,
     set_session_tokens,
 )
+from src.ui import tema
 
 _CHAVE_USUARIO = "usuario"
 
@@ -99,6 +100,13 @@ def _salvar_tema_escuro() -> None:
     salvar_tema_escuro_cookie(escuro)
 
 
+def _usar_tema_do_sistema() -> None:
+    """Volta ao modo automático (acompanha o tema do sistema)."""
+    st.session_state["tema_escuro"] = None
+    st.session_state.pop("modo_escuro", None)
+    salvar_tema_escuro_cookie(None)
+
+
 def require_login() -> None:
     """Bloqueia a página até o dono estar autenticado; exibe login se não estiver."""
     if not esta_autenticado():
@@ -127,9 +135,16 @@ def require_login() -> None:
         st.toggle(
             "Modo escuro",
             key="modo_escuro",
-            value=st.session_state.get("tema_escuro", False),
+            value=tema.tema_escuro_ativo(),
             on_change=_salvar_tema_escuro,
         )
+        if st.session_state.get("tema_escuro") is not None:
+            st.button(
+                "Usar tema do sistema",
+                key="botao_tema_sistema",
+                type="tertiary",
+                on_click=_usar_tema_do_sistema,
+            )
         with st.container(key="dashboard_sidebar_rodape"):
             col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
             col_perfil.markdown(
