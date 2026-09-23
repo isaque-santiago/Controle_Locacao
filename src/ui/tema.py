@@ -380,5 +380,33 @@ div.react-aria-SelectionIndicator {background:#F2B705 !important; border-color:#
 [data-testid="stApp"] [class*=" st-key-pagar_hoje_"] button::after {background:#15181C !important;}
 [data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {color:var(--e-texto2) !important;}
 [data-testid="stDialog"] [role="dialog"] {border-color:var(--e-linha);}
+/* O diálogo é renderizado fora de stMain/stApp: as regras de texto acima não o alcançam */
+[data-testid="stDialog"] {color-scheme:dark;}
+[data-testid="stDialog"] h1, [data-testid="stDialog"] h2, [data-testid="stDialog"] h3,
+[data-testid="stDialog"] p, [data-testid="stDialog"] li, [data-testid="stDialog"] label,
+[data-testid="stDialog"] [data-testid="stMarkdownContainer"],
+[data-testid="stDialog"] [data-testid="stWidgetLabel"], [data-testid="stDialog"] [data-testid="stWidgetLabel"] p {
+  color:var(--e-texto) !important;
+}
+[data-testid="stDialog"] [data-testid="stCaptionContainer"], [data-testid="stDialog"] [data-testid="stCaptionContainer"] p {
+  color:var(--e-texto2) !important;
+}
+[data-testid="stDialog"] [data-testid="stForm"] {background:var(--e-cartao) !important;}
+[data-testid="stDialog"] input::placeholder, [data-testid="stDialog"] textarea::placeholder {
+  color:var(--e-texto3) !important; -webkit-text-fill-color:var(--e-texto3) !important; opacity:1;
+}
+/* Botão de fechar (X) do diálogo */
+[data-testid="stDialog"] button[aria-label="Close"], [data-testid="stDialog"] [role="dialog"] > button {
+  background:transparent !important; color:var(--e-texto2) !important; border-color:transparent !important;
+}
+[data-testid="stDialog"] button[aria-label="Close"] *, [data-testid="stDialog"] [role="dialog"] > button * {
+  color:var(--e-texto2) !important; fill:var(--e-texto2) !important; stroke:var(--e-texto2);
+}
+[data-testid="stDialog"] button[aria-label="Close"]:hover, [data-testid="stDialog"] [role="dialog"] > button:hover {
+  background:var(--e-realce) !important;
+}
+[data-testid="stDialog"] button[aria-label="Close"]:hover *, [data-testid="stDialog"] [role="dialog"] > button:hover * {
+  color:#FFFFFF !important; fill:#FFFFFF !important;
+}
 </style>
 """

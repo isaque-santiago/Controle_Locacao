@@ -233,7 +233,7 @@ h3 {font-size: 1.15rem;}
 [data-testid="stSidebar"] label:has(input[role="switch"]) > div:not([data-testid]) {
   background: #3A4149; border: 1px solid #4A525A; border-radius: 999px;
 }
-[data-testid="stSidebar"] label:has(input[role="switch"]:checked) > div:not([data-testid]) {background: #6B7480; border-color: #6B7480;}
+[data-testid="stSidebar"] label:has(input[role="switch"]:checked) > div:not([data-testid]) {background: #F2B705; border-color: #F2B705;}
 
 /* ── Markdown sem <p> (selo, cartões em <div>): o -16px do Streamlit só compensa a margem do parágrafo;
       sem ele a coluna colapsa e o conteúdo desce da linha ── */
