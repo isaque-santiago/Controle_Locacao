@@ -5,8 +5,20 @@ import streamlit as st
 from src.db import ler_tema_escuro_cookie
 
 
+def tema_escuro_ativo() -> bool:
+    """Modo escuro efetivo: escolha manual, ou o tema do sistema quando automático."""
+    preferencia = st.session_state.get("tema_escuro")
+    if preferencia is not None:
+        return bool(preferencia)
+    try:
+        return st.context.theme.type == "dark"
+    except Exception:
+        return False
+
+
 def aplicar():
-    # Após um F5 a sessão é nova: retoma a preferência guardada no cookie.
+    # Após um F5 a sessão é nova: retoma a preferência guardada no cookie
+    # (None = automático, acompanha o tema do sistema).
     if "tema_escuro" not in st.session_state:
         st.session_state["tema_escuro"] = ler_tema_escuro_cookie()
     st.markdown(
@@ -178,7 +190,7 @@ def aplicar():
     """,
         unsafe_allow_html=True,
     )
-    if st.session_state.get("tema_escuro", False):
+    if tema_escuro_ativo():
         st.markdown(_CSS_MODO_ESCURO, unsafe_allow_html=True)
 
 

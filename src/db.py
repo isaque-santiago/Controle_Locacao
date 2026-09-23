@@ -112,17 +112,22 @@ def marcar_atividade_cookie() -> None:
     )
 
 
-def ler_tema_escuro_cookie() -> bool:
-    """True se o navegador guardou a preferência de modo escuro."""
+def ler_tema_escuro_cookie() -> bool | None:
+    """Preferência guardada no navegador: True (escuro), False (claro) ou None (automático)."""
     _, valor = _ler_cookie_da_requisicao(_COOKIE_TEMA_ESCURO)
-    return valor == "1"
+    if valor == "1":
+        return True
+    if valor == "0":
+        return False
+    return None
 
 
-def salvar_tema_escuro_cookie(escuro: bool) -> None:
-    """Guarda a preferência de modo escuro no navegador, para sobreviver ao F5."""
+def salvar_tema_escuro_cookie(escuro: bool | None) -> None:
+    """Guarda a preferência de tema no navegador (None = seguir o sistema), para sobreviver ao F5."""
+    valor = "auto" if escuro is None else ("1" if escuro else "0")
     _get_cookie_controller().set(
         _COOKIE_TEMA_ESCURO,
-        "1" if escuro else "0",
+        valor,
         max_age=_VALIDADE_TEMA_SEGUNDOS,
         **_opcoes_cookie(),
     )

@@ -44,6 +44,28 @@ def test_tema_escuro_injeta_sobrescritas_de_contraste():
 
 
 @pytest.mark.parametrize(
+    "preferencia, tema_sistema, esperado",
+    [
+        (None, "dark", True),
+        (None, "light", False),
+        (True, "light", True),
+        (False, "dark", False),
+    ],
+)
+def test_tema_escuro_ativo_automatico_ou_manual(preferencia, tema_sistema, esperado):
+    from types import SimpleNamespace
+
+    from src.ui import tema
+
+    contexto = SimpleNamespace(theme=SimpleNamespace(type=tema_sistema))
+    with (
+        patch.object(tema.st, "session_state", {"tema_escuro": preferencia}),
+        patch.object(tema.st, "context", contexto),
+    ):
+        assert tema.tema_escuro_ativo() is esperado
+
+
+@pytest.mark.parametrize(
     "arquivo",
     ["app.py"] + [str(p.relative_to(RAIZ)) for p in (RAIZ / "pages").glob("*.py")],
 )
