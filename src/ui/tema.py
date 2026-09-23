@@ -74,7 +74,7 @@ def aplicar():
     /* Cartões de tabela com linha interativa (Motos/Clientes/Contratos — lista/documentos) */
     .st-key-motos_card_lista, .st-key-motos_card_documentos, .st-key-clientes_card_lista,
     .st-key-contratos_card_lista, .st-key-manutencao_card_historico,
-    .st-key-manutencao_card_catalogo,
+    .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista,
     [class*="st-key-cobrancas_card"] {
       background:#FAFAF9;
       border:1px solid rgba(30,34,39,.12);
@@ -87,6 +87,7 @@ def aplicar():
     .st-key-contratos_card_lista [data-testid="stHorizontalBlock"],
     .st-key-manutencao_card_historico [data-testid="stHorizontalBlock"],
     .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"],
+    .st-key-documentos_card_lista [data-testid="stHorizontalBlock"],
     [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] {
       padding:8px 20px;
       border-bottom:1px solid rgba(30,34,39,.12);
@@ -98,6 +99,7 @@ def aplicar():
     .st-key-contratos_card_lista [data-testid="stHorizontalBlock"]:last-of-type,
     .st-key-manutencao_card_historico [data-testid="stHorizontalBlock"]:last-of-type,
     .st-key-manutencao_card_catalogo [data-testid="stHorizontalBlock"]:last-of-type,
+    .st-key-documentos_card_lista [data-testid="stHorizontalBlock"]:last-of-type,
     [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:last-of-type {
       border-bottom:none;
     }
@@ -105,6 +107,7 @@ def aplicar():
     .st-key-clientes_card_lista button, .st-key-contratos_card_lista button,
     .st-key-manutencao_card_historico button,
     .st-key-manutencao_card_catalogo button,
+    .st-key-documentos_card_lista button,
     [class*="st-key-cobrancas_card"] button {
       background:transparent !important;
       border:1px solid rgba(30,34,39,.12) !important;
@@ -117,7 +120,7 @@ def aplicar():
     /* Pílulas de filtro (Motos/Clientes/Contratos — lista, e periodicidade do assistente) */
     .st-key-motos_filtros button, .st-key-clientes_filtros button,
     .st-key-contratos_filtros button, .st-key-contrato_periodicidade button,
-    [class*="st-key-manutencao_filtros"] button {
+    [class*="st-key-manutencao_filtros"] button, .st-key-documentos_filtros button {
       border-radius:20px !important;
       font-size:.8rem !important;
       padding:4px 10px !important;
@@ -125,7 +128,7 @@ def aplicar():
     }
     .st-key-motos_filtros button[kind="secondary"], .st-key-clientes_filtros button[kind="secondary"],
     .st-key-contratos_filtros button[kind="secondary"], .st-key-contrato_periodicidade button[kind="secondary"],
-    [class*="st-key-manutencao_filtros"] button[kind="secondary"] {
+    [class*="st-key-manutencao_filtros"] button[kind="secondary"], .st-key-documentos_filtros button[kind="secondary"] {
       background:#FAFAF9 !important;
       border:1px solid rgba(30,34,39,.12) !important;
       color:#1E2227 !important;

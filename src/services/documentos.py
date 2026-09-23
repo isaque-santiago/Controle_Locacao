@@ -13,6 +13,10 @@ def listar_por_moto(moto_id: str):
     return documentos_moto.listar_por_moto(moto_id)
 
 
+def listar_todos():
+    return documentos_moto.listar_todos()
+
+
 def listar_pendentes():
     return documentos_moto.listar_pendentes()
 
