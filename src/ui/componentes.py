@@ -383,8 +383,10 @@ def cabecalho(titulo, exibir_titulo=True):
     from src.auth import require_login
     from src.ui.tema import aplicar
 
-    aplicar()
-    require_login()
+    # O app.py já aplica tema e login; a página só refaz isso se for executada sozinha.
+    if not st.session_state.get("shell_pronto"):
+        aplicar()
+        require_login()
     if exibir_titulo:
         st.title(titulo)
     if mensagem := st.session_state.pop("mensagem_sucesso", None):
