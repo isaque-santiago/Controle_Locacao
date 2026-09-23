@@ -342,8 +342,8 @@ def selecionar(titulo, linhas, rotulo, chave):
 
 def abrir_ficha_contrato(contrato_id):
     """Abre a página de contratos com a ficha indicada já selecionada."""
-    st.session_state["ficha_contrato"] = contrato_id
-    st.session_state["contratos_aba_inicial"] = "Ficha e encerramento"
+    st.session_state["contratos_visao"] = "ficha"
+    st.session_state["contratos_id_selecionado"] = contrato_id
     st.switch_page("pages/4_Contratos.py")
 
 

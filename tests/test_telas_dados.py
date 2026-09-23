@@ -24,8 +24,14 @@ CONTRATO = {
     "cliente_id": "cl",
     "data_inicio": "2026-09-01",
     "data_fim_prevista": "2026-10-01",
+    "data_encerramento": None,
     "status": "ativo",
     "km_inicial": 100,
+    "km_final": None,
+    "periodicidade": "mensal",
+    "valor_periodo": Decimal("100"),
+    "caucao_valor": Decimal("0"),
+    "caucao_devolvida": False,
 }
 COBRANCA = {
     "id": "c",
@@ -79,7 +85,7 @@ def servicos():
                 }
             ],
             "vistorias.listar_por_contrato": [
-                {"id": "v", "tipo": "entrega", "km": 100, "fotos": []}
+                {"id": "v", "tipo": "entrega", "km": 100, "fotos": [], "data": "2026-09-01T10:00:00+00:00", "nivel_combustivel": "cheio", "checklist": {}}
             ],
             "vistorias.comparar_entrega_devolucao": {"diferencas": None},
             "alertas.listar_manutencao": [],
@@ -159,10 +165,9 @@ def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):
     app = AppTest.from_file(str(RAIZ / "pages" / "4_Contratos.py"), default_timeout=20)
     app.session_state["usuario"] = {"id": "teste", "email": "teste@example.com"}
     app.session_state["ultima_atividade"] = time()
-    app.session_state["ficha_contrato"] = "ct"
-    app.session_state["contratos_aba_inicial"] = "Ficha e encerramento"
+    app.session_state["contratos_visao"] = "ficha"
+    app.session_state["contratos_id_selecionado"] = "ct"
     app.run()
 
-    seletor = next(e for e in app.selectbox if e.label == "Contrato")
-    assert seletor.value == "ct"
+    assert [t.label for t in app.tabs] == ["Cobranças", "Vistorias", "Manutenções"]
     assert not app.error
