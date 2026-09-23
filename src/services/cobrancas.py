@@ -12,13 +12,21 @@ def listar():
     return cobrancas.listar()
 
 
+def configuracao_encargos() -> dict:
+    return configuracoes.obter()
+
+
 def listar_por_contrato(contrato_id: str):
     return cobrancas.listar_por_contrato(contrato_id)
 
 
-def calcular_encargos_cobranca(cobranca: dict, data_referencia: date) -> dict:
-    """Multa/juros de uma cobrança em aberto, para exibir na tela antes do pagamento."""
-    config = configuracoes.obter()
+def calcular_encargos_cobranca(
+    cobranca: dict, data_referencia: date, config: Optional[dict] = None
+) -> dict:
+    """Multa/juros de uma cobrança em aberto, para exibir na tela antes do pagamento.
+
+    Passe `config` para calcular várias cobranças sem reler as configurações."""
+    config = config or configuracoes.obter()
     saldo = Decimal(str(cobranca["saldo"]))
     return calcular_encargos(
         saldo=saldo,
