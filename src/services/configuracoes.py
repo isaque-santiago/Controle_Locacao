@@ -39,7 +39,7 @@ def backup():
     with ZipFile(saida, "w", ZIP_DEFLATED) as arquivo:
         manifesto = {}
         for nome in TABELAS:
-            linhas = todos(nome)
+            linhas = todos(nome, usar_cache=False)
             texto = StringIO(newline="")
             if linhas:
                 escritor = csv.DictWriter(texto, fieldnames=list(linhas[0]))

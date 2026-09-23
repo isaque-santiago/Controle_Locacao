@@ -7,11 +7,12 @@ uma tabela numa transação só) — não existe inserção direta aqui.
 from datetime import date
 
 from src.db import get_client
-from src.repositories.consultas import todos
+from src.repositories.consultas import invalida_cache, todos
 
 TABELA = "contratos"
 
 
+@invalida_cache
 def criar_com_vistoria(dados, vistoria):
     return (
         get_client()
@@ -24,6 +25,7 @@ def criar_com_vistoria(dados, vistoria):
     )
 
 
+@invalida_cache
 def encerrar_com_vistoria(contrato_id, data, vistoria, caucao_devolvida):
     return (
         get_client()
@@ -57,16 +59,19 @@ def obter(contrato_id: str):
     return resposta.data if resposta else None
 
 
+@invalida_cache
 def atualizar(contrato_id: str, dados: dict):
     resposta = get_client().table(TABELA).update(dados).eq("id", contrato_id).execute()
     return resposta.data[0]
 
 
+@invalida_cache
 def criar_via_rpc(payload: dict) -> dict:
     resposta = get_client().rpc("rpc_criar_contrato", {"payload": payload}).execute()
     return resposta.data
 
 
+@invalida_cache
 def encerrar_via_rpc(
     contrato_id: str, data: date, km_final: int, caucao_devolvida: bool
 ) -> dict:

@@ -1,7 +1,7 @@
 """Leitura da tabela cobrancas (via vw_cobrancas, com saldo e situação) e RPCs."""
 
 from src.db import get_client
-from src.repositories.consultas import todos
+from src.repositories.consultas import invalida_cache, todos
 
 TABELA = "cobrancas"
 VIEW = "vw_cobrancas"
@@ -27,11 +27,13 @@ def obter(cobranca_id: str):
     return resposta.data if resposta else None
 
 
+@invalida_cache
 def atualizar(cobranca_id: str, dados: dict):
     resposta = get_client().table(TABELA).update(dados).eq("id", cobranca_id).execute()
     return resposta.data[0]
 
 
+@invalida_cache
 def gerar_pendentes_via_rpc(horizonte_dias: int = 30) -> dict:
     resposta = (
         get_client()
