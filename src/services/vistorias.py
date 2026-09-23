@@ -13,6 +13,11 @@ _CODIGO_VIOLACAO_UNICIDADE = "23505"
 _EXTENSOES_PERMITIDAS = (".jpg", ".jpeg", ".png")
 
 
+def listar():
+    """Todas as vistorias (com fotos), da mais recente para a mais antiga."""
+    return vistorias.listar()
+
+
 def listar_por_contrato(contrato_id: str):
     return vistorias.listar_por_contrato(contrato_id)
 

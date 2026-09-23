@@ -86,6 +86,21 @@ ficha de Cliente escapa dados cadastrados antes de inseri-los em HTML, carrega
 históricos financeiros em lote e mantém todos os cálculos monetários em
 `Decimal`.
 
+Reconstrução de Vistorias (23/09/2026), conferida contra `Vistorias.dc.html` e
+`VistoriaComparacao.dc.html`: lista de todas as vistorias (mais recentes
+primeiro) com pílulas Todas/Entrega/Devolução, busca por cliente ou placa,
+paginação, chip de placa, combustível e avarias em vermelho. O registro virou
+modal (só oferece contratos e tipos ainda pendentes, data não anterior ao início
+do contrato, checklist em duas colunas, itens adicionais e envio de várias fotos;
+falha no envio de foto não desfaz a vistoria, apenas avisa). A seta da linha abre
+a comparação entrega × devolução lado a lado, com faixa de resumo (período, km
+rodados, avarias na devolução), itens que mudaram destacados em amarelo, fotos
+por URL assinada e "Adicionar fotos" em cada lado. A lógica pura (rótulos,
+ordem do checklist, contagem de avarias, km rodados, tipos pendentes e o
+instante gravado no fuso America/Sao_Paulo) ficou em `src/domain/vistorias.py`,
+com testes; a tela está em `src/ui/vistorias.py`. O formulário usado pelo
+assistente e pelo encerramento de contratos (`campos`/`preparar`) não mudou.
+
 Reconstrução de Manutenção (23/09/2026), conferida contra `Manutencao.dc.html`:
 cabeçalho com contagem de vencidas/próximas e botão "Registrar manutenção",
 3 abas — Alertas (pílulas Todas/Vencidas/Próximas, chip de placa, restante em

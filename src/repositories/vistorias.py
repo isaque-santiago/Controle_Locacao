@@ -9,6 +9,17 @@ from src.db import get_client
 TABELA = "vistorias"
 
 
+def listar():
+    resposta = (
+        get_client()
+        .table(TABELA)
+        .select("*, fotos:vistoria_fotos(*)")
+        .order("data", desc=True)
+        .execute()
+    )
+    return resposta.data
+
+
 def listar_por_contrato(contrato_id: str):
     resposta = (
         get_client()
