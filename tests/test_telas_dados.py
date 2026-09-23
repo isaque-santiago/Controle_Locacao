@@ -92,7 +92,14 @@ def servicos():
             "vistorias.listar_por_contrato": [
                 {"id": "v", "tipo": "entrega", "km": 100, "fotos": [], "data": "2026-09-01T10:00:00+00:00", "nivel_combustivel": "cheio", "checklist": {}}
             ],
-            "vistorias.comparar_entrega_devolucao": {"diferencas": None},
+            "vistorias.listar": [
+                {"id": "v", "contrato_id": "ct", "tipo": "entrega", "km": 100, "fotos": [], "data": "2026-09-01T10:00:00+00:00", "nivel_combustivel": "cheio", "checklist": {}}
+            ],
+            "vistorias.comparar_entrega_devolucao": {
+                "entrega": None,
+                "devolucao": None,
+                "diferencas": None,
+            },
             "alertas.listar_manutencao": [],
             "alertas.listar_documentos": [],
             "alertas.listar_cnh": [],
