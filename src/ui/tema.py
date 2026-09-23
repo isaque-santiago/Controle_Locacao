@@ -207,7 +207,7 @@ def aplicar():
     [data-testid="stSidebar"] button[kind="tertiary"]:hover {background:#2B3036 !important;}
     /* Configurações — cartões de até 780px, como em Configuracoes.dc.html */
     .st-key-config_pagina {max-width:780px; gap:20px;}
-    .st-key-config_pagina [data-testid="stForm"] {padding:0; gap:20px;}
+    .st-key-config_pagina [data-testid="stForm"] {padding:0; gap:20px; background:transparent !important; border:0; border-radius:0;}
     [class*="st-key-config_card"] {
       background:#FAFAF9;
       border:1px solid rgba(30,34,39,.12);
