@@ -90,6 +90,18 @@ Pagamentos. Corrigida uma inconsistência de paleta encontrada nesta revisão:
 mas verde para cliente — os dois usos agora têm chaves de situação
 diferentes (`ativo` vs `ativo_cliente`) na paleta compartilhada.
 
+Reconstrução de Contratos (23/09/2026), conferida contra `Contratos.dc.html`,
+`ContratoNovo.dc.html` e `ContratoFicha.dc.html`: lista com pílulas de filtro
+(Ativo por padrão), busca por cliente/placa e linhas de contratos não ativos
+esmaecidas; assistente em 4 etapas (Cliente, Moto, Condições, Confirmar) com
+cartões selecionáveis (cliente bloqueado/inativo aparece desabilitado, "já
+aluga X" como aviso), periodicidade em pílulas e etapa final com resumo,
+prévia da agenda e a vistoria de entrega exigida pela Fase 5; ficha com
+faixa de dados, abas Cobranças/Vistorias/Manutenções e encerramento em
+modal. **Limitação conhecida:** o mockup mostra "Prazo indeterminado", mas
+`rpc_criar_contrato_com_vistoria` exige `data_fim_prevista` — por isso o
+"Fim previsto" continua obrigatório no assistente.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do

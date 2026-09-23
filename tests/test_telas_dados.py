@@ -24,8 +24,14 @@ CONTRATO = {
     "cliente_id": "cl",
     "data_inicio": "2026-09-01",
     "data_fim_prevista": "2026-10-01",
+    "data_encerramento": None,
     "status": "ativo",
     "km_inicial": 100,
+    "km_final": None,
+    "periodicidade": "mensal",
+    "valor_periodo": Decimal("100"),
+    "caucao_valor": Decimal("0"),
+    "caucao_devolvida": False,
 }
 COBRANCA = {
     "id": "c",
