@@ -14,6 +14,7 @@ from src.ui.componentes import (
     chip_placa,
     selo_situacao,
     tabela_html,
+    abrir_ficha_cliente,
 )
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
@@ -519,6 +520,8 @@ def _cabecalho_ficha(contrato, moto, cliente):
             unsafe_allow_html=True,
         )
     with col_acao:
+        if st.button("Ver cliente →", key="ver_cliente_contrato", use_container_width=True):
+            abrir_ficha_cliente(cliente["id"])
         if contrato["status"] == "ativo":
             if st.button("Encerrar contrato", key="abrir_encerrar", use_container_width=True):
                 _dialog_encerrar(contrato, moto, cliente)
