@@ -144,6 +144,20 @@ mantém principal e "multa e juros" em campos separados (como grava a tabela
 mostra as 30 mais recentes. Regras de abas/resumo/mensagem em
 `src/domain/painel_cobrancas.py`, testadas em `tests/test_painel_cobrancas.py`.
 
+Reconstrução de Documentos (23/09/2026), conferida contra `Documentos.dc.html`:
+a página deixou de ser um seletor por moto e passou a listar os documentos de
+toda a frota (Moto, Tipo, Referência, Vencimento, Valor, Situação), com subtítulo
+de vencidos/a vencer, pílulas Todos/Vencido/A vencer/Em dia com contagem, busca
+por placa e paginação de 10. Novo documento e regularizar são diálogos; as ações
+por linha são ver comprovante (URL assinada de 5 minutos), editar e regularizar.
+A situação vem de `situacao_documento` em `src/domain/documentos.py` (mesma regra
+da view `vw_alertas_documentos`, testada em `tests/test_documentos.py`); documento
+regularizado aparece como "Regularizado" e conta em "Em dia". Diferenças em
+relação ao mockup: há um campo "Descrição" (é ele que alimenta a coluna
+Referência, ex.: apólice), o botão de editar (o mockup não previa edição) e, ao
+regularizar, o "documento do ano seguinte" abre o cadastro já preenchido em vez
+de criar direto, porque `vencimento` é obrigatório no banco.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do

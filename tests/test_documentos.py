@@ -1,6 +1,8 @@
 """Testes de src/domain/documentos.py (Fase 4)."""
 
-from src.domain.documentos import sugerir_proximo_documento
+from datetime import date
+
+from src.domain.documentos import situacao_documento, sugerir_proximo_documento
 
 
 class TestSugerirProximoDocumento:
@@ -27,3 +29,22 @@ class TestSugerirProximoDocumento:
 
     def test_sem_ano_referencia_nao_sugere(self):
         assert sugerir_proximo_documento("ipva", None) is None
+
+
+class TestSituacaoDocumento:
+    HOJE = date(2026, 9, 21)
+
+    def test_vencido_quando_passou_do_vencimento(self):
+        assert situacao_documento(date(2026, 9, 20), False, self.HOJE, 30) == "vencido"
+
+    def test_vence_hoje_ainda_e_a_vencer(self):
+        assert situacao_documento(self.HOJE, False, self.HOJE, 30) == "a_vencer"
+
+    def test_a_vencer_no_limite_do_alerta(self):
+        assert situacao_documento(date(2026, 10, 21), False, self.HOJE, 30) == "a_vencer"
+
+    def test_em_dia_alem_do_alerta(self):
+        assert situacao_documento(date(2026, 10, 22), False, self.HOJE, 30) == "em_dia"
+
+    def test_regularizado_esta_em_dia_mesmo_vencido(self):
+        assert situacao_documento(date(2026, 1, 1), True, self.HOJE, 30) == "em_dia"
