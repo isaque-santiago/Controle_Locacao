@@ -34,7 +34,7 @@ def test_tema_escuro_injeta_sobrescritas_de_contraste():
     from src.ui import tema
 
     with (
-        patch.object(tema.st, "session_state", {"modo_escuro": True}),
+        patch.object(tema.st, "session_state", {"tema_escuro": True}),
         patch.object(tema.st, "markdown") as markdown,
     ):
         tema.aplicar()

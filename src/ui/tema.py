@@ -173,7 +173,7 @@ def aplicar():
     """,
         unsafe_allow_html=True,
     )
-    if st.session_state.get("modo_escuro", False):
+    if st.session_state.get("tema_escuro", False):
         st.markdown(_CSS_MODO_ESCURO, unsafe_allow_html=True)
 
 

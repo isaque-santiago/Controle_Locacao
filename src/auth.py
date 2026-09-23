@@ -114,7 +114,16 @@ def require_login() -> None:
     inicial = nome[0].upper()
 
     with st.sidebar:
-        st.toggle("Modo escuro", key="modo_escuro")
+        # A escolha fica em "tema_escuro" (chave que não é de widget), pois o estado
+        # do toggle é descartado pelo Streamlit na troca de página.
+        st.toggle(
+            "Modo escuro",
+            key="modo_escuro",
+            value=st.session_state.get("tema_escuro", False),
+            on_change=lambda: st.session_state.update(
+                tema_escuro=st.session_state["modo_escuro"]
+            ),
+        )
         with st.container(key="dashboard_sidebar_rodape"):
             col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
             col_perfil.markdown(
