@@ -350,13 +350,6 @@ button[kind="tertiary"], button[kind="tertiary"] * {color:var(--e-texto2) !impor
 [data-testid="stApp"] [class*="_filtros"] button[kind="primary"] {
   background:#F2B705 !important; color:#15181C !important;
 }
-/* Pílula ativa (primary) e inativa (secondary) com o mesmo tamanho: o primary global tem min-height 42px e peso 600 */
-[data-testid="stApp"] [class*="_filtros"] button[kind="primary"],
-[data-testid="stApp"] [class*="_filtros"] button[kind="secondary"],
-[data-testid="stApp"] .st-key-contrato_periodicidade button {
-  min-height:1.9rem !important; height:auto !important; padding:4px 10px !important;
-  font-size:.8rem !important; font-weight:500 !important; border-width:1px !important; border-style:solid !important;
-}
 [data-testid="stApp"] .st-key-dashboard_card_hoje button {background:var(--e-realce) !important;}
 [data-testid="stSidebar"] button[kind="secondary"] {background:transparent; color:#ECEEF0;}
 
