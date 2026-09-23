@@ -45,14 +45,34 @@ def clear_session_tokens() -> None:
     """Descarta o cliente autenticado e os cookies de sessão do navegador."""
     st.session_state.pop(_CHAVE_CLIENTE, None)
     controlador = _get_cookie_controller()
-    if controlador.get(_COOKIE_REFRESH_TOKEN) is not None:
-        controlador.remove(_COOKIE_REFRESH_TOKEN)
-    if controlador.get(_COOKIE_ULTIMA_ATIVIDADE) is not None:
-        controlador.remove(_COOKIE_ULTIMA_ATIVIDADE)
+    for nome in (_COOKIE_REFRESH_TOKEN, _COOKIE_ULTIMA_ATIVIDADE):
+        try:
+            controlador.remove(nome)
+        except KeyError:
+            # A remoção já foi enviada ao navegador; só faltava o item no cache
+            # interno do componente (comum logo após um F5).
+            pass
+
+
+def _ler_cookie_da_requisicao(nome: str) -> tuple[bool, str | None]:
+    """Lê um cookie enviado no handshake, sem depender do componente assíncrono."""
+    try:
+        cookies = st.context.cookies
+    except AttributeError:
+        return False, None
+
+    try:
+        valor = cookies[nome]
+    except KeyError:
+        return True, None
+    return True, valor if isinstance(valor, str) else None
 
 
 def get_refresh_token_cookie() -> str | None:
     """Lê o refresh token guardado no cookie do navegador, se existir."""
+    contexto_disponivel, valor = _ler_cookie_da_requisicao(_COOKIE_REFRESH_TOKEN)
+    if contexto_disponivel:
+        return valor
     return _get_cookie_controller().get(_COOKIE_REFRESH_TOKEN)
 
 
@@ -68,4 +88,9 @@ def marcar_atividade_cookie() -> None:
 
 def sessao_ativa_no_cookie() -> bool:
     """True se o cookie de atividade ainda não expirou (sem inatividade > limite)."""
+    contexto_disponivel, valor = _ler_cookie_da_requisicao(
+        _COOKIE_ULTIMA_ATIVIDADE
+    )
+    if contexto_disponivel:
+        return valor is not None
     return _get_cookie_controller().get(_COOKIE_ULTIMA_ATIVIDADE) is not None

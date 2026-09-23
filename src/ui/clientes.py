@@ -1,6 +1,7 @@
 """Clientes: lista e ficha — segue Clientes.dc.html e ClienteFicha.dc.html do mockup."""
 
 from decimal import Decimal
+from html import escape
 
 import streamlit as st
 
@@ -14,11 +15,19 @@ from src.ui.componentes import (
     chip_placa,
     selo_situacao,
     tabela_html,
+    abrir_ficha_contrato,
 )
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 
 _STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
 _FILTROS = ["Todos", "ativo", "bloqueado", "inativo"]
+
+
+def _html(valor, padrao="—"):
+    """Escapa dados cadastrados antes de inseri-los em blocos HTML."""
+    if valor is None or valor == "":
+        valor = padrao
+    return escape(str(valor))
 
 
 def _salvo(mensagem="Alterações salvas."):
@@ -177,18 +186,18 @@ def _exibir_lista():
                 <div style="display:flex;align-items:center;gap:10px;">
                   <div style="width:26px;height:26px;border-radius:50%;background:{cor_avatar};color:#FAFAF9;
                               display:flex;align-items:center;justify-content:center;font-size:11px;
-                              font-weight:600;flex-shrink:0;">{_iniciais(cliente['nome'])}</div>
-                  <span style="font-size:13px;">{cliente['nome']}</span>
+                              font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
+                  <span style="font-size:13px;">{_html(cliente['nome'])}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
             linha[1].markdown(
-                f'<span class="mono" style="font-size:13px;color:#585F66;">{mascarar_cpf(cliente.get("cpf") or "")}</span>',
+                f'<span class="mono" style="font-size:13px;color:#585F66;">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>',
                 unsafe_allow_html=True,
             )
             linha[2].markdown(
-                f'<span class="mono" style="font-size:13px;">{cliente.get("whatsapp") or cliente.get("telefone") or "—"}</span>',
+                f'<span class="mono" style="font-size:13px;">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>',
                 unsafe_allow_html=True,
             )
             situacao_cnh_cliente = situacao_cnh(
@@ -264,8 +273,8 @@ def _card_contrato_ativo(cliente_id):
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
             {chip_placa(moto['placa'], 'grande') if moto else ''}
             <div>
-              <div style="font-size:14px;font-weight:500;">{moto['marca'] + ' ' + moto['modelo'] if moto else '—'}</div>
-              <div style="font-size:12px;color:#585F66;">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
+              <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
+              <div style="font-size:12px;color:#585F66;">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
@@ -278,7 +287,7 @@ def _card_contrato_ativo(cliente_id):
         unsafe_allow_html=True,
     )
     if st.button("Ver contratos →", key="ver_contrato_cliente"):
-        st.switch_page("pages/4_Contratos.py")
+        abrir_ficha_contrato(contrato["id"])
 
 
 def _card_dados_pessoais(cliente):
@@ -287,12 +296,12 @@ def _card_dados_pessoais(cliente):
         <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{mascarar_cpf(cliente.get('cpf') or '')}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">cnh</span><span class="mono" style="font-size:13px;">{cliente.get('cnh_numero') or '—'} · cat. {cliente.get('cnh_categoria') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">validade cnh</span><span class="mono" style="font-size:13px;">{formatar_data(cliente.get('cnh_validade'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">telefone</span><span class="mono" style="font-size:13px;">{cliente.get('telefone') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{cliente.get('email') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">endereço</span><span style="font-size:13px;">{cliente.get('endereco') or '—'}</span></div>
+            <div class="campo"><span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
+            <div class="campo"><span style="font-size:11px;color:#585F66;">cnh</span><span class="mono" style="font-size:13px;">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
+            <div class="campo"><span style="font-size:11px;color:#585F66;">validade cnh</span><span class="mono" style="font-size:13px;">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
+            <div class="campo"><span style="font-size:11px;color:#585F66;">telefone</span><span class="mono" style="font-size:13px;">{_html(cliente.get('telefone'))}</span></div>
+            <div class="campo"><span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{_html(cliente.get('email'))}</span></div>
+            <div class="campo"><span style="font-size:11px;color:#585F66;">endereço</span><span style="font-size:13px;">{_html(cliente.get('endereco'))}</span></div>
           </div>
         </div>
         """,
@@ -300,13 +309,12 @@ def _card_dados_pessoais(cliente):
     )
 
 
-def _card_situacao_financeira(cliente_id):
-    parcelas = [c for c in cobrancas.listar() if c["cliente_id"] == cliente_id]
+def _card_situacao_financeira(parcelas, historicos):
     pago = sum(
         (
             Decimal(str(p["valor"])) + Decimal(str(p["multa_juros"]))
             for c in parcelas
-            for p in cobrancas.historico_pagamentos(c["id"])
+            for p in historicos.get(c["id"], [])
         ),
         Decimal(0),
     )
@@ -331,14 +339,14 @@ def _card_situacao_financeira(cliente_id):
     )
 
 
-def _aba_resumo(cliente):
+def _aba_resumo(cliente, parcelas, historicos):
     esquerda, direita = st.columns([1.5, 1], gap="medium")
     with esquerda:
         _card_contrato_ativo(cliente["id"])
         st.write("")
         _card_dados_pessoais(cliente)
     with direita:
-        _card_situacao_financeira(cliente["id"])
+        _card_situacao_financeira(parcelas, historicos)
 
 
 def _aba_contratos(cliente):
@@ -349,7 +357,7 @@ def _aba_contratos(cliente):
     for c in registros:
         moto = frota.get(c["moto_id"])
         moto_html = (
-            f'{chip_placa(moto["placa"])}<span style="margin-left:8px;">{moto["marca"]} {moto["modelo"]}</span>'
+            f'{chip_placa(moto["placa"])}<span style="margin-left:8px;">{_html(moto["marca"])} {_html(moto["modelo"])}</span>'
             if moto
             else "—"
         )
@@ -368,17 +376,17 @@ def _aba_contratos(cliente):
     tabela_html(["Moto", "Início", "Fim", "Status", "Valor / período"], linhas, alinhar_direita={4})
 
 
-def _aba_pagamentos(cliente):
+def _aba_pagamentos(parcelas, historicos):
     parcelas = sorted(
-        [c for c in cobrancas.listar() if c["cliente_id"] == cliente["id"]],
+        parcelas,
         key=lambda c: c["vencimento"],
         reverse=True,
     )
     linhas = []
     for c in parcelas:
-        pagamentos = cobrancas.historico_pagamentos(c["id"])
+        pagamentos = historicos.get(c["id"], [])
         ultimo = pagamentos[-1] if pagamentos else None
-        multa = sum(float(p["multa_juros"]) for p in pagamentos)
+        multa = sum((Decimal(str(p["multa_juros"])) for p in pagamentos), Decimal(0))
         if c["situacao"] == "atrasada":
             situacao_html = selo_situacao("Atrasada", "atrasada")
         elif c["situacao"] == "aberta" and c["vencimento"] == hoje_br().isoformat():
@@ -392,9 +400,9 @@ def _aba_pagamentos(cliente):
         linhas.append(
             [
                 f'<span class="mono">{formatar_data(c["vencimento"])}</span>',
-                c["tipo"].capitalize(),
+                _html(c["tipo"].capitalize()),
                 f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span style="color:#9AA0A6;">—</span>',
-                ultimo["forma"].capitalize() if ultimo else '<span style="color:#9AA0A6;">—</span>',
+                _html(ultimo["forma"].capitalize()) if ultimo else '<span style="color:#9AA0A6;">—</span>',
                 f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span style="color:#9AA0A6;">—</span>',
                 f'<span class="mono">{formatar_moeda(c["valor"])}</span>',
                 situacao_html,
@@ -431,9 +439,9 @@ def _exibir_ficha(cliente_id):
             f"""
             <div style="display:flex;align-items:center;gap:16px;">
               <div style="width:48px;height:48px;border-radius:50%;background:{cor_avatar};color:#FAFAF9;
-                          display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;">{_iniciais(cliente['nome'])}</div>
+                          display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
               <div>
-                <h1 class="rotulo" style="margin:0;font-size:24px;">{cliente['nome']}</h1>
+                <h1 class="rotulo" style="margin:0;font-size:24px;">{_html(cliente['nome'])}</h1>
                 <div style="font-size:13px;margin-top:3px;">
                   {selo_situacao(linha_status, _situacao_selo_cliente(cliente["status"]))}
                 </div>
@@ -461,30 +469,33 @@ def _exibir_ficha(cliente_id):
         f"""
         <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;margin-bottom:20px;">
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{mascarar_cpf(cliente.get('cpf') or '')}</span>
+            <span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">whatsapp</span><span class="mono" style="font-size:13px;">{cliente.get('whatsapp') or cliente.get('telefone') or '—'}</span>
+            <span style="font-size:11px;color:#585F66;">whatsapp</span><span class="mono" style="font-size:13px;">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
           </div>
           <div style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:4px;justify-content:center;">
             <span class="rotulo" style="font-size:11px;color:#585F66;">cnh</span>
             {cnh_html}
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{cliente.get('email') or '—'}</span>
+            <span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{_html(cliente.get('email'))}</span>
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    parcelas = [c for c in cobrancas.listar() if c["cliente_id"] == cliente_id]
+    historicos = cobrancas.historicos_pagamentos([c["id"] for c in parcelas])
+
     abas = st.tabs(["Resumo", "Contratos", "Pagamentos"])
     with abas[0]:
-        _aba_resumo(cliente)
+        _aba_resumo(cliente, parcelas, historicos)
     with abas[1]:
         _aba_contratos(cliente)
     with abas[2]:
-        _aba_pagamentos(cliente)
+        _aba_pagamentos(parcelas, historicos)
 
 
 def formatar_placa_simples(moto):

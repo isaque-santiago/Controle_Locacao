@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from datetime import date
 from decimal import Decimal
+from html import escape
 from math import ceil
 import pandas as pd
 import streamlit as st
@@ -235,7 +236,7 @@ def chip_placa(placa, tamanho="normal"):
     return (
         f'<span class="mono" style="background:#1E2227;color:#FAFAF9;padding:{padding};'
         f'border-radius:{"5px" if tamanho == "grande" else "4px"};font-weight:600;'
-        f'font-size:{fonte};letter-spacing:0.05em;">{formatar_placa(placa)}</span>'
+        f'font-size:{fonte};letter-spacing:0.05em;">{escape(formatar_placa(placa))}</span>'
     )
 
 
@@ -248,7 +249,7 @@ def selo_situacao(texto, situacao):
     return (
         f'<div style="display:flex;align-items:center;gap:6px;{estilo_cor}">'
         f'<span style="width:6px;height:6px;border-radius:50%;background:{pontinho};'
-        f'display:inline-block;flex-shrink:0;"></span>{texto}</div>'
+        f'display:inline-block;flex-shrink:0;"></span>{escape(str(texto))}</div>'
     )
 
 
@@ -337,6 +338,13 @@ def selecionar(titulo, linhas, rotulo, chave):
         key=chave,
     )
     return mapa[escolhido]
+
+
+def abrir_ficha_contrato(contrato_id):
+    """Abre a página de contratos com a ficha indicada já selecionada."""
+    st.session_state["contratos_visao"] = "ficha"
+    st.session_state["contratos_id_selecionado"] = contrato_id
+    st.switch_page("pages/4_Contratos.py")
 
 
 def campo_data(titulo, valor=None, **kwargs):

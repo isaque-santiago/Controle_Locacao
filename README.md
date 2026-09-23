@@ -47,8 +47,10 @@ status corrigida para os tokens exatos do documento, chip de placa em mono no
 padrão do plano, selos circulares tracejados para alertas (Dashboard e
 Manutenção), barra de ocupação segmentada substituindo a barra padrão do
 Streamlit e assistente em 4 etapas (Cliente, Moto, Condições, Vistoria de
-entrega) na criação de contrato. Pendências conhecidas continuam as da seção 6
-do `Design_UI.md`: modo escuro e validação em layout mobile.
+entrega) na criação de contrato. O painel autenticado agora oferece modo escuro
+na barra lateral, com contraste específico para cartões, tabelas e formulários.
+A tela de login foi validada em viewport mobile de 390 × 844 px; a validação
+mobile autenticada continua dependendo do acesso ao ambiente de homologação.
 
 Reconstrução do Dashboard (22/09/2026), conferida linha a linha contra o
 artboard `Main.dc.html`: faixa de instrumentos como um único painel com quatro
@@ -76,6 +78,13 @@ anterior: as classes CSS `.rotulo`/`.mono`/`.campo` usadas no HTML injetado
 do Dashboard não tinham regra correspondente no tema global — só o seletor de
 tag (`h1,h2,h3`) pegava por acidente; várias leituras em mono no Dashboard
 podiam não estar com a fonte certa.
+
+Correções complementares (22/09/2026): as fichas de Moto e Cliente abrem
+diretamente o contrato selecionado; o registro de manutenção aceita várias
+peças ou serviços livres numa tabela com linhas adicionáveis e removíveis; a
+ficha de Cliente escapa dados cadastrados antes de inseri-los em HTML, carrega
+históricos financeiros em lote e mantém todos os cálculos monetários em
+`Decimal`.
 
 Reconstrução de Clientes (22/09/2026), conferida contra `Clientes.dc.html` e
 `ClienteFicha.dc.html`: lista com pílulas de filtro por status, busca por

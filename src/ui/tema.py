@@ -141,3 +141,44 @@ def aplicar():
     """,
         unsafe_allow_html=True,
     )
+    if st.session_state.get("modo_escuro", False):
+        st.markdown(
+            """
+            <style>
+            [data-testid="stApp"], [data-testid="stAppViewContainer"] {
+              background:#15181C !important;
+              color:#E6E8EA !important;
+            }
+            [data-testid="stHeader"] {background:rgba(21,24,28,.88) !important;}
+            [data-testid="stMainBlockContainer"] {color:#E6E8EA;}
+            [data-testid="stApp"] h1, [data-testid="stApp"] h2,
+            [data-testid="stApp"] h3, [data-testid="stApp"] p,
+            [data-testid="stApp"] label {color:inherit;}
+            [data-testid="stApp"] [style*="background:#FAFAF9"] {
+              background:#24292F !important;
+            }
+            [data-testid="stApp"] [style*="color:#1E2227"] {
+              color:#E6E8EA !important;
+            }
+            [data-testid="stApp"] [style*="color:#585F66"] {
+              color:#A8AFB7 !important;
+            }
+            [data-testid="stApp"] [style*="color:#9AA0A6"] {
+              color:#89919A !important;
+            }
+            [data-testid="stMetric"], [data-testid="stDataFrame"],
+            [data-testid="stTable"], [data-baseweb="input"] > div,
+            [data-baseweb="select"] > div, textarea {
+              background:#24292F !important;
+              color:#E6E8EA !important;
+            }
+            button[kind="primary"] {
+              background:#E6E8EA !important;
+              border-color:#E6E8EA !important;
+              color:#15181C !important;
+            }
+            [data-baseweb="tab-highlight"] {background:#F2B705 !important;}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )

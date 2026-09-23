@@ -59,3 +59,12 @@ def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:
 
 def historico_pagamentos(cobranca_id):
     return pagamentos.listar_por_cobranca(cobranca_id)
+
+
+def historicos_pagamentos(cobranca_ids):
+    """Agrupa em memória os pagamentos carregados em lote por cobrança."""
+    ids = list(dict.fromkeys(cobranca_ids))
+    historicos = {cobranca_id: [] for cobranca_id in ids}
+    for pagamento in pagamentos.listar_por_cobrancas(ids):
+        historicos.setdefault(pagamento["cobranca_id"], []).append(pagamento)
+    return historicos

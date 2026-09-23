@@ -8,6 +8,35 @@ gravar qualquer coisa.
 from datetime import date, timedelta
 from typing import Optional
 
+from src.domain.valores import decimal_br
+
+
+def preparar_itens_adicionais(linhas: list[dict]) -> list[dict]:
+    """Valida as linhas livres adicionadas na tabela de peças e serviços."""
+    itens = []
+    for linha in linhas:
+        descricao = str(linha.get("descricao") or "").strip()
+        quantidade = linha.get("quantidade")
+        valor_unitario = linha.get("valor_unitario")
+        linha_vazia = not descricao and quantidade in (None, "", "1", 1) and valor_unitario in (
+            None,
+            "",
+            "0",
+            0,
+        )
+        if linha_vazia:
+            continue
+        if not descricao:
+            raise ValueError("Informe a descrição de cada peça ou serviço adicional.")
+        itens.append(
+            {
+                "descricao": descricao,
+                "quantidade": decimal_br(str(quantidade or "1"), positivo=True),
+                "valor_unitario": decimal_br(str(valor_unitario or "0")),
+            }
+        )
+    return itens
+
 
 def calcular_proxima_manutencao(
     ultima_km: Optional[int],

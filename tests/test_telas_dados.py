@@ -65,6 +65,7 @@ def servicos():
             "cobrancas.listar": [COBRANCA],
             "cobrancas.listar_por_contrato": [COBRANCA],
             "cobrancas.historico_pagamentos": [],
+            "cobrancas.historicos_pagamentos": {},
             "cobrancas.calcular_encargos_cobranca": {
                 "multa": Decimal(2),
                 "juros": Decimal(1),
@@ -158,3 +159,16 @@ def test_pagamento_parcial_envia_principal_separado(servicos):
         Decimal("30.50"),
         Decimal("3.00"),
     )
+
+
+def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):
+    app = AppTest.from_file(str(RAIZ / "pages" / "4_Contratos.py"), default_timeout=20)
+    app.session_state["usuario"] = {"id": "teste", "email": "teste@example.com"}
+    app.session_state["ultima_atividade"] = time()
+    app.session_state["ficha_contrato"] = "ct"
+    app.session_state["contratos_aba_inicial"] = "Ficha e encerramento"
+    app.run()
+
+    seletor = next(e for e in app.selectbox if e.label == "Contrato")
+    assert seletor.value == "ct"
+    assert not app.error
