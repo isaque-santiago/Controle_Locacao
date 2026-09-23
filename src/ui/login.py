@@ -2,6 +2,39 @@
 
 import streamlit as st
 
+from src.ui.tema import tema_escuro_ativo
+
+# Sobrepõe as cores fixas do tema claro da tela de login (fundo, cartão e textos).
+_CSS_LOGIN_ESCURO = """
+<style>
+[data-testid="stAppViewContainer"] > .main, [data-testid="stMain"] {
+    background:
+        linear-gradient(rgba(238,240,240,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(238,240,240,.03) 1px, transparent 1px),
+        #15181C !important;
+    background-size: 32px 32px !important;
+}
+.login-simbolo {border-color: #ECEEF0 !important; color: #ECEEF0 !important;}
+.login-marca strong {color: #ECEEF0 !important;}
+.login-marca span, .login-contexto p, .login-acesso {color: #B4BBC3 !important;}
+.login-contexto h2 {color: #ECEEF0 !important;}
+.login-rodape {color: #9BA3AC !important;}
+div[data-testid="stForm"] {
+    background: #22272D !important;
+    border-color: rgba(238,240,240,.14) !important;
+}
+div[data-testid="stForm"] label, div[data-testid="stForm"] label p,
+div[data-testid="stForm"] [data-testid="stWidgetLabel"] p {color: #ECEEF0 !important;}
+div[data-testid="stForm"] button[kind="secondaryFormSubmit"],
+div[data-testid="stFormSubmitButton"] button {
+    background: #F2B705 !important;
+    border-color: #F2B705 !important;
+    color: #15181C !important;
+}
+div[data-testid="stFormSubmitButton"] button * {color: #15181C !important;}
+</style>
+"""
+
 
 def exibir() -> tuple[bool, str, str]:
     """Renderiza a tela de login e devolve envio, e-mail e senha."""
@@ -103,6 +136,9 @@ def exibir() -> tuple[bool, str, str]:
         """,
         unsafe_allow_html=True,
     )
+
+    if tema_escuro_ativo():
+        st.markdown(_CSS_LOGIN_ESCURO, unsafe_allow_html=True)
 
     st.markdown(
         """
