@@ -17,12 +17,18 @@ _TTL_SEGUNDOS = 60
 
 
 def _ler_todos(tabela, ordem, selecao, filtros):
+    # `ordem` pode ser uma coluna ou uma tupla de colunas (views sem id). Com uma só
+    # coluna, o id desempata para a paginação não repetir nem perder linhas.
+    if isinstance(ordem, str):
+        ordens = (ordem,) if ordem == "id" else (ordem, "id")
+    else:
+        ordens = tuple(ordem)
     registros = []
     inicio = 0
     while True:
-        consulta = get_client().table(tabela).select(selecao).order(ordem)
-        if ordem != "id":
-            consulta = consulta.order("id")
+        consulta = get_client().table(tabela).select(selecao)
+        for coluna in ordens:
+            consulta = consulta.order(coluna)
         for campo, valor in filtros:
             consulta = consulta.eq(campo, valor)
         pagina = consulta.range(inicio, inicio + 499).execute().data
@@ -38,6 +44,7 @@ def _todos_em_cache(usuario_id, dia, tabela, ordem, selecao, filtros):
 
 
 def todos(tabela, ordem="id", selecao="*", filtros=None, usar_cache=True):
+    ordem = ordem if isinstance(ordem, str) else tuple(ordem)
     filtros_ordenados = tuple(sorted((filtros or {}).items()))
     if not usar_cache:
         return _ler_todos(tabela, ordem, selecao, filtros_ordenados)
