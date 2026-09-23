@@ -174,47 +174,165 @@ def aplicar():
         unsafe_allow_html=True,
     )
     if st.session_state.get("modo_escuro", False):
-        st.markdown(
-            """
-            <style>
-            [data-testid="stApp"], [data-testid="stAppViewContainer"] {
-              background:#15181C !important;
-              color:#E6E8EA !important;
-            }
-            [data-testid="stHeader"] {background:rgba(21,24,28,.88) !important;}
-            [data-testid="stMainBlockContainer"] {color:#E6E8EA;}
-            [data-testid="stApp"] h1, [data-testid="stApp"] h2,
-            [data-testid="stApp"] h3, [data-testid="stApp"] p,
-            [data-testid="stApp"] label {color:inherit;}
-            [data-testid="stApp"] [style*="background:#FAFAF9"],
-            [data-testid="stApp"] [class*="st-key-config_card"] {
-              background:#24292F !important;
-            }
-            [data-testid="stApp"] [style*="background:#EEF0F0"] {
-              background:#1B1F24 !important;
-            }
-            [data-testid="stApp"] [style*="color:#1E2227"] {
-              color:#E6E8EA !important;
-            }
-            [data-testid="stApp"] [style*="color:#585F66"] {
-              color:#A8AFB7 !important;
-            }
-            [data-testid="stApp"] [style*="color:#9AA0A6"] {
-              color:#89919A !important;
-            }
-            [data-testid="stMetric"], [data-testid="stDataFrame"],
-            [data-testid="stTable"], [data-baseweb="input"] > div,
-            [data-baseweb="select"] > div, textarea {
-              background:#24292F !important;
-              color:#E6E8EA !important;
-            }
-            button[kind="primary"] {
-              background:#E6E8EA !important;
-              border-color:#E6E8EA !important;
-              color:#15181C !important;
-            }
-            [data-baseweb="tab-highlight"] {background:#F2B705 !important;}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(_CSS_MODO_ESCURO, unsafe_allow_html=True)
+
+
+# Modo escuro com paleta própria (não é inversão do claro): fundos em camadas
+# (página < cartão < campo), texto principal ~14:1 e secundário >= 6:1 sobre o cartão;
+# cores de status clareadas para manter contraste >= 4,5:1.
+_CSS_MODO_ESCURO = """
+<style>
+:root {
+  --e-fundo:#15181C; --e-cartao:#22272D; --e-campo:#2B3138; --e-realce:#343B43;
+  --e-linha:rgba(238,240,240,.14); --e-texto:#ECEEF0; --e-texto2:#B4BBC3; --e-texto3:#9BA3AC;
+}
+[data-testid="stApp"] {color-scheme:dark;}
+[data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+  background:var(--e-fundo) !important; color:var(--e-texto) !important;
+}
+[data-testid="stHeader"] {background:rgba(21,24,28,.9) !important;}
+[data-testid="stHeader"] * {color:var(--e-texto2) !important;}
+[data-testid="stSidebar"] {background:#1B1F24 !important; border-right:1px solid var(--e-linha);}
+
+/* Texto nativo do Streamlit */
+[data-testid="stMain"] h1, [data-testid="stMain"] h2, [data-testid="stMain"] h3,
+[data-testid="stMain"] h4, [data-testid="stMain"] h5, [data-testid="stMain"] h6,
+[data-testid="stMain"] p, [data-testid="stMain"] li, [data-testid="stMain"] label,
+[data-testid="stMain"] [data-testid="stMarkdownContainer"],
+[data-testid="stMain"] [data-testid="stWidgetLabel"] p,
+[data-testid="stMain"] [data-testid="stMetricLabel"] p,
+[data-testid="stMain"] [data-testid="stMetricValue"],
+[data-testid="stMain"] summary, [data-testid="stMain"] summary p {color:var(--e-texto) !important;}
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p,
+[data-testid="stMain"] small, [data-testid="stMain"] [data-testid="stMetricDelta"] {color:var(--e-texto2) !important;}
+[data-testid="stMain"] a {color:#F2B705;}
+[data-testid="stMain"] code {background:var(--e-campo); color:var(--e-texto);}
+hr {border-color:var(--e-linha) !important;}
+
+/* Cores inline dos módulos (tokens do modo claro -> equivalentes escuros) */
+[data-testid="stApp"] [style*="color:#1E2227" i], [data-testid="stApp"] [style*="color: rgb(30, 34, 39)"] {color:var(--e-texto) !important;}
+[data-testid="stApp"] [style*="color:#585F66" i], [data-testid="stApp"] [style*="color: rgb(88, 95, 102)"] {color:var(--e-texto2) !important;}
+[data-testid="stApp"] [style*="color:#9AA0A6" i], [data-testid="stApp"] [style*="color: rgb(154, 160, 166)"] {color:var(--e-texto3) !important;}
+[data-testid="stApp"] [style*="color:#D64545" i], [data-testid="stApp"] [style*="color: rgb(214, 69, 69)"] {color:#FF8080 !important;}
+[data-testid="stApp"] [style*="color:#2F9E6E" i], [data-testid="stApp"] [style*="color: rgb(47, 158, 110)"] {color:#4CC994 !important;}
+[data-testid="stApp"] [style*="color:#8a6600" i], [data-testid="stApp"] [style*="color: rgb(138, 102, 0)"] {color:#F2B705 !important;}
+[data-testid="stApp"] [style*="background:#FAFAF9" i], [data-testid="stApp"] [style*="background: rgb(250, 250, 249)"],
+[data-testid="stApp"] [class*="st-key-config_card"],
+[data-testid="stApp"] [class*="_card_"], [data-testid="stApp"] [class*="_card"] {
+  background:var(--e-cartao) !important;
+}
+[data-testid="stApp"] [style*="background:#EEF0F0" i], [data-testid="stApp"] [style*="background: rgb(238, 240, 240)"] {background:var(--e-fundo) !important;}
+[data-testid="stApp"] [style*="background:#1E2227" i], [data-testid="stApp"] [style*="background: rgb(30, 34, 39)"] {background:var(--e-realce) !important;}
+[data-testid="stApp"] [style*="background:rgba(30,34,39"], [data-testid="stApp"] [style*="background: rgba(30, 34, 39"] {background:rgba(238,240,240,.16) !important;}
+[data-testid="stApp"] [style*="rgba(30,34,39"], [data-testid="stApp"] [style*="rgba(30, 34, 39"] {border-color:var(--e-linha) !important;}
+[data-testid="stApp"] [class*="_card"], [data-testid="stApp"] [class*="_card"] [data-testid="stHorizontalBlock"] {
+  border-color:var(--e-linha) !important;
+}
+[data-testid="stApp"] [style*="background:rgba(242,183,5,0.12)"], [data-testid="stApp"] [style*="background: rgba(242, 183, 5, 0.12)"] {background:rgba(242,183,5,.18) !important;}
+
+/* Cartões, métricas e tabelas */
+[data-testid="stMetric"] {background:var(--e-cartao) !important; border-color:var(--e-linha) !important;}
+[data-testid="stTable"], [data-testid="stTable"] th,
+[data-testid="stTable"] td {background:var(--e-cartao) !important; color:var(--e-texto) !important;}
+/* O grid é um canvas com o tema claro: inverte luminosidade preservando o matiz */
+[data-testid="stDataFrame"] {filter:invert(1) hue-rotate(180deg); border-radius:4px; overflow:hidden;}
+[data-testid="stVerticalBlockBorderWrapper"] {border-color:var(--e-linha) !important;}
+[data-testid="stExpander"], [data-testid="stExpander"] details {
+  background:var(--e-cartao) !important; border-color:var(--e-linha) !important;
+}
+[data-testid="stForm"] {border-color:var(--e-linha) !important;}
+
+/* Campos */
+[data-baseweb="input"], [data-baseweb="input"] > div, [data-baseweb="base-input"],
+[data-baseweb="select"] > div, [data-baseweb="textarea"], [data-baseweb="textarea"] > div,
+textarea, [data-testid="stNumberInput"] button, [data-testid="stTextInputRootElement"],
+[data-testid="stDateInputField"], [data-testid="stNumberInputContainer"],
+[data-testid="stSelectbox"] [data-baseweb="select"] > div, [data-testid="stMultiSelect"] [data-baseweb="select"] > div,
+[data-testid="stTimeInput"] [data-baseweb="select"] > div, [data-testid="stTextAreaRootElement"] {
+  background:var(--e-campo) !important; color:var(--e-texto) !important; border-color:var(--e-linha) !important;
+}
+input, textarea, [data-baseweb="select"] div, [data-baseweb="select"] span {
+  color:var(--e-texto) !important; -webkit-text-fill-color:var(--e-texto) !important;
+}
+input::placeholder, textarea::placeholder {color:var(--e-texto3) !important; -webkit-text-fill-color:var(--e-texto3) !important;}
+[data-testid="stSelectbox"] div:has(> input), [data-testid="stMultiSelect"] div:has(> input) {
+  background:var(--e-campo) !important; border-color:var(--e-linha) !important;
+}
+[data-testid="stSelectbox"] button, [data-testid="stSelectbox"] svg, [data-testid="stMultiSelect"] svg {
+  color:var(--e-texto2) !important; fill:var(--e-texto2) !important;
+}
+[role="listbox"], [role="listbox"] [role="option"], [data-testid="stSelectboxVirtualDropdown"],
+[data-testid="stSelectboxVirtualDropdown"] * {
+  background:var(--e-campo) !important; color:var(--e-texto) !important;
+}
+[role="listbox"] [role="option"]:hover, [role="listbox"] [aria-selected="true"] {
+  background:var(--e-realce) !important;
+}
+input:disabled, textarea:disabled {opacity:.6;}
+[data-testid="stDateInputField"] input {opacity:1;}
+[data-testid="stDateInputField"] span, [data-testid="stDateInputField"] div {
+  color:var(--e-texto) !important; -webkit-text-fill-color:var(--e-texto) !important;
+}
+[data-baseweb="select"] svg, [data-testid="stNumberInput"] svg {fill:var(--e-texto2) !important;}
+[data-testid="stFileUploaderDropzone"] {background:var(--e-campo) !important; border-color:var(--e-linha) !important;}
+[data-testid="stFileUploaderDropzone"] * {color:var(--e-texto2) !important;}
+
+/* Menus suspensos (renderizados fora do stApp) */
+[data-baseweb="popover"] [data-baseweb="menu"], [data-baseweb="popover"] ul,
+[data-baseweb="popover"] > div, [data-baseweb="calendar"], [data-baseweb="calendar"] * {
+  background:var(--e-campo) !important; color:var(--e-texto) !important;
+}
+[data-baseweb="popover"] li:hover, [data-baseweb="popover"] [aria-selected="true"] {
+  background:var(--e-realce) !important;
+}
+
+/* Rádio, checkbox, toggle */
+[data-testid="stRadio"] label, [data-testid="stCheckbox"] label, [data-testid="stToggle"] label,
+[data-testid="stRadio"] label p, [data-testid="stCheckbox"] label p {color:var(--e-texto) !important;}
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] label p {color:#ECEEF0 !important;}
+
+/* Botões */
+button[kind="primary"] {background:#F2B705 !important; border-color:#F2B705 !important; color:#15181C !important;}
+button[kind="primary"]:hover {background:#FFC933 !important; border-color:#FFC933 !important;}
+button[kind="primary"] * {color:#15181C !important;}
+button[kind="secondary"], [data-testid="stDownloadButton"] button {
+  background:var(--e-campo); color:var(--e-texto); border-color:var(--e-linha);
+}
+button[kind="secondary"]:hover {background:var(--e-realce); border-color:var(--e-texto3); color:#FFFFFF;}
+button[kind="secondary"] * {color:inherit !important;}
+button[kind="tertiary"], button[kind="tertiary"] * {color:var(--e-texto2) !important;}
+[data-testid="stApp"] [class*="_card"] button, [data-testid="stApp"] [class*="_card"] button * {
+  color:var(--e-texto2) !important; border-color:var(--e-linha) !important;
+}
+[data-testid="stApp"] [class*="_filtros"] button[kind="secondary"] {
+  background:var(--e-cartao) !important; color:var(--e-texto) !important; border-color:var(--e-linha) !important;
+}
+[data-testid="stApp"] [class*="_filtros"] button[kind="primary"] {
+  background:#F2B705 !important; color:#15181C !important;
+}
+[data-testid="stApp"] .st-key-dashboard_card_hoje button {background:var(--e-realce) !important;}
+[data-testid="stSidebar"] button[kind="secondary"] {background:transparent; color:#B4BBC3;}
+
+/* Abas */
+[data-baseweb="tab-list"] {border-bottom:1px solid var(--e-linha);}
+[data-baseweb="tab"], [data-baseweb="tab"] p {color:var(--e-texto2) !important; background:transparent !important;}
+[data-baseweb="tab"][aria-selected="true"], [data-baseweb="tab"][aria-selected="true"] p {color:#F2B705 !important;}
+[data-baseweb="tab-highlight"] {background:#F2B705 !important;}
+[data-baseweb="tab-border"] {background:var(--e-linha) !important;}
+
+/* Alertas nativos */
+[data-testid="stAlert"] {background:var(--e-cartao) !important; border:1px solid var(--e-linha);}
+[data-testid="stAlert"] * {color:var(--e-texto) !important;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentError"]) {border-left:4px solid #FF8080;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentSuccess"]) {border-left:4px solid #4CC994;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentWarning"]) {border-left:4px solid #F2B705;}
+[data-testid="stAlert"]:has([data-testid="stAlertContentInfo"]) {border-left:4px solid #6CB4EE;}
+
+/* Diálogos, tooltips e gráficos */
+[data-testid="stDialog"] > div, [role="dialog"] {background:var(--e-cartao) !important; color:var(--e-texto) !important;}
+[data-testid="stTooltipContent"], [data-baseweb="tooltip"] > div {background:var(--e-realce) !important; color:var(--e-texto) !important;}
+[data-testid="stPlotlyChart"] .main-svg {background:transparent !important;}
+[data-testid="stPlotlyChart"] text {fill:var(--e-texto2) !important;}
+[data-testid="stPlotlyChart"] .gridlayer path, [data-testid="stPlotlyChart"] .zerolinelayer path {stroke:var(--e-linha) !important;}
+</style>
+"""
