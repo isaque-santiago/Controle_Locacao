@@ -4,8 +4,8 @@ import csv
 from io import StringIO, BytesIO
 from decimal import Decimal
 from openpyxl import Workbook
-from src.domain.relatorios import consolidar
-from src.repositories import relatorios
+from src.domain.relatorios import analisar_inadimplencia, consolidar
+from src.repositories import clientes, cobrancas, configuracoes, motos, relatorios
 
 
 def resultado_por_moto(inicio, fim):
@@ -22,6 +22,17 @@ def resultado_por_moto(inicio, fim):
         d["historico_km"],
         inicio,
         fim,
+    )
+
+
+def inadimplencia(hoje):
+    """Posição atual de cobranças em atraso, independente do período do relatório."""
+    return analisar_inadimplencia(
+        cobrancas.listar(),
+        clientes.listar(),
+        motos.listar(),
+        configuracoes.obter(),
+        hoje,
     )
 
 

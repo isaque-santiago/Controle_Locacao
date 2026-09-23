@@ -158,6 +158,18 @@ Referência, ex.: apólice), o botão de editar (o mockup não previa edição) 
 regularizar, o "documento do ano seguinte" abre o cadastro já preenchido em vez
 de criar direto, porque `vencimento` é obrigatório no banco.
 
+Reconstrução de Relatórios (23/09/2026), conferida contra `Relatorios.dc.html`:
+subtítulo com o período, filtros De/Até e quatro abas — Resultado por moto,
+Custo de manutenção (pílulas Por moto/Por modelo, esta com total e média por
+moto), Inadimplência (total em atraso, % da carteira do mês, clientes atrasados
+e valor com encargos por parcela) e Fluxo de caixa (mês corrente marcado como
+parcial) — com barras proporcionais em HTML/CSS e exportação CSV/Excel por aba,
+com os mesmos dados da tabela. **Decisão a confirmar:** o mockup não define
+"% da carteira do mês"; foi adotado total em atraso ÷ previsto do mês (parcelas
+sem caução nem canceladas que vencem no mês, o mesmo "previsto" do Dashboard).
+Cálculos em `src/domain/relatorios.py`, testados em
+`tests/test_relatorios_dominio.py`.
+
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do

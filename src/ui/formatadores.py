@@ -27,6 +27,18 @@ def formatar_data(data) -> str:
     return date.fromisoformat(str(data)[:10]).strftime("%d/%m/%Y")
 
 
+_MESES = (
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+)
+
+
+def formatar_mes(ano_mes) -> str:
+    """'2026-09' (ou uma data ISO) -> 'Setembro de 2026'."""
+    ano, mes = str(ano_mes)[:7].split("-")
+    return f"{_MESES[int(mes) - 1]} de {ano}"
+
+
 def formatar_placa(placa: str) -> str:
     placa = placa.upper().replace("-", "")
     return placa[:3] + "-" + placa[3:] if len(placa) == 7 else placa

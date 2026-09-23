@@ -1,7 +1,10 @@
 """Consolida finanças com Decimal, sem duplicar receitas por junções."""
 
 from collections import defaultdict
-from decimal import Decimal
+from datetime import date
+from decimal import ROUND_HALF_UP, Decimal
+
+from src.domain.encargos import calcular_encargos
 
 
 def valor(numero):
@@ -103,3 +106,91 @@ def consolidar(
             }
         )
     return {"resultado": list(resultado.values()), "fluxo": meses}
+
+
+def proporcoes(valores):
+    """Largura (0 a 100) de cada barra proporcional, relativa ao maior valor.
+    Valores negativos ou zerados ficam sem barra."""
+    maior = max((v for v in valores), default=Decimal(0))
+    if maior <= 0:
+        return [0 for _ in valores]
+    return [
+        int((max(v, Decimal(0)) * 100 / maior).quantize(Decimal("1"), ROUND_HALF_UP))
+        for v in valores
+    ]
+
+
+def agrupar_por_modelo(resultado):
+    """Custo de manutenção por modelo: total e média por moto, do maior para o menor."""
+    grupos = {}
+    for r in resultado:
+        grupo = grupos.setdefault(
+            r["modelo"], {"modelo": r["modelo"], "motos": 0, "custo_total": Decimal(0)}
+        )
+        grupo["motos"] += 1
+        grupo["custo_total"] += r["custo_manutencao"]
+    linhas = []
+    for g in grupos.values():
+        g["custo_medio"] = (g["custo_total"] / g["motos"]).quantize(
+            Decimal("0.01"), ROUND_HALF_UP
+        )
+        linhas.append(g)
+    return sorted(linhas, key=lambda g: (-g["custo_total"], g["modelo"]))
+
+
+def previsto_do_mes(cobrancas, hoje):
+    """Carteira do mês: parcelas (sem caução, sem canceladas) que vencem no mês de `hoje`."""
+    mes = hoje.isoformat()[:7]
+    return sum(
+        (
+            valor(c["valor"])
+            for c in cobrancas
+            if str(c["vencimento"])[:7] == mes
+            and c["tipo"] != "caucao"
+            and c["situacao"] != "cancelada"
+        ),
+        Decimal(0),
+    )
+
+
+def analisar_inadimplencia(cobrancas, clientes, motos, config, hoje):
+    """Posição atual das cobranças atrasadas: linhas (mais antigas primeiro), total
+    em atraso, clientes distintos e % da carteira do mês (None sem carteira)."""
+    nomes = {c["id"]: c["nome"] for c in clientes}
+    placas = {m["id"]: m["placa"] for m in motos}
+    linhas = []
+    for c in cobrancas:
+        if c["situacao"] != "atrasada":
+            continue
+        saldo = valor(c["saldo"])
+        encargos = calcular_encargos(
+            saldo,
+            date.fromisoformat(str(c["vencimento"])[:10]),
+            hoje,
+            valor(config["multa_atraso_percentual"]),
+            valor(config["juros_mensal_percentual"]),
+            config["carencia_dias"],
+        )
+        linhas.append(
+            {
+                "cliente": nomes.get(c["cliente_id"], "Cliente"),
+                "placa": placas.get(c["moto_id"], ""),
+                "vencimento": c["vencimento"],
+                "dias_atraso": max((hoje - date.fromisoformat(str(c["vencimento"])[:10])).days, 0),
+                "saldo": saldo,
+                "total_com_encargos": encargos["total"],
+            }
+        )
+    linhas.sort(key=lambda l: (-l["dias_atraso"], l["cliente"]))
+    total = sum((l["saldo"] for l in linhas), Decimal(0))
+    previsto = previsto_do_mes(cobrancas, hoje)
+    return {
+        "linhas": linhas,
+        "total_atraso": total,
+        "clientes": len({c["cliente_id"] for c in cobrancas if c["situacao"] == "atrasada"}),
+        "percentual_carteira": (
+            (total * 100 / previsto).quantize(Decimal("0.1"), ROUND_HALF_UP)
+            if previsto > 0
+            else None
+        ),
+    }

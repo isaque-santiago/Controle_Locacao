@@ -104,6 +104,12 @@ def servicos():
             "alertas.listar_documentos": [],
             "alertas.listar_cnh": [],
             "relatorios.resultado_por_moto": {"resultado": [], "fluxo": []},
+            "relatorios.inadimplencia": {
+                "linhas": [],
+                "total_atraso": Decimal(0),
+                "clientes": 0,
+                "percentual_carteira": None,
+            },
             "motos.criar": MOTO,
             "clientes.criar": CLIENTE,
             "cobrancas.registrar_pagamento": {},
@@ -143,6 +149,7 @@ def abrir(nome):
         "6_Manutencao.py",
         "7_Documentos.py",
         "8_Vistorias.py",
+        "9_Relatorios.py",
     ],
 )
 def test_paginas_com_dados(servicos, nome):
@@ -211,3 +218,53 @@ def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):
 
     assert [t.label for t in app.tabs] == ["Cobranças", "Vistorias", "Manutenções"]
     assert not app.error
+
+
+def test_relatorios_renderiza_abas_com_dados_e_alterna_custo(servicos):
+    servicos["relatorios.resultado_por_moto"].return_value = {
+        "resultado": [
+            {
+                "moto_id": "m",
+                "placa": "ABC1D23",
+                "modelo": "CG",
+                "receita_recebida": Decimal("1000.00"),
+                "custo_manutencao": Decimal("100.00"),
+                "custo_documentos": Decimal("50.00"),
+                "km_rodados": 500,
+                "custo_por_km": Decimal("0.20"),
+                "resultado": Decimal("850.00"),
+            }
+        ],
+        "fluxo": [
+            {
+                "mes": "2026-09",
+                "receita_recebida": Decimal("1000.00"),
+                "custo_manutencao": Decimal("100.00"),
+                "custo_documentos": Decimal("50.00"),
+                "resultado": Decimal("850.00"),
+            }
+        ],
+    }
+    servicos["relatorios.inadimplencia"].return_value = {
+        "linhas": [
+            {
+                "cliente": "Pessoa teste",
+                "placa": "ABC1D23",
+                "vencimento": "2026-09-01",
+                "dias_atraso": 22,
+                "saldo": Decimal("60.00"),
+                "total_com_encargos": Decimal("63.00"),
+            }
+        ],
+        "total_atraso": Decimal("60.00"),
+        "clientes": 1,
+        "percentual_carteira": Decimal("6.0"),
+    }
+    app = abrir("9_Relatorios.py")
+    assert not app.exception and not app.error
+    html = " ".join(m.value for m in app.markdown)
+    assert "R$ 850,00" in html and "Setembro de 2026" in html
+    assert "R$ 63,00" in html and "6,0%" in html
+    next(b for b in app.button if b.label == "Por moto").click().run()
+    assert not app.exception and not app.error
+    assert "R$ 0,20" in " ".join(m.value for m in app.markdown)
