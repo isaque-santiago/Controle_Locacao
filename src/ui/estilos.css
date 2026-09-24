@@ -312,12 +312,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-pagar_hoje_"] button {background: var(--btn-primario) !important; border: none !important; width: 34px !important; height: 34px; min-height: 34px !important; padding: 0 !important;}
 [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-pagar_hoje_"] button:hover:not(:disabled) {background: var(--btn-primario-hover) !important;}
 /* Placa clicável (Clientes > Contratos): botão com a aparência do chip de placa */
-.st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button {
+[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button {
   background: var(--chip-fundo) !important; border: none !important; border-radius: var(--raio-sm) !important; color: var(--chip-texto) !important;
   font-family: var(--fonte-mono) !important; font-weight: 600 !important; letter-spacing: .05em; min-height: 0 !important; padding: 3px var(--e2) !important;
 }
-.st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
-.st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
+[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
+[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
 /* Pílulas de filtro: ativa (primary) e inativa (secondary) com o mesmo tamanho */
 [class*="_filtros"] button, .st-key-contrato_periodicidade button {
   min-height: 2rem !important; height: auto !important; padding: 4px var(--e3) !important; border-radius: 999px !important;
