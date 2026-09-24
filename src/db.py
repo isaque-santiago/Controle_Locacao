@@ -19,6 +19,7 @@ _LIMITE_INATIVIDADE_SEGUNDOS = 1800
 # o cookie de atividade só é regravado de tempos em tempos, bem antes de expirar.
 _RENOVACAO_ATIVIDADE_SEGUNDOS = 300
 _CHAVE_RENOVACAO_ATIVIDADE = "cookie_atividade_gravado_em"
+_CHAVE_REFRESH_GRAVADO = "cookie_refresh_token_gravado"
 _VALIDADE_LEMBRAR_SEGUNDOS = 60 * 60 * 24 * 7
 
 
@@ -65,17 +66,40 @@ def _get_cookie_controller() -> CookieController:
 def set_session_tokens(access_token: str, refresh_token: str) -> None:
     """Aplica os tokens do usuário logado ao cliente, para o RLS valer."""
     get_client().auth.set_session(access_token, refresh_token)
+    _gravar_refresh_token_cookie(refresh_token)
+
+
+def _gravar_refresh_token_cookie(refresh_token: str) -> None:
     _get_cookie_controller().set(
         _COOKIE_REFRESH_TOKEN,
         refresh_token,
         max_age=_VALIDADE_LEMBRAR_SEGUNDOS,
         **_opcoes_cookie(),
     )
+    st.session_state[_CHAVE_REFRESH_GRAVADO] = refresh_token
+
+
+def sincronizar_refresh_token_cookie() -> None:
+    """Regrava o cookie quando o Supabase rotacionou o refresh token.
+
+    O cliente renova o access token sozinho (cerca de 1 h) e o refresh token é de uso
+    único; sem esta sincronização o cookie ficaria com um token já consumido e o F5
+    devolveria o usuário ao login."""
+    try:
+        sessao = get_client().auth.get_session()
+    except Exception:
+        return
+    if not sessao or not sessao.refresh_token:
+        return
+    if st.session_state.get(_CHAVE_REFRESH_GRAVADO) == sessao.refresh_token:
+        return
+    _gravar_refresh_token_cookie(sessao.refresh_token)
 
 
 def clear_session_tokens() -> None:
     """Descarta o cliente autenticado e os cookies de sessão do navegador."""
     st.session_state.pop(_CHAVE_CLIENTE, None)
+    st.session_state.pop(_CHAVE_REFRESH_GRAVADO, None)
     controlador = _get_cookie_controller()
     for nome in (_COOKIE_REFRESH_TOKEN, _COOKIE_ULTIMA_ATIVIDADE):
         try:

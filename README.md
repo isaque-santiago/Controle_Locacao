@@ -194,6 +194,15 @@ navegador (`streamlit-cookies-controller`) e a sessão é restaurada automaticam
 partir dele; um segundo cookie, renovado a cada requisição e com validade de 30
 minutos, mantém a regra de expiração por inatividade mesmo entre refreshes.
 
+Correção em 24/09/2026: o F5 ainda derrubava a sessão por dois motivos. (1) O login
+chamava `st.rerun()` logo após pedir a gravação do cookie, e o Streamlit descartava o
+componente antes de o navegador executá-lo; agora o formulário é esvaziado e a mesma
+execução segue até a página, sem rerun. (2) O Supabase rotaciona o refresh token (uso
+único) nas renovações automáticas do access token, e o cookie ficava com um token já
+consumido; `sincronizar_refresh_token_cookie()` (`src/db.py`), chamada a cada execução
+em `require_login()`, regrava o cookie sempre que o token muda. Testes em
+`tests/test_sessao_cookie.py`.
+
 Validação local em 21/09/2026:
 
 - Testes pytest de regras, exportação, paginação, login e telas com serviços simulados.
