@@ -238,10 +238,10 @@ h3 {font-size: var(--fs-subtitulo);}
   font-weight: 600;
 }
 /* Cabeçalho da lista: rótulo pequeno em caixa alta, para não competir com os dados */
-:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"]:first-child {
+:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] {
   padding-top: 10px; padding-bottom: 10px;
 }
-:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"]:first-child span {
+:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] span {
   font-size: var(--fs-legenda); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-2);
 }
 /* Fichas: valor do campo maior que o rótulo, que fica discreto em cima */
