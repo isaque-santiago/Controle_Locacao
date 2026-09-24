@@ -11,7 +11,7 @@ Python 3.11+, Streamlit, Supabase (PostgreSQL + Auth + Storage), Plotly, pytest.
 ## Setup
 
 1. Crie um projeto no Supabase. As migrations em `supabase/migrations/` seguem o formato `AAAAMMDDHHMMSS_descricao.sql` (exigido pela integração Supabase ↔ GitHub, que aplica cada push automaticamente); ao adicionar uma nova, use um timestamp maior que o da última. `supabase/seed.sql` **não** é aplicado por essa integração — rode-o manualmente no SQL Editor após a primeira aplicação das migrations.
-2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono.
+2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users) e troque o UUID dentro de `is_dono()` na migration `20260922000000_restringe_rls_ao_dono.sql` **antes de aplicá-la** — a RLS libera o acesso somente a esse usuário; com um UUID errado, ninguém consegue ler nem gravar dados.
 3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
 4. Instale as dependências:
 
@@ -197,20 +197,23 @@ minutos, mantém a regra de expiração por inatividade mesmo entre refreshes.
 Validação local em 21/09/2026:
 
 - Testes pytest de regras, exportação, paginação, login e telas com serviços simulados.
-- Todas as 10 migrations executadas em PostgreSQL embarcado (PGlite 0.5.8).
+- Todas as migrations então existentes executadas em PostgreSQL embarcado (PGlite 0.5.8).
 - Roteiro `supabase/verificar_fluxos.sql` executado com rollback: contrato duplicado,
   pagamento parcial/total, preservação da parcela parcialmente paga no encerramento,
   cancelamento de futuras sem pagamento, vistorias, plano e conclusão de manutenção,
   custo total e resultado financeiro.
 - `seed_demo.sql` executado duas vezes, sem duplicar o cenário.
 
-**Validação em produção (22/09/2026):** as 11 migrations aplicadas no Supabase de
-destino (as 7 mais recentes ficaram pendentes por um tempo — aplicadas via
-`Arquivos/aplicar_migrations_pendentes.sql`, depois `NOTIFY pgrst, 'reload
-schema'` + restart do projeto para o PostgREST reconhecer os objetos novos).
-Login do dono confirmado: RLS e as permissões do papel `authenticated`
-(migration `20260921154000_permissoes_authenticated.sql`) funcionando —
-Dashboard carrega sem erro de permissão.
+**Validação em produção (22 e 23/09/2026):** as 13 migrations estão aplicadas no
+Supabase de destino (as 7 que ficaram pendentes por um tempo foram aplicadas
+manualmente no SQL Editor; o PostgREST só reconheceu os objetos novos depois do
+restart do projeto). Login do dono confirmado: as permissões do papel
+`authenticated` (`20260921154000_permissoes_authenticated.sql`) e a RLS restrita
+ao UUID do dono (`20260922000000_restringe_rls_ao_dono.sql`) funcionam — o
+Dashboard carrega sem erro de permissão. A RPC `rpc_finalizar_manutencao` passou
+a receber `payload jsonb` (`20260922010000_finalizar_manutencao_payload_jsonb.sql`)
+e o roteiro `supabase/verificar_fluxos.sql` foi executado em produção (23/09) sem
+falhas; ele termina em `ROLLBACK`, então não deixa dados.
 
 **Aceite externo ainda pendente:** uploads/URLs assinadas, executar o roteiro
 manual completo (seção abaixo), revisar em celular no aplicativo publicado e
@@ -226,6 +229,9 @@ homologada apenas com base nas telas e testes isolados.
    - `20260921151000_fluxos_contratos.sql`: contratos com vistorias e validação de pagamentos.
    - `20260921152000_finalizar_manutencao.sql`: conclusão/cancelamento de manutenção aberta.
    - `20260921153000_resultado_km.sql`: distância registrada e custo por km na view.
+   - `20260921154000_permissoes_authenticated.sql`: permissões do papel `authenticated` (a RLS continua decidindo as linhas).
+   - `20260922000000_restringe_rls_ao_dono.sql`: RLS e Storage só para o UUID do dono (ajuste o UUID em `is_dono()` antes de aplicar).
+   - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
 3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
    executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
    projeto conectado com `supabase link` e use `supabase db push`.
