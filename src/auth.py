@@ -12,6 +12,7 @@ from src.db import (
     salvar_tema_escuro_cookie,
     sessao_ativa_no_cookie,
     set_session_tokens,
+    sincronizar_refresh_token_cookie,
 )
 from src.ui import tema
 
@@ -71,9 +72,14 @@ def _tentar_restaurar_sessao() -> bool:
 
 
 def _exibir_formulario_login() -> None:
+    """Mostra o login. Ao autenticar, esvazia o formulário e segue a MESMA execução
+    (sem st.rerun): um rerun imediato descartaria o componente que grava o cookie
+    antes de o navegador executá-lo, e o F5 voltaria ao login."""
     from src.ui.login import exibir
 
-    enviado, email, senha = exibir()
+    espaco = st.empty()
+    with espaco.container():
+        enviado, email, senha = exibir()
 
     if enviado:
         if not email.strip() or not senha:
@@ -81,7 +87,7 @@ def _exibir_formulario_login() -> None:
             return
         try:
             login(email.strip(), senha)
-            st.rerun()
+            espaco.empty()
         except AuthApiError:
             st.error("E-mail ou senha inválidos.")
         except (RuntimeError, KeyError) as erro:
@@ -124,6 +130,7 @@ def require_login() -> None:
 
     st.session_state["ultima_atividade"] = time()
     marcar_atividade_cookie()
+    sincronizar_refresh_token_cookie()
 
     email = st.session_state[_CHAVE_USUARIO]["email"]
     nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
