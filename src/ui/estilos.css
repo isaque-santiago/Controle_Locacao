@@ -83,6 +83,7 @@
   --fs-corpo: 14.5px;
   --fs-secundario: 13px;
   --fs-legenda: 12px;
+  --fs-dado: 22px;
 
   /* Movimento */
   --transicao: 150ms ease;
@@ -225,6 +226,36 @@ h3 {font-size: var(--fs-subtitulo);}
 [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:hover {background: var(--superficie-hover);}
 [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) [data-testid="stHorizontalBlock"]:last-of-type,
 [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:last-of-type {border-bottom: none;}
+/* Dados de Clientes, Motos, Contratos e Vistorias: linhas maiores e mais legíveis.
+   O texto das linhas usa var(--fs-secundario); redefini-lo no escopo evita mexer nas páginas. */
+.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista {
+  --fs-secundario: var(--fs-corpo);
+}
+:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] {
+  padding-top: 13px; padding-bottom: 13px;
+}
+/* Primeira coluna (nome, placa, data) em destaque */
+:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child span:not(.chip-placa) {
+  font-weight: 600;
+}
+/* Cabeçalho da lista: rótulo pequeno em caixa alta, para não competir com os dados */
+:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] {
+  padding-top: 10px; padding-bottom: 10px;
+}
+:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] span {
+  font-size: var(--fs-legenda); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-2);
+}
+/* Fichas: rótulo discreto em cima (Primeiras Letras Maiúsculas) e valor grande embaixo */
+.campo {gap: 3px;}
+.campo > span:first-child, .cartao--faixa > div > span:first-child {
+  font-size: var(--fs-secundario) !important; letter-spacing: .02em; text-transform: capitalize;
+}
+.campo > span:not(:first-child) {font-size: var(--fs-corpo) !important; font-weight: 500; line-height: 1.35;}
+/* Dados das fichas em cartões: 22px; textos longos (e-mail, endereço) quebram em vez de vazar */
+.cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child) {
+  font-size: var(--fs-dado) !important; line-height: 1.25; overflow-wrap: anywhere;
+}
+.cartao .campo .mono, .cartao--faixa .campo .mono {white-space: normal;}
 /* Configurações: cartões de formulário de até 780px */
 .st-key-config_pagina {max-width: 780px; gap: var(--e5);}
 .st-key-config_pagina [data-testid="stForm"] {padding: 0; gap: var(--e5); background: transparent !important; border: 0; border-radius: 0;}
