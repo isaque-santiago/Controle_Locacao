@@ -2,6 +2,9 @@
 
 import streamlit as st
 
+from src.auth import require_login
+from src.ui.tema import aplicar
+
 st.set_page_config(page_title="Controle de Locação", layout="wide")
 
 paginas = [
@@ -17,4 +20,13 @@ paginas = [
     st.Page("pages/10_Configuracoes.py", title="Configurações"),
 ]
 
-st.navigation(paginas).run()
+pagina = st.navigation(paginas)
+
+# Tema, login e barra lateral são montados aqui, uma única vez por execução e sempre
+# na mesma posição da tela, em vez de refeitos por cada página (o que fazia a
+# barra lateral e o estilo piscarem a cada troca de página).
+aplicar()
+require_login()
+st.session_state["shell_pronto"] = True
+
+pagina.run()

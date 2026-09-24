@@ -2,10 +2,16 @@
 
 from datetime import date
 from decimal import Decimal
+from time import monotonic
 from typing import Optional
+
+import streamlit as st
 
 from src.domain.encargos import calcular_encargos
 from src.repositories import cobrancas, configuracoes, pagamentos
+
+_CHAVE_GERACAO = "cobrancas_geradas_em"
+_INTERVALO_GERACAO_SEGUNDOS = 3600
 
 
 def listar():
@@ -62,7 +68,17 @@ def registrar_pagamento(
 
 
 def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:
-    return cobrancas.gerar_pendentes_via_rpc(horizonte_dias)
+    """Gera as cobranças pendentes, no máximo uma vez por hora em cada sessão.
+
+    A RPC é idempotente e só atua em contratos sem prazo (exceção neste sistema);
+    rodá-la a cada abertura do Dashboard era uma escrita a mais no banco por página."""
+    agora = monotonic()
+    ultima = st.session_state.get(_CHAVE_GERACAO)
+    if ultima is not None and agora - ultima < _INTERVALO_GERACAO_SEGUNDOS:
+        return {"cobrancas_geradas": 0}
+    resultado = cobrancas.gerar_pendentes_via_rpc(horizonte_dias)
+    st.session_state[_CHAVE_GERACAO] = agora
+    return resultado
 
 
 def historico_pagamentos(cobranca_id):

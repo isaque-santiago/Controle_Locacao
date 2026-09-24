@@ -5,11 +5,12 @@ Registrar manutenção sempre passa pela RPC (grava manutencao + itens + plano
 """
 
 from src.db import get_client
-from src.repositories.consultas import todos
+from src.repositories.consultas import invalida_cache, todos
 
 TABELA = "manutencoes"
 
 
+@invalida_cache
 def finalizar(manutencao_id, status, data_saida, km):
     return (
         get_client()
@@ -50,6 +51,7 @@ def obter(manutencao_id: str):
     return resposta.data if resposta else None
 
 
+@invalida_cache
 def registrar_via_rpc(payload: dict) -> dict:
     resposta = (
         get_client().rpc("rpc_registrar_manutencao", {"payload": payload}).execute()

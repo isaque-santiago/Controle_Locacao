@@ -3,6 +3,7 @@
 from pathlib import PurePath
 from uuid import uuid4
 from src.db import get_client
+from src.repositories.consultas import invalida_cache
 
 TABELA = "vistoria_fotos"
 BUCKET = "vistorias"
@@ -15,6 +16,7 @@ def listar_por_vistoria(vistoria_id: str):
     return resposta.data
 
 
+@invalida_cache
 def criar(dados: dict):
     resposta = get_client().table(TABELA).insert(dados).execute()
     return resposta.data[0]

@@ -1,6 +1,7 @@
 """CRUD da tabela itens_manutencao (catálogo)."""
 
 from src.db import get_client
+from src.repositories.consultas import invalida_cache
 
 TABELA = "itens_manutencao"
 
@@ -17,11 +18,13 @@ def obter(item_id: str):
     return resposta.data if resposta else None
 
 
+@invalida_cache
 def criar(dados: dict):
     resposta = get_client().table(TABELA).insert(dados).execute()
     return resposta.data[0]
 
 
+@invalida_cache
 def atualizar(item_id: str, dados: dict):
     resposta = get_client().table(TABELA).update(dados).eq("id", item_id).execute()
     return resposta.data[0]

@@ -1,7 +1,7 @@
 """CRUD (somente inserção e leitura) da tabela pagamentos."""
 
 from src.db import get_client
-from src.repositories.consultas import todos
+from src.repositories.consultas import invalida_cache, todos
 
 TABELA = "pagamentos"
 _TAMANHO_PAGINA = 500
@@ -50,6 +50,7 @@ def obter(pagamento_id: str):
     return resposta.data if resposta else None
 
 
+@invalida_cache
 def criar(dados: dict):
     resposta = get_client().table(TABELA).insert(dados).execute()
     return resposta.data[0]

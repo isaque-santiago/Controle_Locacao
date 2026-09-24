@@ -99,7 +99,7 @@ def test_backup_contem_todas_tabelas(monkeypatch):
     monkeypatch.setattr(
         configuracoes,
         "todos",
-        lambda nome: [{"id": "1", "nome": "João"}] if nome == "clientes" else [],
+        lambda nome, **_: [{"id": "1", "nome": "João"}] if nome == "clientes" else [],
     )
     with ZipFile(BytesIO(configuracoes.backup())) as arquivo:
         assert all(t + ".csv" in arquivo.namelist() for t in configuracoes.TABELAS)
@@ -130,3 +130,81 @@ def test_paginacao_continua_mesmo_com_limite_menor_do_servidor(monkeypatch):
 
     monkeypatch.setattr(consultas, "get_client", lambda: Consulta())
     assert consultas.todos("motos") == list(range(1200))
+
+
+def test_leitura_usa_cache_e_escrita_invalida(monkeypatch):
+    chamadas = []
+    monkeypatch.setattr(
+        consultas,
+        "_ler_todos",
+        lambda tabela, ordem, selecao, filtros: chamadas.append(tabela) or [1],
+    )
+    consultas.limpar_cache()
+
+    assert consultas.todos("tabela_cache") == [1]
+    assert consultas.todos("tabela_cache") == [1]
+    assert chamadas == ["tabela_cache"]
+
+    @consultas.invalida_cache
+    def escrever():
+        return "ok"
+
+    assert escrever() == "ok"
+    consultas.todos("tabela_cache")
+    assert chamadas == ["tabela_cache", "tabela_cache"]
+
+    consultas.todos("tabela_cache", usar_cache=False)
+    assert len(chamadas) == 3
+    consultas.limpar_cache()
+
+
+def test_ordem_composta_nao_acrescenta_id(monkeypatch):
+    ordens = []
+
+    class Consulta:
+        def table(self, *_):
+            return self
+
+        def select(self, *_):
+            return self
+
+        def order(self, coluna):
+            ordens.append(coluna)
+            return self
+
+        def range(self, *_):
+            return self
+
+        def execute(self):
+            from types import SimpleNamespace
+
+            return SimpleNamespace(data=[])
+
+    monkeypatch.setattr(consultas, "get_client", lambda: Consulta())
+    consultas.todos("vw_sem_id", ("moto_id", "item_id"), usar_cache=False)
+    assert ordens == ["moto_id", "item_id"]
+    ordens.clear()
+    consultas.todos("motos", "placa", usar_cache=False)
+    assert ordens == ["placa", "id"]
+
+
+def test_geracao_de_cobrancas_roda_no_maximo_uma_vez_por_hora(monkeypatch):
+    from src.services import cobrancas
+
+    chamadas = []
+    relogio = [100.0]
+    monkeypatch.setattr(
+        cobrancas.cobrancas,
+        "gerar_pendentes_via_rpc",
+        lambda horizonte: chamadas.append(horizonte) or {"cobrancas_geradas": 2},
+    )
+    monkeypatch.setattr(cobrancas, "monotonic", lambda: relogio[0])
+    monkeypatch.setattr(cobrancas.st, "session_state", {})
+
+    assert cobrancas.gerar_cobrancas_pendentes() == {"cobrancas_geradas": 2}
+    assert cobrancas.gerar_cobrancas_pendentes() == {"cobrancas_geradas": 0}
+    assert len(chamadas) == 1
+
+    relogio[0] += cobrancas._INTERVALO_GERACAO_SEGUNDOS + 1
+    cobrancas.gerar_cobrancas_pendentes()
+    assert len(chamadas) == 2

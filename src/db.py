@@ -1,5 +1,7 @@
 """Fábrica do cliente Supabase (com sessão do usuário, para valer o RLS)."""
 
+from time import monotonic
+
 import streamlit as st
 from streamlit_cookies_controller import CookieController
 from supabase import Client, create_client
@@ -13,6 +15,10 @@ _COOKIE_ULTIMA_ATIVIDADE = "sb_ultima_atividade"
 _COOKIE_TEMA_ESCURO = "tema_escuro"
 _VALIDADE_TEMA_SEGUNDOS = 60 * 60 * 24 * 365
 _LIMITE_INATIVIDADE_SEGUNDOS = 1800
+# Cada .set() monta um componente novo no navegador (iframe + rerun extra); por isso
+# o cookie de atividade só é regravado de tempos em tempos, bem antes de expirar.
+_RENOVACAO_ATIVIDADE_SEGUNDOS = 300
+_CHAVE_RENOVACAO_ATIVIDADE = "cookie_atividade_gravado_em"
 _VALIDADE_LEMBRAR_SEGUNDOS = 60 * 60 * 24 * 7
 
 
@@ -103,7 +109,15 @@ def get_refresh_token_cookie() -> str | None:
 
 
 def marcar_atividade_cookie() -> None:
-    """Renova o cookie de atividade (expira sozinho após inatividade)."""
+    """Renova o cookie de atividade (expira sozinho após inatividade).
+
+    A gravação é espaçada (a cada 5 min): a inatividade real de 30 min continua
+    valendo, com tolerância de até 5 min a mais após um F5."""
+    agora = monotonic()
+    ultima = st.session_state.get(_CHAVE_RENOVACAO_ATIVIDADE)
+    if ultima is not None and agora - ultima < _RENOVACAO_ATIVIDADE_SEGUNDOS:
+        return
+    st.session_state[_CHAVE_RENOVACAO_ATIVIDADE] = agora
     _get_cookie_controller().set(
         _COOKIE_ULTIMA_ATIVIDADE,
         "1",

@@ -5,6 +5,7 @@ numa transação só) — não existe inserção direta aqui.
 """
 
 from src.db import get_client
+from src.repositories.consultas import invalida_cache
 
 TABELA = "vistorias"
 
@@ -57,6 +58,7 @@ def obter_por_contrato_e_tipo(contrato_id: str, tipo: str):
     return resposta.data if resposta else None
 
 
+@invalida_cache
 def registrar_via_rpc(payload: dict) -> dict:
     resposta = get_client().rpc("rpc_registrar_vistoria", {"payload": payload}).execute()
     return resposta.data
