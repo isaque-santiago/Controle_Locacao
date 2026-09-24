@@ -316,6 +316,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   background: var(--chip-fundo) !important; border: none !important; border-radius: var(--raio-sm) !important; color: var(--chip-texto) !important;
   font-family: var(--fonte-mono) !important; font-weight: 600 !important; letter-spacing: .05em; min-height: 0 !important; padding: 3px var(--e2) !important;
 }
+[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button:hover:not(:disabled) {
+  background: var(--chip-fundo) !important; color: var(--chip-texto) !important; box-shadow: 0 0 0 2px var(--linha-forte);
+}
 [data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
 [data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
 /* Pílulas de filtro: ativa (primary) e inativa (secondary) com o mesmo tamanho */
