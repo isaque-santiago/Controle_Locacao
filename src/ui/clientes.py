@@ -119,8 +119,8 @@ def _exibir_lista():
     col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
     col_titulo.markdown(
         f"""
-        <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Clientes</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">{len(registros)} cliente(s) cadastrado(s)</div>
+        <h1 class="rotulo pagina-titulo">Clientes</h1>
+        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{len(registros)} cliente(s) cadastrado(s)</div>
         """,
         unsafe_allow_html=True,
     )
@@ -170,41 +170,41 @@ def _exibir_lista():
         cab = st.columns([1.6, 1.3, 1.3, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Nome", "CPF", "WhatsApp", "CNH", "Status", "Moto atual", ""]):
             coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+                f'<span class="fs-secundario texto-2">{rotulo}</span>',
                 unsafe_allow_html=True,
             )
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum cliente encontrado.</div>',
+                '<div class="vazio vazio--linha">Nenhum cliente encontrado.</div>',
                 unsafe_allow_html=True,
             )
         for cliente in pagina_atual:
             linha = st.columns([1.6, 1.3, 1.3, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
-            cor_avatar = "#1E2227" if cliente["status"] == "ativo" else "#585F66"
+            cor_avatar = "var(--chip-fundo)" if cliente["status"] == "ativo" else "var(--avatar-inativo)"
             linha[0].markdown(
                 f"""
                 <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:26px;height:26px;border-radius:50%;background:{cor_avatar};color:#FAFAF9;
-                              display:flex;align-items:center;justify-content:center;font-size:11px;
+                  <div style="width:26px;height:26px;border-radius:50%;background:{cor_avatar};color:var(--chip-texto);
+                              display:flex;align-items:center;justify-content:center;font-size:var(--fs-legenda);
                               font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
-                  <span style="font-size:13px;">{_html(cliente['nome'])}</span>
+                  <span style="font-size:var(--fs-secundario);">{_html(cliente['nome'])}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
             linha[1].markdown(
-                f'<span class="mono" style="font-size:13px;color:#585F66;">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>',
+                f'<span class="mono" class="fs-secundario texto-2">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>',
                 unsafe_allow_html=True,
             )
             linha[2].markdown(
-                f'<span class="mono" style="font-size:13px;">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>',
+                f'<span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>',
                 unsafe_allow_html=True,
             )
             situacao_cnh_cliente = situacao_cnh(
                 _data_iso(cliente.get("cnh_validade")), hoje, config["alerta_cnh_dias"]
             )
             if situacao_cnh_cliente == "sem_cnh":
-                linha[3].markdown('<span style="font-size:13px;color:#9AA0A6;">—</span>', unsafe_allow_html=True)
+                linha[3].markdown('<span style="font-size:var(--fs-secundario);color:var(--texto-3);">—</span>', unsafe_allow_html=True)
             else:
                 linha[3].markdown(
                     selo_situacao(formatar_data(cliente["cnh_validade"]), situacao_cnh_cliente),
@@ -216,7 +216,7 @@ def _exibir_lista():
             )
             moto_id = contratos_ativos.get(cliente["id"])
             linha[5].markdown(
-                chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span style="color:#9AA0A6;">—</span>',
+                chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span style="color:var(--texto-3);">—</span>',
                 unsafe_allow_html=True,
             )
             if linha[6].button("→", key=f"ficha_cli_{cliente['id']}", help="Ver ficha"):
@@ -248,9 +248,9 @@ def _card_contrato_ativo(cliente_id):
     if not contrato:
         st.markdown(
             """
-            <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+            <div class="cartao">
               <h3 class="rotulo" style="margin:0 0 6px;font-size:14px;">Contrato ativo</h3>
-              <div style="font-size:13px;color:#585F66;">Nenhum contrato ativo para este cliente.</div>
+              <div class="fs-secundario texto-2">Nenhum contrato ativo para este cliente.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -266,7 +266,7 @@ def _card_contrato_ativo(cliente_id):
 
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+        <div class="cartao">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>
           </div>
@@ -274,13 +274,13 @@ def _card_contrato_ativo(cliente_id):
             {chip_placa(moto['placa'], 'grande') if moto else ''}
             <div>
               <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
-              <div style="font-size:12px;color:#585F66;">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
+              <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">valor / período</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">próxima cobrança</span><span class="mono" style="font-size:13px;">{proxima}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">caução</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
           </div>
         </div>
         """,
@@ -293,15 +293,15 @@ def _card_contrato_ativo(cliente_id):
 def _card_dados_pessoais(cliente):
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+        <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">cnh</span><span class="mono" style="font-size:13px;">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">validade cnh</span><span class="mono" style="font-size:13px;">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">telefone</span><span class="mono" style="font-size:13px;">{_html(cliente.get('telefone'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{_html(cliente.get('email'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">endereço</span><span style="font-size:13px;">{_html(cliente.get('endereco'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">cpf</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">cnh</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">validade cnh</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">telefone</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('telefone'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">e-mail</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('email'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">endereço</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('endereco'))}</span></div>
           </div>
         </div>
         """,
@@ -326,12 +326,12 @@ def _card_situacao_financeira(parcelas, historicos):
     )
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;height:100%;">
+        <div class="cartao" style="height:100%;">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Situação financeira</h3>
           <div style="display:flex;flex-direction:column;gap:14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">pago no histórico</span><span class="mono" style="font-size:18px;color:#2F9E6E;">{formatar_moeda(pago)}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">atrasado</span><span class="mono" style="font-size:18px;color:{'#D64545' if atrasado else '#1E2227'};">{formatar_moeda(atrasado)}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">pago no histórico</span><span class="mono" style="font-size:18px;color:var(--sucesso-texto);">{formatar_moeda(pago)}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">atrasado</span><span class="mono" style="font-size:18px;color:{'var(--perigo-texto)' if atrasado else 'var(--texto)'};">{formatar_moeda(atrasado)}</span></div>
           </div>
         </div>
         """,
@@ -358,12 +358,12 @@ def _aba_contratos(cliente):
         cab = st.columns(larguras, vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Moto", "Início", "Fim", "Status", "Valor / período"]):
             coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+                f'<span class="fs-secundario texto-2">{rotulo}</span>',
                 unsafe_allow_html=True,
             )
         if not registros:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum registro encontrado.</div>',
+                '<div class="vazio vazio--linha">Nenhum registro encontrado.</div>',
                 unsafe_allow_html=True,
             )
         for c in registros:
@@ -378,19 +378,19 @@ def _aba_contratos(cliente):
                 ):
                     abrir_ficha_contrato(c["id"])
                 col_modelo.markdown(
-                    f'<span style="font-size:13px;">{_html(moto["marca"])} {_html(moto["modelo"])}</span>',
+                    f'<span style="font-size:var(--fs-secundario);">{_html(moto["marca"])} {_html(moto["modelo"])}</span>',
                     unsafe_allow_html=True,
                 )
             else:
                 linha[0].markdown("—")
             linha[1].markdown(
-                f'<span class="mono" style="font-size:13px;">{formatar_data(c["data_inicio"])}</span>',
+                f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(c["data_inicio"])}</span>',
                 unsafe_allow_html=True,
             )
             linha[2].markdown(
-                f'<span class="mono" style="font-size:13px;">{formatar_data(c["data_encerramento"])}</span>'
+                f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(c["data_encerramento"])}</span>'
                 if c["data_encerramento"]
-                else '<span style="color:#9AA0A6;">—</span>',
+                else '<span style="color:var(--texto-3);">—</span>',
                 unsafe_allow_html=True,
             )
             linha[3].markdown(
@@ -401,7 +401,7 @@ def _aba_contratos(cliente):
                 unsafe_allow_html=True,
             )
             linha[4].markdown(
-                f'<div style="text-align:right;"><span class="mono" style="font-size:13px;">{formatar_moeda(c["valor_periodo"])}</span></div>',
+                f'<div style="text-align:right;"><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(c["valor_periodo"])}</span></div>',
                 unsafe_allow_html=True,
             )
 
@@ -431,9 +431,9 @@ def _aba_pagamentos(parcelas, historicos):
             [
                 f'<span class="mono">{formatar_data(c["vencimento"])}</span>',
                 _html(c["tipo"].capitalize()),
-                f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span style="color:#9AA0A6;">—</span>',
-                _html(ultimo["forma"].capitalize()) if ultimo else '<span style="color:#9AA0A6;">—</span>',
-                f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span style="color:#9AA0A6;">—</span>',
+                f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span style="color:var(--texto-3);">—</span>',
+                _html(ultimo["forma"].capitalize()) if ultimo else '<span style="color:var(--texto-3);">—</span>',
+                f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span style="color:var(--texto-3);">—</span>',
                 f'<span class="mono">{formatar_moeda(c["valor"])}</span>',
                 situacao_html,
             ]
@@ -464,15 +464,15 @@ def _exibir_ficha(cliente_id):
 
     col_cab, col_acoes = st.columns([3, 1], vertical_alignment="center")
     with col_cab:
-        cor_avatar = "#1E2227" if cliente["status"] == "ativo" else "#585F66"
+        cor_avatar = "var(--chip-fundo)" if cliente["status"] == "ativo" else "var(--avatar-inativo)"
         st.markdown(
             f"""
             <div style="display:flex;align-items:center;gap:16px;">
-              <div style="width:48px;height:48px;border-radius:50%;background:{cor_avatar};color:#FAFAF9;
+              <div style="width:48px;height:48px;border-radius:50%;background:{cor_avatar};color:var(--chip-texto);
                           display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
               <div>
                 <h1 class="rotulo" style="margin:0;font-size:24px;">{_html(cliente['nome'])}</h1>
-                <div style="font-size:13px;margin-top:3px;">
+                <div style="font-size:var(--fs-secundario);margin-top:3px;">
                   {selo_situacao(linha_status, _situacao_selo_cliente(cliente["status"]))}
                 </div>
               </div>
@@ -488,7 +488,7 @@ def _exibir_ficha(cliente_id):
     config = configuracoes.obter()
     situacao_cnh_cliente = situacao_cnh(_data_iso(cliente.get("cnh_validade")), hoje_br(), config["alerta_cnh_dias"])
     cnh_html = (
-        f'<span style="font-size:13px;color:#9AA0A6;">Sem CNH cadastrada</span>'
+        f'<span style="font-size:var(--fs-secundario);color:var(--texto-3);">Sem CNH cadastrada</span>'
         if situacao_cnh_cliente == "sem_cnh"
         else selo_situacao(
             f"categoria {cliente.get('cnh_categoria') or '—'} · válida até {formatar_data(cliente['cnh_validade'])}",
@@ -497,19 +497,19 @@ def _exibir_ficha(cliente_id):
     )
     st.markdown(
         f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;margin-bottom:20px;">
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
+        <div class="cartao cartao--faixa" style="margin-bottom:20px;">
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">cpf</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
           </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">whatsapp</span><span class="mono" style="font-size:13px;">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">whatsapp</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
           </div>
-          <div style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:4px;justify-content:center;">
-            <span class="rotulo" style="font-size:11px;color:#585F66;">cnh</span>
+          <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;justify-content:center;">
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">cnh</span>
             {cnh_html}
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{_html(cliente.get('email'))}</span>
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">e-mail</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('email'))}</span>
           </div>
         </div>
         """,

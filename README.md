@@ -308,4 +308,11 @@ registrada. Os cálculos financeiros usam `Decimal`; as células do Excel são n
 
 ## Estilização do painel
 
-O acabamento compartilhado está em `src/ui/estilos.css`, carregado por `src/ui/tema.py`. Mantém a identidade grafite/amarelo, com indicadores responsivos, navegação com ícones, foco visível por teclado, formulários uniformes e tabelas com rolagem horizontal em telas estreitas. O modo escuro redefine as variáveis `--painel-*` e reaproveita a mesma paleta. A tela de entrada apresenta as áreas da operação sem alterar a autenticação.
+A interface segue um design system em camadas: **tokens → `estilos.css` → componentes → páginas**.
+
+- `src/ui/estilos.css` é o design system: tokens (`:root` com cores, espaçamento 4–48px, raios 6/8/10/14/18px, sombras, tipografia) e, na ordem, base, tipografia, layout, barra lateral, cartões, KPI, botões, campos, tabelas, selos, alertas, modais, estados vazios, login e responsivo.
+- `src/ui/estilos_escuro.css` só redefine os tokens e ajusta os widgets nativos do Streamlit; regras novas devem usar `var(--…)`, nunca cores fixas.
+- `src/ui/tema.py` carrega os dois arquivos e decide o modo (claro, escuro ou o do sistema).
+- `src/ui/componentes.py` monta o HTML com classes do design system: `cabecalho_pagina`, `kpi`/`kpi_grade`, `cartao_html`, `selo_situacao`, `chip_placa`, `item_alerta`, `estado_vazio`/`mostrar_vazio`, `tabela_html`, barras de ocupação e proporção.
+
+Botões: primário (grafite no claro, amarelo no escuro), secundário, terciário e destrutivo (contorno vermelho; use a chave `perigo_*` no `st.button`). Estados de status usam sempre bolinha + texto, sem depender só da cor.

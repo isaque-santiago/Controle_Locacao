@@ -39,7 +39,7 @@ def _salvo(mensagem="Pagamento registrado."):
 
 
 def _texto(valor, cor="", direita=False, mono=False):
-    estilo = f"font-size:13px;{cor}"
+    estilo = f"font-size:var(--fs-secundario);{cor}"
     if direita:
         estilo += "text-align:right;display:block;"
     return f'<span class="{"mono" if mono else ""}" style="{estilo}">{valor}</span>'
@@ -52,7 +52,7 @@ def _cartao(chave, colunas, linhas, acoes=None):
     with st.container(key=f"cobrancas_card_{chave}"):
         cab = st.columns(pesos, vertical_alignment="center")
         for coluna, (rotulo, _, _) in zip(cab, colunas):
-            coluna.markdown(_texto(rotulo, "color:#585F66;"), unsafe_allow_html=True)
+            coluna.markdown(_texto(rotulo, "color:var(--texto-2);"), unsafe_allow_html=True)
         for c in linhas:
             linha = st.columns(pesos, vertical_alignment="center")
             for coluna, (_, _, desenhar) in zip(linha, colunas):
@@ -96,7 +96,7 @@ def _acoes_abertas(chave):
 def _dialog_pagamento(c):
     st.markdown(
         f'{chip_placa(c["placa"])} <span style="margin-left:8px;">{c["cliente"]}</span>'
-        f'<div style="color:#585F66;font-size:13px;margin-top:4px;">'
+        f'<div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:4px;">'
         f'{c["tipo"].capitalize()} · vencimento {formatar_data(c["vencimento"])}</div>',
         unsafe_allow_html=True,
     )
@@ -109,11 +109,11 @@ def _dialog_pagamento(c):
     linha = "display:flex;justify-content:space-between;"
     st.markdown(
         f"""
-        <div style="background:#EEF0F0;border-radius:2px;padding:12px 14px;font-size:13px;">
+        <div style="background:var(--fundo);border-radius:var(--raio-sm);padding:12px 14px;font-size:var(--fs-secundario);">
           <div style="{linha}"><span>Valor original (saldo)</span><span class="mono">{formatar_moeda(c["saldo"])}</span></div>
           <div style="{linha}"><span>Multa</span><span class="mono">{formatar_moeda(enc["multa"])}</span></div>
           <div style="{linha}"><span>Juros ({enc["dias_atraso"]} dia(s) de atraso)</span><span class="mono">{formatar_moeda(enc["juros"])}</span></div>
-          <div style="{linha}font-weight:600;border-top:1px solid rgba(30,34,39,.12);margin-top:6px;padding-top:6px;"><span>Total</span><span class="mono">{formatar_moeda(enc["total"])}</span></div>
+          <div style="{linha}font-weight:600;border-top:1px solid var(--linha);margin-top:6px;padding-top:6px;"><span>Total</span><span class="mono">{formatar_moeda(enc["total"])}</span></div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -177,7 +177,7 @@ def _aba_pagas(linhas):
         _colunas_base()
         + [
             ("Pago em", 1.1, lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
-            ("Forma", 1.1, lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:#585F66;")),
+            ("Forma", 1.1, lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:var(--texto-2);")),
             ("Valor", 1.1, _moeda("valor")),
         ],
         linhas[:_LIMITE_PAGAS],
@@ -187,7 +187,7 @@ def _aba_pagas(linhas):
 
 
 def _aba_atrasadas(linhas):
-    dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "color:#D64545;")
+    dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "color:var(--perigo-texto);")
     encargos = lambda c: _texto(
         formatar_moeda(c["encargos"]["multa"] + c["encargos"]["juros"]),
         direita=True,
@@ -219,7 +219,7 @@ def _aba_hoje(linhas):
 
 def _aba_proximos(linhas):
     primeira = lambda c: (
-        _texto("1ª parcela", "color:#585F66;") if c.get("numero") == 1 else ""
+        _texto("1ª parcela", "color:var(--texto-2);") if c.get("numero") == 1 else ""
     )
     _cartao(
         "proximos",
@@ -262,8 +262,8 @@ def exibir():
         )
         st.markdown(
             f"""
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Cobranças</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">{subtitulo}</div>
+            <h1 class="rotulo pagina-titulo">Cobranças</h1>
+            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{subtitulo}</div>
             """,
             unsafe_allow_html=True,
         )
@@ -294,6 +294,6 @@ def exibir():
                     _DESENHO_ABA[aba](por_aba[aba])
                 else:
                     st.markdown(
-                        f'<div style="color:#585F66;font-size:13px;padding:8px 0;">{_VAZIO[aba]}</div>',
+                        f'<div style="color:var(--texto-2);font-size:var(--fs-secundario);padding:8px 0;">{_VAZIO[aba]}</div>',
                         unsafe_allow_html=True,
                     )

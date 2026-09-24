@@ -38,17 +38,17 @@ def _km(valor):
 
 
 def _mono(texto, estilo=""):
-    return f'<span class="mono" style="font-size:13px;{estilo}">{texto}</span>'
+    return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
 def _texto(texto, estilo=""):
-    return f'<span style="font-size:13px;{estilo}">{texto}</span>'
+    return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
 def _cabecalho_tabela(colunas, rotulos):
     for coluna, rotulo in zip(colunas, rotulos):
         coluna.markdown(
-            f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+            f'<span class="fs-secundario texto-2">{rotulo}</span>',
             unsafe_allow_html=True,
         )
 
@@ -169,7 +169,7 @@ def _dialog_registrar():
         item = next(i for i in itens if i["id"] == id)
         c_nome, c_qtd, c_valor, c_sub = st.columns([3, 1, 1.4, 1.4], vertical_alignment="center")
         c_nome.markdown(
-            _texto(item["nome"]) + ' <span style="font-size:12px;color:#9AA0A6;">(plano)</span>',
+            _texto(item["nome"]) + ' <span style="font-size:var(--fs-legenda);color:var(--texto-3);">(plano)</span>',
             unsafe_allow_html=True,
         )
         qtd = c_qtd.text_input("Quantidade", "1", key=f"{_PREFIXO_REGISTRO}qtd_{id}", label_visibility="collapsed")
@@ -206,12 +206,12 @@ def _dialog_registrar():
     )
     total = pecas + _valor_tolerante(mao_obra)
     col_pecas.markdown(
-        f'<div class="campo"><span style="font-size:12px;color:#585F66;">custo de peças</span>'
+        f'<div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">custo de peças</span>'
         f'{_mono(formatar_moeda(pecas), "font-size:15px;")}</div>',
         unsafe_allow_html=True,
     )
     col_total.markdown(
-        f'<div class="campo"><span style="font-size:12px;color:#585F66;">custo total</span>'
+        f'<div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">custo total</span>'
         f'{_mono(formatar_moeda(total), "font-size:18px;font-weight:600;")}</div>',
         unsafe_allow_html=True,
     )
@@ -317,7 +317,7 @@ def _restante(alerta):
     if alerta.get("dias_restantes") is not None:
         partes.append(f"{alerta['dias_restantes']} dias")
         negativo = negativo or alerta["dias_restantes"] < 0
-    cor = "color:#D64545;" if negativo else ""
+    cor = "color:var(--perigo-texto);" if negativo else ""
     return f'<span class="mono" style="{cor}">{" / ".join(partes) or "—"}</span>'
 
 
@@ -395,7 +395,7 @@ def _aba_historico(frota):
         )
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">'
+                '<div class="vazio vazio--linha">'
                 "Nenhuma manutenção encontrada.</div>",
                 unsafe_allow_html=True,
             )
@@ -406,7 +406,7 @@ def _aba_historico(frota):
             linha[1].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
             linha[2].markdown(_texto(registro["tipo"].capitalize()), unsafe_allow_html=True)
             linha[3].markdown(_texto(registro["descricao"]), unsafe_allow_html=True)
-            linha[4].markdown(_texto(registro.get("oficina") or "—", "color:#585F66;"), unsafe_allow_html=True)
+            linha[4].markdown(_texto(registro.get("oficina") or "—", "color:var(--texto-2);"), unsafe_allow_html=True)
             linha[5].markdown(
                 _mono(formatar_moeda(registro["custo_total"]), "text-align:right;display:block;"),
                 unsafe_allow_html=True,
@@ -424,12 +424,12 @@ def _aba_historico(frota):
 def _interruptor(ativo):
     if ativo:
         return (
-            '<div style="width:34px;height:18px;border-radius:10px;background:#1E2227;position:relative;">'
-            '<div style="width:14px;height:14px;border-radius:50%;background:#FAFAF9;position:absolute;top:2px;right:2px;"></div></div>'
+            '<div style="width:34px;height:18px;border-radius:var(--raio-md);background:var(--chip-fundo);position:relative;">'
+            '<div style="width:14px;height:14px;border-radius:50%;background:var(--superficie);position:absolute;top:2px;right:2px;"></div></div>'
         )
     return (
-        '<div style="width:34px;height:18px;border-radius:10px;border:1px solid rgba(30,34,39,0.12);position:relative;">'
-        '<div style="width:14px;height:14px;border-radius:50%;background:#9AA0A6;position:absolute;top:1px;left:2px;"></div></div>'
+        '<div style="width:34px;height:18px;border-radius:var(--raio-md);border:1px solid var(--linha);position:relative;">'
+        '<div style="width:14px;height:14px;border-radius:50%;background:var(--neutro);position:absolute;top:1px;left:2px;"></div></div>'
     )
 
 
@@ -447,22 +447,22 @@ def _aba_catalogo(itens):
         )
         if not itens:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">'
+                '<div class="vazio vazio--linha">'
                 "Nenhum item no catálogo.</div>",
                 unsafe_allow_html=True,
             )
         for item in itens:
-            muted = "" if item["ativo"] else "color:#585F66;"
+            muted = "" if item["ativo"] else "color:var(--texto-2);"
             linha = st.columns(larguras, vertical_alignment="center")
             linha[0].markdown(_texto(item["nome"], muted), unsafe_allow_html=True)
             linha[1].markdown(
-                _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "color:#9AA0A6;"),
+                _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "color:var(--texto-3);"),
                 unsafe_allow_html=True,
             )
             linha[2].markdown(
                 _mono(str(item["intervalo_dias"]), muted)
                 if item["intervalo_dias"]
-                else _texto("—", "color:#9AA0A6;"),
+                else _texto("—", "color:var(--texto-3);"),
                 unsafe_allow_html=True,
             )
             linha[3].markdown(_interruptor(item["ativo"]), unsafe_allow_html=True)
@@ -483,8 +483,8 @@ def exibir():
         col_titulo, col_botao = st.columns([5, 1.4], vertical_alignment="center")
         col_titulo.markdown(
             f"""
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Manutenção</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">{vencidas} vencida(s) · {proximas} próxima(s)</div>
+            <h1 class="rotulo pagina-titulo">Manutenção</h1>
+            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{vencidas} vencida(s) · {proximas} próxima(s)</div>
             """,
             unsafe_allow_html=True,
         )

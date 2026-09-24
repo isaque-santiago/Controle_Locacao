@@ -82,12 +82,12 @@ _FILTROS_TIPO = [("todas", "Todas"), ("entrega", "Entrega"), ("devolucao", "Devo
 _TIPO_ROTULO = {"entrega": "Entrega", "devolucao": "Devolução"}
 # Estado do item do checklist: OK verde; avaria/ausente vermelho; N/A neutro.
 _ESTADO_ITEM = {
-    "ok": ("OK", "#2F9E6E"),
-    "avaria": ("Avaria", "#D64545"),
-    "ausente": ("Ausente", "#D64545"),
-    "nao_aplicavel": ("N/A", "#9AA0A6"),
+    "ok": ("OK", "var(--sucesso-texto)"),
+    "avaria": ("Avaria", "var(--perigo-texto)"),
+    "ausente": ("Ausente", "var(--perigo-texto)"),
+    "nao_aplicavel": ("N/A", "var(--texto-3)"),
 }
-_LINHA = "rgba(30,34,39,0.12)"
+_LINHA = "var(--linha)"
 _POR_PAGINA = 8
 _PREFIXO_REGISTRO = "vistreg_"
 _FUSO = ZoneInfo("America/Sao_Paulo")
@@ -107,17 +107,17 @@ def _combustivel(valor):
 
 
 def _mono(texto, estilo=""):
-    return f'<span class="mono" style="font-size:13px;{estilo}">{texto}</span>'
+    return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
 def _texto(texto, estilo=""):
-    return f'<span style="font-size:13px;{estilo}">{texto}</span>'
+    return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
 def _cabecalho_tabela(colunas, rotulos):
     for coluna, rotulo in zip(colunas, rotulos):
         coluna.markdown(
-            f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+            f'<span class="fs-secundario texto-2">{rotulo}</span>',
             unsafe_allow_html=True,
         )
 
@@ -340,7 +340,7 @@ def _rotulo_contrato(contrato, frota, pessoas):
     moto = frota.get(contrato["moto_id"])
     nome = escape(pessoas.get(contrato["cliente_id"], "—"))
     placa = chip_placa(moto["placa"]) if moto else "—"
-    return f'{_texto(nome)} <span style="color:#585F66;">→</span> {placa}'
+    return f'{_texto(nome)} <span style="color:var(--texto-2);">→</span> {placa}'
 
 
 def _abrir_comparacao(contrato_id):
@@ -369,8 +369,8 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
     col_titulo, col_botao = st.columns([5, 1.6], vertical_alignment="center")
     col_titulo.markdown(
         """
-        <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Vistorias</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">Entregas e devoluções registradas</div>
+        <h1 class="rotulo pagina-titulo">Vistorias</h1>
+        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">Entregas e devoluções registradas</div>
         """,
         unsafe_allow_html=True,
     )
@@ -412,7 +412,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
         )
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">'
+                '<div class="vazio vazio--linha">'
                 "Nenhuma vistoria encontrada.</div>",
                 unsafe_allow_html=True,
             )
@@ -426,7 +426,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
             linha[3].markdown(_mono(_km(v["km"])), unsafe_allow_html=True)
             linha[4].markdown(_texto(_combustivel(v.get("nivel_combustivel"))), unsafe_allow_html=True)
             linha[5].markdown(
-                _texto(escape(avarias), "color:#D64545;") if avarias else _texto("Nenhuma", "color:#585F66;"),
+                _texto(escape(avarias), "color:var(--perigo-texto);") if avarias else _texto("Nenhuma", "color:var(--texto-2);"),
                 unsafe_allow_html=True,
             )
             if contrato and linha[6].button("›", key=f"ver_vist_{v['id']}", help="Ver comparação"):
@@ -439,13 +439,13 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
 
 def _campo(rotulo, valor_html):
     return (
-        f'<div class="campo"><span style="font-size:11px;color:#585F66;">{rotulo}</span>'
-        f'<span style="font-size:13px;">{valor_html}</span></div>'
+        f'<div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">{rotulo}</span>'
+        f'<span style="font-size:var(--fs-secundario);">{valor_html}</span></div>'
     )
 
 
 def _miniatura(url, legenda):
-    estilo = "width:90px;height:66px;border-radius:4px;"
+    estilo = "width:90px;height:66px;border-radius:var(--raio-sm);"
     if not url:
         return f'<div style="{estilo}background:{_LINHA};"></div>'
     return (
@@ -466,33 +466,33 @@ def _html_cartao(titulo, vistoria, diferentes):
     avarias = resumo_avarias(vistoria)
     linhas = ""
     for indice, (chave, estado) in enumerate(itens):
-        rotulo, cor = _ESTADO_ITEM.get(estado, (str(estado), "#9AA0A6"))
-        fundo = "background:rgba(242,183,5,0.12);" if chave in diferentes else ""
+        rotulo, cor = _ESTADO_ITEM.get(estado, (str(estado), "var(--texto-3)"))
+        fundo = "background:var(--alerta-fundo);" if chave in diferentes else ""
         borda = "" if indice == len(itens) - 1 else f"border-bottom:1px solid {_LINHA};"
         linhas += (
             f'<div style="display:flex;align-items:center;justify-content:space-between;'
-            f'padding:7px 10px;{borda}{fundo}font-size:12px;">'
+            f'padding:7px 10px;{borda}{fundo}font-size:var(--fs-legenda);">'
             f'<span>{escape(rotulo_item(chave))}</span>'
             f'<span style="color:{cor};font-weight:600;">{escape(rotulo)}</span></div>'
         )
     checklist = (
-        f'<div style="font-size:11px;color:#585F66;margin-bottom:6px;">checklist</div>{linhas}'
+        f'<div style="font-size:var(--fs-legenda);color:var(--texto-2);margin-bottom:6px;">checklist</div>{linhas}'
         if linhas
-        else '<div style="font-size:12px;color:#585F66;">Checklist não preenchido.</div>'
+        else '<div style="font-size:var(--fs-legenda);color:var(--texto-2);">Checklist não preenchido.</div>'
     )
     fotos = "".join(_miniatura(_url_foto(f), f.get("legenda")) for f in vistoria.get("fotos", []))
-    fotos = fotos or '<span style="font-size:12px;color:#585F66;">Nenhuma foto anexada.</span>'
+    fotos = fotos or '<span style="font-size:var(--fs-legenda);color:var(--texto-2);">Nenhuma foto anexada.</span>'
     return f"""
-    <div style="background:#FAFAF9;border:1px solid {_LINHA};border-radius:2px;padding:20px 22px;">
+    <div style="background:var(--superficie);border:1px solid {_LINHA};border-radius:var(--raio-lg);padding:20px 22px;">
       <h3 class="rotulo" style="margin:0 0 14px;font-size:15px;">{titulo}</h3>
       <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px;">
         {_campo("data", _mono(formatar_data(vistoria["data"])))}
         {_campo("km", _mono(_km(vistoria["km"])))}
         {_campo("combustível", escape(_combustivel(vistoria.get("nivel_combustivel"))))}
-        {_campo("avarias", f'<span style="color:#D64545;">{escape(avarias)}</span>' if avarias else "Nenhuma")}
+        {_campo("avarias", f'<span style="color:var(--perigo-texto);">{escape(avarias)}</span>' if avarias else "Nenhuma")}
       </div>
       <div style="margin-bottom:16px;">{checklist}</div>
-      <div style="font-size:11px;color:#585F66;margin-bottom:6px;">fotos</div>
+      <div style="font-size:var(--fs-legenda);color:var(--texto-2);margin-bottom:6px;">fotos</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">{fotos}</div>
     </div>
     """
@@ -503,9 +503,9 @@ def _html_cartao_vazio(titulo, tipo):
         " — será registrada no encerramento do contrato." if tipo == "devolucao" else "."
     )
     return f"""
-    <div style="background:#FAFAF9;border:1px dashed {_LINHA};border-radius:2px;padding:20px 22px;">
-      <h3 class="rotulo" style="margin:0 0 8px;font-size:15px;color:#585F66;">{titulo}</h3>
-      <div style="font-size:13px;color:#585F66;">Ainda não realizada{complemento}</div>
+    <div style="background:var(--superficie);border:1px dashed {_LINHA};border-radius:var(--raio-sm);padding:20px 22px;">
+      <h3 class="rotulo" style="margin:0 0 8px;font-size:15px;color:var(--texto-2);">{titulo}</h3>
+      <div class="fs-secundario texto-2">Ainda não realizada{complemento}</div>
     </div>
     """
 
@@ -516,10 +516,10 @@ def _faixa_resumo(contrato, entrega, devolucao):
     )
     rodados = km_rodados(entrega, devolucao)
     if devolucao is None:
-        avarias = '<span style="color:#585F66;">—</span>'
+        avarias = '<span style="color:var(--texto-2);">—</span>'
     else:
         total = contar_avarias(devolucao)
-        avarias = f'<span style="color:#D64545;">{total} registrada(s)</span>' if total else "Nenhuma"
+        avarias = f'<span style="color:var(--perigo-texto);">{total} registrada(s)</span>' if total else "Nenhuma"
     celulas = [
         ("contrato", _mono(periodo)),
         ("km rodados", _mono(_km(rodados))),
@@ -528,13 +528,13 @@ def _faixa_resumo(contrato, entrega, devolucao):
     blocos = "".join(
         f'<div class="campo" style="flex:1;padding:14px 22px;justify-content:center;'
         f'{"border-right:1px solid " + _LINHA + ";" if i < len(celulas) - 1 else ""}">'
-        f'<span style="font-size:11px;color:#585F66;">{rotulo}</span>'
-        f'<span style="font-size:13px;">{valor}</span></div>'
+        f'<span style="font-size:var(--fs-legenda);color:var(--texto-2);">{rotulo}</span>'
+        f'<span style="font-size:var(--fs-secundario);">{valor}</span></div>'
         for i, (rotulo, valor) in enumerate(celulas)
     )
     st.markdown(
-        f'<div style="display:flex;background:#FAFAF9;border:1px solid {_LINHA};'
-        f'border-radius:2px;margin-bottom:20px;">{blocos}</div>',
+        f'<div style="display:flex;background:var(--superficie);border:1px solid {_LINHA};'
+        f'border-radius:var(--raio-sm);margin-bottom:20px;">{blocos}</div>',
         unsafe_allow_html=True,
     )
 
@@ -552,7 +552,7 @@ def _exibir_comparacao(contratos_por_id, frota, pessoas):
 
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:14px;margin:6px 0 20px;">'
-        f'<h1 class="rotulo" style="margin:0;font-size:22px;color:#1E2227;">'
+        f'<h1 class="rotulo" style="margin:0;font-size:22px;color:var(--texto);">'
         f'{escape(pessoas.get(contrato["cliente_id"], "—"))} → {escape(moto["marca"])} {escape(moto["modelo"])}</h1>'
         f'{chip_placa(moto["placa"], "grande")}</div>',
         unsafe_allow_html=True,

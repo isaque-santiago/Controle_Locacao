@@ -20,8 +20,8 @@ def _percentual(valor):
 def _titulo_cartao(titulo, descricao):
     st.markdown(
         f"""
-        <h3 class="rotulo" style="margin:0 0 4px 0;font-size:15px;color:#1E2227;">{escape(titulo)}</h3>
-        <div style="font-size:12px;color:#585F66;margin-bottom:14px;">{escape(descricao)}</div>
+        <h3 class="rotulo" style="margin:0 0 4px 0;font-size:15px;color:var(--texto);">{escape(titulo)}</h3>
+        <div style="font-size:var(--fs-legenda);color:var(--texto-2);margin-bottom:14px;">{escape(descricao)}</div>
         """,
         unsafe_allow_html=True,
     )
@@ -29,15 +29,15 @@ def _titulo_cartao(titulo, descricao):
 
 def _mono(texto, forte=False):
     peso = "font-weight:600;" if forte else ""
-    return f'<span class="mono" style="color:#1E2227;{peso}">{escape(texto)}</span>'
+    return f'<span class="mono" style="color:var(--texto);{peso}">{escape(texto)}</span>'
 
 
 def _exemplo(multa, juros, carencia):
     """Cálculo com os valores hoje salvos (o formulário só grava ao salvar)."""
     e = exemplo_encargos(multa, juros, carencia)
     st.markdown(
-        '<div style="background:#EEF0F0;border-radius:6px;padding:12px 16px;'
-        'font-size:12px;color:#585F66;">Exemplo: cobrança de '
+        '<div style="background:var(--fundo);border-radius:var(--raio-sm);padding:12px 16px;'
+        'font-size:var(--fs-legenda);color:var(--texto-2);">Exemplo: cobrança de '
         f'{_mono(formatar_moeda(e["saldo"]))}, vencida há {_mono(str(e["dias_vencida"]) + " dias")} → '
         f'multa {_mono(formatar_moeda(e["multa"]))} + juros {_mono(formatar_moeda(e["juros"]))} = '
         f'total {_mono(formatar_moeda(e["total"]), True)}</div>',
@@ -51,8 +51,8 @@ def _formulario(config):
         titulo, acao = st.columns([4, 1], vertical_alignment="top")
         titulo.markdown(
             """
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Configurações</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">Parâmetros do sistema</div>
+            <h1 class="rotulo pagina-titulo">Configurações</h1>
+            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">Parâmetros do sistema</div>
             """,
             unsafe_allow_html=True,
         )
@@ -122,7 +122,7 @@ def _backup():
         gerado = st.session_state.get("config_backup")
         if gerado:
             texto.markdown(
-                '<div style="font-size:12px;color:#585F66;">Backup desta sessão: '
+                '<div style="font-size:var(--fs-legenda);color:var(--texto-2);">Backup desta sessão: '
                 f'{_mono(gerado["quando"])}</div>',
                 unsafe_allow_html=True,
             )
@@ -136,7 +136,7 @@ def _backup():
             )
         else:
             texto.markdown(
-                '<div style="font-size:12px;color:#585F66;">Nenhum backup gerado nesta sessão.</div>',
+                '<div style="font-size:var(--fs-legenda);color:var(--texto-2);">Nenhum backup gerado nesta sessão.</div>',
                 unsafe_allow_html=True,
             )
             if acao.button("Gerar backup", use_container_width=True):

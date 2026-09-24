@@ -15,8 +15,7 @@
 
 O sistema é uma ferramenta de trabalho operacional (não uma landing page): o dono da frota abre para decisão rápida
 — quem está atrasado, qual moto precisa de manutenção, o que vence essa semana. A identidade visual nasce do
-universo de oficina/moto/estrada, evitando os padrões genéricos de dashboard SaaS (cards arredondados com sombra,
-gradientes, paleta cream+terracota ou preto+neon).
+universo de oficina/moto/estrada, evitando os padrões genéricos de dashboard SaaS (gradientes, sombras pesadas, paleta cream+terracota ou preto+neon).
 
 Conceito central: **painel de instrumentos**. KPIs como leitura tipo odômetro (números grandes em mono), barra de
 ocupação da frota como medidor de combustível, selos de status circulares tracejados como adesivo de
@@ -58,7 +57,7 @@ itens com "·" decorativo fora de listas realmente compactas.
 - **Sidebar**: fixa, 240px, fundo `grafite-900`. Item ativo com barra esquerda `amarelo-farol` + fundo sutil.
 - **Selo de status**: bolinha de 6-8px colorida + texto (tabelas) ou círculo maior com borda tracejada + número
   dentro (alertas do Dashboard/Manutenção) — remete a adesivo de vistoria.
-- **Chip de placa**: `mono`, fundo `grafite-900`, texto `neblina-0`, `border-radius: 4px`, letter-spacing.
+- **Chip de placa**: `mono`, fundo `grafite-900`, texto `neblina-0`, `border-radius: 6px`, letter-spacing.
 - **Botões**: ação primária de página = grafite sólido com label; ação por linha de tabela = ícone só (ex.:
   check para "registrar pagamento"); ação destrutiva (encerrar contrato) = contorno vermelho, nunca preenchido.
 - **Modais**: usados para formulários únicos (registrar pagamento, encerrar contrato, registrar manutenção,
@@ -109,3 +108,19 @@ manutenção.
 2. Leia este arquivo para recuperar paleta, tipografia e padrões de componente sem precisar re-perguntar.
 3. Ao implementar de verdade em Streamlit, os tokens de cor/tipografia daqui devem virar CSS custom injetado
    (`st.markdown(..., unsafe_allow_html=True)` ou arquivo `.css` próprio), já que Streamlit não usa HTML puro.
+
+## 8. Design system (modernização de 24/09/2026)
+
+Evolução visual, sem trocar a identidade: cards e modais mais arredondados, tipografia com hierarquia mais clara e
+tudo centralizado em tokens (`src/ui/estilos.css`; modo escuro em `src/ui/estilos_escuro.css`).
+
+- **Raios**: `sm` 6px (chips, botões de ação), `campo` 8px (inputs, botões), `md` 10px (tabelas, listas), `lg` 14px
+  (cartões, KPIs), `xl` 18px (modais). Sombras só de sussurro; a hierarquia vem da borda.
+- **Escala tipográfica**: display 28–38px (mono), título de página 30px, seção 18px, subtítulo 16px, corpo 14,5px,
+  secundário 13px, legenda 12px (mínimo). O rótulo dos KPIs é em caixa alta (decisão desta revisão; o restante
+  continua sem caixa alta).
+- **Espaçamento**: 4, 8, 12, 16, 24, 32, 40, 48px (`--e1` a `--e8`).
+- **Estados**: `sucesso`, `alerta`, `perigo`, `info`, `neutro`, cada um com cor cheia, cor de texto (contraste
+  ≥ 4,5:1) e fundo suave. Selo = bolinha + texto (nunca só cor).
+- **Botão primário**: grafite no claro, amarelo no escuro (o amarelo continua fora dos botões no tema claro).
+- **Foco**: contorno de 2px na cor `--foco` (visível nos dois temas).

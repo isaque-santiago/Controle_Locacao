@@ -1,0 +1,119 @@
+/* =====================================================================
+   MODO ESCURO — paleta própria (não é inversão do claro).
+   Fundos em camadas (página < cartão < campo < realce); texto principal
+   ~14:1 e secundário ≥ 6:1 sobre o cartão; cores de estado clareadas
+   para manter contraste ≥ 4,5:1. Só entra quando o modo escuro está ativo.
+   ===================================================================== */
+
+/* ========================================
+   DARK MODE — TOKENS
+======================================== */
+:root {
+  --fundo: #15181C; --superficie: #22272D; --superficie-elevada: #2B3138; --superficie-hover: #2A3037;
+  --realce: #343B43;
+  --linha: rgba(238,240,240,.14); --linha-sutil: rgba(238,240,240,.08);
+  --linha-forte: rgba(238,240,240,.28); --linha-campo-hover: rgba(238,240,240,.5);
+  --texto: #ECEEF0; --texto-2: #B4BBC3; --texto-3: #9BA3AC; --texto-invertido: #15181C;
+
+  --sucesso-texto: #4CC994; --sucesso-fundo: rgba(76,201,148,.14);
+  --alerta-texto: #F2B705;  --alerta-fundo: rgba(242,183,5,.16);
+  --perigo: #FF6B6B; --perigo-texto: #FF8080; --perigo-fundo: rgba(255,128,128,.14);
+  --info: #6CB4EE; --info-texto: #6CB4EE; --info-fundo: rgba(108,180,238,.14);
+  --neutro-texto: #B4BBC3; --neutro-fundo: rgba(238,240,240,.08);
+
+  --btn-primario: #F2B705; --btn-primario-hover: #FFC933; --btn-primario-ativo: #D9A304; --btn-primario-texto: #15181C;
+  --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
+  --kpi-topo: #F2B705; --chip-fundo: #343B43; --chip-texto: #ECEEF0; --seg-alugada-cor: #C9CED3; --avatar-inativo: #4A525A; --grade: rgba(238,240,240,.03);
+  --sombra-1: 0 1px 2px rgba(0,0,0,.30); --sombra-2: 0 2px 8px rgba(0,0,0,.40); --sombra-modal: 0 24px 60px rgba(0,0,0,.6);
+}
+
+/* ========================================
+   DARK MODE — SUPERFÍCIES E TEXTO NATIVO
+======================================== */
+[data-testid="stApp"] {color-scheme: dark;}
+[data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stMain"] {background: var(--fundo) !important; color: var(--texto) !important;}
+[data-testid="stHeader"] {background: rgba(21,24,28,.9) !important;}
+[data-testid="stHeader"] * {color: var(--texto-2) !important;}
+[data-testid="stSidebar"] {background: #1B1F24 !important; border-right: 1px solid var(--linha);}
+[data-testid="stMain"] h1, [data-testid="stMain"] h2, [data-testid="stMain"] h3, [data-testid="stMain"] h4,
+[data-testid="stMain"] h5, [data-testid="stMain"] h6, [data-testid="stMain"] p, [data-testid="stMain"] li,
+[data-testid="stMain"] label, [data-testid="stMain"] [data-testid="stMarkdownContainer"],
+[data-testid="stMain"] [data-testid="stMetricLabel"] p, [data-testid="stMain"] [data-testid="stMetricValue"],
+[data-testid="stMain"] summary, [data-testid="stMain"] summary p {color: var(--texto) !important;}
+[data-testid="stMain"] [data-testid="stWidgetLabel"] p, [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p,
+[data-testid="stMain"] small, [data-testid="stMain"] [data-testid="stMetricDelta"] {color: var(--texto-2) !important;}
+[data-testid="stMain"] a {color: var(--marca);}
+[data-testid="stMain"] code {background: var(--superficie-elevada); color: var(--texto);}
+[data-testid="stVerticalBlockBorderWrapper"] {border-color: var(--linha) !important;}
+[data-testid="stExpander"], [data-testid="stExpander"] details {background: var(--superficie) !important; border-color: var(--linha) !important;}
+[data-testid="stTable"], [data-testid="stTable"] th, [data-testid="stTable"] td {background: var(--superficie) !important; color: var(--texto) !important;}
+/* O grid é um canvas com o tema claro: inverte luminosidade preservando o matiz */
+[data-testid="stDataFrame"] {filter: invert(1) hue-rotate(180deg);}
+
+/* ========================================
+   DARK MODE — CAMPOS
+======================================== */
+[data-baseweb="input"], [data-baseweb="input"] > div, [data-baseweb="base-input"], [data-baseweb="textarea"], [data-baseweb="textarea"] > div,
+textarea, [data-testid="stNumberInput"] button {background: var(--superficie-elevada) !important; color: var(--texto) !important; border-color: var(--linha) !important;}
+input, textarea, [data-baseweb="select"] div, [data-baseweb="select"] span {color: var(--texto) !important; -webkit-text-fill-color: var(--texto) !important;}
+input::placeholder, textarea::placeholder {color: var(--texto-3) !important; -webkit-text-fill-color: var(--texto-3) !important;}
+[data-testid="stSelectbox"] div:has(> input), [data-testid="stMultiSelect"] div:has(> input) {background: var(--superficie-elevada) !important; border-color: var(--linha) !important;}
+[data-testid="stSelectbox"] button, [data-testid="stSelectbox"] svg, [data-testid="stMultiSelect"] svg {color: var(--texto-2) !important; fill: var(--texto-2) !important;}
+[role="listbox"], [role="listbox"] [role="option"], [data-testid="stSelectboxVirtualDropdown"], [data-testid="stSelectboxVirtualDropdown"] * {background: var(--superficie-elevada) !important; color: var(--texto) !important;}
+[role="listbox"] [role="option"]:hover, [role="listbox"] [aria-selected="true"] {background: var(--realce) !important;}
+[data-testid="stDateInputField"] input {opacity: 1;}
+[data-testid="stDateInputField"] span, [data-testid="stDateInputField"] div {color: var(--texto) !important; -webkit-text-fill-color: var(--texto) !important;}
+[data-baseweb="select"] svg, [data-testid="stNumberInput"] svg {fill: var(--texto-2) !important;}
+[data-testid="stFileUploaderDropzone"] {background: var(--superficie-elevada) !important; border-color: var(--linha) !important;}
+[data-testid="stFileUploaderDropzone"] * {color: var(--texto-2) !important;}
+[data-baseweb="popover"] [data-baseweb="menu"], [data-baseweb="popover"] ul, [data-baseweb="popover"] > div, [data-baseweb="calendar"], [data-baseweb="calendar"] * {background: var(--superficie-elevada) !important; color: var(--texto) !important;}
+[data-baseweb="popover"] li:hover, [data-baseweb="popover"] [aria-selected="true"] {background: var(--realce) !important;}
+[data-testid="stRadio"] label, [data-testid="stCheckbox"] label, [data-testid="stToggle"] label,
+[data-testid="stRadio"] label p, [data-testid="stCheckbox"] label p {color: var(--texto) !important;}
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] label p {color: #ECEEF0 !important;}
+[data-testid="stNumberInputStepDown"], [data-testid="stNumberInputStepUp"] {color: var(--texto-2) !important;}
+
+/* ========================================
+   DARK MODE — ABAS E ALERTAS
+======================================== */
+[data-baseweb="tab"], [data-baseweb="tab"] p {color: var(--texto-2) !important; background: transparent !important;}
+[data-baseweb="tab"][aria-selected="true"], [data-baseweb="tab"][aria-selected="true"] p {color: var(--marca) !important;}
+[data-baseweb="tab-highlight"] {background: var(--marca) !important;}
+[data-baseweb="tab-border"] {background: var(--linha) !important;}
+.react-aria-TabList {border-bottom: 1px solid var(--linha) !important; box-shadow: none !important;}
+.react-aria-Tab, .react-aria-Tab * {color: var(--texto-2) !important; background: transparent !important;}
+.react-aria-Tab:hover, .react-aria-Tab:hover * {color: var(--texto) !important;}
+.react-aria-Tab[aria-selected="true"], .react-aria-Tab[aria-selected="true"] * {color: var(--marca) !important;}
+div.react-aria-SelectionIndicator {background: var(--marca) !important; border-color: var(--marca) !important;}
+[data-testid="stAlert"] {background: var(--superficie) !important;}
+[data-testid="stAlert"] * {color: var(--texto) !important;}
+
+/* ========================================
+   DARK MODE — MODAIS, TOOLTIPS, GRÁFICOS
+======================================== */
+[data-testid="stDialog"] > div, [role="dialog"] {background: var(--superficie) !important; color: var(--texto) !important;}
+[data-testid="stTooltipContent"], [data-baseweb="tooltip"] > div {background: var(--realce) !important; color: var(--texto) !important;}
+[data-testid="stPlotlyChart"] .main-svg {background: transparent !important;}
+[data-testid="stPlotlyChart"] text {fill: var(--texto-2) !important;}
+[data-testid="stPlotlyChart"] .gridlayer path, [data-testid="stPlotlyChart"] .zerolinelayer path {stroke: var(--linha) !important;}
+/* O diálogo é renderizado fora de stMain/stApp: as regras de texto acima não o alcançam */
+[data-testid="stDialog"] {color-scheme: dark;}
+[data-testid="stDialog"] h1, [data-testid="stDialog"] h2, [data-testid="stDialog"] h3, [data-testid="stDialog"] p,
+[data-testid="stDialog"] li, [data-testid="stDialog"] label, [data-testid="stDialog"] [data-testid="stMarkdownContainer"],
+[data-testid="stDialog"] [data-testid="stWidgetLabel"], [data-testid="stDialog"] [data-testid="stWidgetLabel"] p {color: var(--texto) !important;}
+[data-testid="stDialog"] [data-testid="stCaptionContainer"], [data-testid="stDialog"] [data-testid="stCaptionContainer"] p {color: var(--texto-2) !important;}
+[data-testid="stDialog"] [data-testid="stForm"] {background: var(--superficie) !important;}
+[data-testid="stDialog"] input::placeholder, [data-testid="stDialog"] textarea::placeholder {color: var(--texto-3) !important; -webkit-text-fill-color: var(--texto-3) !important; opacity: 1;}
+[data-testid="stDialog"] button[aria-label="Close"], [data-testid="stDialog"] [role="dialog"] > button {background: transparent !important; color: var(--texto-2) !important; border-color: transparent !important;}
+[data-testid="stDialog"] button[aria-label="Close"] *, [data-testid="stDialog"] [role="dialog"] > button * {color: var(--texto-2) !important; fill: var(--texto-2) !important; stroke: var(--texto-2);}
+[data-testid="stDialog"] button[aria-label="Close"]:hover, [data-testid="stDialog"] [role="dialog"] > button:hover {background: var(--realce) !important;}
+[data-testid="stDialog"] button[aria-label="Close"]:hover *, [data-testid="stDialog"] [role="dialog"] > button:hover * {color: #FFFFFF !important; fill: #FFFFFF !important;}
+
+/* ========================================
+   DARK MODE — ÍCONES DE AÇÃO
+======================================== */
+[data-testid="stApp"] [class*=" st-key-ficha_"] button::after, [data-testid="stApp"] [class*=" st-key-ver_vist_"] button::after,
+[data-testid="stApp"] [class*=" st-key-editar_doc_"] button::after, [data-testid="stApp"] [class*=" st-key-editar_item_"] button::after,
+[data-testid="stApp"] [class*=" st-key-km_"] button::after, [data-testid="stApp"] [class*=" st-key-regularizar_doc_"] button::after,
+[data-testid="stApp"] [class*=" st-key-concluir_man_"] button::after, [data-testid="stApp"] [class*=" st-key-comprovante_doc_"] button::after {background: #C9CED3 !important;}
+[data-testid="stApp"] [class*=" st-key-pagar_hoje_"] button::after {background: var(--btn-primario-texto) !important;}

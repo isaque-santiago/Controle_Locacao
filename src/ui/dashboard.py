@@ -1,11 +1,23 @@
-"""Dashboard: faixa de instrumentos, Hoje e Alertas — segue Arquivos/Design_UI.md
+"""Dashboard: faixa de indicadores, Hoje e Alertas — segue Arquivos/Design_UI.md
 e o artboard Main.dc.html do mockup (link na seção 1 do documento)."""
 
 import streamlit as st
 
 from src.services import dashboard, alertas, cobrancas, configuracoes, clientes, manutencao
 from src.domain.valores import hoje_br
-from src.ui.componentes import cabecalho, proteger
+from src.ui.componentes import (
+    barra_segmentada,
+    cabecalho,
+    cabecalho_pagina,
+    cartao_html,
+    estado_vazio,
+    item_alerta,
+    kpi,
+    kpi_grade,
+    legenda_ocupacao,
+    proteger,
+    selo_situacao,
+)
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_moeda_compacta
 
 _DIAS = [
@@ -31,6 +43,12 @@ _MESES = [
     "novembro",
     "dezembro",
 ]
+_STATUS_FROTA = (
+    ("alugada", "alugadas"),
+    ("disponivel", "disponíveis"),
+    ("manutencao", "manutenção"),
+    ("inativa", "inativas"),
+)
 
 
 def _data_por_extenso(data):
@@ -38,21 +56,11 @@ def _data_por_extenso(data):
 
 
 def _cabecalho_pagina():
-    st.markdown(
-        f"""
-        <div class="painel-cabecalho">
-          <div>
-            <div class="painel-sobretitulo">Visão geral da operação</div>
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Dashboard</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">{_data_por_extenso(hoje_br())}</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;color:#585F66;font-size:12px;">
-            <span style="width:6px;height:6px;border-radius:50%;background:#2F9E6E;display:inline-block;"></span>
-            Cobranças atualizadas nesta consulta
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    cabecalho_pagina(
+        "Dashboard",
+        sub=_data_por_extenso(hoje_br()),
+        sobretitulo="Visão geral da operação",
+        lateral='<div class="painel-status">Cobranças atualizadas nesta consulta</div>',
     )
 
 
@@ -62,90 +70,57 @@ def _faixa_instrumentos(dados, contagem, devedores_count, ordens_concluidas):
     alugadas = contagem.get("alugada", 0)
     ocupacao = round(100 * alugadas / ativas) if ativas else 0
     total_base = max(frota_total, 1)
-    larguras = {
-        chave: round(100 * contagem.get(chave, 0) / total_base, 1)
-        for chave in ("alugada", "disponivel", "manutencao", "inativa")
-    }
     previsto = dados["previsto"]
     recebido = dados["recebido"]
     progresso_recebido = (
         min(100, round(100 * recebido / previsto)) if previsto else 0
     )
 
-    segmentos = "".join(
-        f'<div style="width:{largura}%;background:{cor};"></div>'
-        for largura, cor in [
-            (larguras["alugada"], "#1E2227"),
-            (larguras["disponivel"], "#2F9E6E"),
-            (larguras["manutencao"], "#F2B705"),
-            (larguras["inativa"], "#9AA0A6"),
+    segmentos = barra_segmentada(
+        [(round(100 * contagem.get(chave, 0) / total_base, 1), chave) for chave, _ in _STATUS_FROTA]
+    )
+    legenda = legenda_ocupacao(
+        [(f"{contagem.get(chave, 0)} {rotulo}", chave) for chave, rotulo in _STATUS_FROTA]
+    )
+    barra_recebido = barra_segmentada([(progresso_recebido, "disponivel")])
+
+    kpi_grade(
+        [
+            kpi(
+                "frota",
+                frota_total,
+                contexto=f"motos · {ocupacao}% ocupação",
+                extra=segmentos + legenda,
+            ),
+            kpi(
+                "recebido no mês",
+                formatar_moeda_compacta(recebido),
+                contexto=f"de {formatar_moeda_compacta(previsto)} previstos",
+                extra=barra_recebido,
+            ),
+            kpi(
+                "em atraso",
+                formatar_moeda_compacta(dados["atrasado"]),
+                contexto=f"{devedores_count} cliente(s) atrasado(s)",
+                tom="perigo" if dados["atrasado"] else None,
+            ),
+            kpi(
+                "manutenção no mês",
+                formatar_moeda_compacta(dados["manutencao"]),
+                contexto=f"{ordens_concluidas} ordem(ns) concluída(s)",
+            ),
         ]
-        if largura > 0
-    )
-    legenda = "".join(
-        f'<div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#585F66;">'
-        f'<span style="width:8px;height:8px;background:{cor};border-radius:2px;display:inline-block;"></span>'
-        f"{contagem.get(chave, 0)} {rotulo}</div>"
-        for chave, rotulo, cor in [
-            ("alugada", "alugadas", "#1E2227"),
-            ("disponivel", "disponíveis", "#2F9E6E"),
-            ("manutencao", "manutenção", "#F2B705"),
-            ("inativa", "inativas", "#9AA0A6"),
-        ]
-    )
-
-    st.markdown(
-        f"""
-        <div class="painel-instrumentos">
-          <div style="flex:1.3;padding:18px 24px;display:flex;flex-direction:column;gap:10px;border-right:1px solid rgba(30,34,39,0.12);">
-            <div class="rotulo" style="font-size:12px;color:#585F66;letter-spacing:0.03em;">frota</div>
-            <div style="display:flex;align-items:baseline;gap:8px;">
-              <span class="mono" style="font-size:34px;font-weight:600;line-height:1;">{frota_total}</span>
-              <span style="font-size:13px;color:#585F66;">motos · {ocupacao}% ocupação</span>
-            </div>
-            <div style="display:flex;height:8px;border-radius:2px;overflow:hidden;background:rgba(30,34,39,0.12);">{segmentos}</div>
-            <div style="display:flex;gap:14px;flex-wrap:wrap;">{legenda}</div>
-          </div>
-          <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:10px;border-right:1px solid rgba(30,34,39,0.12);">
-            <div class="rotulo" style="font-size:12px;color:#585F66;letter-spacing:0.03em;">recebido no mês</div>
-            <span class="mono" style="font-size:34px;font-weight:600;line-height:1;">{formatar_moeda_compacta(recebido)}</span>
-            <div style="height:8px;border-radius:2px;background:rgba(30,34,39,0.12);overflow:hidden;">
-              <div style="width:{progresso_recebido}%;height:100%;background:#2F9E6E;"></div>
-            </div>
-            <div style="font-size:12px;color:#585F66;">de {formatar_moeda_compacta(previsto)} previstos</div>
-          </div>
-          <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:10px;border-right:1px solid rgba(30,34,39,0.12);">
-            <div class="rotulo" style="font-size:12px;color:#585F66;letter-spacing:0.03em;">em atraso</div>
-            <span class="mono" style="font-size:34px;font-weight:600;line-height:1;color:#D64545;">{formatar_moeda_compacta(dados["atrasado"])}</span>
-            <div style="font-size:12px;color:#585F66;">{devedores_count} cliente(s) atrasado(s)</div>
-          </div>
-          <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:10px;">
-            <div class="rotulo" style="font-size:12px;color:#585F66;letter-spacing:0.03em;">manutenção no mês</div>
-            <span class="mono" style="font-size:34px;font-weight:600;line-height:1;">{formatar_moeda_compacta(dados["manutencao"])}</span>
-            <div style="font-size:12px;color:#585F66;">{ordens_concluidas} ordem(ns) concluída(s)</div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
     )
 
 
-_COLUNAS_HOJE = [2, 1.3, 1.3, 1.1, 1.6, 0.5]
+_COLUNAS_HOJE = [2, 1.3, 1.3, 1.1, 2, 0.5]
 
 
 def _situacao_cobranca_html(cobranca):
     if cobranca["situacao"] == "atrasada":
         dias = max((hoje_br() - _iso_data(cobranca["vencimento"])).days, 0)
-        texto = f"Atrasada há {dias} dia(s)"
-        cor = "#D64545"
-    else:
-        texto = "Vence hoje"
-        cor = "#F2B705"
-    estilo_cor = f"color:{cor};" if cobranca["situacao"] == "atrasada" else ""
-    return (
-        f'<div style="display:flex;align-items:center;gap:6px;{estilo_cor}">'
-        f'<span style="width:6px;height:6px;border-radius:50%;background:{cor};display:inline-block;"></span>{texto}</div>'
-    )
+        return selo_situacao(f"Atrasada há {dias} dia(s)", "atrasada")
+    return selo_situacao("Vence hoje", "proxima")
 
 
 def _iso_data(valor):
@@ -158,9 +133,9 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
     with st.container(key="dashboard_card_hoje"):
         st.markdown(
             """
-            <div style="padding:16px 20px;border-bottom:1px solid rgba(30,34,39,0.12);display:flex;align-items:center;justify-content:space-between;">
-              <h2 class="rotulo" style="margin:0;font-size:16px;">Hoje</h2>
-              <span style="font-size:12px;color:#585F66;">vencendo hoje e atrasadas</span>
+            <div class="cartao__cab">
+              <h2 class="cartao__titulo">Hoje</h2>
+              <span class="cartao__meta">vencendo hoje e atrasadas</span>
             </div>
             """,
             unsafe_allow_html=True,
@@ -173,30 +148,30 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
         ):
             alinhamento = "text-align:right;" if direita else ""
             coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;{alinhamento}display:block;">{rotulo}</span>',
+                f'<span class="fs-legenda texto-2" style="font-weight:600;{alinhamento}display:block;">{rotulo}</span>',
                 unsafe_allow_html=True,
             )
         if not cobrancas_hoje:
             st.markdown(
-                '<div style="padding:12px 20px;color:#585F66;font-size:13px;">Nenhuma cobrança vencendo hoje ou atrasada.</div>',
+                estado_vazio("Nenhuma cobrança vencendo hoje ou atrasada.", compacto=True),
                 unsafe_allow_html=True,
             )
         for c in cobrancas_hoje:
             linha = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
             linha[0].markdown(
-                f'<span style="font-size:13px;">{nomes.get(c["cliente_id"], "—")}</span>',
+                f'<span class="fs-secundario">{nomes.get(c["cliente_id"], "—")}</span>',
                 unsafe_allow_html=True,
             )
             linha[1].markdown(
-                f'<span class="mono" style="font-size:13px;color:#585F66;">{placas.get(c["moto_id"], "—")}</span>',
+                f'<span class="mono fs-secundario texto-2">{placas.get(c["moto_id"], "—")}</span>',
                 unsafe_allow_html=True,
             )
             linha[2].markdown(
-                f'<span class="mono" style="font-size:13px;">{formatar_data(c["vencimento"])}</span>',
+                f'<span class="mono fs-secundario">{formatar_data(c["vencimento"])}</span>',
                 unsafe_allow_html=True,
             )
             linha[3].markdown(
-                f'<span class="mono" style="font-size:13px;text-align:right;display:block;">{formatar_moeda(c["valor"])}</span>',
+                f'<span class="mono fs-secundario" style="text-align:right;display:block;">{formatar_moeda(c["valor"])}</span>',
                 unsafe_allow_html=True,
             )
             linha[4].markdown(_situacao_cobranca_html(c), unsafe_allow_html=True)
@@ -207,18 +182,6 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
                 st.switch_page("pages/5_Cobrancas.py")
 
 
-def _item_alerta(numero, titulo, descricao, cor_borda, cor_numero):
-    return f"""
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div class="mono" style="width:40px;height:40px;border-radius:50%;border:2px dashed {cor_borda};color:{cor_numero};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex-shrink:0;">{numero}</div>
-          <div>
-            <div style="font-size:13px;font-weight:500;">{titulo}</div>
-            <div style="font-size:12px;color:#585F66;">{descricao}</div>
-          </div>
-        </div>
-        """
-
-
 def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alertas_cnh):
     itens = []
 
@@ -227,7 +190,7 @@ def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alerta
         nomes = ", ".join(dict.fromkeys(a["item"] for a in vencidas[:2]))
         if len(vencidas) > 2:
             nomes += f" e mais {len(vencidas) - 2}"
-        itens.append(_item_alerta(len(vencidas), "Manutenção vencida", nomes, "#D64545", "#D64545"))
+        itens.append(item_alerta(len(vencidas), "Manutenção vencida", nomes, "perigo"))
 
     proximas = [a for a in alertas_manutencao if a["situacao"] == "proxima"]
     if proximas:
@@ -235,7 +198,7 @@ def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alerta
             f"nos próximos {dados_config['alerta_manutencao_km']} km ou "
             f"{dados_config['alerta_manutencao_dias']} dias"
         )
-        itens.append(_item_alerta(len(proximas), "Manutenção próxima", descricao, "#F2B705", "#8a6600"))
+        itens.append(item_alerta(len(proximas), "Manutenção próxima", descricao, "alerta"))
 
     doc_vencidos = [a for a in alertas_documentos if a["situacao"] == "vencido"]
     if doc_vencidos:
@@ -243,12 +206,12 @@ def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alerta
         descricao = f"{primeiro['tipo'].upper()} · moto {primeiro['placa']}"
         if len(doc_vencidos) > 1:
             descricao += f" e mais {len(doc_vencidos) - 1}"
-        itens.append(_item_alerta(len(doc_vencidos), "Documento vencido", descricao, "#D64545", "#D64545"))
+        itens.append(item_alerta(len(doc_vencidos), "Documento vencido", descricao, "perigo"))
 
     doc_a_vencer = [a for a in alertas_documentos if a["situacao"] == "a_vencer"]
     if doc_a_vencer:
         descricao = f"próximos {dados_config['alerta_documento_dias']} dias"
-        itens.append(_item_alerta(len(doc_a_vencer), "Documento a vencer", descricao, "#F2B705", "#8a6600"))
+        itens.append(item_alerta(len(doc_a_vencer), "Documento a vencer", descricao, "alerta"))
 
     cnh_vencidas = [a for a in alertas_cnh if a["situacao"] == "vencida"]
     if cnh_vencidas:
@@ -256,7 +219,7 @@ def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alerta
         descricao = f"{primeiro['nome']} · {formatar_data(primeiro['cnh_validade'])}"
         if len(cnh_vencidas) > 1:
             descricao += f" e mais {len(cnh_vencidas) - 1}"
-        itens.append(_item_alerta(len(cnh_vencidas), "CNH vencida", descricao, "#D64545", "#D64545"))
+        itens.append(item_alerta(len(cnh_vencidas), "CNH vencida", descricao, "perigo"))
 
     cnh_a_vencer = [a for a in alertas_cnh if a["situacao"] == "a_vencer"]
     if cnh_a_vencer:
@@ -264,26 +227,14 @@ def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alerta
         descricao = f"{primeiro['nome']} · {formatar_data(primeiro['cnh_validade'])}"
         if len(cnh_a_vencer) > 1:
             descricao += f" e mais {len(cnh_a_vencer) - 1}"
-        itens.append(_item_alerta(len(cnh_a_vencer), "CNH a vencer", descricao, "#F2B705", "#8a6600"))
+        itens.append(item_alerta(len(cnh_a_vencer), "CNH a vencer", descricao, "alerta"))
 
     corpo = (
-        '<div style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;">'
-        + "".join(itens)
-        + "</div>"
+        '<div class="alerta-lista">' + "".join(itens) + "</div>"
         if itens
-        else '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum alerta no momento.</div>'
+        else estado_vazio("Nenhum alerta no momento.", compacto=True)
     )
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;">
-          <div style="padding:16px 20px;border-bottom:1px solid rgba(30,34,39,0.12);">
-            <h2 class="rotulo" style="margin:0;font-size:16px;">Alertas</h2>
-          </div>
-          {corpo}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(cartao_html("Alertas", corpo), unsafe_allow_html=True)
 
 
 def exibir():
@@ -314,7 +265,6 @@ def exibir():
         nomes = {c["id"]: c["nome"] for c in clientes.listar()}
 
         _cabecalho_pagina()
-        st.write("")
         _faixa_instrumentos(dados, contagem, len(dados["devedores"]), ordens_concluidas)
         st.write("")
         col_hoje, col_alertas = st.columns([1.6, 1], gap="medium")
