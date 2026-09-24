@@ -296,9 +296,9 @@ def _card_dados_pessoais(cliente):
         <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">cpf</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">cnh</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">validade cnh</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">CPF</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">Validade CNH</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">telefone</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('telefone'))}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">e-mail</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('email'))}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">endereço</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('endereco'))}</span></div>
@@ -499,13 +499,13 @@ def _exibir_ficha(cliente_id):
         f"""
         <div class="cartao cartao--faixa" style="margin-bottom:20px;">
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">cpf</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CPF</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
             <span style="font-size:var(--fs-legenda);color:var(--texto-2);">whatsapp</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
           </div>
           <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;justify-content:center;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">cnh</span>
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span>
             {cnh_html}
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
