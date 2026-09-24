@@ -149,11 +149,9 @@ def require_login() -> None:
             col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
             col_perfil.markdown(
                 f"""
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:#2B3036;
-                              display:flex;align-items:center;justify-content:center;
-                              color:#FAFAF9;font-size:12px;font-weight:600;flex-shrink:0;">{inicial}</div>
-                  <div style="color:#FAFAF9;font-size:13px;">{nome}</div>
+                <div class="usuario-lateral">
+                  <div class="usuario-lateral__avatar">{inicial}</div>
+                  <div class="usuario-lateral__nome">{nome}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,

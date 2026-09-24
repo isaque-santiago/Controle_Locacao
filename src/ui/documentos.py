@@ -43,17 +43,17 @@ def _salvo(mensagem="Alterações salvas."):
 
 
 def _mono(texto, estilo=""):
-    return f'<span class="mono" style="font-size:13px;{estilo}">{texto}</span>'
+    return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
 def _texto(texto, estilo=""):
-    return f'<span style="font-size:13px;{estilo}">{texto}</span>'
+    return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
 def _cabecalho_tabela(colunas, rotulos):
     for coluna, rotulo in zip(colunas, rotulos):
         coluna.markdown(
-            f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+            f'<span class="fs-secundario texto-2">{rotulo}</span>',
             unsafe_allow_html=True,
         )
 
@@ -215,7 +215,7 @@ def _dialog_regularizar(documento, moto):
         chip_placa(moto["placa"])
         + _texto(
             f" {escape(rotulo)} {escape(str(referencia))} · vence {formatar_data(documento['vencimento'])}",
-            "color:#585F66;",
+            "color:var(--texto-2);",
         ),
         unsafe_allow_html=True,
     )
@@ -253,7 +253,7 @@ def _dialog_regularizar(documento, moto):
 @st.dialog("Comprovante")
 def _dialog_comprovante(documento, moto):
     st.markdown(
-        chip_placa(moto["placa"]) + _texto(f" {escape(_TIPOS[documento['tipo']])}", "color:#585F66;"),
+        chip_placa(moto["placa"]) + _texto(f" {escape(_TIPOS[documento['tipo']])}", "color:var(--texto-2);"),
         unsafe_allow_html=True,
     )
     with proteger():
@@ -277,7 +277,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias):
         )
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">'
+                '<div class="vazio vazio--linha">'
                 "Nenhum documento encontrado.</div>",
                 unsafe_allow_html=True,
             )
@@ -289,7 +289,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias):
             linha = st.columns(larguras, vertical_alignment="center")
             linha[0].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
             linha[1].markdown(_texto(_TIPOS.get(doc["tipo"], doc["tipo"])), unsafe_allow_html=True)
-            linha[2].markdown(_texto(escape(str(referencia)), "color:#585F66;"), unsafe_allow_html=True)
+            linha[2].markdown(_texto(escape(str(referencia)), "color:var(--texto-2);"), unsafe_allow_html=True)
             linha[3].markdown(_mono(formatar_data(doc["vencimento"])), unsafe_allow_html=True)
             linha[4].markdown(
                 _mono(
@@ -333,8 +333,8 @@ def exibir():
         col_titulo, col_botao = st.columns([5, 1.4], vertical_alignment="center")
         col_titulo.markdown(
             f"""
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Documentos</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">{vencidos} vencido(s) · {a_vencer} a vencer</div>
+            <h1 class="rotulo pagina-titulo">Documentos</h1>
+            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{vencidos} vencido(s) · {a_vencer} a vencer</div>
             """,
             unsafe_allow_html=True,
         )

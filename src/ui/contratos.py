@@ -74,8 +74,8 @@ def _exibir_lista():
     col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
     col_titulo.markdown(
         f"""
-        <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Contratos</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">{contagem.get('ativo', 0)} contrato(s) ativo(s)</div>
+        <h1 class="rotulo pagina-titulo">Contratos</h1>
+        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{contagem.get('ativo', 0)} contrato(s) ativo(s)</div>
         """,
         unsafe_allow_html=True,
     )
@@ -130,21 +130,21 @@ def _exibir_lista():
         for coluna, rotulo in zip(
             cab, ["Cliente", "Moto", "Início", "Periodicidade", "Valor / período", "Status", ""]
         ):
-            coluna.markdown(f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>', unsafe_allow_html=True)
+            coluna.markdown(f'<span class="fs-secundario texto-2">{rotulo}</span>', unsafe_allow_html=True)
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum contrato encontrado.</div>',
+                '<div class="vazio vazio--linha">Nenhum contrato encontrado.</div>',
                 unsafe_allow_html=True,
             )
         for contrato in pagina_atual:
             moto = frota.get(contrato["moto_id"])
-            muted = "color:#9AA0A6;" if contrato["status"] != "ativo" else ""
+            muted = "color:var(--texto-3);" if contrato["status"] != "ativo" else ""
             linha = st.columns([1.5, 1.2, 1.1, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
-            linha[0].markdown(f'<span style="font-size:13px;{muted}">{nomes.get(contrato["cliente_id"], "—")}</span>', unsafe_allow_html=True)
+            linha[0].markdown(f'<span style="font-size:var(--fs-secundario);{muted}">{nomes.get(contrato["cliente_id"], "—")}</span>', unsafe_allow_html=True)
             linha[1].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
-            linha[2].markdown(f'<span class="mono" style="font-size:13px;{muted}">{formatar_data(contrato["data_inicio"])}</span>', unsafe_allow_html=True)
-            linha[3].markdown(f'<span style="font-size:13px;{muted or "color:#585F66;"}">{_PERIODOS_ROTULO.get(contrato["periodicidade"], contrato["periodicidade"])}</span>', unsafe_allow_html=True)
-            linha[4].markdown(f'<span class="mono" style="font-size:13px;text-align:right;display:block;{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>', unsafe_allow_html=True)
+            linha[2].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_data(contrato["data_inicio"])}</span>', unsafe_allow_html=True)
+            linha[3].markdown(f'<span style="font-size:var(--fs-secundario);{muted or "color:var(--texto-2);"}">{_PERIODOS_ROTULO.get(contrato["periodicidade"], contrato["periodicidade"])}</span>', unsafe_allow_html=True)
+            linha[4].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);text-align:right;display:block;{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>', unsafe_allow_html=True)
             linha[5].markdown(
                 selo_situacao(_STATUS_ROTULO[contrato["status"]], contrato["status"]),
                 unsafe_allow_html=True,
@@ -171,21 +171,21 @@ def _indicador_etapas_contrato(atual):
         concluido = i < atual
         corrente = i == atual
         if concluido or corrente:
-            cor_fundo, cor_borda, cor_texto = "#1E2227", "#1E2227", "#FAFAF9"
+            cor_fundo, cor_borda, cor_texto = "var(--chip-fundo)", "var(--chip-fundo)", "var(--chip-texto)"
         else:
-            cor_fundo, cor_borda, cor_texto = "transparent", "rgba(30,34,39,0.12)", "#9AA0A6"
-        anel = "box-shadow:0 0 0 3px rgba(30,34,39,0.18);" if corrente else ""
-        rotulo_cor = "#1E2227" if corrente else ("#2B3036" if concluido else "#9AA0A6")
+            cor_fundo, cor_borda, cor_texto = "transparent", "var(--linha)", "var(--texto-3)"
+        anel = "box-shadow:0 0 0 3px var(--linha-forte);" if corrente else ""
+        rotulo_cor = "var(--texto)" if corrente else ("var(--texto-2)" if concluido else "var(--texto-3)")
         rotulo_peso = "600" if corrente else "500"
         if i > 1:
-            cor_linha = "#1E2227" if i <= atual else "rgba(30,34,39,0.12)"
+            cor_linha = "var(--texto)" if i <= atual else "var(--linha)"
             itens += f'<div style="flex-grow:1;height:1px;background:{cor_linha};margin:14px 12px 0;"></div>'
         itens += f"""
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;">
           <div style="width:28px;height:28px;border-radius:50%;background:{cor_fundo};border:1px solid {cor_borda};
                       {anel}display:flex;align-items:center;justify-content:center;color:{cor_texto};
-                      font-size:12px;font-weight:600;flex-shrink:0;">{i}</div>
-          <span style="font-size:13px;color:{rotulo_cor};font-weight:{rotulo_peso};">{rotulo}</span>
+                      font-size:var(--fs-legenda);font-weight:600;flex-shrink:0;">{i}</div>
+          <span style="font-size:var(--fs-secundario);color:{rotulo_cor};font-weight:{rotulo_peso};">{rotulo}</span>
         </div>
         """
     st.markdown(
@@ -194,22 +194,22 @@ def _indicador_etapas_contrato(atual):
     )
 
 
-def _avatar_circulo(texto, cor="#1E2227"):
+def _avatar_circulo(texto, cor="var(--chip-fundo)"):
     return (
-        f'<div style="width:30px;height:30px;border-radius:50%;background:{cor};color:#FAFAF9;'
-        f'display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;'
+        f'<div style="width:30px;height:30px;border-radius:50%;background:{cor};color:var(--chip-texto);'
+        f'display:flex;align-items:center;justify-content:center;font-size:var(--fs-legenda);font-weight:600;'
         f'flex-shrink:0;">{texto}</div>'
     )
 
 
 def _cartao_selecionavel(chave, icone_html, titulo, subtitulo, badge_html, selecionado, elegivel):
-    borda = "2px solid #1E2227" if selecionado else "1px solid rgba(30,34,39,.12)"
-    fundo = "rgba(30,34,39,.03)" if selecionado else "#FAFAF9"
+    borda = "2px solid var(--texto)" if selecionado else "1px solid var(--linha)"
+    fundo = "var(--superficie-hover)" if selecionado else "var(--superficie)"
     opacidade = "1" if elegivel else "0.55"
     st.markdown(
         f"""
         <style>.st-key-{chave} {{
-          border:{borda} !important; background:{fundo} !important; border-radius:6px;
+          border:{borda} !important; background:{fundo} !important; border-radius:var(--raio-lg);
           padding:14px 16px; opacity:{opacidade}; margin-bottom:10px;
         }}</style>
         """,
@@ -222,8 +222,8 @@ def _cartao_selecionavel(chave, icone_html, titulo, subtitulo, badge_html, selec
             <div style="display:flex;align-items:center;gap:12px;">
               {icone_html}
               <div>
-                <div style="font-size:13px;font-weight:500;">{titulo}</div>
-                <div class="mono" style="font-size:12px;color:#585F66;">{subtitulo}</div>
+                <div style="font-size:var(--fs-secundario);font-weight:500;">{titulo}</div>
+                <div class="mono" style="font-size:var(--fs-legenda);color:var(--texto-2);">{subtitulo}</div>
               </div>
             </div>
             """,
@@ -252,12 +252,12 @@ def _wizard_etapa1():
         elegivel = cliente["status"] == "ativo"
         moto_atual = contratos_ativos.get(cliente["id"])
         if not elegivel:
-            badge = f'<span style="font-size:12px;color:#D64545;">{"bloqueado" if cliente["status"] == "bloqueado" else "inativo"} · não pode alugar</span>'
+            badge = f'<span style="font-size:var(--fs-legenda);color:var(--perigo-texto);">{"bloqueado" if cliente["status"] == "bloqueado" else "inativo"} · não pode alugar</span>'
         elif moto_atual:
-            badge = f'<span style="font-size:12px;color:#585F66;">já aluga {placas.get(moto_atual, "—")}</span>'
+            badge = f'<span style="font-size:var(--fs-legenda);color:var(--texto-2);">já aluga {placas.get(moto_atual, "—")}</span>'
         else:
             badge = ""
-        avatar_cor = "#1E2227" if elegivel else "#585F66"
+        avatar_cor = "var(--chip-fundo)" if elegivel else "var(--avatar-inativo)"
         if _cartao_selecionavel(
             f"cli_card_{cliente['id']}",
             _avatar_circulo(_iniciais(cliente["nome"]), avatar_cor),
@@ -312,7 +312,7 @@ def _wizard_etapa3():
     with col_data:
         inicio = campo_data("Data de início", condicoes_atuais.get("data_inicio") or hoje_br().isoformat())
     with col_periodo:
-        st.markdown('<span style="font-size:12px;color:#585F66;">Periodicidade</span>', unsafe_allow_html=True)
+        st.markdown('<span style="font-size:var(--fs-legenda);color:var(--texto-2);">Periodicidade</span>', unsafe_allow_html=True)
         periodicidade_atual = st.session_state.get("wizard_periodicidade", "mensal")
         with st.container(key="contrato_periodicidade"):
             cols = st.columns(len(_PERIODOS))
@@ -379,13 +379,13 @@ def _wizard_etapa4():
 
     st.markdown(
         f"""
-        <div style="background:#1E2227;border-radius:6px;padding:20px 24px;color:#FAFAF9;">
+        <div style="background:var(--chip-fundo);border-radius:var(--raio-sm);padding:20px 24px;color:var(--chip-texto);">
           <div class="rotulo" style="font-size:17px;margin-bottom:12px;">{cliente['nome']} vai alugar {moto['placa']} · {moto['marca']} {moto['modelo']}</div>
           <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;">
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:11px;color:#9AA0A6;">periodicidade</span><span style="font-size:13px;">{_PERIODOS_ROTULO[condicoes['periodicidade']]}</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:11px;color:#9AA0A6;">valor / período</span><span class="mono" style="font-size:13px;">{formatar_moeda(condicoes['valor_periodo'])}</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:11px;color:#9AA0A6;">início</span><span class="mono" style="font-size:13px;">{formatar_data(condicoes['data_inicio'])}</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:11px;color:#9AA0A6;">caução</span><span class="mono" style="font-size:13px;">{formatar_moeda(condicoes['caucao_valor'])}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">periodicidade</span><span style="font-size:var(--fs-secundario);">{_PERIODOS_ROTULO[condicoes['periodicidade']]}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(condicoes['valor_periodo'])}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">início</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(condicoes['data_inicio'])}</span></div>
+            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(condicoes['caucao_valor'])}</span></div>
           </div>
         </div>
         """,
@@ -448,7 +448,7 @@ def _exibir_wizard():
     col_titulo.markdown(
         """
         <h1 class="rotulo" style="margin:0;font-size:24px;">Novo contrato</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">assistente em 4 etapas</div>
+        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">assistente em 4 etapas</div>
         """,
         unsafe_allow_html=True,
     )
@@ -515,7 +515,7 @@ def _cabecalho_ficha(contrato, moto, cliente):
             <h1 class="rotulo" style="margin:0;font-size:22px;">{cliente['nome']} → {moto['marca']} {moto['modelo']}
               {chip_placa(moto['placa'])}
             </h1>
-            <div style="font-size:13px;margin-top:6px;">{selo_situacao(linha, contrato["status"])}</div>
+            <div style="font-size:var(--fs-secundario);margin-top:6px;">{selo_situacao(linha, contrato["status"])}</div>
             """,
             unsafe_allow_html=True,
         )
@@ -538,21 +538,21 @@ def _faixa_dados_contrato(contrato):
     km_inicial = f"{contrato['km_inicial']:,}".replace(",", ".")
     st.markdown(
         f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;margin-bottom:24px;">
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">valor / período</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['valor_periodo'])}</span>
+        <div class="cartao cartao--faixa" style="margin-bottom:24px;">
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span>
           </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">caução</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['caucao_valor'])}</span>
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span>
           </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">km inicial</span><span class="mono" style="font-size:13px;">{km_inicial} km</span>
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">km inicial</span><span class="mono" style="font-size:var(--fs-secundario);">{km_inicial} km</span>
           </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">prazo</span><span style="font-size:13px;">{prazo}</span>
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">prazo</span><span style="font-size:var(--fs-secundario);">{prazo}</span>
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">próxima cobrança</span><span class="mono" style="font-size:13px;">{proxima}</span>
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span>
           </div>
         </div>
         """,
@@ -578,7 +578,7 @@ def _aba_cobrancas(contrato):
             [
                 c["tipo"].capitalize(),
                 f'<span class="mono">{formatar_data(c["vencimento"])}</span>',
-                f'<span class="mono">{pago_em}</span>' if pago_em else '<span style="color:#9AA0A6;">—</span>',
+                f'<span class="mono">{pago_em}</span>' if pago_em else '<span style="color:var(--texto-3);">—</span>',
                 f'<span class="mono">{formatar_moeda(c["valor"])}</span>',
                 situacao_html,
             ]
@@ -595,10 +595,10 @@ def _aba_vistorias(contrato):
             if not vistoria:
                 st.markdown(
                     f"""
-                    <div style="background:#FAFAF9;border:1px dashed rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;
+                    <div style="background:var(--superficie);border:1px dashed var(--linha);border-radius:var(--raio-sm);padding:18px 22px;
                                 display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;height:100%;">
-                      <h3 class="rotulo" style="margin:0;font-size:14px;color:#585F66;">{titulo}</h3>
-                      <div style="font-size:13px;color:#585F66;">Ainda não realizada{" — será registrada no encerramento do contrato." if tipo == "devolucao" else "."}</div>
+                      <h3 class="rotulo" style="margin:0;font-size:14px;color:var(--texto-2);">{titulo}</h3>
+                      <div class="fs-secundario texto-2">Ainda não realizada{" — será registrada no encerramento do contrato." if tipo == "devolucao" else "."}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -610,13 +610,13 @@ def _aba_vistorias(contrato):
             ) or "Nenhuma"
             st.markdown(
                 f"""
-                <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+                <div class="cartao">
                   <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">{titulo}</h3>
                   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;">
-                    <div class="campo"><span style="font-size:11px;color:#585F66;">data</span><span class="mono" style="font-size:13px;">{formatar_data(vistoria['data'])}</span></div>
-                    <div class="campo"><span style="font-size:11px;color:#585F66;">km</span><span class="mono" style="font-size:13px;">{f"{vistoria['km']:,}".replace(",", ".")} km</span></div>
-                    <div class="campo"><span style="font-size:11px;color:#585F66;">combustível</span><span style="font-size:13px;">{(vistoria.get('nivel_combustivel') or '—').capitalize()}</span></div>
-                    <div class="campo"><span style="font-size:11px;color:#585F66;">avarias</span><span style="font-size:13px;">{avarias}</span></div>
+                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">data</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(vistoria['data'])}</span></div>
+                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">km</span><span class="mono" style="font-size:var(--fs-secundario);">{f"{vistoria['km']:,}".replace(",", ".")} km</span></div>
+                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">combustível</span><span style="font-size:var(--fs-secundario);">{(vistoria.get('nivel_combustivel') or '—').capitalize()}</span></div>
+                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">avarias</span><span style="font-size:var(--fs-secundario);">{avarias}</span></div>
                   </div>
                 </div>
                 """,
@@ -637,7 +637,7 @@ def _aba_manutencoes(contrato):
             m["tipo"].capitalize(),
             m["descricao"],
             f'<span class="mono">{f"{m["km"]:,}".replace(",", ".")} km</span>',
-            "Sim" if m.get("cobrar_do_cliente") else '<span style="color:#585F66;">Não</span>',
+            "Sim" if m.get("cobrar_do_cliente") else '<span style="color:var(--texto-2);">Não</span>',
             f'<span class="mono">{formatar_moeda(m["custo_total"])}</span>',
         ]
         for m in registros

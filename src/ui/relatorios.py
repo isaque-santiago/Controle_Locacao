@@ -197,11 +197,11 @@ def _aba_custo(resultado):
 
 
 def _indicador(rotulo, valor, cor=None, ultimo=False):
-    borda = "" if ultimo else "border-right:1px solid rgba(30,34,39,0.12);"
+    borda = "" if ultimo else "border-right:1px solid var(--linha);"
     estilo_cor = f"color:{cor};" if cor else ""
     return (
         f'<div style="flex:1;padding:16px 22px;{borda}display:flex;flex-direction:column;gap:6px;">'
-        f'<span class="rotulo" style="font-size:12px;color:#585F66;">{rotulo}</span>'
+        f'<span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">{rotulo}</span>'
         f'<span class="mono" style="font-size:24px;font-weight:600;{estilo_cor}">{valor}</span></div>'
     )
 
@@ -210,8 +210,8 @@ def _aba_inadimplencia(dados):
     st.caption("Posição atual de cobranças em atraso, independente do período selecionado.")
     percentual = dados["percentual_carteira"]
     st.markdown(
-        '<div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);'
-        'border-radius:2px;margin-bottom:20px;">'
+        '<div style="display:flex;background:var(--superficie);border:1px solid var(--linha);'
+        'border-radius:var(--raio-sm);margin-bottom:20px;">'
         + _indicador("total em atraso", formatar_moeda(dados["total_atraso"]), _VERMELHO if dados["total_atraso"] else None)
         + _indicador(
             "% da carteira do mês",
@@ -261,7 +261,7 @@ def _aba_fluxo(fluxo, hoje):
             [
                 escape(formatar_mes(m["mes"]))
                 + (
-                    ' <span style="color:#9AA0A6;font-weight:400;">(parcial)</span>'
+                    ' <span style="color:var(--texto-3);font-weight:400;">(parcial)</span>'
                     if m["mes"] == mes_atual
                     else ""
                 ),
@@ -310,8 +310,8 @@ def exibir():
         subtitulo = _periodo_texto(inicio, fim) if isinstance(inicio, date) and isinstance(fim, date) else ""
         st.markdown(
             f"""
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Relatórios</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">{escape(subtitulo)}</div>
+            <h1 class="rotulo pagina-titulo">Relatórios</h1>
+            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{escape(subtitulo)}</div>
             """,
             unsafe_allow_html=True,
         )

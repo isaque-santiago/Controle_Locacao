@@ -159,8 +159,8 @@ def _exibir_lista():
     col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
     col_titulo.markdown(
         f"""
-        <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Motos</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">{len(registros)} moto(s) cadastrada(s)</div>
+        <h1 class="rotulo pagina-titulo">Motos</h1>
+        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{len(registros)} moto(s) cadastrada(s)</div>
         """,
         unsafe_allow_html=True,
     )
@@ -209,24 +209,24 @@ def _exibir_lista():
         cab = st.columns([1.3, 1.8, 1.5, 1.4, 1.5, 0.5], vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Placa", "Modelo", "Km atual", "Status", "Contrato atual", ""]):
             coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
+                f'<span class="fs-secundario texto-2">{rotulo}</span>',
                 unsafe_allow_html=True,
             )
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhuma moto encontrada.</div>',
+                '<div class="vazio vazio--linha">Nenhuma moto encontrada.</div>',
                 unsafe_allow_html=True,
             )
         for moto in pagina_atual:
             linha = st.columns([1.3, 1.8, 1.5, 1.4, 1.5, 0.5], vertical_alignment="center")
             linha[0].markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
             linha[1].markdown(
-                f'<span style="font-size:13px;">{moto["marca"]} {moto["modelo"]}</span>',
+                f'<span style="font-size:var(--fs-secundario);">{moto["marca"]} {moto["modelo"]}</span>',
                 unsafe_allow_html=True,
             )
             sub_km, sub_botao = linha[2].columns([3, 1], vertical_alignment="center")
             sub_km.markdown(
-                f'<span class="mono" style="font-size:13px;">{moto["km_atual"]:,} km</span>'.replace(",", "."),
+                f'<span class="mono" style="font-size:var(--fs-secundario);">{moto["km_atual"]:,} km</span>'.replace(",", "."),
                 unsafe_allow_html=True,
             )
             if sub_botao.button("✎", key=f"km_{moto['id']}", help="Atualizar km"):
@@ -237,7 +237,7 @@ def _exibir_lista():
             )
             cliente_id = contratos_ativos.get(moto["id"])
             linha[4].markdown(
-                f'<span style="font-size:13px;{"color:#9AA0A6;" if not cliente_id else ""}">'
+                f'<span style="font-size:var(--fs-secundario);{"color:var(--texto-3);" if not cliente_id else ""}">'
                 f'{nomes_cliente.get(cliente_id, "—") if cliente_id else "—"}</span>',
                 unsafe_allow_html=True,
             )
@@ -262,9 +262,9 @@ def _card_contrato_ativo(moto_id):
     if not contrato:
         st.markdown(
             """
-            <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+            <div class="cartao">
               <h3 class="rotulo" style="margin:0 0 6px;font-size:14px;">Contrato ativo</h3>
-              <div style="font-size:13px;color:#585F66;">Nenhum contrato ativo para esta moto.</div>
+              <div class="fs-secundario texto-2">Nenhum contrato ativo para esta moto.</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -281,22 +281,22 @@ def _card_contrato_ativo(moto_id):
 
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+        <div class="cartao">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:#1E2227;color:#FAFAF9;
-                        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;">{_iniciais(nome)}</div>
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--chip-fundo);color:var(--chip-texto);
+                        display:flex;align-items:center;justify-content:center;font-size:var(--fs-secundario);font-weight:600;">{_iniciais(nome)}</div>
             <div>
               <div style="font-size:14px;font-weight:500;">{nome}</div>
-              <div style="font-size:12px;color:#585F66;">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
+              <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">valor / período</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">próxima cobrança</span><span class="mono" style="font-size:13px;">{proxima}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">caução</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
           </div>
         </div>
         """,
@@ -309,15 +309,15 @@ def _card_contrato_ativo(moto_id):
 def _card_dados_moto(moto):
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
+        <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados da moto</h3>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">renavam</span><span class="mono" style="font-size:13px;">{moto.get('renavam') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">chassi</span><span class="mono" style="font-size:13px;">{moto.get('chassi') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">placa</span><span class="mono" style="font-size:13px;">{formatar_placa(moto['placa'])}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">valor de aquisição</span><span class="mono" style="font-size:13px;">{formatar_moeda(moto.get('valor_aquisicao'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">data de aquisição</span><span class="mono" style="font-size:13px;">{formatar_data(moto.get('data_aquisicao'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">status</span><span style="font-size:13px;">{_STATUS_ROTULO[moto['status']]}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">renavam</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('renavam') or '—'}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">chassi</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('chassi') or '—'}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">placa</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_placa(moto['placa'])}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor de aquisição</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_aquisicao'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">data de aquisição</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(moto.get('data_aquisicao'))}</span></div>
+            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">status</span><span style="font-size:var(--fs-secundario);">{_STATUS_ROTULO[moto['status']]}</span></div>
           </div>
         </div>
         """,
@@ -330,18 +330,18 @@ def _card_quilometragem(moto_id):
     linhas = "".join(
         f"""
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;
-                    {"border-bottom:1px solid rgba(30,34,39,0.12);" if i < len(historico) - 1 else ""}">
-          <span class="mono" style="font-size:13px;">{f"{h['km']:,}".replace(",", ".")} km</span>
-          <span style="font-size:12px;color:#585F66;">{formatar_data(h['data'])} · {h['origem']}</span>
+                    {"border-bottom:1px solid var(--linha);" if i < len(historico) - 1 else ""}">
+          <span class="mono" style="font-size:var(--fs-secundario);">{f"{h['km']:,}".replace(",", ".")} km</span>
+          <span style="font-size:var(--fs-legenda);color:var(--texto-2);">{formatar_data(h['data'])} · {h['origem']}</span>
         </div>
         """
         for i, h in enumerate(historico)
     )
     if not historico:
-        linhas = '<div style="padding:8px 0;color:#585F66;font-size:13px;">Nenhuma leitura registrada.</div>'
+        linhas = '<div style="padding:8px 0;color:var(--texto-2);font-size:var(--fs-secundario);">Nenhuma leitura registrada.</div>'
     st.markdown(
         f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;height:100%;">
+        <div class="cartao" style="height:100%;">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Quilometragem</h3>
           {linhas}
         </div>
@@ -384,7 +384,7 @@ def _aba_plano(moto):
         linhas.append(
             [
                 item["item"]["nome"],
-                f'<span style="color:#585F66;">{intervalo or "—"}</span>',
+                f'<span style="color:var(--texto-2);">{intervalo or "—"}</span>',
                 f'<span class="mono">{f"{item["ultima_km"]:,}".replace(",", ".") + " km" if item["ultima_km"] else "—"}</span>',
                 f'<span class="mono">{f"{item["proxima_km"]:,}".replace(",", ".") + " km" if item["proxima_km"] else "—"}</span>',
                 f'<span class="mono">{restante}</span>',
@@ -424,10 +424,10 @@ def _aba_documentos(moto):
     with st.container(key="motos_card_documentos"):
         cab = st.columns([1.2, 1.2, 1.2, 1.6, 0.8], vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Tipo", "Referência", "Vencimento", "Situação", ""]):
-            coluna.markdown(f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>', unsafe_allow_html=True)
+            coluna.markdown(f'<span class="fs-secundario texto-2">{rotulo}</span>', unsafe_allow_html=True)
         if not registros:
             st.markdown(
-                '<div style="padding:12px 20px;color:#585F66;font-size:13px;">Nenhum documento cadastrado.</div>',
+                '<div class="vazio vazio--linha">Nenhum documento cadastrado.</div>',
                 unsafe_allow_html=True,
             )
         hoje = hoje_br()
@@ -436,12 +436,12 @@ def _aba_documentos(moto):
             situacao = "vencido" if vencido else ("a_vencer" if not doc["regularizado"] else "ok")
             texto_situacao = "Vencido" if vencido else ("A vencer" if not doc["regularizado"] else "Em dia")
             linha = st.columns([1.2, 1.2, 1.2, 1.6, 0.8], vertical_alignment="center")
-            linha[0].markdown(f'<span style="font-size:13px;">{doc["tipo"].upper()}</span>', unsafe_allow_html=True)
+            linha[0].markdown(f'<span style="font-size:var(--fs-secundario);">{doc["tipo"].upper()}</span>', unsafe_allow_html=True)
             linha[1].markdown(
-                f'<span style="font-size:13px;color:#585F66;">{doc.get("ano_referencia") or doc.get("descricao") or "—"}</span>',
+                f'<span class="fs-secundario texto-2">{doc.get("ano_referencia") or doc.get("descricao") or "—"}</span>',
                 unsafe_allow_html=True,
             )
-            linha[2].markdown(f'<span class="mono" style="font-size:13px;">{formatar_data(doc["vencimento"])}</span>', unsafe_allow_html=True)
+            linha[2].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(doc["vencimento"])}</span>', unsafe_allow_html=True)
             linha[3].markdown(selo_situacao(texto_situacao, situacao), unsafe_allow_html=True)
             if not doc["regularizado"]:
                 if linha[4].button("Regularizar", key=f"reg_{doc['id']}"):
@@ -456,7 +456,7 @@ def _aba_contratos(moto):
         [
             nomes.get(c["cliente_id"], "—"),
             f'<span class="mono">{formatar_data(c["data_inicio"])}</span>',
-            f'<span class="mono">{formatar_data(c["data_encerramento"]) if c["data_encerramento"] else "<span style=color:#9AA0A6>—</span>"}</span>',
+            f'<span class="mono">{formatar_data(c["data_encerramento"]) if c["data_encerramento"] else "<span style=color:var(--texto-3)>—</span>"}</span>',
             selo_situacao(
                 {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}[c["status"]],
                 c["status"],
@@ -476,26 +476,26 @@ def _aba_financeiro(moto):
         return
     st.markdown(
         f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;">
-          <div style="flex:1;padding:18px 24px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">receita recebida</span>
-            <span class="mono" style="font-size:26px;font-weight:600;color:#2F9E6E;">{formatar_moeda_compacta(dados['receita_recebida'])}</span>
+        <div class="cartao cartao--faixa">
+          <div style="flex:1;padding:18px 24px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:8px;">
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">receita recebida</span>
+            <span class="mono" style="font-size:26px;font-weight:600;color:var(--sucesso-texto);">{formatar_moeda_compacta(dados['receita_recebida'])}</span>
           </div>
-          <div style="flex:1;padding:18px 24px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">custo de manutenção</span>
+          <div style="flex:1;padding:18px 24px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:8px;">
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">custo de manutenção</span>
             <span class="mono" style="font-size:26px;font-weight:600;">{formatar_moeda_compacta(dados['custo_manutencao'])}</span>
           </div>
-          <div style="flex:1;padding:18px 24px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">custo de documentos</span>
+          <div style="flex:1;padding:18px 24px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:8px;">
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">custo de documentos</span>
             <span class="mono" style="font-size:26px;font-weight:600;">{formatar_moeda_compacta(dados['custo_documentos'])}</span>
           </div>
           <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">resultado</span>
-            <span class="mono" style="font-size:26px;font-weight:600;color:{'#2F9E6E' if dados['resultado'] >= 0 else '#D64545'};">{formatar_moeda_compacta(dados['resultado'])}</span>
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">resultado</span>
+            <span class="mono" style="font-size:26px;font-weight:600;color:{'var(--sucesso-texto)' if dados['resultado'] >= 0 else 'var(--perigo-texto)'};">{formatar_moeda_compacta(dados['resultado'])}</span>
           </div>
         </div>
-        <div style="font-size:13px;color:#585F66;margin-top:16px;">Custo por km rodado desde a aquisição:
-          <span class="mono" style="color:#1E2227;font-weight:600;">{formatar_moeda(dados['custo_por_km']) if dados['custo_por_km'] is not None else '—'}</span>
+        <div style="font-size:var(--fs-secundario);color:var(--texto-2);margin-top:16px;">Custo por km rodado desde a aquisição:
+          <span class="mono" style="color:var(--texto);font-weight:600;">{formatar_moeda(dados['custo_por_km']) if dados['custo_por_km'] is not None else '—'}</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -527,7 +527,7 @@ def _exibir_ficha(moto_id):
               {chip_placa(moto['placa'], "grande")}
               <div>
                 <h1 class="rotulo" style="margin:0;font-size:24px;">{moto['marca']} {moto['modelo']}</h1>
-                <div style="font-size:13px;margin-top:3px;">
+                <div style="font-size:var(--fs-secundario);margin-top:3px;">
                   {selo_situacao(
                       "Alugada · " + linha_status if moto["status"] == "alugada" else linha_status,
                       moto["status"],
@@ -554,19 +554,19 @@ def _exibir_ficha(moto_id):
     st.write("")
     st.markdown(
         f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;margin-bottom:20px;">
-          <div style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:4px;">
-            <span class="rotulo" style="font-size:11px;color:#585F66;">km atual</span>
+        <div class="cartao cartao--faixa" style="margin-bottom:20px;">
+          <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;">
+            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">km atual</span>
             <span class="mono" style="font-size:20px;font-weight:600;">{f"{moto['km_atual']:,}".replace(",", ".")} km</span>
           </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">ano fab. / modelo</span><span class="mono" style="font-size:13px;">{moto.get('ano_fabricacao') or '—'} / {moto.get('ano_modelo') or '—'}</span>
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">ano fab. / modelo</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('ano_fabricacao') or '—'} / {moto.get('ano_modelo') or '—'}</span>
           </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">cor</span><span style="font-size:13px;">{moto.get('cor') or '—'}</span>
+          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">cor</span><span style="font-size:var(--fs-secundario);">{moto.get('cor') or '—'}</span>
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">locação sugerida</span><span class="mono" style="font-size:13px;">{formatar_moeda(moto.get('valor_locacao_sugerido'))} / mês</span>
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">locação sugerida</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_locacao_sugerido'))} / mês</span>
           </div>
         </div>
         """,
