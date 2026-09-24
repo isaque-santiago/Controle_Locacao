@@ -8,3 +8,4 @@ pydantic==2.13.5
 openpyxl==3.1.5
 pytest==9.1.1
 tzdata==2026.4
+fpdf2==2.8.8

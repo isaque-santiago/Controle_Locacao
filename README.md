@@ -12,7 +12,7 @@ Python 3.11+, Streamlit, Supabase (PostgreSQL + Auth + Storage), Plotly, pytest.
 
 1. Crie um projeto no Supabase. As migrations em `supabase/migrations/` seguem o formato `AAAAMMDDHHMMSS_descricao.sql` (exigido pela integração Supabase ↔ GitHub, que aplica cada push automaticamente); ao adicionar uma nova, use um timestamp maior que o da última. `supabase/seed.sql` **não** é aplicado por essa integração — rode-o manualmente no SQL Editor após a primeira aplicação das migrations.
 2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users) e troque o UUID dentro de `is_dono()` na migration `20260922000000_restringe_rls_ao_dono.sql` **antes de aplicá-la** — a RLS libera o acesso somente a esse usuário; com um UUID errado, ninguém consegue ler nem gravar dados.
-3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
+3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Preencha também a seção `[locador]` (dados da empresa que aparecem no contrato em PDF); sem ela o contrato sai com linhas em branco no lugar do locador.
 4. Instale as dependências:
 
 ```bash
@@ -24,6 +24,24 @@ pip install -r requirements.txt
 ```bash
 streamlit run app.py
 ```
+
+## Contrato em PDF
+
+A ficha do contrato tem o botão **Contrato em PDF**, que gera o contrato de locação no
+modelo usado pela empresa (10 cláusulas), com os dados do cliente, da moto e do contrato
+(valor e caução por extenso, datas, km inicial). O PDF só é montado no clique.
+
+- **Texto do modelo:** `src/domain/contrato_modelo.py`. As multas, prazos e valores fixos
+  do modelo ficam no dicionário `TERMOS` (um lugar só, para revisão com o advogado); o
+  restante do texto é a redação do contrato original.
+- **Dados da empresa (LOCADOR):** seção `[locador]` do `secrets.toml`, fora do git.
+- **Campos que o cadastro não tem** (nacionalidade, estado civil, profissão, RG do
+  cliente e motor da moto) saem como linha em branco para preencher à mão.
+- **Fora do contrato gerado:** a cláusula 6.2 (multa e juros por atraso) usa os valores
+  fixos do modelo (`atraso_multa` e `atraso_juros_por_dia`), não os percentuais da tela
+  Configurações; se a operação mudar de regra, ajuste `TERMOS` ou passe a usar a
+  configuração.
+- Modelo padrão de contrato: revise o texto final com um advogado antes de usar.
 
 ## Testes
 

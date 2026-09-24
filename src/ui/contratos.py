@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 import streamlit as st
 
-from src.services import contratos, motos, clientes, cobrancas, vistorias, manutencao
+from src.services import contratos, motos, clientes, cobrancas, vistorias, manutencao, contrato_pdf
 from src.domain.valores import hoje_br, decimal_br
 from src.ui.componentes import (
     cabecalho,
@@ -522,6 +522,16 @@ def _cabecalho_ficha(contrato, moto, cliente):
     with col_acao:
         if st.button("Ver cliente →", key="ver_cliente_contrato", use_container_width=True):
             abrir_ficha_cliente(cliente["id"])
+        st.download_button(
+            "Contrato em PDF",
+            data=lambda: contrato_pdf.gerar(contrato, cliente, moto),
+            file_name=f"contrato_{moto['placa']}_{contrato['data_inicio']}.pdf",
+            mime="application/pdf",
+            key="baixar_contrato_pdf",
+            on_click="ignore",
+            use_container_width=True,
+            help="Gera o contrato de locação no modelo da empresa, com os dados deste contrato.",
+        )
         if contrato["status"] == "ativo":
             if st.button("Encerrar contrato", key="abrir_encerrar", use_container_width=True):
                 _dialog_encerrar(contrato, moto, cliente)

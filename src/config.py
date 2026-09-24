@@ -16,3 +16,16 @@ def get_supabase_anon_key() -> str:
     if not valor or valor == "sua-anon-key":
         raise RuntimeError("SUPABASE_ANON_KEY não foi configurada.")
     return valor
+
+
+def get_locador() -> dict:
+    """Dados da empresa LOCADORA para o contrato: seção [locador] do secrets.toml.
+
+    Ficam fora do repositório (têm CNPJ e documentos pessoais do representante).
+    Devolve {} se a seção não existir — o contrato sai com linhas em branco.
+    """
+    try:
+        bruto = st.secrets.get("locador")
+        return {chave: str(valor) for chave, valor in dict(bruto).items()} if bruto else {}
+    except Exception:
+        return {}
