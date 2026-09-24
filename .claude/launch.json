@@ -5,7 +5,8 @@
       "name": "controle-locacao",
       "runtimeExecutable": ".venv\\Scripts\\streamlit.exe",
       "runtimeArgs": ["run", "app.py", "--server.headless", "true"],
-      "port": 8501
+      "port": 8501,
+      "autoPort": true
     }
   ]
 }
