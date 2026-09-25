@@ -760,6 +760,9 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   }
   .tabela-leitura td[data-label]::before {content: attr(data-label); font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3);}
   .tabela-leitura td[colspan] {grid-column: 1 / -1;}
+  /* Nº ímpar de campos: o último (ex.: Situação) ocupa a linha inteira, e o selo se estica até as bordas do cartão */
+  .tabela-leitura td:last-child:nth-child(odd) {grid-column: 1 / -1;}
+  .tabela-leitura td:last-child:nth-child(odd) .badge {align-self: stretch; width: auto;}
   /* Clientes > ficha > Contratos: cada contrato vira um bloco (moto + situação / início, fim, valor) */
   .st-key-clientes_card_contratos {overflow: visible;}
   .st-key-clientes_card_contratos > div:first-child {display: none;}
