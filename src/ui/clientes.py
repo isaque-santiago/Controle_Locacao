@@ -296,17 +296,20 @@ def _card_contrato_ativo(cliente_id):
 
 def _card_dados_pessoais(cliente):
     """Cartão em largura total: em coluna estreita os valores de 22px (CPF, CNH, e-mail) quebravam no meio."""
+    # A categoria vai no rótulo: o número da CNH sozinho cabe em meia largura no celular
+    categoria = cliente.get("cnh_categoria")
+    rotulo_categoria = f" · cat. {_html(categoria)}" if categoria else ""
     st.markdown(
         f"""
         <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
-          <div class="grade-dados">
+          <div class="grade-dados grade-dados--duas">
             <div class="campo"><span class="texto-2">CPF</span><span class="mono">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span class="texto-2">CNH</span><span class="mono">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
+            <div class="campo"><span class="texto-2">CNH{rotulo_categoria}</span><span class="mono">{_html(cliente.get('cnh_numero'))}</span></div>
             <div class="campo"><span class="texto-2">Validade CNH</span><span class="mono">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
             <div class="campo"><span class="texto-2">telefone</span><span class="mono">{_html(cliente.get('telefone'))}</span></div>
-            <div class="campo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
-            <div class="campo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
+            <div class="campo campo--largo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
+            <div class="campo campo--largo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
           </div>
         </div>
         """,
