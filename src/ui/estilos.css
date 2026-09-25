@@ -685,7 +685,7 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   /* Selo de situação logo acima do nome/modelo */
   .moto-cab > div {display: flex; flex-direction: column; gap: var(--e2);}
   .moto-cab > div > div:last-child {order: -1; margin-top: 0 !important;}
- (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
+  /* Motos > lista: cada moto vira um bloco (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
   .st-key-motos_card_lista {overflow: visible;}
   .st-key-motos_card_lista > div:first-child {display: none;}
   [data-testid="stApp"] .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] {
@@ -789,6 +789,40 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   /* Placa e modelo lado a lado, sem o espaçamento de linha de tabela */
   .st-key-clientes_card_contratos [data-testid="stColumn"] [data-testid="stHorizontalBlock"] {padding: 0 !important; border-bottom: 0; flex-wrap: nowrap; gap: var(--e3);}
   .st-key-clientes_card_contratos [data-testid="stColumn"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width: auto !important; min-width: 0 !important; flex: 0 1 auto !important;}
+  /* Contratos > lista: cada contrato vira um bloco (cliente + situação + ação / moto, início, periodicidade / valor), sem rolagem lateral */
+  .st-key-contratos_card_lista {overflow: visible;}
+  .st-key-contratos_card_lista > div:first-child {display: none;}
+  [data-testid="stApp"] .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto 32px; gap: var(--e3) var(--e3); align-items: center;
+    grid-template-areas: "cli cli sit btn" "moto ini per per" "val val val val";
+    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
+  }
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: cli;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: ini;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: per;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: val;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: sit; justify-self: end;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: btn; justify-self: end;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) span {overflow-wrap: anywhere;}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(5)) [data-testid="stMarkdownContainer"]::before {
+    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
+  }
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Moto";}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Início";}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Periodicidade";}
+  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Valor / período";}
+  /* Ficha do contrato: cliente e moto empilhados (selo de situação acima), em vez de um título longo quebrando no meio */
+  .contrato-cab {display: flex; flex-direction: column; gap: var(--e2);}
+  .contrato-cab > div {order: -1; margin-top: 0 !important; align-self: flex-start;}
+  .contrato-cab h1 {font-size: 24px !important; line-height: 1.15; padding: 0 !important; display: flex; flex-direction: column; align-items: flex-start; gap: var(--e2);}
+  .contrato-cab .contrato-cab__seta {display: none;}
+  .contrato-cab .contrato-cab__moto {display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap; font-size: 18px; color: var(--texto-2);}
+  /* Faixa de dados do contrato: 5 células em 2 colunas; a última (próxima cobrança) ocupa a linha inteira; valores menores */
+  .cartao--faixa-contrato {--fs-dado: 18px;}
+  .cartao--faixa-contrato > div:nth-child(4) {border-bottom: 1px solid var(--linha);}
+  .cartao--faixa-contrato > div:nth-child(5) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
   /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
   .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
   [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {
