@@ -525,7 +525,7 @@ def _exibir_ficha(moto_id):
     with col_cab:
         st.markdown(
             f"""
-            <div style="display:flex;align-items:center;gap:16px;">
+            <div class="moto-cab" style="display:flex;align-items:center;gap:16px;">
               {chip_placa(moto['placa'], "grande")}
               <div>
                 <h1 class="rotulo" style="margin:0;font-size:24px;">{moto['marca']} {moto['modelo']}</h1>
