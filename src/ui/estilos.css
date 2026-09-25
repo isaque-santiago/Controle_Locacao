@@ -823,6 +823,55 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .cartao--faixa-contrato {--fs-dado: 18px;}
   .cartao--faixa-contrato > div:nth-child(4) {border-bottom: 1px solid var(--linha);}
   .cartao--faixa-contrato > div:nth-child(5) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
+  /* Cobranças (todas as abas): cada cobrança vira um bloco em grade, sem rolagem lateral; o cabeçalho some e cada valor ganha rótulo */
+  [class*="st-key-cobrancas_card"] {overflow: visible;}
+  [class*="st-key-cobrancas_card"] > div:first-child {display: none;}
+  [data-testid="stApp"] [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] {
+    display: grid !important; gap: var(--e3); align-items: center; padding: var(--e3) var(--e4) !important; min-width: 0 !important;
+  }
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] [data-testid="stMarkdownContainer"] {overflow-wrap: anywhere;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+2) [data-testid="stMarkdownContainer"]::before {
+    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
+  }
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: cli;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Moto";}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: ven;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Vencimento";}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: c4;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: c5;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: c6;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: c7;}
+  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: act; justify-self: end;}
+  /* Hoje: cliente + ação / moto, vencimento, valor */
+  [data-testid="stApp"] .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "cli cli cli c5" "moto ven c4 c4";
+  }
+  .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
+  .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {justify-self: end;}
+  /* Próximos 7 dias: cliente + "1ª parcela" / moto, vencimento, valor */
+  [data-testid="stApp"] .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "cli cli c5" "moto ven c4";
+  }
+  .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
+  .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {justify-self: end;}
+  /* Pagas: cliente + valor / moto, vencimento, pago em / forma */
+  [data-testid="stApp"] .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "cli cli c6" "moto ven c4" "c5 c5 c5";
+  }
+  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Pago em";}
+  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Forma";}
+  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
+  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {justify-self: end; text-align: right;}
+  /* Atrasadas: cliente + ação / moto, vencimento, atraso / original, encargos, total */
+  [data-testid="stApp"] .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "cli cli cli act" "moto ven c4 c4" "c5 c6 c7 c7";
+  }
+  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Atraso";}
+  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Original";}
+  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Encargos";}
+  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) [data-testid="stMarkdownContainer"]::before {content: "Total";}
   /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
   .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
   [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {
