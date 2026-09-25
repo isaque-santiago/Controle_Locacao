@@ -279,31 +279,34 @@ def _card_contrato_ativo(moto_id):
     parcelas.sort(key=lambda c: c["vencimento"])
     proxima = formatar_data(parcelas[0]["vencimento"]) if parcelas else "—"
 
-    st.markdown(
-        f"""
-        <div class="cartao">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--chip-fundo);color:var(--chip-texto);
-                        display:flex;align-items:center;justify-content:center;font-size:var(--fs-secundario);font-weight:600;">{_iniciais(nome)}</div>
-            <div>
-              <div style="font-size:14px;font-weight:500;">{nome}</div>
-              <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
+    # O botão vai no cabeçalho do cartão, à direita do título (não solto abaixo dele)
+    with st.container(key="moto_contrato_ativo"):
+        titulo, acao = st.columns([3, 1], vertical_alignment="center")
+        titulo.markdown(
+            '<h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>',
+            unsafe_allow_html=True,
+        )
+        with acao:
+            if st.button("Ver contratos →", key="ver_contrato_moto"):
+                abrir_ficha_contrato(contrato["id"])
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--chip-fundo);color:var(--chip-texto);
+                          display:flex;align-items:center;justify-content:center;font-size:var(--fs-secundario);font-weight:600;">{_iniciais(nome)}</div>
+              <div>
+                <div style="font-size:14px;font-weight:500;">{nome}</div>
+                <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
+              </div>
             </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Ver contratos →", key="ver_contrato"):
-        abrir_ficha_contrato(contrato["id"])
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
+              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _card_dados_moto(moto):
@@ -354,10 +357,10 @@ def _aba_resumo(moto):
     esquerda, direita = st.columns([1.5, 1], gap="medium")
     with esquerda:
         _card_contrato_ativo(moto["id"])
-        st.write("")
-        _card_dados_moto(moto)
     with direita:
         _card_quilometragem(moto["id"])
+    st.write("")
+    _card_dados_moto(moto)
 
 
 def _aba_plano(moto):
@@ -551,28 +554,29 @@ def _exibir_ficha(moto_id):
                 _salvo()
 
     st.write("")
-    st.markdown(
-        f"""
-        <div class="cartao cartao--faixa" style="margin-bottom:20px;">
-          <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">km atual</span>
-            <span class="mono" style="font-size:20px;font-weight:600;">{f"{moto['km_atual']:,}".replace(",", ".")} km</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">ano fab. / modelo</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('ano_fabricacao') or '—'} / {moto.get('ano_modelo') or '—'}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">cor</span><span style="font-size:var(--fs-secundario);">{moto.get('cor') or '—'}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">locação sugerida</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_locacao_sugerido'))} / mês</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("✎ Atualizar km", key="km_ficha"):
-        _dialog_km(moto)
+    with st.container(key="moto_faixa_km"):
+        st.markdown(
+            f"""
+            <div class="cartao cartao--faixa" style="margin-bottom:20px;">
+              <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;">
+                <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">km atual</span>
+                <span class="mono" style="font-size:20px;font-weight:600;">{f"{moto['km_atual']:,}".replace(",", ".")} km</span>
+              </div>
+              <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+                <span style="font-size:var(--fs-legenda);color:var(--texto-2);">ano fab. / modelo</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('ano_fabricacao') or '—'} / {moto.get('ano_modelo') or '—'}</span>
+              </div>
+              <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
+                <span style="font-size:var(--fs-legenda);color:var(--texto-2);">cor</span><span style="font-size:var(--fs-secundario);">{moto.get('cor') or '—'}</span>
+              </div>
+              <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
+                <span style="font-size:var(--fs-legenda);color:var(--texto-2);">locação sugerida</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_locacao_sugerido'))} / mês</span>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("✎ Atualizar km", key="km_ficha"):
+            _dialog_km(moto)
 
     abas = st.tabs(
         ["Resumo", "Plano de manutenção", "Histórico", "Documentos", "Contratos", "Financeiro"]

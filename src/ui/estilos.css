@@ -204,7 +204,7 @@ h3 {font-size: var(--fs-subtitulo);}
 /* ========================================
    CARDS
 ======================================== */
-.cartao, .st-key-cliente_contrato_ativo {
+.cartao, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) {
   background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);
   box-shadow: var(--sombra-1); padding: var(--e4) var(--e5);
 }
@@ -256,21 +256,29 @@ h3 {font-size: var(--fs-subtitulo);}
 .campo > span:not(:first-child) {font-size: var(--fs-corpo) !important; font-weight: 500; line-height: 1.35;}
 /* Dados das fichas em cartões: 22px; textos longos (e-mail, endereço) quebram em vez de vazar */
 .cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child),
-.st-key-cliente_contrato_ativo .campo > span:not(:first-child) {
+:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo > span:not(:first-child) {
   font-size: var(--fs-dado) !important; line-height: 1.25; overflow-wrap: anywhere;
 }
-.cartao .campo .mono, .cartao--faixa .campo .mono, .st-key-cliente_contrato_ativo .campo .mono {white-space: normal;}
+.cartao .campo .mono, .cartao--faixa .campo .mono, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo .mono {white-space: normal;}
 /* Dados de ficha em grade: 3 colunas (2 e 1 nos breakpoints do bloco RESPONSIVE) */
 .grade-dados {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e4) var(--e5);}
 /* Ficha do cliente > Contrato ativo: cartão com a ação (Ver contrato) no cabeçalho, à direita do título */
-.st-key-cliente_contrato_ativo {gap: var(--e3);}
+:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) {gap: var(--e3);}
 /* Acompanha a altura do cartão vizinho (Situação financeira) na mesma linha */
-[data-testid="stLayoutWrapper"]:has(> .st-key-cliente_contrato_ativo) {flex: 1 1 auto;}
+[data-testid="stLayoutWrapper"]:has(> :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo)) {flex: 1 1 auto;}
 /* A coluna do botão tem a largura do rótulo (proporcional, ele era truncado em telas estreitas) */
-.st-key-cliente_contrato_ativo [data-testid="stColumn"]:has(.st-key-ver_contrato_cliente) {flex: 0 0 auto; width: auto; min-width: 0;}
-.st-key-cliente_contrato_ativo [data-testid="stColumn"]:not(:has(.st-key-ver_contrato_cliente)) {flex: 1 1 0; min-width: 0;}
-.st-key-cliente_contrato_ativo button[kind="secondary"] {min-height: 2rem; padding: 2px var(--e3);}
-.st-key-cliente_contrato_ativo button[kind="secondary"] p {font-size: var(--fs-secundario);}
+:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) [data-testid="stColumn"]:has([class*="st-key-ver_contrato_"]) {flex: 0 0 auto; width: auto; min-width: 0;}
+:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) [data-testid="stColumn"]:not(:has([class*="st-key-ver_contrato_"])) {flex: 1 1 0; min-width: 0;}
+:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) button[kind="secondary"] {min-height: 2rem; padding: 2px var(--e3);}
+:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) button[kind="secondary"] p {font-size: var(--fs-secundario);}
+/* Ficha da moto: botão "Atualizar km" dentro da célula Km atual (canto superior direito da 1ª célula da faixa) */
+.st-key-moto_faixa_km {position: relative;}
+.st-key-moto_faixa_km .st-key-km_ficha {position: absolute; top: 12px; right: calc(75% + 14px); width: auto; z-index: 1;}
+.st-key-moto_faixa_km .st-key-km_ficha button {min-height: 1.75rem; padding: 2px var(--e3);}
+.st-key-moto_faixa_km .st-key-km_ficha button p {font-size: var(--fs-legenda);}
+@media (max-width: 900px) {
+  .st-key-moto_faixa_km .st-key-km_ficha {position: static;}
+}
 /* Configurações: cartões de formulário em largura total */
 .st-key-config_pagina {gap: var(--e5);}
 .st-key-config_pagina [data-testid="stForm"] {padding: 0; gap: var(--e5); background: transparent !important; border: 0; border-radius: 0;}
