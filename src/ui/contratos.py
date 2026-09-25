@@ -512,10 +512,13 @@ def _cabecalho_ficha(contrato, moto, cliente):
     with col_titulo:
         st.markdown(
             f"""
-            <h1 class="rotulo" style="margin:0;font-size:22px;">{cliente['nome']} → {moto['marca']} {moto['modelo']}
-              {chip_placa(moto['placa'])}
-            </h1>
-            <div style="font-size:var(--fs-secundario);margin-top:6px;">{selo_situacao(linha, contrato["status"])}</div>
+            <div class="contrato-cab">
+              <h1 class="rotulo" style="margin:0;font-size:22px;"><span>{cliente['nome']}</span>
+                <span class="contrato-cab__seta">→</span>
+                <span class="contrato-cab__moto">{moto['marca']} {moto['modelo']} {chip_placa(moto['placa'])}</span>
+              </h1>
+              <div style="font-size:var(--fs-secundario);margin-top:6px;">{selo_situacao(linha, contrato["status"])}</div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -538,7 +541,7 @@ def _faixa_dados_contrato(contrato):
     km_inicial = f"{contrato['km_inicial']:,}".replace(",", ".")
     st.markdown(
         f"""
-        <div class="cartao cartao--faixa" style="margin-bottom:24px;">
+        <div class="cartao cartao--faixa cartao--faixa-contrato" style="margin-bottom:24px;">
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
             <span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span>
           </div>
