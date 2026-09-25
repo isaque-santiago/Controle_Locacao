@@ -846,7 +846,7 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: act; justify-self: end;}
   /* Hoje: cliente + ação / moto, vencimento, valor */
   [data-testid="stApp"] .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "cli cli cli c5" "moto ven c4 c4";
+    grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cli cli c5" "moto ven c4";
   }
   .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
   .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {justify-self: end;}
@@ -858,15 +858,15 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {justify-self: end;}
   /* Pagas: cliente + valor / moto, vencimento, pago em / forma */
   [data-testid="stApp"] .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "cli cli c6" "moto ven c4" "c5 c5 c5";
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "cli cli cli" "moto ven c4" "c5 c6 c6";
   }
   .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Pago em";}
   .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Forma";}
   .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
-  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {justify-self: end; text-align: right;}
+  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {justify-self: start;}
   /* Atrasadas: cliente + ação / moto, vencimento, atraso / original, encargos, total */
   [data-testid="stApp"] .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "cli cli cli act" "moto ven c4 c4" "c5 c6 c7 c7";
+    grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cli cli act" "moto ven c4" "c5 c6 c7";
   }
   .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Atraso";}
   .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Original";}
