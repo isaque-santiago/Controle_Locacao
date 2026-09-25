@@ -407,10 +407,7 @@ def _aba_historico(frota):
             linha[2].markdown(_texto(registro["tipo"].capitalize()), unsafe_allow_html=True)
             linha[3].markdown(_texto(registro["descricao"]), unsafe_allow_html=True)
             linha[4].markdown(_texto(registro.get("oficina") or "—", "color:var(--texto-2);"), unsafe_allow_html=True)
-            linha[5].markdown(
-                _mono(formatar_moeda(registro["custo_total"]), "text-align:right;display:block;"),
-                unsafe_allow_html=True,
-            )
+            linha[5].markdown(_mono(formatar_moeda(registro["custo_total"])), unsafe_allow_html=True)
             linha[6].markdown(
                 selo_situacao(_STATUS_ROTULO[registro["status"]], _STATUS_SELO[registro["status"]]),
                 unsafe_allow_html=True,

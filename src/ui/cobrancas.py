@@ -161,8 +161,8 @@ def _colunas_base():
     ]
 
 
-def _moeda(campo):
-    return lambda c: _texto(formatar_moeda(c[campo]), direita=True, mono=True)
+def _moeda(campo, direita=True):
+    return lambda c: _texto(formatar_moeda(c[campo]), direita=direita, mono=True)
 
 
 def _aba_pagas(linhas):
@@ -178,7 +178,7 @@ def _aba_pagas(linhas):
         + [
             ("Pago em", 1.1, lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
             ("Forma", 1.1, lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:var(--texto-2);")),
-            ("Valor", 1.1, _moeda("valor")),
+            ("Valor", 1.1, _moeda("valor", direita=False)),
         ],
         linhas[:_LIMITE_PAGAS],
     )

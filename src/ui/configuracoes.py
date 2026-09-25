@@ -1,5 +1,5 @@
 """Configurações: encargos, alertas e backup manual — segue Configuracoes.dc.html
-do mockup (cartões de 780px, exemplo de cálculo, backup em ZIP)."""
+do mockup (cartões em largura total, exemplo de cálculo, backup em ZIP)."""
 
 from decimal import Decimal
 from html import escape
@@ -48,7 +48,7 @@ def _exemplo(multa, juros, carencia):
 def _formulario(config):
     entrada = {}
     with st.form("configuracoes", border=False):
-        titulo, acao = st.columns([4, 1], vertical_alignment="top")
+        titulo, acao = st.columns([5, 1], vertical_alignment="top")
         titulo.markdown(
             """
             <h1 class="rotulo pagina-titulo">Configurações</h1>
@@ -65,7 +65,7 @@ def _formulario(config):
                 "Encargos por atraso",
                 "Aplicados sobre o saldo em aberto após a carência.",
             )
-            c1, c2, c3, _ = st.columns([1, 1, 1, 1.5])
+            c1, c2, c3 = st.columns(3)
             entrada["multa_atraso_percentual"] = c1.text_input(
                 "Multa por atraso (%)", _percentual(config["multa_atraso_percentual"])
             )
@@ -86,7 +86,7 @@ def _formulario(config):
                 "Alertas de manutenção",
                 'Quando um item entra em situação "próxima" antes de vencer.',
             )
-            c1, c2, _ = st.columns([1, 1, 2.5])
+            c1, c2 = st.columns(2)
             entrada["alerta_manutencao_km"] = c1.text_input(
                 "Avisar (km antes)", str(config["alerta_manutencao_km"])
             )
@@ -99,7 +99,7 @@ def _formulario(config):
                 "Alertas de documentos e CNH",
                 'Dias antes do vencimento para marcar como "a vencer".',
             )
-            c1, c2, _ = st.columns([1.3, 1.3, 2.2])
+            c1, c2 = st.columns(2)
             entrada["alerta_documento_dias"] = c1.text_input(
                 "Documentos da moto (dias)", str(config["alerta_documento_dias"])
             )
