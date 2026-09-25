@@ -872,6 +872,70 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Original";}
   .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Encargos";}
   .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) [data-testid="stMarkdownContainer"]::before {content: "Total";}
+  /* Manutenção (histórico e catálogo), Documentos e Vistorias: cada linha vira um bloco em grade de 3 colunas, sem rolagem lateral;
+     linha 1 = identificação + situação/ação, demais linhas = dados rotulados */
+  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) {overflow: visible;}
+  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div:first-child {display: none;}
+  [data-testid="stApp"] :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] {display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3); align-items: center; padding: var(--e3) var(--e4) !important; min-width: 0 !important;}
+  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
+  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] [data-testid="stMarkdownContainer"] {overflow-wrap: anywhere;}
+  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] [data-testid="stMarkdownContainer"]::before {display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;}
+  [data-testid="stApp"] .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "moto sit btn" "dat tip cus" "des des des" "ofi ofi ofi";}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: dat;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: tip;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: des;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: ofi;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: cus;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: sit;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: btn; justify-self: end;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) [data-testid="stMarkdownContainer"]::before {content: "Data";}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Tipo";}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Descrição";}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Oficina";}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Custo";}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: none;}
+  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) [data-testid="stMarkdownContainer"]::before {content: none;}
+  [data-testid="stApp"] .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "ite ite btn" "km dia ati";}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: ite;}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: km;}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: dia;}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: ati;}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: btn; justify-self: end;}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Intervalo km";}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Intervalo dias";}
+  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Ativo";}
+  [data-testid="stApp"] .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "moto moto sit" "tip ven val" "ref ref ref" "b7 b8 b9";}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: moto;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: tip;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: ref;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: ven;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: val;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: sit;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: b7;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: b8;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9) {grid-area: b9;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Tipo";}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Referência";}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Vencimento";}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {justify-self: end;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+7) button {width: 100% !important;}
+  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+7) [data-testid="stElementContainer"], .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+7) [data-testid="stButton"] {width: 100% !important;}
+  [data-testid="stApp"] .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "con con btn" "dat tip km" "com ava ava";}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: dat;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: con;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: tip;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: km;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: com;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: ava;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: btn; justify-self: end;}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) [data-testid="stMarkdownContainer"]::before {content: "Data";}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Tipo";}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Km";}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Combustível";}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Avarias";}
+  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: none;}
   /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
   .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
   [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {
