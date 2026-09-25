@@ -116,7 +116,6 @@ def _aba_resultado(resultado):
             ]
             for r, largura in zip(linhas, larguras)
         ],
-        alinhar_direita={1, 2, 3, 4},
     )
     _exportacao(
         "resultado_por_moto",
@@ -154,7 +153,6 @@ def _aba_custo(resultado):
                 ]
                 for g, largura in zip(linhas, larguras)
             ],
-            alinhar_direita={1, 2, 3},
         )
         exportacao = [
             {
@@ -181,7 +179,6 @@ def _aba_custo(resultado):
                 ]
                 for r, largura in zip(linhas, larguras)
             ],
-            alinhar_direita={2, 3, 4},
         )
         exportacao = [
             {
@@ -234,7 +231,6 @@ def _aba_inadimplencia(dados):
             ]
             for l in linhas
         ],
-        alinhar_direita={4},
     )
     _exportacao(
         "inadimplencia",
@@ -273,7 +269,6 @@ def _aba_fluxo(fluxo, hoje):
             ]
             for m, largura in zip(fluxo, larguras)
         ],
-        alinhar_direita={1, 2, 3, 4},
     )
     _exportacao(
         "fluxo_de_caixa",

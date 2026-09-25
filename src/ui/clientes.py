@@ -405,7 +405,7 @@ def _aba_contratos(cliente):
                 unsafe_allow_html=True,
             )
             linha[4].markdown(
-                f'<div style="text-align:right;"><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(c["valor_periodo"])}</span></div>',
+                f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(c["valor_periodo"])}</span>',
                 unsafe_allow_html=True,
             )
 
@@ -445,7 +445,6 @@ def _aba_pagamentos(parcelas, historicos):
     tabela_html(
         ["Vencimento", "Tipo", "Pago em", "Forma", "Multa/juros", "Valor", "Situação"],
         linhas,
-        alinhar_direita={4, 5},
     )
 
 

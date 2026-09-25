@@ -38,10 +38,8 @@ def _salvo(mensagem="Pagamento registrado."):
     st.rerun()
 
 
-def _texto(valor, cor="", direita=False, mono=False):
+def _texto(valor, cor="", mono=False):
     estilo = f"font-size:var(--fs-secundario);{cor}"
-    if direita:
-        estilo += "text-align:right;display:block;"
     return f'<span class="{"mono" if mono else ""}" style="{estilo}">{valor}</span>'
 
 
@@ -161,8 +159,8 @@ def _colunas_base():
     ]
 
 
-def _moeda(campo, direita=True):
-    return lambda c: _texto(formatar_moeda(c[campo]), direita=direita, mono=True)
+def _moeda(campo):
+    return lambda c: _texto(formatar_moeda(c[campo]), mono=True)
 
 
 def _aba_pagas(linhas):
@@ -178,7 +176,7 @@ def _aba_pagas(linhas):
         + [
             ("Pago em", 1.1, lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
             ("Forma", 1.1, lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:var(--texto-2);")),
-            ("Valor", 1.1, _moeda("valor", direita=False)),
+            ("Valor", 1.1, _moeda("valor")),
         ],
         linhas[:_LIMITE_PAGAS],
     )
@@ -190,10 +188,9 @@ def _aba_atrasadas(linhas):
     dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "color:var(--perigo-texto);")
     encargos = lambda c: _texto(
         formatar_moeda(c["encargos"]["multa"] + c["encargos"]["juros"]),
-        direita=True,
         mono=True,
     )
-    total = lambda c: _texto(formatar_moeda(c["encargos"]["total"]), direita=True, mono=True)
+    total = lambda c: _texto(formatar_moeda(c["encargos"]["total"]), mono=True)
     _cartao(
         "atrasadas",
         _colunas_base()

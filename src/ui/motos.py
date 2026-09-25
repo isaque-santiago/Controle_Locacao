@@ -415,7 +415,6 @@ def _aba_historico(moto):
     tabela_html(
         ["Data", "Tipo", "Descrição", "Km", "Oficina", "Custo"],
         linhas,
-        alinhar_direita={5},
     )
 
 
@@ -465,7 +464,7 @@ def _aba_contratos(moto):
         ]
         for c in registros
     ]
-    tabela_html(["Cliente", "Início", "Fim", "Status", "Valor / período"], linhas, alinhar_direita={4})
+    tabela_html(["Cliente", "Início", "Fim", "Status", "Valor / período"], linhas)
 
 
 def _aba_financeiro(moto):

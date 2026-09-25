@@ -242,17 +242,14 @@ def tabela(linhas, chave="tabela", colunas=None):
     st.dataframe(estilizado, hide_index=True, use_container_width=True)
 
 
-def tabela_html(cabecalhos, linhas, alinhar_direita=None):
+def tabela_html(cabecalhos, linhas):
     """Tabela somente leitura, hairline entre linhas, sem zebra — para abas sem
     ação por linha (Plano de manutenção, Histórico, Contratos...). Cada célula
     de `linhas` já vem pronta como HTML (use selo_situacao/chip_placa/mono)."""
-    alinhar_direita = alinhar_direita or set()
+    def celula(conteudo, tag):
+        return f"<{tag}>{conteudo}</{tag}>"
 
-    def celula(i, conteudo, tag):
-        classe = ' class="direita"' if i in alinhar_direita else ""
-        return f"<{tag}{classe}>{conteudo}</{tag}>"
-
-    ths = "".join(celula(i, c, "th") for i, c in enumerate(cabecalhos))
+    ths = "".join(celula(c, "th") for c in cabecalhos)
     if not linhas:
         corpo = (
             f'<tr><td colspan="{len(cabecalhos)}">'
@@ -260,7 +257,7 @@ def tabela_html(cabecalhos, linhas, alinhar_direita=None):
         )
     else:
         corpo = "".join(
-            "<tr>" + "".join(celula(i, valor, "td") for i, valor in enumerate(linha)) + "</tr>"
+            "<tr>" + "".join(celula(valor, "td") for valor in linha) + "</tr>"
             for linha in linhas
         )
     st.markdown(

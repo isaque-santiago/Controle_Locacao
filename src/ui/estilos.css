@@ -415,7 +415,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .tabela-leitura tr:last-child td {border-bottom-width: 0;}
 .tabela-leitura th:first-child, .tabela-leitura td:first-child {padding-left: var(--e5);}
 .tabela-leitura th:last-child, .tabela-leitura td:last-child {padding-right: var(--e5);}
-.tabela-leitura .direita {text-align: right;}
 .tabela-leitura tbody tr {transition: background-color var(--transicao);}
 .tabela-leitura tbody tr:hover {background: var(--superficie-hover);}
 [data-testid="stDataFrame"] {border-radius: var(--raio-md); overflow: hidden;}
