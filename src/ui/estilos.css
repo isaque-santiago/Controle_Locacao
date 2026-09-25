@@ -707,6 +707,11 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {
     content: "Contrato"; display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
   }
+  /* Contrato ativo e Situação financeira: rótulo à esquerda e valor à direita na mesma linha, em vez de uma coluna estreita com o lado direito vazio */
+  .campos-linha {display: flex !important; flex-direction: column; gap: 0 !important;}
+  .campos-linha .campo {flex-direction: row; justify-content: space-between; align-items: baseline; gap: var(--e3); padding: 10px 0; border-bottom: 1px solid var(--linha-sutil);}
+  .campos-linha .campo:last-child {border-bottom: 0; padding-bottom: 0;}
+  .campos-linha .campo > span:not(:first-child) {text-align: right; white-space: nowrap;}
   /* Ficha do cliente: espaço abaixo da barra superior fixa (o botão ‹ Clientes ficava cortado por ela) */
   .block-container {padding-top: 48px !important;}
   /* Faixa de dados da ficha do cliente: CPF e WhatsApp lado a lado; CNH e e-mail em linha inteira, valores menores */

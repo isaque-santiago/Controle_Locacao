@@ -284,7 +284,7 @@ def _card_contrato_ativo(cliente_id):
                 <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
               </div>
             </div>
-            <div class="grade-dados grade-dados--compacta">
+            <div class="grade-dados grade-dados--compacta campos-linha">
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
@@ -333,7 +333,7 @@ def _card_situacao_financeira(parcelas, historicos):
         f"""
         <div class="cartao" style="height:100%;">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Situação financeira</h3>
-          <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="campos-linha" style="display:flex;flex-direction:column;gap:14px;">
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">pago no histórico</span><span class="mono" style="font-size:18px;color:var(--sucesso-texto);">{formatar_moeda(pago)}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">atrasado</span><span class="mono" style="font-size:18px;color:{'var(--perigo-texto)' if atrasado else 'var(--texto)'};">{formatar_moeda(atrasado)}</span></div>
