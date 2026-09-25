@@ -668,6 +668,8 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .cartao--faixa > div {min-width: 0; border-right: 0 !important; border-bottom: 1px solid var(--linha); padding: var(--e3) var(--e4) !important;}
   .cartao--faixa > div:nth-child(odd) {border-right: 1px solid var(--linha) !important;}
   .cartao--faixa > div:nth-last-child(-n+2) {border-bottom: 0;}
+  /* Ficha da moto: "Atualizar km" de volta dentro da célula Km atual (a faixa tem 2 células por linha) */
+  .st-key-moto_faixa_km .st-key-km_ficha {position: absolute; top: 10px; right: calc(50% + 10px);}
   /* Motos > lista: cada moto vira um bloco (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
   .st-key-motos_card_lista {overflow: visible;}
   .st-key-motos_card_lista > div:first-child {display: none;}
