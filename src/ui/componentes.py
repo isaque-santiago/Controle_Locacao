@@ -34,7 +34,8 @@ _SITUACOES = {
     "inativo": "cinza",
     "cancelada": "cinza",
     "cancelado": "cinza",
-    "encerrado": "cinza",
+    "ativo": "verde",
+    "encerrado": "azul",
 }
 # Cor cheia e cor de texto por situação. Só a tabela `st.dataframe` (canvas, sem
 # acesso às variáveis CSS) e os gráficos usam estes hex; o HTML usa as classes abaixo.
@@ -42,6 +43,7 @@ CORES_BORDA = {
     "vermelho": "#D64545",
     "amarelo": "#F2B705",
     "verde": "#2F9E6E",
+    "azul": "#3F6E9C",
     "cinza": "#9AA0A6",
 }
 CORES_TEXTO = {**CORES_BORDA, "amarelo": "#8a6600"}
@@ -49,7 +51,7 @@ CORES_STATUS_BORDA = {chave: CORES_BORDA[cor] for chave, cor in _SITUACOES.items
 CORES_STATUS_TEXTO = {chave: CORES_TEXTO[cor] for chave, cor in _SITUACOES.items()}
 
 # Cor semântica -> sufixo de classe (badge--*, alerta-item--*, seg-*)
-_TOM = {"vermelho": "perigo", "amarelo": "alerta", "verde": "sucesso", "cinza": "neutro"}
+_TOM = {"vermelho": "perigo", "amarelo": "alerta", "verde": "sucesso", "azul": "info", "cinza": "neutro"}
 _SEGMENTO_POR_HEX = {
     CORES_BORDA["verde"]: "seg-sucesso",
     CORES_BORDA["vermelho"]: "seg-perigo",

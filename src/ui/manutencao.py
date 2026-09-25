@@ -421,7 +421,7 @@ def _aba_historico(frota):
 def _interruptor(ativo):
     if ativo:
         return (
-            '<div style="width:34px;height:18px;border-radius:var(--raio-md);background:var(--chip-fundo);position:relative;">'
+            '<div style="width:34px;height:18px;border-radius:var(--raio-md);background:var(--sucesso);position:relative;">'
             '<div style="width:14px;height:14px;border-radius:50%;background:var(--superficie);position:absolute;top:2px;right:2px;"></div></div>'
         )
     return (
