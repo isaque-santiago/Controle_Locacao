@@ -110,6 +110,19 @@ div.react-aria-SelectionIndicator {background: var(--marca) !important; border-c
 [data-testid="stDialog"] button[aria-label="Close"]:hover *, [data-testid="stDialog"] [role="dialog"] > button:hover * {color: #FFFFFF !important; fill: #FFFFFF !important;}
 
 /* ========================================
+   DARK MODE — BOTÕES
+======================================== */
+/* As regras de texto acima (p, label, markdown em stMain/stDialog) empatam em especificidade
+   com as do botão em estilos.css e vencem por virem depois: o rótulo do botão primário
+   (amarelo) ficava claro sobre claro. O prefixo "body" desempata a favor do botão. */
+body button[kind="primary"] *, body button[kind="primaryFormSubmit"] * {color: var(--btn-primario-texto) !important;}
+body button[kind="secondary"] *, body button[kind="secondaryFormSubmit"] *, body button[kind="tertiary"] *,
+body [data-testid="stDownloadButton"] button * {color: inherit !important;}
+/* Registrar pagamento (✔) em Cobranças: ação positiva sólida, como no cartão Hoje do dashboard */
+[data-testid="stApp"] [class*="st-key-cobrancas_card"] [class*="st-key-pagar_"] button {background: var(--btn-primario) !important; border-color: var(--btn-primario) !important; color: var(--btn-primario-texto) !important;}
+[data-testid="stApp"] [class*="st-key-cobrancas_card"] [class*="st-key-pagar_"] button:hover:not(:disabled) {background: var(--btn-primario-hover) !important; border-color: var(--btn-primario-hover) !important; color: var(--btn-primario-texto) !important;}
+
+/* ========================================
    DARK MODE — ÍCONES DE AÇÃO
 ======================================== */
 [data-testid="stApp"] [class*=" st-key-ficha_"] button::after, [data-testid="stApp"] [class*=" st-key-ver_vist_"] button::after,
