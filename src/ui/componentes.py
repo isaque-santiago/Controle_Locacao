@@ -248,8 +248,10 @@ def tabela_html(cabecalhos, linhas):
     """Tabela somente leitura, hairline entre linhas, sem zebra — para abas sem
     ação por linha (Plano de manutenção, Histórico, Contratos...). Cada célula
     de `linhas` já vem pronta como HTML (use selo_situacao/chip_placa/mono)."""
-    def celula(conteudo, tag):
-        return f"<{tag}>{conteudo}</{tag}>"
+    def celula(conteudo, tag, rotulo=None):
+        # data-label: no celular o cabeçalho some e cada célula mostra o próprio rótulo (ver estilos.css)
+        atributo = f' data-label="{escape(str(rotulo), quote=True)}"' if rotulo else ""
+        return f"<{tag}{atributo}>{conteudo}</{tag}>"
 
     ths = "".join(celula(c, "th") for c in cabecalhos)
     if not linhas:
@@ -259,7 +261,7 @@ def tabela_html(cabecalhos, linhas):
         )
     else:
         corpo = "".join(
-            "<tr>" + "".join(celula(valor, "td") for valor in linha) + "</tr>"
+            "<tr>" + "".join(celula(valor, "td", rotulo) for rotulo, valor in zip(cabecalhos, linha)) + "</tr>"
             for linha in linhas
         )
     st.markdown(

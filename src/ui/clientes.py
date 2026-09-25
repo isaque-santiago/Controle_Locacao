@@ -27,7 +27,8 @@ def _html(valor, padrao="—"):
     """Escapa dados cadastrados antes de inseri-los em blocos HTML."""
     if valor is None or valor == "":
         valor = padrao
-    return escape(str(valor))
+    # "*" vira entidade: o CPF mascarado (***.123.***-**) virava negrito/itálico no markdown
+    return escape(str(valor)).replace("*", "&#42;")
 
 
 def _salvo(mensagem="Alterações salvas."):
@@ -283,7 +284,7 @@ def _card_contrato_ativo(cliente_id):
                 <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+            <div class="grade-dados grade-dados--compacta">
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
@@ -358,7 +359,7 @@ def _aba_contratos(cliente):
     registros.sort(key=lambda c: c["data_inicio"], reverse=True)
     frota = {m["id"]: m for m in motos.listar()}
     larguras = [2, 1, 1, 1, 1]
-    with st.container(key="clientes_card_lista"):
+    with st.container(key="clientes_card_contratos"):
         cab = st.columns(larguras, vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Moto", "Início", "Fim", "Status", "Valor / período"]):
             coluna.markdown(
@@ -500,7 +501,7 @@ def _exibir_ficha(cliente_id):
     )
     st.markdown(
         f"""
-        <div class="cartao cartao--faixa" style="margin-bottom:20px;">
+        <div class="cartao cartao--faixa cartao--faixa-cliente" style="margin-bottom:20px;">
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
             <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CPF</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
           </div>
