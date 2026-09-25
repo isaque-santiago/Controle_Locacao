@@ -680,6 +680,9 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   /* Ficha da moto: placa e nome empilhados e alinhados à esquerda, em vez de lado a lado com alturas diferentes */
   .moto-cab {flex-direction: column; align-items: flex-start !important; gap: var(--e2) !important;}
   .moto-cab h1 {font-size: 24px !important; line-height: 1.15;}
+  /* Selo de situação logo acima do nome/modelo */
+  .moto-cab > div {display: flex; flex-direction: column; gap: var(--e2);}
+  .moto-cab > div > div:last-child {order: -1; margin-top: 0 !important;}
  (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
   .st-key-motos_card_lista {overflow: visible;}
   .st-key-motos_card_lista > div:first-child {display: none;}
