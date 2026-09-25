@@ -262,6 +262,7 @@ h3 {font-size: var(--fs-subtitulo);}
 .cartao .campo .mono, .cartao--faixa .campo .mono, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo .mono {white-space: normal;}
 /* Dados de ficha em grade: 3 colunas (2 e 1 nos breakpoints do bloco RESPONSIVE) */
 .grade-dados {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e4) var(--e5);}
+.grade-dados--compacta {gap: 16px 14px;}
 /* Ficha do cliente > Contrato ativo: cartão com a ação (Ver contrato) no cabeçalho, à direita do título */
 :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) {gap: var(--e3);}
 /* Acompanha a altura do cartão vizinho (Situação financeira) na mesma linha */
@@ -661,6 +662,33 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
   [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
     min-width: 0 !important; width: auto !important; flex: 1 1 0 !important;
+  }
+  /* Faixas de dados das fichas (km atual, cliente, contrato...): 2 por linha em vez de 4 espremidas */
+  .cartao--faixa {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));}
+  .cartao--faixa > div {min-width: 0; border-right: 0 !important; border-bottom: 1px solid var(--linha); padding: var(--e3) var(--e4) !important;}
+  .cartao--faixa > div:nth-child(odd) {border-right: 1px solid var(--linha) !important;}
+  .cartao--faixa > div:nth-last-child(-n+2) {border-bottom: 0;}
+  /* Motos > lista: cada moto vira um bloco (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
+  .st-key-motos_card_lista {overflow: visible;}
+  .st-key-motos_card_lista > div:first-child {display: none;}
+  [data-testid="stApp"] .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] {
+    display: grid !important; grid-template-columns: 136px minmax(0, 1fr) auto; gap: var(--e2) var(--e3); align-items: center;
+    grid-template-areas: "placa sit btn" "modelo modelo modelo" "km contr contr";
+    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
+  }
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: placa;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: modelo;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: km;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: sit; justify-self: start;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: contr;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: btn; justify-self: end;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) span {font-weight: 600; overflow-wrap: anywhere;}
+  /* Km atual e botão de editar lado a lado, sem o espaçamento de linha de tabela */
+  .st-key-motos_card_lista [data-testid="stColumn"] [data-testid="stHorizontalBlock"] {padding: 0 !important; border-bottom: 0; flex-wrap: nowrap; gap: var(--e2);}
+  .st-key-motos_card_lista [data-testid="stColumn"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width: auto !important; min-width: 0 !important; flex: 0 0 auto !important;}
+  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {
+    content: "Contrato"; display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
   }
   /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
   .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
