@@ -575,7 +575,7 @@ def _exibir_ficha(moto_id):
             """,
             unsafe_allow_html=True,
         )
-        if st.button("✎ Atualizar km", key="km_ficha"):
+        if st.button("✎ Atualizar km", key="km_ficha", help="Atualizar km"):
             _dialog_km(moto)
 
     abas = st.tabs(

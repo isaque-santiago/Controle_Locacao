@@ -670,6 +670,13 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .cartao--faixa > div:nth-last-child(-n+2) {border-bottom: 0;}
   /* Ficha da moto: "Atualizar km" de volta dentro da célula Km atual (a faixa tem 2 células por linha) */
   .st-key-moto_faixa_km .st-key-km_ficha {position: absolute; top: 10px; right: calc(50% + 10px);}
+  /* No celular o botão vira só o lápis (mesmo ícone dos botões de ação por linha) */
+  .st-key-moto_faixa_km .st-key-km_ficha button {position: relative; width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; overflow: hidden;}
+  .st-key-moto_faixa_km .st-key-km_ficha button * {font-size: 0 !important; color: transparent !important; line-height: 0;}
+  .st-key-moto_faixa_km .st-key-km_ficha button::after {
+    content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px; background: var(--texto-2);
+    -webkit-mask: var(--ico-editar) center / contain no-repeat; mask: var(--ico-editar) center / contain no-repeat;
+  }
   /* Motos > lista: cada moto vira um bloco (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
   .st-key-motos_card_lista {overflow: visible;}
   .st-key-motos_card_lista > div:first-child {display: none;}
