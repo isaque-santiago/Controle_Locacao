@@ -176,7 +176,7 @@ Cálculos em `src/domain/relatorios.py`, testados em
 `tests/test_relatorios_dominio.py`.
 
 Reconstrução de Configurações (23/09/2026), conferida contra `Configuracoes.dc.html`:
-quatro cartões de até 780px — Encargos por atraso (multa, juros mensal e carência,
+quatro cartões em largura total (até 25/09/2026 eram de 780px) — Encargos por atraso (multa, juros mensal e carência,
 com exemplo calculado: R$ 500,00 vencida há 5 dias), Alertas de manutenção,
 Alertas de documentos e CNH e Backup manual (ZIP de CSVs) — e botão "Salvar
 alterações" no cabeçalho. Percentuais entre 0 e 100 com até duas casas; demais
@@ -186,6 +186,16 @@ tabelas a cada interação. **Decisão a confirmar:** o mockup mostra "Último b
 com data/hora, mas o schema não guarda isso; a tela informa apenas o backup gerado
 na sessão atual. O exemplo usa os valores já salvos (o formulário só grava ao salvar).
 Validação em `src/domain/configuracoes.py`, testada em `tests/test_configuracoes.py`.
+
+Rearranjo de elementos em 25/09/2026 (só interface, sem regra de negócio): na ficha do
+cliente, o botão "Ver contrato →" passou para o cabeçalho do cartão Contrato ativo e
+"Dados pessoais" ocupa a largura total em grade de 3 colunas (2 abaixo de 1100px, 1 abaixo
+de 640px), sem quebrar CPF, CNH e e-mail no meio; o ícone de "Copiar mensagem de cobrança"
+fica centralizado no botão; as colunas de valor de Cobranças > Pagas, Manutenção > Histórico
+e Documentos ficam alinhadas à esquerda, como o cabeçalho (exceção deliberada à regra
+"números à direita" do `Design_UI.md`); Configurações usa toda a largura da página; e os
+selos de status/situação de tabelas e listas têm largura única (`--selo-largura`, 104px, nunca
+maior que a coluna), com o texto centralizado.
 
 Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
 Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na

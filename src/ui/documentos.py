@@ -292,10 +292,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias):
             linha[2].markdown(_texto(escape(str(referencia)), "color:var(--texto-2);"), unsafe_allow_html=True)
             linha[3].markdown(_mono(formatar_data(doc["vencimento"])), unsafe_allow_html=True)
             linha[4].markdown(
-                _mono(
-                    formatar_moeda(doc["valor"]) if doc.get("valor") is not None else "—",
-                    "text-align:right;display:block;",
-                ),
+                _mono(formatar_moeda(doc["valor"]) if doc.get("valor") is not None else "—"),
                 unsafe_allow_html=True,
             )
             linha[5].markdown(

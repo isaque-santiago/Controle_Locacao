@@ -144,7 +144,7 @@ def _exibir_lista():
             linha[1].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
             linha[2].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_data(contrato["data_inicio"])}</span>', unsafe_allow_html=True)
             linha[3].markdown(f'<span style="font-size:var(--fs-secundario);{muted or "color:var(--texto-2);"}">{_PERIODOS_ROTULO.get(contrato["periodicidade"], contrato["periodicidade"])}</span>', unsafe_allow_html=True)
-            linha[4].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);text-align:right;display:block;{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>', unsafe_allow_html=True)
+            linha[4].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>', unsafe_allow_html=True)
             linha[5].markdown(
                 selo_situacao(_STATUS_ROTULO[contrato["status"]], contrato["status"]),
                 unsafe_allow_html=True,
@@ -404,7 +404,7 @@ def _wizard_etapa4():
                 f'<span class="mono">{formatar_moeda(item["valor"])}</span>',
             ]
         )
-    tabela_html(["Item", "Vencimento", "Valor"], linhas, alinhar_direita={2})
+    tabela_html(["Item", "Vencimento", "Valor"], linhas)
 
     st.write("")
     st.markdown('<h3 class="rotulo" style="margin:0 0 10px;font-size:14px;">Vistoria de entrega</h3>', unsafe_allow_html=True)
@@ -583,7 +583,7 @@ def _aba_cobrancas(contrato):
                 situacao_html,
             ]
         )
-    tabela_html(["Tipo", "Vencimento", "Pago em", "Valor", "Situação"], linhas, alinhar_direita={3})
+    tabela_html(["Tipo", "Vencimento", "Pago em", "Valor", "Situação"], linhas)
 
 
 def _aba_vistorias(contrato):
@@ -642,7 +642,7 @@ def _aba_manutencoes(contrato):
         ]
         for m in registros
     ]
-    tabela_html(["Data", "Tipo", "Descrição", "Km", "Cobrada do cliente", "Custo"], linhas, alinhar_direita={5})
+    tabela_html(["Data", "Tipo", "Descrição", "Km", "Cobrada do cliente", "Custo"], linhas)
     st.caption("Mostrando apenas manutenções realizadas durante a vigência deste contrato.")
 
 

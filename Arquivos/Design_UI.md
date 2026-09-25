@@ -66,7 +66,7 @@ itens com "·" decorativo fora de listas realmente compactas.
   conectados por linha, navegação Voltar/Avançar.
 - **Tabs**: usadas nas fichas (Moto, Cliente, Contrato) e em páginas com múltiplas visões (Cobranças, Manutenção,
   Relatórios) — sublinhado `grafite-900` no item ativo, sem pílula.
-- **Tabelas**: hairline entre linhas, sem zebra, sem sombra. Números sempre `mono` e alinhados à direita.
+- **Tabelas**: hairline entre linhas, sem zebra, sem sombra. Números sempre `mono` e alinhados à esquerda, sob o cabeçalho da coluna (decisão de 25/09/2026, valores monetários incluídos). Selos de status com largura única (104px, `--selo-largura`) e texto curto.
 - **Barras/medidores**: usadas em vez de gráficos de biblioteca — barra de ocupação segmentada (Dashboard), barra
   proporcional em Relatórios. Mantém a página autocontida em HTML/CSS puro.
 

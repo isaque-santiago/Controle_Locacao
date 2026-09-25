@@ -264,44 +264,48 @@ def _card_contrato_ativo(cliente_id):
     parcelas.sort(key=lambda c: c["vencimento"])
     proxima = formatar_data(parcelas[0]["vencimento"]) if parcelas else "—"
 
-    st.markdown(
-        f"""
-        <div class="cartao">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            {chip_placa(moto['placa'], 'grande') if moto else ''}
-            <div>
-              <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
-              <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
+    # O botão vai no cabeçalho do cartão, à direita do título (não solto abaixo dele)
+    with st.container(key="cliente_contrato_ativo"):
+        titulo, acao = st.columns([3, 1], vertical_alignment="center")
+        titulo.markdown(
+            '<h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>',
+            unsafe_allow_html=True,
+        )
+        with acao:
+            if st.button("Ver contrato →", key="ver_contrato_cliente"):
+                abrir_ficha_contrato(contrato["id"])
+        st.markdown(
+            f"""
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+              {chip_placa(moto['placa'], 'grande') if moto else ''}
+              <div>
+                <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
+                <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
+              </div>
             </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Ver contratos →", key="ver_contrato_cliente"):
-        abrir_ficha_contrato(contrato["id"])
+            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
+              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _card_dados_pessoais(cliente):
+    """Cartão em largura total: em coluna estreita os valores de 22px (CPF, CNH, e-mail) quebravam no meio."""
     st.markdown(
         f"""
         <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">CPF</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">Validade CNH</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">telefone</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('telefone'))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">e-mail</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('email'))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">endereço</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('endereco'))}</span></div>
+          <div class="grade-dados">
+            <div class="campo"><span class="texto-2">CPF</span><span class="mono">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
+            <div class="campo"><span class="texto-2">CNH</span><span class="mono">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
+            <div class="campo"><span class="texto-2">Validade CNH</span><span class="mono">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
+            <div class="campo"><span class="texto-2">telefone</span><span class="mono">{_html(cliente.get('telefone'))}</span></div>
+            <div class="campo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
+            <div class="campo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
           </div>
         </div>
         """,
@@ -343,10 +347,10 @@ def _aba_resumo(cliente, parcelas, historicos):
     esquerda, direita = st.columns([1.5, 1], gap="medium")
     with esquerda:
         _card_contrato_ativo(cliente["id"])
-        st.write("")
-        _card_dados_pessoais(cliente)
     with direita:
         _card_situacao_financeira(parcelas, historicos)
+    st.write("")
+    _card_dados_pessoais(cliente)
 
 
 def _aba_contratos(cliente):
@@ -401,7 +405,7 @@ def _aba_contratos(cliente):
                 unsafe_allow_html=True,
             )
             linha[4].markdown(
-                f'<div style="text-align:right;"><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(c["valor_periodo"])}</span></div>',
+                f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(c["valor_periodo"])}</span>',
                 unsafe_allow_html=True,
             )
 
@@ -441,7 +445,6 @@ def _aba_pagamentos(parcelas, historicos):
     tabela_html(
         ["Vencimento", "Tipo", "Pago em", "Forma", "Multa/juros", "Valor", "Situação"],
         linhas,
-        alinhar_direita={4, 5},
     )
 
 

@@ -60,6 +60,9 @@
   --e1: 4px;  --e2: 8px;  --e3: 12px; --e4: 16px;
   --e5: 24px; --e6: 32px; --e7: 40px; --e8: 48px;
 
+  /* Largura única dos selos de status em tabelas e listas (cabe "Regularizado") */
+  --selo-largura: 104px;
+
   /* Raio: grande em superfícies, pequeno em controles e tabelas */
   --raio-sm: 6px;
   --raio-campo: 8px;
@@ -201,7 +204,7 @@ h3 {font-size: var(--fs-subtitulo);}
 /* ========================================
    CARDS
 ======================================== */
-.cartao {
+.cartao, .st-key-cliente_contrato_ativo {
   background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);
   box-shadow: var(--sombra-1); padding: var(--e4) var(--e5);
 }
@@ -252,12 +255,24 @@ h3 {font-size: var(--fs-subtitulo);}
 }
 .campo > span:not(:first-child) {font-size: var(--fs-corpo) !important; font-weight: 500; line-height: 1.35;}
 /* Dados das fichas em cartões: 22px; textos longos (e-mail, endereço) quebram em vez de vazar */
-.cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child) {
+.cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child),
+.st-key-cliente_contrato_ativo .campo > span:not(:first-child) {
   font-size: var(--fs-dado) !important; line-height: 1.25; overflow-wrap: anywhere;
 }
-.cartao .campo .mono, .cartao--faixa .campo .mono {white-space: normal;}
-/* Configurações: cartões de formulário de até 780px */
-.st-key-config_pagina {max-width: 780px; gap: var(--e5);}
+.cartao .campo .mono, .cartao--faixa .campo .mono, .st-key-cliente_contrato_ativo .campo .mono {white-space: normal;}
+/* Dados de ficha em grade: 3 colunas (2 e 1 nos breakpoints do bloco RESPONSIVE) */
+.grade-dados {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e4) var(--e5);}
+/* Ficha do cliente > Contrato ativo: cartão com a ação (Ver contrato) no cabeçalho, à direita do título */
+.st-key-cliente_contrato_ativo {gap: var(--e3);}
+/* Acompanha a altura do cartão vizinho (Situação financeira) na mesma linha */
+[data-testid="stLayoutWrapper"]:has(> .st-key-cliente_contrato_ativo) {flex: 1 1 auto;}
+/* A coluna do botão tem a largura do rótulo (proporcional, ele era truncado em telas estreitas) */
+.st-key-cliente_contrato_ativo [data-testid="stColumn"]:has(.st-key-ver_contrato_cliente) {flex: 0 0 auto; width: auto; min-width: 0;}
+.st-key-cliente_contrato_ativo [data-testid="stColumn"]:not(:has(.st-key-ver_contrato_cliente)) {flex: 1 1 0; min-width: 0;}
+.st-key-cliente_contrato_ativo button[kind="secondary"] {min-height: 2rem; padding: 2px var(--e3);}
+.st-key-cliente_contrato_ativo button[kind="secondary"] p {font-size: var(--fs-secundario);}
+/* Configurações: cartões de formulário em largura total */
+.st-key-config_pagina {gap: var(--e5);}
 .st-key-config_pagina [data-testid="stForm"] {padding: 0; gap: var(--e5); background: transparent !important; border: 0; border-radius: 0;}
 [class*="st-key-config_card"] {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); box-shadow: var(--sombra-1); padding: var(--e5) 26px;}
 [class*="st-key-config_card"] label p {font-size: var(--fs-legenda); color: var(--texto-2);}
@@ -400,7 +415,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .tabela-leitura tr:last-child td {border-bottom-width: 0;}
 .tabela-leitura th:first-child, .tabela-leitura td:first-child {padding-left: var(--e5);}
 .tabela-leitura th:last-child, .tabela-leitura td:last-child {padding-right: var(--e5);}
-.tabela-leitura .direita {text-align: right;}
 .tabela-leitura tbody tr {transition: background-color var(--transicao);}
 .tabela-leitura tbody tr:hover {background: var(--superficie-hover);}
 [data-testid="stDataFrame"] {border-radius: var(--raio-md); overflow: hidden;}
@@ -410,7 +424,10 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] {gap: 6px; flex-wrap: nowrap; justify-content: flex-end; min-width: 78px; padding: 0; border-bottom: none;}
 [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex: 0 0 34px; min-width: 34px; width: 34px;}
 [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] [data-testid="stHorizontalBlock"] button {width: 34px !important; min-width: 34px; height: 32px; min-height: 32px !important; padding: 0 !important; justify-content: center;}
-[data-testid="stPopoverButton"] [data-testid="stIconMaterial"] {display: none;}
+/* A seta do popover é escondida por inteiro (wrapper incluso) e a margem negativa que a compensava é
+   zerada: só o ícone do rótulo, centralizado no botão */
+[data-testid="stPopoverButton"] [aria-hidden="true"], [data-testid="stPopoverButton"] [data-testid="stIconMaterial"] {display: none;}
+[data-testid="stPopoverButton"] > div {margin: 0;}
 .st-key-dashboard_card_hoje .mono {white-space: nowrap;}
 .st-key-dashboard_card_hoje [data-testid="stMarkdownContainer"] p {white-space: normal;}
 
@@ -431,6 +448,12 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .badge--perigo::before {background: var(--perigo);}
 .badge--info {background: var(--info-fundo); color: var(--info-texto);}
 .badge--info::before {background: var(--info);}
+/* Em tabelas e listas todos os selos têm a mesma largura, com o texto centralizado. Nas listas em colunas
+   do Streamlit a largura nunca passa da coluna (min(..., 100%)); textos mais longos crescem além do piso. */
+.tabela-leitura .badge {min-width: var(--selo-largura); justify-content: center;}
+[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) .badge, [class*="st-key-cobrancas_card"] .badge {
+  min-width: min(var(--selo-largura), 100%); justify-content: center;
+}
 
 /* ========================================
    ALERTS
@@ -601,6 +624,7 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
    RESPONSIVE
 ======================================== */
 @media (max-width: 1100px) {
+  .grade-dados {grid-template-columns: repeat(2, minmax(0, 1fr));}
   [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-dashboard_card_hoje) {flex-wrap: wrap;}
   [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-dashboard_card_hoje) > [data-testid="stColumn"] {flex: 1 1 100% !important; width: 100% !important; min-width: 100% !important;}
 }
@@ -611,6 +635,7 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 @media (max-width: 640px) {
   .block-container {padding: var(--e5) var(--e4) var(--e7) !important;}
   h1 {font-size: 28px !important;}
+  .grade-dados {grid-template-columns: 1fr;}
   .painel-cabecalho {align-items: flex-start; flex-direction: column;}
   .kpi-grade {grid-template-columns: 1fr;}
   .kpi {padding: var(--e4);}

@@ -119,7 +119,7 @@ _COLUNAS_HOJE = [2, 1.3, 1.3, 1.1, 2, 0.5]
 def _situacao_cobranca_html(cobranca):
     if cobranca["situacao"] == "atrasada":
         dias = max((hoje_br() - _iso_data(cobranca["vencimento"])).days, 0)
-        return selo_situacao(f"Atrasada há {dias} dia(s)", "atrasada")
+        return selo_situacao(f"Atraso {dias}d", "atrasada")
     return selo_situacao("Vence hoje", "proxima")
 
 
@@ -148,7 +148,7 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
         ):
             alinhamento = "text-align:right;" if direita else ""
             coluna.markdown(
-                f'<span class="fs-legenda texto-2" style="font-weight:600;{alinhamento}display:block;">{rotulo}</span>',
+                f'<span class="fs-legenda texto-2" style="font-weight:600;display:block;">{rotulo}</span>',
                 unsafe_allow_html=True,
             )
         if not cobrancas_hoje:
@@ -171,7 +171,7 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
                 unsafe_allow_html=True,
             )
             linha[3].markdown(
-                f'<span class="mono fs-secundario" style="text-align:right;display:block;">{formatar_moeda(c["valor"])}</span>',
+                f'<span class="mono fs-secundario">{formatar_moeda(c["valor"])}</span>',
                 unsafe_allow_html=True,
             )
             linha[4].markdown(_situacao_cobranca_html(c), unsafe_allow_html=True)
