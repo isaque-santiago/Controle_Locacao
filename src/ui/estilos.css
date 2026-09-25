@@ -254,6 +254,8 @@ h3 {font-size: var(--fs-subtitulo);}
   font-size: var(--fs-secundario) !important; letter-spacing: .02em; text-transform: capitalize;
 }
 .campo > span:not(:first-child) {font-size: var(--fs-corpo) !important; font-weight: 500; line-height: 1.35;}
+/* Título dos cartões de ficha: o Streamlit soma 12px/16px de padding ao h3, abrindo um vazio acima e abaixo dele */
+.cartao > [data-testid="stHeadingWithActionElements"] h3, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) h3 {padding: 0 !important;}
 /* Dados das fichas em cartões: 22px; textos longos (e-mail, endereço) quebram em vez de vazar */
 .cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child),
 :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo > span:not(:first-child) {
@@ -710,6 +712,8 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   /* Faixa de dados da ficha do cliente: CPF e WhatsApp lado a lado; CNH e e-mail em linha inteira, valores menores */
   .cartao--faixa-cliente {--fs-dado: 18px;}
   .cartao--faixa-cliente > div:nth-child(3) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 1px solid var(--linha);}
+  /* O selo da CNH tem a largura do texto, não da linha inteira */
+  .cartao--faixa-cliente .badge {align-self: flex-start;}
   .cartao--faixa-cliente > div:nth-child(4) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
   /* Clientes > lista: cada cliente vira um bloco (nome + situação + ação / CPF + WhatsApp / CNH + moto), sem rolagem lateral */
   .st-key-clientes_card_lista {overflow: visible;}

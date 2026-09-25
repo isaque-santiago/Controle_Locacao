@@ -509,7 +509,7 @@ def _exibir_ficha(cliente_id):
             <span style="font-size:var(--fs-legenda);color:var(--texto-2);">whatsapp</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
           </div>
           <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;justify-content:center;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span>
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span>
             {cnh_html}
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
