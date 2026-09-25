@@ -662,11 +662,11 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
     min-width: 0 !important; width: auto !important; flex: 1 1 0 !important;
   }
-  /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + ação / moto, data, valor / situação) */
+  /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
   .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
   [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {
-    display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e2) var(--e3); align-items: center;
-    grid-template-areas: "cli cli btn" "moto venc valor" "sit sit sit";
+    display: grid !important; grid-template-columns: fit-content(58%) minmax(104px, max-content) minmax(0, 1fr) auto; gap: var(--e2) var(--e3); align-items: center;
+    grid-template-areas: "cli sit . btn" "moto venc valor valor";
     padding: var(--e3) var(--e4) !important; min-width: 0 !important;
   }
   .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
@@ -674,7 +674,7 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
   .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(3) {grid-area: venc;}
   .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(4) {grid-area: valor;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(5) {grid-area: sit;}
+  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(5) {grid-area: sit; justify-self: start;}
   .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(6) {grid-area: btn; justify-self: end;}
   .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(1) span {font-weight: 600; font-size: var(--fs-corpo); overflow-wrap: anywhere;}
   /* Rótulo pequeno acima de moto, vencimento e valor (o cabeçalho da tabela some no celular) */
