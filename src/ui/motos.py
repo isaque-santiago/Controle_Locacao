@@ -287,7 +287,7 @@ def _card_contrato_ativo(moto_id):
             unsafe_allow_html=True,
         )
         with acao:
-            if st.button("Ver contratos →", key="ver_contrato_moto"):
+            if st.button("Ver contrato →", key="ver_contrato_moto"):
                 abrir_ficha_contrato(contrato["id"])
         st.markdown(
             f"""
