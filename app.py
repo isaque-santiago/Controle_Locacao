@@ -1,11 +1,15 @@
 """Ponto de entrada do sistema: navegação com Dashboard como página inicial."""
 
+from pathlib import Path
+
 import streamlit as st
 
 from src.auth import require_login
 from src.ui.tema import aplicar
 
-st.set_page_config(page_title="Controle de Locação", layout="wide")
+ICONE = Path(__file__).parent / "src" / "ui" / "assets" / "icone.png"
+
+st.set_page_config(page_title="Controle de Locação", page_icon=str(ICONE), layout="wide")
 
 paginas = [
     st.Page("pages/1_Dashboard.py", title="Dashboard", default=True),
