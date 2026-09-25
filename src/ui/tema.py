@@ -12,8 +12,19 @@ import streamlit as st
 from src.db import ler_tema_escuro_cookie
 
 _PASTA = Path(__file__).parent
-_ESTILOS = (_PASTA / "estilos.css").read_text(encoding="utf-8")
-_ESTILOS_ESCURO = (_PASTA / "estilos_escuro.css").read_text(encoding="utf-8")
+_CACHE_CSS: dict[str, tuple[float, str]] = {}
+
+
+def _ler_css(nome: str) -> str:
+    """Lê o CSS e só o relê quando o arquivo muda (edição vale sem reiniciar o servidor)."""
+    caminho = _PASTA / nome
+    modificado = caminho.stat().st_mtime
+    em_cache = _CACHE_CSS.get(nome)
+    if em_cache is None or em_cache[0] != modificado:
+        em_cache = (modificado, caminho.read_text(encoding="utf-8"))
+        _CACHE_CSS[nome] = em_cache
+    return em_cache[1]
+
 
 _FONTES = (
     "@import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700"
@@ -37,6 +48,6 @@ def aplicar():
     # (None = automático, acompanha o tema do sistema).
     if "tema_escuro" not in st.session_state:
         st.session_state["tema_escuro"] = ler_tema_escuro_cookie()
-    st.markdown(f"<style>{_FONTES}\n{_ESTILOS}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{_FONTES}\n{_ler_css('estilos.css')}</style>", unsafe_allow_html=True)
     if tema_escuro_ativo():
-        st.markdown(f"<style>{_ESTILOS_ESCURO}</style>", unsafe_allow_html=True)
+        st.markdown(f"<style>{_ler_css('estilos_escuro.css')}</style>", unsafe_allow_html=True)

@@ -299,7 +299,7 @@ def _card_contrato_ativo(moto_id):
                 <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+            <div class="grade-dados grade-dados--compacta">
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
@@ -314,7 +314,7 @@ def _card_dados_moto(moto):
         f"""
         <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados da moto</h3>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
+          <div class="grade-dados grade-dados--compacta">
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">renavam</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('renavam') or '—'}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">chassi</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('chassi') or '—'}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">placa</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_placa(moto['placa'])}</span></div>
@@ -525,7 +525,7 @@ def _exibir_ficha(moto_id):
     with col_cab:
         st.markdown(
             f"""
-            <div style="display:flex;align-items:center;gap:16px;">
+            <div class="moto-cab" style="display:flex;align-items:center;gap:16px;">
               {chip_placa(moto['placa'], "grande")}
               <div>
                 <h1 class="rotulo" style="margin:0;font-size:24px;">{moto['marca']} {moto['modelo']}</h1>
@@ -575,7 +575,7 @@ def _exibir_ficha(moto_id):
             """,
             unsafe_allow_html=True,
         )
-        if st.button("✎ Atualizar km", key="km_ficha"):
+        if st.button("✎ Atualizar km", key="km_ficha", help="Atualizar km"):
             _dialog_km(moto)
 
     abas = st.tabs(
