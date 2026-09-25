@@ -27,7 +27,8 @@ def _html(valor, padrao="—"):
     """Escapa dados cadastrados antes de inseri-los em blocos HTML."""
     if valor is None or valor == "":
         valor = padrao
-    return escape(str(valor))
+    # "*" vira entidade: o CPF mascarado (***.123.***-**) virava negrito/itálico no markdown
+    return escape(str(valor)).replace("*", "&#42;")
 
 
 def _salvo(mensagem="Alterações salvas."):
@@ -283,7 +284,7 @@ def _card_contrato_ativo(cliente_id):
                 <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
               </div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
+            <div class="grade-dados grade-dados--compacta campos-linha">
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
               <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
@@ -295,17 +296,20 @@ def _card_contrato_ativo(cliente_id):
 
 def _card_dados_pessoais(cliente):
     """Cartão em largura total: em coluna estreita os valores de 22px (CPF, CNH, e-mail) quebravam no meio."""
+    # A categoria vai no rótulo: o número da CNH sozinho cabe em meia largura no celular
+    categoria = cliente.get("cnh_categoria")
+    rotulo_categoria = f" · cat. {_html(categoria)}" if categoria else ""
     st.markdown(
         f"""
         <div class="cartao">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
-          <div class="grade-dados">
+          <div class="grade-dados grade-dados--duas">
             <div class="campo"><span class="texto-2">CPF</span><span class="mono">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span class="texto-2">CNH</span><span class="mono">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
+            <div class="campo"><span class="texto-2">CNH{rotulo_categoria}</span><span class="mono">{_html(cliente.get('cnh_numero'))}</span></div>
             <div class="campo"><span class="texto-2">Validade CNH</span><span class="mono">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
             <div class="campo"><span class="texto-2">telefone</span><span class="mono">{_html(cliente.get('telefone'))}</span></div>
-            <div class="campo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
-            <div class="campo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
+            <div class="campo campo--largo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
+            <div class="campo campo--largo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
           </div>
         </div>
         """,
@@ -332,7 +336,7 @@ def _card_situacao_financeira(parcelas, historicos):
         f"""
         <div class="cartao" style="height:100%;">
           <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Situação financeira</h3>
-          <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="campos-linha" style="display:flex;flex-direction:column;gap:14px;">
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">pago no histórico</span><span class="mono" style="font-size:18px;color:var(--sucesso-texto);">{formatar_moeda(pago)}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
             <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">atrasado</span><span class="mono" style="font-size:18px;color:{'var(--perigo-texto)' if atrasado else 'var(--texto)'};">{formatar_moeda(atrasado)}</span></div>
@@ -358,7 +362,7 @@ def _aba_contratos(cliente):
     registros.sort(key=lambda c: c["data_inicio"], reverse=True)
     frota = {m["id"]: m for m in motos.listar()}
     larguras = [2, 1, 1, 1, 1]
-    with st.container(key="clientes_card_lista"):
+    with st.container(key="clientes_card_contratos"):
         cab = st.columns(larguras, vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Moto", "Início", "Fim", "Status", "Valor / período"]):
             coluna.markdown(
@@ -500,7 +504,7 @@ def _exibir_ficha(cliente_id):
     )
     st.markdown(
         f"""
-        <div class="cartao cartao--faixa" style="margin-bottom:20px;">
+        <div class="cartao cartao--faixa cartao--faixa-cliente" style="margin-bottom:20px;">
           <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
             <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CPF</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
           </div>
@@ -508,7 +512,7 @@ def _exibir_ficha(cliente_id):
             <span style="font-size:var(--fs-legenda);color:var(--texto-2);">whatsapp</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
           </div>
           <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;justify-content:center;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span>
+            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span>
             {cnh_html}
           </div>
           <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">

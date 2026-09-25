@@ -231,21 +231,21 @@ h3 {font-size: var(--fs-subtitulo);}
 [class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:last-of-type {border-bottom: none;}
 /* Dados de Clientes, Motos, Contratos e Vistorias: linhas maiores e mais legíveis.
    O texto das linhas usa var(--fs-secundario); redefini-lo no escopo evita mexer nas páginas. */
-.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista {
+.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista {
   --fs-secundario: var(--fs-corpo);
 }
-:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] {
+:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] {
   padding-top: 13px; padding-bottom: 13px;
 }
 /* Primeira coluna (nome, placa, data) em destaque */
-:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child span:not(.chip-placa) {
+:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child span:not(.chip-placa) {
   font-weight: 600;
 }
 /* Cabeçalho da lista: rótulo pequeno em caixa alta, para não competir com os dados */
-:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] {
+:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] {
   padding-top: 10px; padding-bottom: 10px;
 }
-:is(.st-key-clientes_card_lista, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] span {
+:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] span {
   font-size: var(--fs-legenda); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-2);
 }
 /* Fichas: rótulo discreto em cima (Primeiras Letras Maiúsculas) e valor grande embaixo */
@@ -254,6 +254,8 @@ h3 {font-size: var(--fs-subtitulo);}
   font-size: var(--fs-secundario) !important; letter-spacing: .02em; text-transform: capitalize;
 }
 .campo > span:not(:first-child) {font-size: var(--fs-corpo) !important; font-weight: 500; line-height: 1.35;}
+/* Título dos cartões de ficha: o Streamlit soma 12px/16px de padding ao h3, abrindo um vazio acima e abaixo dele */
+.cartao > [data-testid="stHeadingWithActionElements"] h3, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) h3 {padding: 0 !important;}
 /* Dados das fichas em cartões: 22px; textos longos (e-mail, endereço) quebram em vez de vazar */
 .cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child),
 :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo > span:not(:first-child) {
@@ -367,15 +369,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-pagar_hoje_"] button {background: var(--btn-primario) !important; border: none !important; width: 34px !important; height: 34px; min-height: 34px !important; padding: 0 !important;}
 [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-pagar_hoje_"] button:hover:not(:disabled) {background: var(--btn-primario-hover) !important;}
 /* Placa clicável (Clientes > Contratos): botão com a aparência do chip de placa */
-[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button {
+[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button {
   background: var(--chip-fundo) !important; border: none !important; border-radius: var(--raio-sm) !important; color: var(--chip-texto) !important;
   font-family: var(--fonte-mono) !important; font-weight: 600 !important; letter-spacing: .05em; min-height: 0 !important; padding: 3px var(--e2) !important;
 }
-[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button:hover:not(:disabled) {
+[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button:hover:not(:disabled) {
   background: var(--chip-fundo) !important; color: var(--chip-texto) !important; box-shadow: 0 0 0 2px var(--linha-forte);
 }
-[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
-[data-testid="stApp"] .st-key-clientes_card_lista [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
+[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
+[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
 /* Pílulas de filtro: ativa (primary) e inativa (secondary) com o mesmo tamanho */
 [class*="_filtros"] button, .st-key-contrato_periodicidade button {
   min-height: 2rem !important; height: auto !important; padding: 4px var(--e3) !important; border-radius: 999px !important;
@@ -705,6 +707,88 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {
     content: "Contrato"; display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
   }
+  /* Dados pessoais: campos curtos em 2 colunas (valores menores); e-mail e endereço em linha inteira */
+  .grade-dados--duas {grid-template-columns: repeat(2, minmax(0, 1fr)); --fs-dado: 18px;}
+  .grade-dados--duas .campo--largo {grid-column: 1 / -1;}
+  /* Contrato ativo e Situação financeira: rótulo à esquerda e valor à direita na mesma linha, em vez de uma coluna estreita com o lado direito vazio */
+  .campos-linha {display: flex !important; flex-direction: column; gap: 0 !important;}
+  .campos-linha .campo {flex-direction: row; justify-content: space-between; align-items: baseline; gap: var(--e3); padding: 10px 0; border-bottom: 1px solid var(--linha-sutil);}
+  .campos-linha .campo:last-child {border-bottom: 0; padding-bottom: 0;}
+  .campos-linha .campo > span:not(:first-child) {text-align: right; white-space: nowrap;}
+  /* Ficha do cliente: espaço abaixo da barra superior fixa (o botão ‹ Clientes ficava cortado por ela) */
+  .block-container {padding-top: 48px !important;}
+  /* Faixa de dados da ficha do cliente: CPF e WhatsApp lado a lado; CNH e e-mail em linha inteira, valores menores */
+  .cartao--faixa-cliente {--fs-dado: 18px;}
+  .cartao--faixa-cliente > div:nth-child(3) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 1px solid var(--linha);}
+  /* O selo da CNH tem a largura do texto, não da linha inteira */
+  .cartao--faixa-cliente .badge {align-self: flex-start;}
+  .cartao--faixa-cliente > div:nth-child(4) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
+  /* Clientes > lista: cada cliente vira um bloco (nome + situação + ação / CPF + WhatsApp / CNH + moto), sem rolagem lateral */
+  .st-key-clientes_card_lista {overflow: visible;}
+  .st-key-clientes_card_lista > div:first-child {display: none;}
+  [data-testid="stApp"] .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) 112px 32px; gap: var(--e3) var(--e3); align-items: center;
+    grid-template-areas: "nome sit btn" "cpf whats whats" "cnh moto moto";
+    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
+  }
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: nome;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: cpf;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: whats;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: cnh;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: sit; justify-self: end;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: moto;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: btn; justify-self: end;}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) span {overflow-wrap: anywhere;}
+  /* Rótulo pequeno acima de CPF, WhatsApp, CNH e moto (o cabeçalho da tabela some no celular) */
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(6)) [data-testid="stMarkdownContainer"]::before {
+    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
+  }
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "CPF";}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "WhatsApp";}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "CNH";}
+  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Moto atual";}
+  /* Tabelas somente leitura (fichas, relatórios): cada linha vira um cartão com os campos em 2 colunas, rótulo acima do valor */
+  .tabela-leitura {background: none; border: 0; box-shadow: none; overflow: visible;}
+  .tabela-leitura table, .tabela-leitura tbody {display: block; width: 100%;}
+  .tabela-leitura thead {display: none;}
+  .tabela-leitura tr {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3) var(--e4);
+    background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-md); box-shadow: var(--sombra-1);
+    padding: var(--e3) var(--e4); margin-bottom: var(--e3);
+  }
+  .tabela-leitura tbody tr:hover {background: var(--superficie);}
+  .tabela-leitura td, .tabela-leitura td:first-child, .tabela-leitura td:last-child {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; padding: 0; border: 0; overflow-wrap: anywhere;
+  }
+  .tabela-leitura td[data-label]::before {content: attr(data-label); font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3);}
+  .tabela-leitura td[colspan] {grid-column: 1 / -1;}
+  /* Nº ímpar de campos: o último (ex.: Situação) ocupa a linha inteira, e o selo se estica até as bordas do cartão */
+  .tabela-leitura td:last-child:nth-child(odd) {grid-column: 1 / -1;}
+  .tabela-leitura td:last-child:nth-child(odd) .badge {align-self: stretch; width: auto;}
+  /* Clientes > ficha > Contratos: cada contrato vira um bloco (moto + situação / início, fim, valor) */
+  .st-key-clientes_card_contratos {overflow: visible;}
+  .st-key-clientes_card_contratos > div:first-child {display: none;}
+  [data-testid="stApp"] .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] {
+    display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3) var(--e3); align-items: center;
+    grid-template-areas: "moto moto sit" "ini fim val";
+    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
+  }
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: moto;}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: ini;}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: fim;}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: sit; justify-self: end;}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: val;}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(5)) [data-testid="stMarkdownContainer"]::before {
+    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
+  }
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Início";}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Fim";}
+  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Valor / período";}
+  /* Placa e modelo lado a lado, sem o espaçamento de linha de tabela */
+  .st-key-clientes_card_contratos [data-testid="stColumn"] [data-testid="stHorizontalBlock"] {padding: 0 !important; border-bottom: 0; flex-wrap: nowrap; gap: var(--e3);}
+  .st-key-clientes_card_contratos [data-testid="stColumn"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width: auto !important; min-width: 0 !important; flex: 0 1 auto !important;}
   /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
   .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
   [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {
