@@ -140,46 +140,45 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
             """,
             unsafe_allow_html=True,
         )
-        cab = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
-        for coluna, rotulo, direita in zip(
-            cab,
-            ["Cliente", "Moto", "Vencimento", "Valor", "Situação", ""],
-            [False, False, False, True, False, False],
-        ):
-            alinhamento = "text-align:right;" if direita else ""
-            coluna.markdown(
-                f'<span class="fs-legenda texto-2" style="font-weight:600;display:block;">{rotulo}</span>',
-                unsafe_allow_html=True,
-            )
+        with st.container(key="hoje_cab"):
+            cab = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
+            for coluna, rotulo in zip(
+                cab, ["Cliente", "Moto", "Vencimento", "Valor", "Situação", ""]
+            ):
+                coluna.markdown(
+                    f'<span class="fs-legenda texto-2" style="font-weight:600;display:block;">{rotulo}</span>',
+                    unsafe_allow_html=True,
+                )
         if not cobrancas_hoje:
             st.markdown(
                 estado_vazio("Nenhuma cobrança vencendo hoje ou atrasada.", compacto=True),
                 unsafe_allow_html=True,
             )
         for c in cobrancas_hoje:
-            linha = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
-            linha[0].markdown(
-                f'<span class="fs-secundario">{nomes.get(c["cliente_id"], "—")}</span>',
-                unsafe_allow_html=True,
-            )
-            linha[1].markdown(
-                f'<span class="mono fs-secundario texto-2">{placas.get(c["moto_id"], "—")}</span>',
-                unsafe_allow_html=True,
-            )
-            linha[2].markdown(
-                f'<span class="mono fs-secundario">{formatar_data(c["vencimento"])}</span>',
-                unsafe_allow_html=True,
-            )
-            linha[3].markdown(
-                f'<span class="mono fs-secundario">{formatar_moeda(c["valor"])}</span>',
-                unsafe_allow_html=True,
-            )
-            linha[4].markdown(_situacao_cobranca_html(c), unsafe_allow_html=True)
-            if linha[5].button(
-                "✓", key=f"pagar_hoje_{c['id']}", help="Registrar pagamento"
-            ):
-                st.session_state["cobranca_rapida"] = c["id"]
-                st.switch_page("pages/5_Cobrancas.py")
+            with st.container(key=f"hoje_linha_{c['id']}"):
+                linha = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
+                linha[0].markdown(
+                    f'<span class="fs-secundario">{nomes.get(c["cliente_id"], "—")}</span>',
+                    unsafe_allow_html=True,
+                )
+                linha[1].markdown(
+                    f'<span class="mono fs-secundario texto-2">{placas.get(c["moto_id"], "—")}</span>',
+                    unsafe_allow_html=True,
+                )
+                linha[2].markdown(
+                    f'<span class="mono fs-secundario">{formatar_data(c["vencimento"])}</span>',
+                    unsafe_allow_html=True,
+                )
+                linha[3].markdown(
+                    f'<span class="mono fs-secundario">{formatar_moeda(c["valor"])}</span>',
+                    unsafe_allow_html=True,
+                )
+                linha[4].markdown(_situacao_cobranca_html(c), unsafe_allow_html=True)
+                if linha[5].button(
+                    "✓", key=f"pagar_hoje_{c['id']}", help="Registrar pagamento"
+                ):
+                    st.session_state["cobranca_rapida"] = c["id"]
+                    st.switch_page("pages/5_Cobrancas.py")
 
 
 def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alertas_cnh):
