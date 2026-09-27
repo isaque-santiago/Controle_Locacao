@@ -727,10 +727,16 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
   acesso por URL assinada — mesmo padrão da Fase 5.
 
 **Pontos em aberto — decidir antes de começar (ainda não definido):**
-1. **Controle de acesso:** login próprio do locatário (portal real, com
-   autenticação e RLS por perfil) **ou** o dono continua sendo o único
-   usuário do sistema e só digita o que o locatário manda por fora
-   (WhatsApp etc.). Isso muda o tamanho da fase inteira.
+1. **Controle de acesso:** já está definido que é o **próprio locatário**
+   quem vai anexar a foto e o hodômetro — o dono não vai digitar isso por
+   fora. Falta decidir só o nível de acesso:
+   - **Login completo** (e-mail/senha, sessão, recuperação de senha — um
+     segundo perfil de usuário de verdade, com RLS por papel); ou
+   - **Acesso restrito e leve** (ex.: link/token único por locatário que
+     abre direto o formulário de troca de óleo, sem tela de login).
+   A segunda opção é mais rápida de construir, mas exige cuidado extra:
+   qualquer pessoa que descubra o link consegue enviar dados se passando
+   pelo locatário.
 2. **Fórmula da multa:** valor fixo único ao ultrapassar, valor por km
    excedente, ou valor por dia de atraso em reportar.
 
