@@ -18,7 +18,7 @@ Sistema web para o dono de uma frota de motos de aluguel controlar, em um só lu
 ### Perfil de uso (definido)
 
 - Frota **média** (20 a 100 motos).
-- **Um único usuário: o dono.** Só ele registra locações, pagamentos e manutenções. Não há perfis de mecânico ou financeiro na v1.
+- **Um único usuário: o dono, até a fase 7** Só ele registra locações, pagamentos e manutenções. Não há perfis de mecânico ou financeiro na v1. (ver Fase 8 para o acesso do locatário)
 - Alertas aparecem **dentro do sistema** (dashboard). Envio por WhatsApp/e-mail fica para a v2.
 - A quilometragem é **informada manualmente** pelo dono (vistoria, manutenção ou atualização avulsa). Não há rastreador/GPS na v1.
 
@@ -703,7 +703,40 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 - `vw_resultado_moto` e custo por km rodado.
 - **Aceite:** números do Dashboard conferem com consultas manuais no banco (teste com dados de exemplo); exportação abre corretamente no Excel com acentos.
 
-### Fase 7: Acabamento e publicação
+### Fase 8: Portal do locatário e controle de troca de óleo
+
+> ⚠️ Esta fase quebra a premissa da seção 1 ("Um único usuário: o dono").
+> Não iniciar sem resolver os dois pontos em aberto abaixo.
+
+- Reaproveita cadastro de Motos e Clientes (Fase 1) e o plano preventivo já
+  existente (Fase 3 — troca de óleo já configurada em 1.000 km / 90 dias).
+- Cria um segundo papel de usuário (locatário), com RLS restrito: só enxerga
+  o(s) contrato(s)/moto(s) vinculados a ele, e só pode escrever registros de
+  troca de óleo do próprio vínculo — nunca dados de outro locatário.
+- Tela simplificada (mobile-first) para o locatário: anexa foto + hodômetro
+  ao reportar a troca de óleo.
+- `rpc_registrar_troca_oleo_locatario` (transação única):
+  - valida hodômetro informado >= último registrado (km nunca regride, regra
+    já usada na Fase 1);
+  - grava a manutenção vinculada ao id do locatário que reportou;
+  - recalcula a situação com `manutencao_regras.calcular_situacao` /
+    `calcular_proxima_manutencao` (já existentes, sem mudança);
+  - se o km reportado ultrapassar o intervalo do plano, gera uma cobrança de
+    multa (tabela `pagamentos`, novo tipo, ex.: `multa_manutencao`).
+- Bucket de fotos privado (novo `trocas_oleo` ou reaproveitar `vistorias`),
+  acesso por URL assinada — mesmo padrão da Fase 5.
+
+**Pontos em aberto — decidir antes de começar (ainda não definido):**
+1. **Controle de acesso:** login próprio do locatário (portal real, com
+   autenticação e RLS por perfil) **ou** o dono continua sendo o único
+   usuário do sistema e só digita o que o locatário manda por fora
+   (WhatsApp etc.). Isso muda o tamanho da fase inteira.
+2. **Fórmula da multa:** valor fixo único ao ultrapassar, valor por km
+   excedente, ou valor por dia de atraso em reportar.
+
+**Aceite:** a definir junto com os dois pontos acima.
+
+### Fase 8: Acabamento e publicação
 - Backup manual (ZIP com CSV de todas as tabelas), tratamento de erros amigável, estados vazios, paginação das listas grandes, revisão de responsividade no celular.
 - Deploy no Streamlit Community Cloud com segredos em `st.secrets`; README com passo a passo.
 - Script de dados de exemplo (`seed_demo.sql`) para demonstração.
@@ -753,10 +786,10 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 1. Envio automático de cobrança por WhatsApp (API oficial ou provedor) e resumo diário de vencimentos.
 2. Gestão de multas de trânsito com identificação do condutor e repasse ao locatário.
 3. Contrato em PDF gerado a partir de modelo (revisar o modelo com advogado).
-4. Portal do cliente para ver contrato, cobranças e enviar comprovante Pix.
+4. Portal do cliente para ver contrato, cobranças e enviar comprovante Pix. *(acesso básico do locatário — foto/hodômetro de troca de óleo — antecipado na Fase 7)*
 5. Conciliação de Pix (extrato) e geração de cobrança Pix.
 6. Integração com rastreador para km automático.
-7. Perfis de usuário (mecânico, financeiro) e trilha de auditoria.
+7. Perfis de usuário (mecânico, financeiro) e trilha de auditoria. *(papel de locatário antecipado na Fase 7; mecânico/financeiro seguem em backlog)*
 8. Previsão de custo de manutenção e recomendação de venda da moto (custo acumulado x valor de mercado, cruzando com tabela FIPE).
 
 ---
