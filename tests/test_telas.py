@@ -19,7 +19,7 @@ def test_pagina_sem_login_nao_acessa_dados(arquivo):
     app = AppTest.from_file(str(RAIZ / arquivo), default_timeout=20).run()
     assert not app.exception
     assert app.title[0].value == "Entrar"
-    assert any(entrada.label == "E-mail" for entrada in app.text_input)
+    assert any(entrada.label == "E-mail ou CPF" for entrada in app.text_input)
     assert any(entrada.label == "Senha" for entrada in app.text_input)
     assert any(botao.label == "Entrar no painel" for botao in app.button)
 
@@ -86,6 +86,25 @@ def test_paginas_vazias_autenticadas(arquivo):
                     patch(f"src.services.{modulo}.{nome}", return_value=[])
                 )
         pilha.enter_context(
+            patch("src.services.portal_locatario.papel_atual", return_value="dono")
+        )
+        pilha.enter_context(
+            patch("src.services.portal_locatario.listar_trocas", return_value=[])
+        )
+        pilha.enter_context(
+            patch(
+                "src.services.portal_locatario.dados_portal",
+                return_value={
+                    "cliente_id": "c1",
+                    "nome": "Teste Silva",
+                    "multa_valor": 0,
+                    "alerta_km": 300,
+                    "alerta_dias": 15,
+                    "contratos": [],
+                },
+            )
+        )
+        pilha.enter_context(
             patch(
                 "src.services.relatorios.resultado_por_moto",
                 return_value={"resultado": [], "fluxo": []},
@@ -113,6 +132,7 @@ def test_paginas_vazias_autenticadas(arquivo):
                     "alerta_manutencao_dias": 15,
                     "alerta_documento_dias": 30,
                     "alerta_cnh_dias": 30,
+                    "multa_troca_oleo_valor": 0,
                 },
             )
         )

@@ -4,6 +4,7 @@ import streamlit as st
 from time import time
 from supabase_auth.errors import AuthApiError
 
+from src.domain.acesso_locatario import eh_email_de_locatario, identificador_para_email
 from src.db import (
     clear_session_tokens,
     get_client,
@@ -86,10 +87,10 @@ def _exibir_formulario_login() -> None:
             st.error("Informe o e-mail e a senha.")
             return
         try:
-            login(email.strip(), senha)
+            login(identificador_para_email(email), senha)
             espaco.empty()
         except AuthApiError:
-            st.error("E-mail ou senha inválidos.")
+            st.error("E-mail, CPF ou senha inválidos.")
         except (RuntimeError, KeyError) as erro:
             st.error(f"O aplicativo não está configurado: {erro}")
         except Exception:
@@ -133,7 +134,10 @@ def require_login() -> None:
     sincronizar_refresh_token_cookie()
 
     email = st.session_state[_CHAVE_USUARIO]["email"]
-    nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
+    if eh_email_de_locatario(email):
+        nome = "Locatário"  # o e-mail interno é o CPF: não o mostra na tela
+    else:
+        nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
     inicial = nome[0].upper()
 
     with st.sidebar:
