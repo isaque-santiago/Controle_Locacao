@@ -263,7 +263,8 @@ Referência: [migrations do Supabase](https://supabase.com/docs/guides/deploymen
 
 ## Portal do locatário (Fase 7)
 
-O locatário entra com **login completo** (e-mail e senha do Supabase Auth) e vê só a tela
+O locatário entra com **login completo** por **CPF + senha** (o app converte o CPF no e-mail
+interno `<cpf>@portal.example.com` do Supabase Auth; o dono continua entrando com e-mail) e vê só a tela
 "Troca de óleo": moto e contrato ativos dele, situação do óleo e o formulário para
 reportar a troca com **foto do painel (hodômetro)** e **foto da nota fiscal** (cláusula 4.13
 do contrato). O dono continua com o app completo; o menu depende do papel (`rpc_meu_papel`).
@@ -276,11 +277,22 @@ privado (só imagens, até 10 MB): o locatário só envia para a própria pasta 
 sobrescreve arquivos; o dono vê as fotos por URL assinada na ficha do cliente (aba "Portal").
 O cadastro público continua desativado e a `service_role` nunca é usada pelo app.
 
-**Como liberar um locatário.**
+**Como liberar um locatário.** A senha inicial é **individual e aleatória** (nunca uma senha
+padrão para todos) e provisória: o locatário é obrigado a trocá-la no primeiro acesso.
 
-1. No painel do Supabase, Authentication > Users > Add user (e-mail e senha).
-2. No app, Clientes > ficha do cliente > aba "Portal": informe o e-mail e clique em
-   "Vincular acesso". "Remover acesso ao portal" desfaz o vínculo.
+1. No app, Clientes > ficha do cliente > aba "Portal" > "Gerar senha provisória". O app mostra
+   o e-mail interno e a senha, uma única vez (a senha não é gravada no banco).
+2. No painel do Supabase, Authentication > Users > Add user, com esse e-mail e essa senha e
+   **Auto Confirm User** marcado.
+3. De volta ao app, "Confirmar e vincular". Entregue ao locatário o CPF e a senha provisória.
+4. No primeiro login o portal só mostra a tela "defina sua senha"; enquanto a senha for
+   provisória, a RPC recusa registrar troca de óleo.
+
+"Gerar nova senha provisória" serve para redefinir (troque a senha do usuário no painel do
+Supabase e confirme no app: o locatário volta a ser obrigado a trocar). "Remover acesso ao
+portal" desfaz o vínculo (para bloquear também o login, exclua o usuário no Supabase).
+Limite conhecido: o banco não consegue provar que a senha foi trocada; o flag só força o
+fluxo. A senha provisória aleatória e o bloqueio de tentativas do Supabase Auth cobrem o risco.
 
 **Regras da troca.** O hodômetro não pode ser menor que o último registrado. A troca grava
 uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o

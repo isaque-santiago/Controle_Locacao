@@ -136,6 +136,25 @@ def _formulario(dados, contrato, previsto):
     st.rerun()
 
 
+def _trocar_senha():
+    """Primeiro acesso: a senha provisória precisa ser trocada antes de qualquer coisa."""
+    st.warning(
+        "Este é o seu primeiro acesso. Por segurança, defina agora uma senha só sua. "
+        "Depois disso você poderá registrar a troca de óleo."
+    )
+    with st.form("trocar_senha", clear_on_submit=False):
+        nova = st.text_input("Nova senha", type="password", autocomplete="new-password")
+        confirmacao = st.text_input(
+            "Repita a nova senha", type="password", autocomplete="new-password"
+        )
+        st.caption("Mínimo de 8 caracteres, misturando letras e números; não use o seu CPF.")
+        enviar = st.form_submit_button("Salvar nova senha", type="primary", use_container_width=True)
+    if enviar:
+        portal_locatario.trocar_senha(nova, confirmacao)
+        st.session_state["mensagem_sucesso"] = "Senha alterada. Você já pode registrar a troca de óleo."
+        st.rerun()
+
+
 def exibir():
     cabecalho("Portal do locatário", exibir_titulo=False)
     with proteger():
@@ -145,6 +164,9 @@ def exibir():
             '<div class="pagina-sub">Registre aqui a troca de óleo da sua moto.</div>',
             unsafe_allow_html=True,
         )
+        if dados.get("trocar_senha"):
+            _trocar_senha()
+            return
         if not dados["contratos"]:
             st.info("Você não tem contrato ativo no momento.")
             return

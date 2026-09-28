@@ -33,12 +33,12 @@ def exibir() -> tuple[bool, str, str]:
 
     with acesso:
         st.title("Entrar")
-        st.markdown('<div class="login-acesso">Acesso restrito ao proprietário</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-acesso">Acesso restrito ao proprietário e aos locatários</div>', unsafe_allow_html=True)
         with st.form("form_login"):
             email = st.text_input(
-                "E-mail",
-                placeholder="seu@email.com",
-                autocomplete="email",
+                "E-mail ou CPF",
+                placeholder="seu@email.com ou CPF",
+                autocomplete="username",
             )
             senha = st.text_input(
                 "Senha",

@@ -147,3 +147,54 @@ class TestTelas:
         app = _abrir("app.py", "locatario")
         assert not app.exception and not app.error
         assert "Olá, Maria" in " ".join(m.value for m in app.markdown)
+
+
+class TestPrimeiroAcesso:
+    def test_senha_provisoria_mostra_so_a_troca_de_senha(self):
+        app = _abrir("pages/11_Portal_Locatario.py", "locatario", {**DADOS, "trocar_senha": True})
+        assert not app.exception and not app.error
+        assert [t.label for t in app.text_input] == ["Nova senha", "Repita a nova senha"]
+        assert "primeiro acesso" in app.warning[0].value
+
+    def test_trocar_senha_valida_e_chama_o_auth(self):
+        with (
+            patch(f"{REPO}.alterar_senha") as alterar,
+            patch("src.services.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
+        ):
+            portal_locatario.trocar_senha("moto2026x", "moto2026x")
+        alterar.assert_called_once_with("moto2026x")
+
+    @pytest.mark.parametrize(
+        "nova,confirmacao",
+        [("moto2026x", "outra1234"), ("curta1", "curta1"), ("12345678", "12345678"), ("a52998224725", "a52998224725")],
+    )
+    def test_senha_fraca_ou_diferente_nao_chama_o_auth(self, nova, confirmacao):
+        with (
+            patch(f"{REPO}.alterar_senha") as alterar,
+            patch("src.services.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
+        ):
+            with pytest.raises(ValueError):
+                portal_locatario.trocar_senha(nova, confirmacao)
+        alterar.assert_not_called()
+
+
+class TestCredenciais:
+    def test_gera_email_interno_e_senha_diferente_por_cliente(self):
+        a = portal_locatario.gerar_credenciais("529.982.247-25")
+        b = portal_locatario.gerar_credenciais("529.982.247-25")
+        assert a["email"] == "52998224725@portal.example.com"
+        assert a["senha"] != b["senha"] and len(a["senha"]) == 10
+
+    def test_cpf_invalido_nao_gera_credenciais(self):
+        with pytest.raises(ValueError):
+            portal_locatario.gerar_credenciais("111.111.111-11")
+
+
+class TestLoginPorCpf:
+    def test_cpf_digitado_vira_email_interno_no_login(self):
+        app = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=20).run()
+        app.text_input[0].set_value("529.982.247-25")
+        app.text_input[1].set_value("senha-qualquer")
+        with patch("src.auth.login") as login:
+            next(b for b in app.button if b.label == "Entrar no painel").click().run()
+        login.assert_called_once_with("52998224725@portal.example.com", "senha-qualquer")

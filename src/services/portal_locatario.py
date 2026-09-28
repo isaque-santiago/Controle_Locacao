@@ -6,6 +6,11 @@ from pathlib import PurePath
 import streamlit as st
 from postgrest.exceptions import APIError
 
+from src.domain.acesso_locatario import (
+    email_de_acesso,
+    gerar_senha_provisoria,
+    validar_nova_senha,
+)
 from src.domain.arquivos import validar_arquivo
 from src.domain.troca_oleo import avaliar_troca_oleo, validar_km_informado
 from src.repositories import portal_locatario
@@ -75,12 +80,35 @@ def registrar_troca_oleo(
         raise
 
 
+def trocar_senha(nova: str, confirmacao: str) -> None:
+    """Primeiro acesso: o locatário troca a senha provisória por uma própria."""
+    email = (st.session_state.get("usuario") or {}).get("email", "")
+    cpf = email.split("@")[0]
+    portal_locatario.alterar_senha(validar_nova_senha(nova, confirmacao, cpf))
+
+
 # ---- Somente o dono ----------------------------------------------------------
 
 
-def vincular_acesso(cliente_id: str, email: str) -> dict:
+def gerar_credenciais(cpf: str) -> dict:
+    """E-mail interno e senha provisória (aleatória, por cliente) para o dono criar o
+    usuário no Supabase. A senha não é guardada em lugar nenhum: só é mostrada uma vez."""
+    return {"email": email_de_acesso(cpf), "senha": gerar_senha_provisoria()}
+
+
+def vincular_acesso(cliente_id: str) -> dict:
     try:
-        return portal_locatario.vincular(cliente_id, email.strip())
+        return portal_locatario.vincular(cliente_id)
+    except APIError as erro:
+        if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
+            raise _como_regra_de_negocio(erro) from erro
+        raise
+
+
+def exigir_nova_senha(cliente_id: str) -> dict:
+    """Usar depois de redefinir a senha do locatário no painel do Supabase."""
+    try:
+        return portal_locatario.definir_senha_provisoria(cliente_id)
     except APIError as erro:
         if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
             raise _como_regra_de_negocio(erro) from erro

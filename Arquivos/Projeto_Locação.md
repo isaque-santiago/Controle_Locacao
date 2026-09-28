@@ -710,12 +710,16 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 
 - Reaproveita cadastro de Motos e Clientes (Fase 1) e o plano preventivo já
   existente (Fase 3 — troca de óleo já configurada em 1.000 km / 90 dias).
-- **Controle de acesso: login completo** (e-mail/senha do Supabase Auth). O
-  usuário é criado pelo dono no painel do Supabase (cadastro público continua
-  desativado; o app nunca usa a `service_role`) e vinculado ao cliente na ficha
-  dele (`clientes.auth_user_id`, aba "Portal"). O papel vem de `rpc_meu_papel()`
-  (`dono`, `locatario` ou nenhum) e define o menu: o locatário só vê a tela
-  "Troca de óleo".
+- **Controle de acesso: login completo por CPF + senha** (Supabase Auth). O app
+  converte o CPF no e-mail interno `<cpf>@portal.example.com` (domínio reservado,
+  nunca recebe e-mail); o dono continua com e-mail. Não existe senha padrão geral:
+  cada cliente recebe uma **senha provisória aleatória e individual**, gerada pelo
+  app e mostrada uma vez ao dono, que cria o usuário no painel do Supabase
+  (cadastro público continua desativado; o app nunca usa a `service_role`) e o
+  vincula na aba "Portal" da ficha (`clientes.auth_user_id`). No primeiro acesso o
+  locatário é **obrigado a trocar a senha** (`clientes.senha_provisoria`); enquanto
+  pendente, a RPC de troca de óleo recusa. O papel vem de `rpc_meu_papel()` (`dono`,
+  `locatario` ou nenhum) e define o menu: o locatário só vê a tela "Troca de óleo".
 - **RLS:** as tabelas continuam só com a política do dono (`is_dono()`); o
   locatário não tem acesso direto a nenhuma tabela. Lê e grava apenas por RPCs
   `SECURITY DEFINER` que o identificam por `auth.uid()` e só alcançam o contrato
@@ -755,12 +759,13 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
   locatário não lê nenhuma tabela, km regredido/arquivo de outro cliente/arquivo
   inexistente/troca duplicada são recusados, troca dentro do intervalo não gera
   multa e troca acima gera exatamente uma `multa_manutencao` com o valor fixo;
-- teste manual em dev: dono vincula o e-mail do locatário; o locatário loga,
-  vê só a tela "Troca de óleo", envia troca com as duas fotos; o dono vê troca,
+- teste manual em dev: dono gera a senha provisória, cria o usuário e vincula; o
+  locatário loga com o CPF, é obrigado a trocar a senha, vê só a tela "Troca de
+  óleo" e envia troca com as duas fotos; o dono vê troca,
   fotos e multa na ficha do cliente.
 
 **Fora do escopo desta fase:** tela para cancelar cobrança (hoje só direto no
-banco), recuperação de senha personalizada e exclusão de fotos órfãs
+banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
 (enviadas ao Storage quando o registro da troca falha).
 
 ### Fase 8: Acabamento e publicação

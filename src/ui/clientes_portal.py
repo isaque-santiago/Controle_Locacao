@@ -1,4 +1,4 @@
-"""Aba "Portal" da ficha do cliente: vínculo do acesso do locatário e trocas de óleo."""
+"""Aba "Portal" da ficha do cliente: acesso do locatário (CPF + senha) e trocas de óleo."""
 
 import streamlit as st
 
@@ -6,30 +6,76 @@ from src.services import portal_locatario
 from src.ui.componentes import proteger, selo_situacao, sucesso, tabela_html
 from src.ui.formatadores import formatar_data
 
+_CHAVE_CREDENCIAIS = "portal_credenciais_geradas"
+
 
 def _km(valor):
     return f"{valor:,} km".replace(",", ".")
 
 
+def _credenciais(cliente):
+    """Gera e mostra (uma única vez) o e-mail interno e a senha provisória do cliente."""
+    gerada = st.session_state.get(_CHAVE_CREDENCIAIS)
+    if gerada and gerada["cliente_id"] != cliente["id"]:
+        gerada = None
+    if not gerada:
+        return None
+    st.warning(
+        "Anote a senha agora: ela não é gravada no banco e some quando você confirmar, cancelar ou sair. "
+        "No painel do Supabase (Authentication > Users > Add user), crie o usuário com o e-mail "
+        "e a senha abaixo e marque **Auto Confirm User**. Depois clique em "
+        "**Confirmar e vincular**. Entregue ao locatário o CPF e esta senha: "
+        "ele terá de trocá-la no primeiro acesso."
+    )
+    st.code(gerada["email"], language=None)
+    st.code(gerada["senha"], language=None)
+    return gerada
+
+
 def _acesso(cliente):
-    if cliente.get("auth_user_id"):
-        st.success("Este cliente tem acesso ao portal do locatário.")
-        if st.button("Remover acesso ao portal", key="desvincular_portal"):
+    tem_acesso = bool(cliente.get("auth_user_id"))
+    gerada = _credenciais(cliente)
+
+    if tem_acesso and not gerada:
+        if cliente.get("senha_provisoria"):
+            st.info("Acesso ativo. O locatário ainda não trocou a senha provisória.")
+        else:
+            st.success("Acesso ativo ao portal do locatário.")
+        col_nova, col_remover = st.columns(2)
+        if col_nova.button("Gerar nova senha provisória", key="nova_senha_portal", use_container_width=True):
+            with proteger():
+                credenciais = portal_locatario.gerar_credenciais(cliente.get("cpf") or "")
+                st.session_state[_CHAVE_CREDENCIAIS] = {"cliente_id": cliente["id"], "redefinindo": True, **credenciais}
+                st.rerun()
+        if col_remover.button("Remover acesso ao portal", key="desvincular_portal", use_container_width=True):
             with proteger():
                 portal_locatario.desvincular_acesso(cliente["id"])
                 sucesso()
         return
 
-    st.info(
-        "Para liberar o portal: 1) crie o usuário (e-mail e senha) em Authentication > Users "
-        "no painel do Supabase; 2) informe aqui o mesmo e-mail para vinculá-lo a este cliente."
-    )
-    with st.form("vincular_portal", border=False):
-        email = st.text_input("E-mail do usuário criado no Supabase", cliente.get("email") or "")
-        if st.form_submit_button("Vincular acesso", type="primary"):
-            with proteger():
-                portal_locatario.vincular_acesso(cliente["id"], email)
+    if gerada:
+        with proteger():
+            if st.button("Confirmar e vincular", type="primary", key="confirmar_vinculo_portal"):
+                if gerada.get("redefinindo"):
+                    portal_locatario.exigir_nova_senha(cliente["id"])
+                else:
+                    portal_locatario.vincular_acesso(cliente["id"])
+                st.session_state.pop(_CHAVE_CREDENCIAIS, None)
                 sucesso()
+        if st.button("Cancelar", key="cancelar_credenciais_portal"):
+            st.session_state.pop(_CHAVE_CREDENCIAIS, None)
+            st.rerun()
+        return
+
+    st.info(
+        "Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma "
+        "senha provisória gerada aqui para ele."
+    )
+    if st.button("Gerar senha provisória", type="primary", key="gerar_credenciais_portal"):
+        with proteger():
+            credenciais = portal_locatario.gerar_credenciais(cliente.get("cpf") or "")
+            st.session_state[_CHAVE_CREDENCIAIS] = {"cliente_id": cliente["id"], **credenciais}
+            st.rerun()
 
 
 def _trocas(cliente):

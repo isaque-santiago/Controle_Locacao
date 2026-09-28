@@ -1,23 +1,30 @@
 -- =====================================================================
 -- 20260928120000_portal_locatario.sql : Fase 7 — portal do locatário
 --
--- O locatário entra com LOGIN COMPLETO (e-mail/senha do Supabase Auth), como
--- um segundo papel de usuário. Ele NÃO recebe nenhuma permissão direta nas
+-- O locatário entra com LOGIN COMPLETO do Supabase Auth, como um segundo papel de
+-- usuário. O login é por CPF + senha: o app converte o CPF (só dígitos) no e-mail
+-- interno <cpf>@portal.example.com (domínio reservado, que nunca recebe e-mail).
+-- A senha inicial é PROVISÓRIA e individual (gerada pelo app, mostrada uma vez ao
+-- dono); o locatário é obrigado a trocá-la no primeiro acesso. Ele NÃO recebe nenhuma permissão direta nas
 -- tabelas: a RLS "dono_total" (is_dono()) continua sendo a única política das
 -- tabelas do sistema. Tudo que o locatário lê ou grava passa por RPCs
 -- SECURITY DEFINER que identificam quem chamou por auth.uid() e só enxergam o
 -- contrato/moto vinculados a ele.
 --
 -- Como criar um locatário (o app nunca usa a service_role):
---   1. Authentication > Users > Add user (e-mail + senha) no painel do Supabase
---      (cadastro público continua desativado);
---   2. no app, Clientes > ficha do cliente > "Acesso ao portal": informar o
---      e-mail criado no passo 1 (rpc_vincular_locatario).
+--   1. no app, Clientes > ficha do cliente > aba "Portal": "Gerar senha provisória";
+--   2. Authentication > Users > Add user no painel do Supabase, com o e-mail e a
+--      senha mostrados pelo app e "Auto Confirm User" marcado (cadastro público
+--      continua desativado);
+--   3. no app, "Vincular acesso" (rpc_vincular_locatario).
 -- =====================================================================
 
 -- ---------- Vínculo cliente <-> usuário do Supabase Auth ----------
 alter table clientes
   add column auth_user_id uuid unique references auth.users(id) on delete set null;
+-- true enquanto o locatário ainda não trocou a senha provisória
+alter table clientes
+  add column senha_provisoria boolean not null default false;
 
 -- ---------- Multa fixa por troca de óleo fora do intervalo ----------
 -- 0 = sem multa configurada: o excesso é registrado, mas nada é cobrado.
@@ -75,35 +82,35 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 -- ---------- Vincular / desvincular locatário (só o dono) ----------
+-- O usuário no Auth deve ter o e-mail <cpf>@portal.example.com (o app mostra o
+-- valor exato). Vincular marca a senha como provisória: o locatário terá de trocá-la.
 create or replace function rpc_vincular_locatario(payload jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   v_cliente_id uuid := (payload->>'cliente_id')::uuid;
-  v_email      text := lower(trim(payload->>'email'));
+  v_cpf        text;
+  v_email      text;
   v_user_id    uuid;
 begin
   if not is_dono() then
     raise exception 'Acesso negado.' using errcode = '42501';
   end if;
-  if coalesce(v_email, '') = '' then
-    raise exception 'Informe o e-mail do usuário criado no Supabase.';
+
+  select cpf into v_cpf from clientes where id = v_cliente_id;
+  if not found then
+    raise exception 'Cliente não encontrado.';
   end if;
+  v_email := v_cpf || '@portal.example.com';
 
   select id into v_user_id from auth.users where lower(email) = v_email;
   if v_user_id is null then
-    raise exception 'Não existe usuário com esse e-mail. Crie-o antes em Authentication > Users no Supabase.';
-  end if;
-  if is_dono() and v_user_id = auth.uid() then
-    raise exception 'Este usuário é o proprietário; use outro e-mail para o locatário.';
+    raise exception 'Não existe usuário com o e-mail %. Crie-o antes em Authentication > Users no Supabase.', v_email;
   end if;
   if exists (select 1 from clientes where auth_user_id = v_user_id and id <> v_cliente_id) then
     raise exception 'Este usuário já está vinculado a outro cliente.';
   end if;
 
-  update clientes set auth_user_id = v_user_id where id = v_cliente_id;
-  if not found then
-    raise exception 'Cliente não encontrado.';
-  end if;
+  update clientes set auth_user_id = v_user_id, senha_provisoria = true where id = v_cliente_id;
   return jsonb_build_object('cliente_id', v_cliente_id, 'email', v_email);
 end $$;
 
@@ -113,11 +120,39 @@ begin
   if not is_dono() then
     raise exception 'Acesso negado.' using errcode = '42501';
   end if;
-  update clientes set auth_user_id = null where id = (payload->>'cliente_id')::uuid;
+  update clientes set auth_user_id = null, senha_provisoria = false
+   where id = (payload->>'cliente_id')::uuid;
   if not found then
     raise exception 'Cliente não encontrado.';
   end if;
   return jsonb_build_object('cliente_id', payload->>'cliente_id');
+end $$;
+
+-- Dono redefiniu a senha do locatário no painel do Supabase: volta a exigir a troca.
+create or replace function rpc_definir_senha_provisoria(payload jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_dono() then
+    raise exception 'Acesso negado.' using errcode = '42501';
+  end if;
+  update clientes set senha_provisoria = true
+   where id = (payload->>'cliente_id')::uuid and auth_user_id is not null;
+  if not found then
+    raise exception 'Este cliente não tem acesso ao portal.';
+  end if;
+  return jsonb_build_object('cliente_id', payload->>'cliente_id');
+end $$;
+
+-- O locatário chama depois de trocar a senha (auth.update_user). Não dá para o
+-- banco confirmar que a senha mudou de fato; a senha provisória é aleatória e de
+-- uso individual, então o flag serve para forçar o fluxo de troca, não como prova.
+create or replace function rpc_confirmar_troca_senha() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update clientes set senha_provisoria = false where auth_user_id = auth.uid();
+  if not found then
+    raise exception 'Acesso negado.' using errcode = '42501';
+  end if;
 end $$;
 
 -- ---------- Dados mínimos do portal ----------
@@ -169,6 +204,7 @@ begin
 
   return jsonb_build_object(
     'cliente_id',     v_cliente.id,
+    'trocar_senha',   v_cliente.senha_provisoria,
     'nome',           v_cliente.nome,
     'multa_valor',    v_config.multa_troca_oleo_valor,
     'alerta_km',      v_config.alerta_manutencao_km,
@@ -213,6 +249,10 @@ declare
 begin
   if v_cliente_id is null then
     raise exception 'Acesso negado.' using errcode = '42501';
+  end if;
+
+  if exists (select 1 from clientes where id = v_cliente_id and senha_provisoria) then
+    raise exception 'Troque a senha provisória antes de registrar a troca de óleo.';
   end if;
 
   select * into v_contrato from contratos
@@ -302,11 +342,13 @@ end $$;
 revoke execute on function
   cliente_id_logado(), item_troca_oleo_id(), rpc_meu_papel(),
   rpc_vincular_locatario(jsonb), rpc_desvincular_locatario(jsonb),
+  rpc_definir_senha_provisoria(jsonb), rpc_confirmar_troca_senha(),
   rpc_portal_locatario(), rpc_registrar_troca_oleo_locatario(jsonb)
 from public, anon;
 grant execute on function
   cliente_id_logado(), item_troca_oleo_id(), rpc_meu_papel(),
   rpc_vincular_locatario(jsonb), rpc_desvincular_locatario(jsonb),
+  rpc_definir_senha_provisoria(jsonb), rpc_confirmar_troca_senha(),
   rpc_portal_locatario(), rpc_registrar_troca_oleo_locatario(jsonb)
 to authenticated;
 
