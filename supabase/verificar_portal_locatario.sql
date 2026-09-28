@@ -120,3 +120,6 @@ begin
 end $$;
 
 rollback;
+
+-- Só chega aqui se todas as verificações acima passaram (qualquer falha interrompe com erro).
+select 'OK: portal do locatário verificado' as resultado;
