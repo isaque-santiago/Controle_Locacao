@@ -7,9 +7,12 @@ larguras, dois temas e quatro perfis de navegador, e gera capturas de tela. Na E
 
 ## Preparação (uma vez)
 
+Os comandos abaixo são para o PowerShell, executados na raiz do projeto
+(`cd C:\Controle_Locacao`); o prefixo `.\` é obrigatório.
+
 ```bash
-.venv\Scripts\python.exe -m pip install -r e2e/requirements-e2e.txt
-.venv\Scripts\python.exe -m playwright install chromium firefox webkit
+.\.venv\Scripts\python.exe -m pip install -r e2e/requirements-e2e.txt
+.\.venv\Scripts\python.exe -m playwright install chromium firefox webkit
 ```
 
 ## Ambiente: sempre o de desenvolvimento
@@ -32,20 +35,20 @@ PowerShell:
 
 ```powershell
 $env:E2E_BASE_URL = "http://localhost:8501"
-$env:E2E_EMAIL = "<usuário de teste>"
-$env:E2E_SENHA = "<senha do usuário de teste>"
+$env:E2E_EMAIL = "e-mail-do-usuario-de-teste"   # valor real, sem < >
+$env:E2E_SENHA = "senha-do-usuario-de-teste"    # valor real, sem < >
 $env:E2E_DADOS = "normal"
 ```
 
 ## Execução
 
 ```bash
-.venv\Scripts\python.exe -m pytest e2e                      # Chromium desktop, 5 larguras, 2 temas
-.venv\Scripts\python.exe -m pytest e2e --capturas           # também salva PNGs em e2e/capturas/
-.venv\Scripts\python.exe -m pytest e2e --larguras 320,390 --temas claro
-.venv\Scripts\python.exe -m pytest e2e --perfil chromium-desktop --perfil chromium-movel --perfil firefox --perfil webkit --capturas
-.venv\Scripts\python.exe -m pytest e2e -k login             # só a tela de acesso (não precisa de credenciais)
-.venv\Scripts\python.exe -m pytest e2e --e2e-estrito        # reprova se houver P0
+.\.venv\Scripts\python.exe -m pytest e2e                      # Chromium desktop, 5 larguras, 2 temas
+.\.venv\Scripts\python.exe -m pytest e2e --capturas           # também salva PNGs em e2e/capturas/
+.\.venv\Scripts\python.exe -m pytest e2e --larguras 320,390 --temas claro
+.\.venv\Scripts\python.exe -m pytest e2e --perfil chromium-desktop --perfil chromium-movel --perfil firefox --perfil webkit --capturas
+.\.venv\Scripts\python.exe -m pytest e2e -k login             # só a tela de acesso (não precisa de credenciais)
+.\.venv\Scripts\python.exe -m pytest e2e --e2e-estrito        # reprova se houver P0
 ```
 
 `pytest` sem argumentos roda apenas `tests/` (240 testes), por causa do `pytest.ini`.
