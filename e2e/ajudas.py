@@ -3,7 +3,7 @@
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
 
-from e2e.config import ALVO_MINIMO, Pagina, base_url
+from e2e.config import ALVO_MINIMO, Pagina, base_url, credenciais
 
 SELETOR_INTERATIVOS = (
     'a[href], button, input:not([type="hidden"]), select, textarea, summary, '
@@ -53,10 +53,24 @@ def entrar(page: Page, email: str, senha: str) -> None:
     page.wait_for_timeout(1_200)
 
 
-def ir_para(page: Page, pagina: Pagina) -> None:
-    """Abre a página pela URL; a sessão é restaurada pelo cookie."""
-    page.goto(f"{base_url()}/{pagina.caminho}")
+def ir_para(page: Page, pagina: Pagina) -> bool:
+    """Abre a página pela URL; a sessão é restaurada pelo cookie.
+
+    Se o app devolver a tela de acesso (a restauração por cookie falhou), entra de novo e
+    repete a navegação. Devolve True quando foi preciso reautenticar, para o teste registrar
+    o achado sem perder o restante da varredura."""
+    destino = f"{base_url()}/{pagina.caminho}"
+    page.goto(destino)
     aguardar_app(page)
+    if not tem_formulario_login(page):
+        return False
+    cred = credenciais()
+    if cred is None:
+        return False
+    entrar(page, *cred)
+    page.goto(destino)
+    aguardar_app(page)
+    return True
 
 
 def textos_de_excecao(page: Page) -> list[str]:

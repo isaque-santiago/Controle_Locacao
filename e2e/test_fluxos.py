@@ -31,7 +31,13 @@ class Contexto:
     capturas: bool
 
     def visitar(self, titulo: str) -> None:
-        ir_para(self.page, _pagina(titulo))
+        if ir_para(self.page, _pagina(titulo)):
+            self.reg(
+                "P2",
+                "sessao-restaurada-por-novo-login",
+                titulo,
+                "A sessão não sobreviveu à navegação por URL; foi preciso entrar de novo.",
+            )
         self.medir(titulo, titulo)
 
     def medir(self, onde: str, foto: str | None = None) -> None:

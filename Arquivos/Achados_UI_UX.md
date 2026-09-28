@@ -26,9 +26,12 @@ Severidades: **P0** bloqueador (overflow, ação perdida, diálogo sem saída) �
 | A-005 | P1 | Todas as páginas | Ações por linha, abas, links do menu e botões de diálogo com altura < 44 px (cerca de 370 ocorrências no total; detalhe em `achados.json`) | Chromium desktop, 390 px, claro, dados normal | 1 | Aberto |
 | A-006 | P2 | Todas as páginas autenticadas | `console.error` de recurso com 404 a cada página (origem a identificar) | Chromium desktop, 390 px | 8 | Aberto |
 | A-007 | INFO | Cobranças | Fluxo 5: botão de pagamento não localizado pelo rótulo `pagamento\|pagar\|✓`; ajustar o seletor do cenário | Chromium desktop, 390 px, dados normal | 0 | Aberto |
+| A-008 | INFO | Configurações | `httpx.ReadTimeout` do Supabase exibido como exceção na página em uma execução (não reproduzido nas outras); tratar em Feedback e recuperação | Chromium desktop, 390 px, dados extremo | 7 | Aberto |
 
-> A-001 a A-003 vieram da execução só do login. A-004 a A-007 vêm da primeira execução
-> autenticada (390 px, claro, Chromium desktop). Os avisos de "diálogo sem rolagem" em
-> Documentos, Manutenção e Vistorias foram falso positivo (a rolagem fica no contêiner que
-> envolve o diálogo) e a medição foi corrigida. A matriz completa (5 larguras, 2 temas,
-> 4 perfis, dados vazio/extremo) ainda não foi executada.
+> A-001 a A-003 vieram da execução só do login. A-004 a A-008 vêm de execuções autenticadas
+> (390 px, claro, Chromium desktop, dados normal e extremo). Os avisos de "diálogo sem
+> rolagem" em Documentos, Manutenção e Vistorias foram falso positivo (a rolagem fica no
+> contêiner que envolve o diálogo) e a medição foi corrigida. Com dados extremos (30 motos,
+> textos longos, 999.999 km) a lista de Motos não apresentou overflow nem sobreposição em
+> 390 px. A matriz completa (5 larguras, 2 temas, 4 perfis) e o estado `vazio` ainda não
+> foram executados.

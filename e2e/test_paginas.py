@@ -16,10 +16,17 @@ def test_todas_as_paginas(pagina_logada, cenario, registrar, coletor, request):
 
     for pagina in PAGINAS:
         try:
-            ir_para(page, pagina)
+            reautenticou = ir_para(page, pagina)
         except Exception as erro:  # página que não carrega também é achado
             reg("P0", "pagina-nao-carrega", pagina.titulo, f"Falha ao abrir: {type(erro).__name__}")
             continue
+        if reautenticou:
+            reg(
+                "P2",
+                "sessao-restaurada-por-novo-login",
+                pagina.titulo,
+                "A sessão não sobreviveu à navegação por URL; foi preciso entrar de novo.",
+            )
         if tem_formulario_login(page):
             reg("P0", "sessao-perdida", pagina.titulo, "A navegação voltou para a tela de acesso.")
             continue
