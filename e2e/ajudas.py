@@ -198,15 +198,17 @@ _JS_DIALOGO = (
     const rb = b.getBoundingClientRect();
     botoes.push({ rotulo: rotulo(b), esquerda: Math.round(rb.left), direita: Math.round(rb.right) });
   }
-  let rolavel = d;
-  for (const el of d.querySelectorAll('*')) {
-    if (el.scrollHeight > el.clientHeight + 1 && ['auto', 'scroll'].includes(getComputedStyle(el).overflowY)) { rolavel = el; break; }
+  // A rolagem pode estar no diálogo, em um descendente ou no contêiner (overlay) que o envolve.
+  let rola = false;
+  const candidatos = [d, ...d.querySelectorAll('*')];
+  for (let p = d.parentElement; p && p !== document.documentElement; p = p.parentElement) candidatos.push(p);
+  for (const el of candidatos) {
+    if (el.scrollHeight > el.clientHeight + 1 && ['auto', 'scroll'].includes(getComputedStyle(el).overflowY)) { rola = true; break; }
   }
-  const oy = getComputedStyle(rolavel).overflowY;
   return {
     caixa: { esquerda: Math.round(r.left), direita: Math.round(r.right), topo: Math.round(r.top), base: Math.round(r.bottom) },
     viewport: { largura: vw, altura: vh },
-    rola: oy === 'auto' || oy === 'scroll',
+    rola,
     botoes,
   };
 }"""
