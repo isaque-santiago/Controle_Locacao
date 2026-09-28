@@ -5,7 +5,6 @@ import pytest
 from src.domain.acesso_locatario import (
     eh_email_de_locatario,
     email_de_acesso,
-    gerar_senha_provisoria,
     identificador_para_email,
     validar_nova_senha,
 )
@@ -42,16 +41,6 @@ def test_eh_email_de_locatario():
     assert eh_email_de_locatario(f"{CPF}@portal.example.com")
     assert not eh_email_de_locatario("dono@exemplo.com")
     assert not eh_email_de_locatario(None)
-
-
-class TestSenhaProvisoria:
-    def test_tamanho_e_alfabeto_sem_caracteres_ambiguos(self):
-        senha = gerar_senha_provisoria()
-        assert len(senha) == 10
-        assert not set(senha) & set("0O1lIi")
-
-    def test_cada_cliente_recebe_uma_senha_diferente(self):
-        assert len({gerar_senha_provisoria() for _ in range(50)}) == 50
 
 
 class TestValidarNovaSenha:

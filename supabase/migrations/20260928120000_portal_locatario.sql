@@ -4,19 +4,18 @@
 -- O locatário entra com LOGIN COMPLETO do Supabase Auth, como um segundo papel de
 -- usuário. O login é por CPF + senha: o app converte o CPF (só dígitos) no e-mail
 -- interno <cpf>@portal.example.com (domínio reservado, que nunca recebe e-mail).
--- A senha é individual e aleatória (gerada pelo app, mostrada uma vez ao dono);
--- não existe senha padrão para todos. O locatário pode trocá-la se quiser. Ele NÃO recebe nenhuma permissão direta nas
--- tabelas: a RLS "dono_total" (is_dono()) continua sendo a única política das
+-- A senha é individual e aleatória (gerada pela Edge Function, mostrada uma vez ao
+-- dono); não existe senha padrão para todos. O locatário pode trocá-la se quiser.
+-- Ele NÃO recebe nenhuma permissão direta nas tabelas: a RLS "dono_total" (is_dono()) continua sendo a única política das
 -- tabelas do sistema. Tudo que o locatário lê ou grava passa por RPCs
 -- SECURITY DEFINER que identificam quem chamou por auth.uid() e só enxergam o
 -- contrato/moto vinculados a ele.
 --
 -- Como criar um locatário (o app nunca usa a service_role):
---   1. no app, Clientes > ficha do cliente > aba "Portal": "Gerar senha de acesso";
---   2. Authentication > Users > Add user no painel do Supabase, com o e-mail e a
---      senha mostrados pelo app e "Auto Confirm User" marcado (cadastro público
---      continua desativado);
---   3. no app, "Vincular acesso" (rpc_vincular_locatario).
+--   no app, Clientes > ficha do cliente > aba "Portal" > "Criar acesso". O app chama a
+--   Edge Function criar-locatario (supabase/functions), que cria o usuário no Auth com
+--   a service_role — chave que existe só dentro do Supabase — e vincula ao cliente.
+--   A função precisa estar publicada (README, "Portal do locatário").
 -- =====================================================================
 
 -- ---------- Vínculo cliente <-> usuário do Supabase Auth ----------
@@ -78,7 +77,9 @@ language sql stable security definer set search_path = public as $$
   end;
 $$;
 
--- ---------- Vincular / desvincular locatário (só o dono) ----------
+-- ---------- Vincular locatário (só o dono) ----------
+-- Chamada pela Edge Function criar-locatario com o JWT do dono, logo depois de criar o
+-- usuário no Auth. Remover o acesso = excluir o usuário (auth_user_id vira null).
 -- O usuário no Auth deve ter o e-mail <cpf>@portal.example.com (o app mostra o
 -- valor exato).
 create or replace function rpc_vincular_locatario(payload jsonb) returns jsonb
@@ -109,20 +110,6 @@ begin
 
   update clientes set auth_user_id = v_user_id where id = v_cliente_id;
   return jsonb_build_object('cliente_id', v_cliente_id, 'email', v_email);
-end $$;
-
-create or replace function rpc_desvincular_locatario(payload jsonb) returns jsonb
-language plpgsql security definer set search_path = public as $$
-begin
-  if not is_dono() then
-    raise exception 'Acesso negado.' using errcode = '42501';
-  end if;
-  update clientes set auth_user_id = null
-   where id = (payload->>'cliente_id')::uuid;
-  if not found then
-    raise exception 'Cliente não encontrado.';
-  end if;
-  return jsonb_build_object('cliente_id', payload->>'cliente_id');
 end $$;
 
 -- ---------- Dados mínimos do portal ----------
@@ -306,12 +293,12 @@ end $$;
 -- não é dono nem locatário recebe "Acesso negado" dentro das próprias RPCs.
 revoke execute on function
   cliente_id_logado(), item_troca_oleo_id(), rpc_meu_papel(),
-  rpc_vincular_locatario(jsonb), rpc_desvincular_locatario(jsonb),
+  rpc_vincular_locatario(jsonb),
   rpc_portal_locatario(), rpc_registrar_troca_oleo_locatario(jsonb)
 from public, anon;
 grant execute on function
   cliente_id_logado(), item_troca_oleo_id(), rpc_meu_papel(),
-  rpc_vincular_locatario(jsonb), rpc_desvincular_locatario(jsonb),
+  rpc_vincular_locatario(jsonb),
   rpc_portal_locatario(), rpc_registrar_troca_oleo_locatario(jsonb)
 to authenticated;
 

@@ -12,6 +12,7 @@ from src.db import get_client
 from src.repositories.consultas import invalida_cache, todos
 
 BUCKET = "trocas_oleo"
+FUNCAO_ACESSO = "criar-locatario"
 
 
 def meu_papel():
@@ -55,22 +56,20 @@ def alterar_senha(nova_senha: str) -> None:
 
 
 @invalida_cache
-def vincular(cliente_id: str) -> dict:
-    return (
-        get_client()
-        .rpc("rpc_vincular_locatario", {"payload": {"cliente_id": cliente_id}})
-        .execute()
-        .data
-    )
+def gerenciar_acesso(acao: str, cliente_id: str) -> dict:
+    """Chama a Edge Function criar-locatario (criar, redefinir ou remover o acesso).
 
-
-@invalida_cache
-def desvincular(cliente_id: str) -> dict:
-    return (
-        get_client()
-        .rpc("rpc_desvincular_locatario", {"payload": {"cliente_id": cliente_id}})
-        .execute()
-        .data
+    Só ela usa a service_role, dentro do Supabase; o app manda apenas o JWT do dono.
+    A função responde sempre JSON: {"ok": true, ...} ou {"ok": false, "erro": "..."}."""
+    cliente = get_client()
+    sessao = cliente.auth.get_session()
+    return cliente.functions.invoke(
+        FUNCAO_ACESSO,
+        invoke_options={
+            "headers": {"Authorization": f"Bearer {sessao.access_token}"},
+            "body": {"acao": acao, "cliente_id": cliente_id},
+            "responseType": "json",
+        },
     )
 
 

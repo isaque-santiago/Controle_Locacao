@@ -2,18 +2,15 @@
 
 O Supabase Auth só entende e-mail; o locatário digita o CPF e o app o converte
 no e-mail interno <cpf>@portal.example.com. O domínio example.com é reservado
-(ninguém o possui), então nenhum e-mail real é enviado a terceiros.
+(ninguém o possui), então nenhum e-mail real é enviado a terceiros. O usuário e a
+senha aleatória são criados pela Edge Function supabase/functions/criar-locatario,
+que usa o mesmo domínio (mantenha os dois iguais).
 """
-
-import secrets
 
 from src.domain.validadores import validar_cpf
 
 DOMINIO_ACESSO = "portal.example.com"
-TAMANHO_SENHA_PROVISORIA = 10
 TAMANHO_MINIMO_SENHA = 8
-# Sem 0/O, 1/l/I e afins: a senha é lida pelo dono e digitada pelo locatário.
-_ALFABETO = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 
 def _digitos(texto: str) -> str:
@@ -41,11 +38,6 @@ def identificador_para_email(texto: str) -> str:
 
 def eh_email_de_locatario(email: str) -> bool:
     return str(email or "").lower().endswith("@" + DOMINIO_ACESSO)
-
-
-def gerar_senha_provisoria() -> str:
-    """Senha aleatória (criptograficamente segura) de uso único, por cliente."""
-    return "".join(secrets.choice(_ALFABETO) for _ in range(TAMANHO_SENHA_PROVISORIA))
 
 
 def validar_nova_senha(nova: str, confirmacao: str, cpf: str = "") -> str:

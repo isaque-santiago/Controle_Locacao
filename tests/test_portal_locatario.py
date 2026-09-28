@@ -178,16 +178,35 @@ class TestAlterarSenha:
         alterar.assert_not_called()
 
 
-class TestCredenciais:
-    def test_gera_email_interno_e_senha_diferente_por_cliente(self):
-        a = portal_locatario.gerar_credenciais("529.982.247-25")
-        b = portal_locatario.gerar_credenciais("529.982.247-25")
-        assert a["email"] == "52998224725@portal.example.com"
-        assert a["senha"] != b["senha"] and len(a["senha"]) == 10
+class TestAcessoDoLocatario:
+    def test_criar_devolve_email_e_senha_da_funcao(self):
+        resposta = {"ok": True, "email": "52998224725@portal.example.com", "senha": "Abc23def45"}
+        with patch(f"{REPO}.gerenciar_acesso", return_value=resposta) as funcao:
+            assert portal_locatario.criar_acesso("cli1") == {
+                "email": "52998224725@portal.example.com",
+                "senha": "Abc23def45",
+            }
+        funcao.assert_called_once_with("criar", "cli1")
 
-    def test_cpf_invalido_nao_gera_credenciais(self):
-        with pytest.raises(ValueError):
-            portal_locatario.gerar_credenciais("111.111.111-11")
+    def test_redefinir_e_remover_chamam_a_acao_certa(self):
+        with patch(f"{REPO}.gerenciar_acesso", return_value={"ok": True, "email": "e", "senha": "s"}) as funcao:
+            portal_locatario.redefinir_senha("cli1")
+            portal_locatario.remover_acesso("cli1")
+        assert [c.args for c in funcao.call_args_list] == [("redefinir", "cli1"), ("remover", "cli1")]
+
+    @pytest.mark.parametrize(
+        "resposta,mensagem",
+        [
+            ({"ok": False, "erro": "Este cliente já tem acesso."}, "já tem acesso"),
+            ({"ok": False}, "Não foi possível concluir"),
+            (None, "Não foi possível concluir"),
+            (b"<html>", "Não foi possível concluir"),
+        ],
+    )
+    def test_erro_da_funcao_vira_mensagem_para_o_dono(self, resposta, mensagem):
+        with patch(f"{REPO}.gerenciar_acesso", return_value=resposta):
+            with pytest.raises(ValueError, match=mensagem):
+                portal_locatario.criar_acesso("cli1")
 
 
 class TestLoginPorCpf:
@@ -198,3 +217,23 @@ class TestLoginPorCpf:
         with patch("src.auth.login") as login:
             next(b for b in app.button if b.label == "Entrar no painel").click().run()
         login.assert_called_once_with("52998224725@portal.example.com", "senha-qualquer")
+
+
+class TestRepositorioAcesso:
+    def test_chama_a_edge_function_com_o_jwt_do_dono(self):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+
+        from src.repositories import portal_locatario as repositorio
+
+        cliente = MagicMock()
+        cliente.auth.get_session.return_value = SimpleNamespace(access_token="jwt-do-dono")
+        cliente.functions.invoke.return_value = {"ok": True}
+        with patch.object(repositorio, "get_client", return_value=cliente):
+            assert repositorio.gerenciar_acesso("criar", "cli1") == {"ok": True}
+        (nome,) = cliente.functions.invoke.call_args.args
+        opcoes = cliente.functions.invoke.call_args.kwargs["invoke_options"]
+        assert nome == "criar-locatario"
+        assert opcoes["headers"] == {"Authorization": "Bearer jwt-do-dono"}
+        assert opcoes["body"] == {"acao": "criar", "cliente_id": "cli1"}
+        assert opcoes["responseType"] == "json"

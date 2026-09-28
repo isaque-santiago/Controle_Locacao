@@ -277,19 +277,31 @@ privado (só imagens, até 10 MB): o locatário só envia para a própria pasta 
 sobrescreve arquivos; o dono vê as fotos por URL assinada na ficha do cliente (aba "Portal").
 O cadastro público continua desativado e a `service_role` nunca é usada pelo app.
 
-**Como liberar um locatário.** A senha é **individual e aleatória** (nunca uma senha padrão
-para todos). O locatário pode trocá-la no portal ("Alterar minha senha"), mas não é obrigado.
+**Como liberar um locatário.** Na ficha do cliente, aba "Portal", o dono clica em **"Criar
+acesso"**. O app chama a Edge Function `criar-locatario`, que cria o usuário no Supabase Auth
+(e-mail interno do CPF, senha **aleatória e individual**, nunca uma senha padrão) e o vincula
+ao cliente. O app mostra o CPF e a senha uma única vez (a senha não é gravada em lugar
+nenhum): entregue-os ao locatário. Ele pode trocar a senha no portal ("Alterar minha senha"),
+mas não é obrigado. "Gerar nova senha" redefine a senha e "Remover acesso" exclui o login.
+Não há "esqueci minha senha": quem redefine é o dono. O bloqueio de tentativas do Supabase
+Auth protege contra tentativas repetidas de senha.
 
-1. No app, Clientes > ficha do cliente > aba "Portal" > "Gerar senha de acesso". O app mostra
-   o e-mail interno e a senha, uma única vez (a senha não é gravada no banco).
-2. No painel do Supabase, Authentication > Users > Add user, com esse e-mail e essa senha e
-   **Auto Confirm User** marcado.
-3. De volta ao app, "Confirmar e vincular". Entregue ao locatário o CPF e a senha.
+**Edge Function `criar-locatario`** (`supabase/functions/criar-locatario/index.ts`). Criar,
+redefinir e excluir usuários exige a `service_role`, que nunca vai para o app nem para o
+repositório: a função roda dentro do Supabase, onde essa chave é um segredo injetado
+automaticamente (`SUPABASE_SERVICE_ROLE_KEY`). Ela só atende o **dono** (repassa o JWT de quem
+chamou e confere `rpc_meu_papel() = 'dono'`), monta o e-mail a partir do CPF do cadastro e
+gera a senha com gerador criptográfico. O app só usa a anon key e a sessão do usuário.
 
-"Gerar nova senha" mostra outra senha para você definir no usuário, no painel do Supabase.
-"Remover acesso ao portal" desfaz o vínculo (para bloquear também o login, exclua o usuário
-no Supabase). Não há "esqueci minha senha": quem redefine é o dono. O bloqueio de tentativas
-do Supabase Auth protege contra tentativas repetidas de senha.
+Publicar (uma vez por projeto Supabase — dev e produção são projetos diferentes):
+
+```bash
+supabase login
+supabase functions deploy criar-locatario --project-ref <ref-do-projeto>
+```
+
+Sem publicar a função, "Criar acesso" mostra um erro. Confira no painel: Edge Functions >
+`criar-locatario` (com "Verify JWT" ligado, que é o padrão) e os logs em caso de falha.
 
 **Regras da troca.** O hodômetro não pode ser menor que o último registrado. A troca grava
 uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o
