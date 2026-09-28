@@ -17,6 +17,7 @@ from src.ui.componentes import (
     tabela_html,
     abrir_ficha_contrato,
 )
+from src.ui.clientes_portal import aba_portal
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 
 _STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
@@ -526,13 +527,15 @@ def _exibir_ficha(cliente_id):
     parcelas = [c for c in cobrancas.listar() if c["cliente_id"] == cliente_id]
     historicos = cobrancas.historicos_pagamentos([c["id"] for c in parcelas])
 
-    abas = st.tabs(["Resumo", "Contratos", "Pagamentos"])
+    abas = st.tabs(["Resumo", "Contratos", "Pagamentos", "Portal"])
     with abas[0]:
         _aba_resumo(cliente, parcelas, historicos)
     with abas[1]:
         _aba_contratos(cliente)
     with abas[2]:
         _aba_pagamentos(parcelas, historicos)
+    with abas[3]:
+        aba_portal(cliente)
 
 
 def formatar_placa_simples(moto):

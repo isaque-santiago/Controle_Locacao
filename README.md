@@ -251,14 +251,44 @@ homologada apenas com base nas telas e testes isolados.
    - `20260921154000_permissoes_authenticated.sql`: permissões do papel `authenticated` (a RLS continua decidindo as linhas).
    - `20260922000000_restringe_rls_ao_dono.sql`: RLS e Storage só para o UUID do dono (ajuste o UUID em `is_dono()` antes de aplicar).
    - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
+   - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
 3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
    executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
    projeto conectado com `supabase link` e use `supabase db push`.
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
-5. Em homologação, execute `supabase/verificar_fluxos.sql`. O roteiro usa `ROLLBACK`.
+5. Em homologação, execute `supabase/verificar_fluxos.sql` e `supabase/verificar_portal_locatario.sql`. Os roteiros usam `ROLLBACK`.
 6. Reinicie o aplicativo com as dependências de `requirements.txt`.
 
 Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
+
+## Portal do locatário (Fase 7)
+
+O locatário entra com **login completo** (e-mail e senha do Supabase Auth) e vê só a tela
+"Troca de óleo": moto e contrato ativos dele, situação do óleo e o formulário para
+reportar a troca com **foto do painel (hodômetro)** e **foto da nota fiscal** (cláusula 4.13
+do contrato). O dono continua com o app completo; o menu depende do papel (`rpc_meu_papel`).
+
+**Segurança.** As tabelas seguem com RLS só para o dono (`is_dono()`); o locatário não tem
+acesso direto a nenhuma tabela. Ele lê e grava apenas por RPCs `SECURITY DEFINER`
+(`rpc_portal_locatario`, `rpc_registrar_troca_oleo_locatario`), que o identificam por
+`auth.uid()` e só enxergam o contrato ativo dele. No Storage, o bucket `trocas_oleo` é
+privado (só imagens, até 10 MB): o locatário só envia para a própria pasta e não lê nem
+sobrescreve arquivos; o dono vê as fotos por URL assinada na ficha do cliente (aba "Portal").
+O cadastro público continua desativado e a `service_role` nunca é usada pelo app.
+
+**Como liberar um locatário.**
+
+1. No painel do Supabase, Authentication > Users > Add user (e-mail e senha).
+2. No app, Clientes > ficha do cliente > aba "Portal": informe o e-mail e clique em
+   "Vincular acesso". "Remover acesso ao portal" desfaz o vínculo.
+
+**Regras da troca.** O hodômetro não pode ser menor que o último registrado. A troca grava
+uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o
+km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
+padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
+Configurações > "Multa por troca de óleo fora do intervalo". Valor 0,00 (padrão) não cobra
+multa. O app ainda não tem tela para cancelar cobrança: se a foto não confirmar o km, a
+multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
 
 ## Publicação no Streamlit Community Cloud
 
@@ -297,7 +327,7 @@ Use um projeto de homologação; os passos criam dados.
 9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
    Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente
    fica vazio; o cálculo usa a distância observada, sem extrapolar leituras ausentes.
-10. Gere e baixe o backup. Confira as 14 tabelas e as contagens em `manifesto.json`.
+10. Gere e baixe o backup. Confira as 15 tabelas e as contagens em `manifesto.json`.
     O ZIP não inclui os binários de fotos/comprovantes nem usuários do Auth. Evite
     alterações durante a geração, pois as leituras não formam um snapshot transacional.
 11. Confira os formulários e tabelas em celular. Saia da conta e verifique que os dados

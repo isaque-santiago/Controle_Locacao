@@ -93,6 +93,12 @@ def _formulario(config):
             entrada["alerta_manutencao_dias"] = c2.text_input(
                 "Avisar (dias antes)", str(config["alerta_manutencao_dias"])
             )
+            entrada["multa_troca_oleo_valor"] = st.text_input(
+                "Multa por troca de óleo fora do intervalo (R$)",
+                _percentual(config.get("multa_troca_oleo_valor") or 0),
+                help="Valor fixo cobrado do locatário quando ele reporta a troca de óleo "
+                "depois do intervalo do plano. Deixe 0,00 para não cobrar multa.",
+            )
 
         with st.container(key="config_card_documentos"):
             _titulo_cartao(
@@ -113,7 +119,7 @@ def _backup():
     with st.container(key="config_card_backup"):
         _titulo_cartao(
             "Backup manual",
-            "Gera um ZIP com um CSV de cada uma das 14 tabelas. Contém dados pessoais; "
+            "Gera um ZIP com um CSV de cada uma das 15 tabelas. Contém dados pessoais; "
             "guarde em local privado. Fotos e comprovantes devem ser copiados "
             "separadamente do Storage. Evite outras alterações durante a geração. "
             "Recomendado semanalmente.",

@@ -705,58 +705,63 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 
 ### Fase 7: Portal do locatário e controle de troca de óleo
 
-> ⚠️ Esta fase quebra a premissa da seção 1 ("Um único usuário: o dono").
-> Não iniciar sem resolver os dois pontos em aberto abaixo.
+> ⚠️ Esta fase quebra a premissa da seção 1 ("Um único usuário: o dono"): passa a
+> existir um segundo papel, o **locatário**, com login próprio.
 
 - Reaproveita cadastro de Motos e Clientes (Fase 1) e o plano preventivo já
   existente (Fase 3 — troca de óleo já configurada em 1.000 km / 90 dias).
-- Cria um segundo papel de usuário (locatário), com RLS restrito: só enxerga
-  o(s) contrato(s)/moto(s) vinculados a ele, e só pode escrever registros de
-  troca de óleo do próprio vínculo — nunca dados de outro locatário.
-- Tela simplificada (mobile-first) para o locatário: anexa foto + hodômetro
-  ao reportar a troca de óleo.
+- **Controle de acesso: login completo** (e-mail/senha do Supabase Auth). O
+  usuário é criado pelo dono no painel do Supabase (cadastro público continua
+  desativado; o app nunca usa a `service_role`) e vinculado ao cliente na ficha
+  dele (`clientes.auth_user_id`, aba "Portal"). O papel vem de `rpc_meu_papel()`
+  (`dono`, `locatario` ou nenhum) e define o menu: o locatário só vê a tela
+  "Troca de óleo".
+- **RLS:** as tabelas continuam só com a política do dono (`is_dono()`); o
+  locatário não tem acesso direto a nenhuma tabela. Lê e grava apenas por RPCs
+  `SECURITY DEFINER` que o identificam por `auth.uid()` e só alcançam o contrato
+  **ativo** dele: `rpc_portal_locatario` (dados mínimos: placa, modelo, km,
+  plano de óleo, últimas trocas) e `rpc_registrar_troca_oleo_locatario`.
+- Tela simplificada (mobile-first) para o locatário: informa o hodômetro e anexa
+  a **foto do painel** e a **foto da nota fiscal do óleo** (cláusula 4.13 do
+  contrato: "será exigido foto do painel do veículo e nota fiscal da compra do
+  óleo").
 - `rpc_registrar_troca_oleo_locatario` (transação única):
   - valida hodômetro informado >= último registrado (km nunca regride, regra
-    já usada na Fase 1);
-  - grava a manutenção vinculada ao id do locatário que reportou;
-  - recalcula a situação com `manutencao_regras.calcular_situacao` /
-    `calcular_proxima_manutencao` (já existentes, sem mudança);
-  - se o km reportado ultrapassar o intervalo do plano, gera uma cobrança de
-    multa (tabela `pagamentos`, novo tipo, ex.: `multa_manutencao`).
-- Bucket de fotos privado (novo `trocas_oleo` ou reaproveitar `vistorias`),
-  acesso por URL assinada — mesmo padrão da Fase 5.
+    já usada na Fase 1) e recusa o mesmo hodômetro duas vezes no contrato;
+  - exige as duas imagens já enviadas ao Storage, dentro da pasta do próprio
+    cliente;
+  - grava a manutenção preventiva concluída (custo zero) e a troca em
+    `trocas_oleo`, vinculada ao cliente que reportou, reinicia o item de troca
+    de óleo do plano da moto e lança o km em `historico_km`;
+  - a situação/próxima troca seguem a lógica de `manutencao_regras`
+    (`calcular_proxima_manutencao` / `calcular_situacao`), replicada no domínio
+    `src/domain/troca_oleo.py` para a prévia na tela e os testes;
+  - se o km reportado ultrapassar `última km + intervalo` do plano (trocar
+    exatamente na km prevista não multa), gera a cobrança de **multa fixa**
+    (tabela `cobrancas`, novo tipo `multa_manutencao` — é `cobrancas` que guarda
+    o tipo, não `pagamentos`), **cobrada direto**, sem conferência prévia do dono.
+- **Multa: valor fixo único**, definido em Configurações
+  (`configuracoes.multa_troca_oleo_valor`). O valor em reais ainda será informado
+  pelo dono; enquanto for 0,00 (padrão) o excesso é registrado, mas nada é cobrado.
+  Como o hodômetro é informado pelo próprio locatário, a foto é a evidência.
+- Bucket de fotos privado `trocas_oleo` (só imagem, até 10 MB), acesso do dono
+  por URL assinada — mesmo padrão da Fase 5. O locatário só insere na própria
+  pasta `<cliente_id>/`; não lista, não lê e não sobrescreve.
+- Backup manual passa a incluir `trocas_oleo` (15 tabelas).
 
-**Decidido — controle de acesso: acesso restrito e leve (link/token, sem login).**
-O **próprio locatário** anexa a foto e o hodômetro. Como o link funciona como
-uma senha, valem estas regras de segurança:
-- **Token:** 32 bytes aleatórios (`secrets.token_urlsafe`), um por locatário/contrato.
-  O banco guarda só o **hash SHA-256**, nunca o token. O token expira, o dono
-  pode revogá-lo ou gerar outro a qualquer momento, e ele é invalidado
-  automaticamente quando o contrato encerra.
-- **PIN de 6 dígitos (segundo fator):** combinado fora do link (não usar CPF,
-  por ser dado pessoal). O locatário informa o PIN ao abrir o formulário.
-- **Acesso ao banco:** o papel `anon` não recebe nenhuma permissão nas tabelas
-  (a RLS de dono continua igual). O locatário só usa RPCs `SECURITY DEFINER`
-  que validam token + PIN + vínculo com o contrato e devolvem o mínimo
-  (placa, último km, situação da troca de óleo). Sem `service_role` no app.
-- **Fotos:** bucket privado `trocas_oleo`, com limite de tamanho e só imagem.
-  O `anon` só pode inserir, em caminhos com UUID aleatório; não lista nem lê.
-  A RPC confere o caminho enviado. O dono vê a foto por URL assinada.
-- **Anti-abuso:** tabela de tentativas — token/PIN inválidos repetidos bloqueiam
-  por um tempo; limite de envios por dia.
-- **Token na URL:** a página lê de `st.query_params` e não o exibe nem o
-  registra em logs.
+**Aceite:**
+- `pytest` passa (`tests/test_troca_oleo.py`, `tests/test_portal_locatario.py`);
+- `supabase/verificar_portal_locatario.sql` roda sem erro em homologação:
+  locatário não lê nenhuma tabela, km regredido/arquivo de outro cliente/arquivo
+  inexistente/troca duplicada são recusados, troca dentro do intervalo não gera
+  multa e troca acima gera exatamente uma `multa_manutencao` com o valor fixo;
+- teste manual em dev: dono vincula o e-mail do locatário; o locatário loga,
+  vê só a tela "Troca de óleo", envia troca com as duas fotos; o dono vê troca,
+  fotos e multa na ficha do cliente.
 
-**Decidido — multa cobrada direto:** ao ultrapassar o intervalo do plano, a
-cobrança `multa_manutencao` é gerada imediatamente pela RPC, sem etapa de
-conferência do dono. Como o hodômetro é informado sem login, a foto é a
-evidência; o dono pode cancelar a cobrança se a foto não confirmar o km.
-
-**Ponto em aberto — decidir antes de começar:**
-1. **Fórmula da multa** (a definir com o Alisson): valor fixo único ao
-   ultrapassar, valor por km excedente, ou valor por dia de atraso em reportar.
-
-**Aceite:** a definir após o ponto acima.
+**Fora do escopo desta fase:** tela para cancelar cobrança (hoje só direto no
+banco), recuperação de senha personalizada e exclusão de fotos órfãs
+(enviadas ao Storage quando o registro da troca falha).
 
 ### Fase 8: Acabamento e publicação
 - Backup manual (ZIP com CSV de todas as tabelas), tratamento de erros amigável, estados vazios, paginação das listas grandes, revisão de responsividade no celular.
