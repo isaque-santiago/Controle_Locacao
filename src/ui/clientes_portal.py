@@ -14,39 +14,55 @@ def _km(valor):
 
 
 def _credenciais(cliente):
-    """Gera e mostra (uma única vez) o e-mail interno e a senha provisória do cliente."""
+    """Devolve as credenciais geradas para este cliente (mostradas até confirmar/fechar)."""
     gerada = st.session_state.get(_CHAVE_CREDENCIAIS)
-    if gerada and gerada["cliente_id"] != cliente["id"]:
-        gerada = None
-    if not gerada:
+    if not gerada or gerada["cliente_id"] != cliente["id"]:
         return None
+    if gerada.get("nova_senha"):
+        instrucao = (
+            "No painel do Supabase (Authentication > Users), abra este usuário e defina "
+            "a senha abaixo (Reset password / Update user)."
+        )
+    else:
+        instrucao = (
+            "No painel do Supabase (Authentication > Users > Add user), crie o usuário com o "
+            "e-mail e a senha abaixo e marque **Auto Confirm User**. Depois clique em "
+            "**Confirmar e vincular**."
+        )
     st.warning(
-        "Anote a senha agora: ela não é gravada no banco e some quando você confirmar, cancelar ou sair. "
-        "No painel do Supabase (Authentication > Users > Add user), crie o usuário com o e-mail "
-        "e a senha abaixo e marque **Auto Confirm User**. Depois clique em "
-        "**Confirmar e vincular**. Entregue ao locatário o CPF e esta senha: "
-        "ele terá de trocá-la no primeiro acesso."
+        "Anote a senha agora: ela não é gravada no banco e some quando você fechar ou sair. "
+        + instrucao
+        + " Entregue ao locatário o CPF e a senha; ele pode trocá-la no portal se quiser."
     )
     st.code(gerada["email"], language=None)
     st.code(gerada["senha"], language=None)
     return gerada
 
 
+def _gerar(cliente, **extras):
+    with proteger():
+        credenciais = portal_locatario.gerar_credenciais(cliente.get("cpf") or "")
+        st.session_state[_CHAVE_CREDENCIAIS] = {"cliente_id": cliente["id"], **credenciais, **extras}
+        st.rerun()
+
+
+def _fechar():
+    st.session_state.pop(_CHAVE_CREDENCIAIS, None)
+    st.rerun()
+
+
 def _acesso(cliente):
-    tem_acesso = bool(cliente.get("auth_user_id"))
     gerada = _credenciais(cliente)
 
-    if tem_acesso and not gerada:
-        if cliente.get("senha_provisoria"):
-            st.info("Acesso ativo. O locatário ainda não trocou a senha provisória.")
-        else:
-            st.success("Acesso ativo ao portal do locatário.")
+    if cliente.get("auth_user_id"):
+        if gerada:
+            if st.button("Fechar", key="fechar_credenciais_portal"):
+                _fechar()
+            return
+        st.success("Acesso ativo ao portal do locatário.")
         col_nova, col_remover = st.columns(2)
-        if col_nova.button("Gerar nova senha provisória", key="nova_senha_portal", use_container_width=True):
-            with proteger():
-                credenciais = portal_locatario.gerar_credenciais(cliente.get("cpf") or "")
-                st.session_state[_CHAVE_CREDENCIAIS] = {"cliente_id": cliente["id"], "redefinindo": True, **credenciais}
-                st.rerun()
+        if col_nova.button("Gerar nova senha", key="nova_senha_portal", use_container_width=True):
+            _gerar(cliente, nova_senha=True)
         if col_remover.button("Remover acesso ao portal", key="desvincular_portal", use_container_width=True):
             with proteger():
                 portal_locatario.desvincular_acesso(cliente["id"])
@@ -56,26 +72,19 @@ def _acesso(cliente):
     if gerada:
         with proteger():
             if st.button("Confirmar e vincular", type="primary", key="confirmar_vinculo_portal"):
-                if gerada.get("redefinindo"):
-                    portal_locatario.exigir_nova_senha(cliente["id"])
-                else:
-                    portal_locatario.vincular_acesso(cliente["id"])
+                portal_locatario.vincular_acesso(cliente["id"])
                 st.session_state.pop(_CHAVE_CREDENCIAIS, None)
                 sucesso()
         if st.button("Cancelar", key="cancelar_credenciais_portal"):
-            st.session_state.pop(_CHAVE_CREDENCIAIS, None)
-            st.rerun()
+            _fechar()
         return
 
     st.info(
         "Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma "
-        "senha provisória gerada aqui para ele."
+        "senha individual gerada aqui."
     )
-    if st.button("Gerar senha provisória", type="primary", key="gerar_credenciais_portal"):
-        with proteger():
-            credenciais = portal_locatario.gerar_credenciais(cliente.get("cpf") or "")
-            st.session_state[_CHAVE_CREDENCIAIS] = {"cliente_id": cliente["id"], **credenciais}
-            st.rerun()
+    if st.button("Gerar senha de acesso", type="primary", key="gerar_credenciais_portal"):
+        _gerar(cliente)
 
 
 def _trocas(cliente):

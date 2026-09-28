@@ -47,9 +47,8 @@ def enviar_arquivo(
 
 
 def alterar_senha(nova_senha: str) -> None:
-    """Troca a senha do usuário logado no Supabase Auth e confirma no cadastro."""
+    """Troca a senha do usuário logado no Supabase Auth."""
     get_client().auth.update_user({"password": nova_senha})
-    get_client().rpc("rpc_confirmar_troca_senha").execute()
 
 
 # ---- Somente o dono ----------------------------------------------------------
@@ -60,16 +59,6 @@ def vincular(cliente_id: str) -> dict:
     return (
         get_client()
         .rpc("rpc_vincular_locatario", {"payload": {"cliente_id": cliente_id}})
-        .execute()
-        .data
-    )
-
-
-@invalida_cache
-def definir_senha_provisoria(cliente_id: str) -> dict:
-    return (
-        get_client()
-        .rpc("rpc_definir_senha_provisoria", {"payload": {"cliente_id": cliente_id}})
         .execute()
         .data
     )

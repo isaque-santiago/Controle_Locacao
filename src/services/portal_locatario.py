@@ -81,7 +81,7 @@ def registrar_troca_oleo(
 
 
 def trocar_senha(nova: str, confirmacao: str) -> None:
-    """Primeiro acesso: o locatário troca a senha provisória por uma própria."""
+    """O locatário troca, se quiser, a senha gerada por uma própria."""
     email = (st.session_state.get("usuario") or {}).get("email", "")
     cpf = email.split("@")[0]
     portal_locatario.alterar_senha(validar_nova_senha(nova, confirmacao, cpf))
@@ -91,7 +91,7 @@ def trocar_senha(nova: str, confirmacao: str) -> None:
 
 
 def gerar_credenciais(cpf: str) -> dict:
-    """E-mail interno e senha provisória (aleatória, por cliente) para o dono criar o
+    """E-mail interno e senha (aleatória, por cliente) para o dono criar o
     usuário no Supabase. A senha não é guardada em lugar nenhum: só é mostrada uma vez."""
     return {"email": email_de_acesso(cpf), "senha": gerar_senha_provisoria()}
 
@@ -99,16 +99,6 @@ def gerar_credenciais(cpf: str) -> dict:
 def vincular_acesso(cliente_id: str) -> dict:
     try:
         return portal_locatario.vincular(cliente_id)
-    except APIError as erro:
-        if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
-            raise _como_regra_de_negocio(erro) from erro
-        raise
-
-
-def exigir_nova_senha(cliente_id: str) -> dict:
-    """Usar depois de redefinir a senha do locatário no painel do Supabase."""
-    try:
-        return portal_locatario.definir_senha_provisoria(cliente_id)
     except APIError as erro:
         if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
             raise _como_regra_de_negocio(erro) from erro

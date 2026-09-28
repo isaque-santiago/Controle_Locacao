@@ -277,22 +277,19 @@ privado (só imagens, até 10 MB): o locatário só envia para a própria pasta 
 sobrescreve arquivos; o dono vê as fotos por URL assinada na ficha do cliente (aba "Portal").
 O cadastro público continua desativado e a `service_role` nunca é usada pelo app.
 
-**Como liberar um locatário.** A senha inicial é **individual e aleatória** (nunca uma senha
-padrão para todos) e provisória: o locatário é obrigado a trocá-la no primeiro acesso.
+**Como liberar um locatário.** A senha é **individual e aleatória** (nunca uma senha padrão
+para todos). O locatário pode trocá-la no portal ("Alterar minha senha"), mas não é obrigado.
 
-1. No app, Clientes > ficha do cliente > aba "Portal" > "Gerar senha provisória". O app mostra
+1. No app, Clientes > ficha do cliente > aba "Portal" > "Gerar senha de acesso". O app mostra
    o e-mail interno e a senha, uma única vez (a senha não é gravada no banco).
 2. No painel do Supabase, Authentication > Users > Add user, com esse e-mail e essa senha e
    **Auto Confirm User** marcado.
-3. De volta ao app, "Confirmar e vincular". Entregue ao locatário o CPF e a senha provisória.
-4. No primeiro login o portal só mostra a tela "defina sua senha"; enquanto a senha for
-   provisória, a RPC recusa registrar troca de óleo.
+3. De volta ao app, "Confirmar e vincular". Entregue ao locatário o CPF e a senha.
 
-"Gerar nova senha provisória" serve para redefinir (troque a senha do usuário no painel do
-Supabase e confirme no app: o locatário volta a ser obrigado a trocar). "Remover acesso ao
-portal" desfaz o vínculo (para bloquear também o login, exclua o usuário no Supabase).
-Limite conhecido: o banco não consegue provar que a senha foi trocada; o flag só força o
-fluxo. A senha provisória aleatória e o bloqueio de tentativas do Supabase Auth cobrem o risco.
+"Gerar nova senha" mostra outra senha para você definir no usuário, no painel do Supabase.
+"Remover acesso ao portal" desfaz o vínculo (para bloquear também o login, exclua o usuário
+no Supabase). Não há "esqueci minha senha": quem redefine é o dono. O bloqueio de tentativas
+do Supabase Auth protege contra tentativas repetidas de senha.
 
 **Regras da troca.** O hodômetro não pode ser menor que o último registrado. A troca grava
 uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o

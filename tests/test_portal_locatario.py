@@ -149,12 +149,12 @@ class TestTelas:
         assert "Olá, Maria" in " ".join(m.value for m in app.markdown)
 
 
-class TestPrimeiroAcesso:
-    def test_senha_provisoria_mostra_so_a_troca_de_senha(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario", {**DADOS, "trocar_senha": True})
+class TestAlterarSenha:
+    def test_portal_oferece_troca_de_senha_opcional_sem_bloquear_a_troca_de_oleo(self):
+        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
         assert not app.exception and not app.error
-        assert [t.label for t in app.text_input] == ["Nova senha", "Repita a nova senha"]
-        assert "primeiro acesso" in app.warning[0].value
+        assert [e.label for e in app.expander][-1] == "Alterar minha senha (opcional)"
+        assert any(t.label == "Hodômetro atual (km)" for t in app.text_input)
 
     def test_trocar_senha_valida_e_chama_o_auth(self):
         with (

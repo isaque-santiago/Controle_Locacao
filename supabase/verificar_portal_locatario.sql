@@ -11,7 +11,7 @@ declare
 begin
   insert into auth.users (id, email) values (v_user, 'locatario.teste@example.com');
   insert into motos (placa, marca, modelo, km_atual) values ('TST8P88', 'Teste', 'Teste', 5000) returning id into v_moto;
-  insert into clientes (nome, cpf, auth_user_id, senha_provisoria) values ('Locatário Teste', '00000000001', v_user, true) returning id into v_cliente;
+  insert into clientes (nome, cpf, auth_user_id) values ('Locatário Teste', '00000000001', v_user) returning id into v_cliente;
   insert into clientes (nome, cpf) values ('Outro Cliente', '00000000002') returning id into v_outro;
   v_contrato := rpc_criar_contrato(jsonb_build_object('moto_id', v_moto, 'cliente_id', v_cliente,
     'data_inicio', hoje_br(), 'periodicidade', 'semanal', 'valor_periodo', 100, 'km_inicial', 5000));
@@ -50,17 +50,6 @@ begin
   assert jsonb_array_length(r->'contratos') = 1, 'Portal deveria listar 1 contrato ativo';
   assert (r->'contratos'->0->>'km_atual')::int = 5000, 'Km da moto incorreto no portal';
 
-  assert (r->>'trocar_senha')::boolean = true, 'Senha provisória deveria estar pendente';
-
-  -- com a senha provisória pendente, não registra troca
-  begin
-    perform rpc_registrar_troca_oleo_locatario(jsonb_build_object('contrato_id', v_contrato, 'km', 5500,
-      'foto_painel_path', v_cliente || '/painel1.png', 'nota_fiscal_path', v_cliente || '/nota1.png'));
-    raise exception using errcode = 'ZX000', message = 'Troca aceita com senha provisória';
-  exception when raise_exception then null;
-  end;
-  perform rpc_confirmar_troca_senha();
-  assert (rpc_portal_locatario()->>'trocar_senha')::boolean = false, 'Troca de senha não confirmada';
 
   -- RLS: o locatário não lê nenhuma tabela diretamente
   assert (select count(*) from clientes) = 0, 'Locatário enxergou clientes';
