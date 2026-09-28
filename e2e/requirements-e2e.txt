@@ -1,0 +1,5 @@
+# Dependências dos testes de navegador (separadas do requirements.txt do app).
+# Instalação:
+#   .venv\Scripts\python.exe -m pip install -r e2e/requirements-e2e.txt
+#   .venv\Scripts\python.exe -m playwright install chromium firefox webkit
+playwright==1.63.0

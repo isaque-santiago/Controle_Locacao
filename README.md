@@ -335,3 +335,13 @@ A interface segue um design system em camadas: **tokens → `estilos.css` → co
 - `src/ui/componentes.py` monta o HTML com classes do design system: `cabecalho_pagina`, `kpi`/`kpi_grade`, `cartao_html`, `selo_situacao`, `chip_placa`, `item_alerta`, `estado_vazio`/`mostrar_vazio`, `tabela_html`, barras de ocupação e proporção.
 
 Botões: primário (grafite no claro, amarelo no escuro), secundário, terciário e destrutivo (contorno vermelho; use a chave `perigo_*` no `st.button`). Estados de status usam sempre bolinha + texto, sem depender só da cor.
+
+## Testes de navegador (UI/UX)
+
+`e2e/` contém a suíte Playwright do `Arquivos/Plano_Melhorias_UI_UX.md` (Etapa 0), separada
+de `tests/`: mede overflow, alvos de toque, diálogos e erros de console em cinco larguras,
+dois temas e Chromium/Firefox/WebKit, contra o projeto Supabase de **desenvolvimento**.
+`pytest` roda só `tests/`; `pytest e2e` roda a suíte de navegador. Instalação, variáveis de
+ambiente e opções em `e2e/README.md`; inventário em `Arquivos/Inventario_UI_UX.md`;
+achados curados em `Arquivos/Achados_UI_UX.md`; massa de dados extremos em
+`supabase/seed_e2e.sql`.
