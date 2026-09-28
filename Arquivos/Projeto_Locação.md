@@ -703,7 +703,7 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 - `vw_resultado_moto` e custo por km rodado.
 - **Aceite:** números do Dashboard conferem com consultas manuais no banco (teste com dados de exemplo); exportação abre corretamente no Excel com acentos.
 
-### Fase 8: Portal do locatário e controle de troca de óleo
+### Fase 7: Portal do locatário e controle de troca de óleo
 
 > ⚠️ Esta fase quebra a premissa da seção 1 ("Um único usuário: o dono").
 > Não iniciar sem resolver os dois pontos em aberto abaixo.
@@ -726,21 +726,37 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 - Bucket de fotos privado (novo `trocas_oleo` ou reaproveitar `vistorias`),
   acesso por URL assinada — mesmo padrão da Fase 5.
 
-**Pontos em aberto — decidir antes de começar (ainda não definido):**
-1. **Controle de acesso:** já está definido que é o **próprio locatário**
-   quem vai anexar a foto e o hodômetro — o dono não vai digitar isso por
-   fora. Falta decidir só o nível de acesso:
-   - **Login completo** (e-mail/senha, sessão, recuperação de senha — um
-     segundo perfil de usuário de verdade, com RLS por papel); ou
-   - **Acesso restrito e leve** (ex.: link/token único por locatário que
-     abre direto o formulário de troca de óleo, sem tela de login).
-   A segunda opção é mais rápida de construir, mas exige cuidado extra:
-   qualquer pessoa que descubra o link consegue enviar dados se passando
-   pelo locatário.
-2. **Fórmula da multa:** valor fixo único ao ultrapassar, valor por km
-   excedente, ou valor por dia de atraso em reportar.
+**Decidido — controle de acesso: acesso restrito e leve (link/token, sem login).**
+O **próprio locatário** anexa a foto e o hodômetro. Como o link funciona como
+uma senha, valem estas regras de segurança:
+- **Token:** 32 bytes aleatórios (`secrets.token_urlsafe`), um por locatário/contrato.
+  O banco guarda só o **hash SHA-256**, nunca o token. O token expira, o dono
+  pode revogá-lo ou gerar outro a qualquer momento, e ele é invalidado
+  automaticamente quando o contrato encerra.
+- **PIN de 6 dígitos (segundo fator):** combinado fora do link (não usar CPF,
+  por ser dado pessoal). O locatário informa o PIN ao abrir o formulário.
+- **Acesso ao banco:** o papel `anon` não recebe nenhuma permissão nas tabelas
+  (a RLS de dono continua igual). O locatário só usa RPCs `SECURITY DEFINER`
+  que validam token + PIN + vínculo com o contrato e devolvem o mínimo
+  (placa, último km, situação da troca de óleo). Sem `service_role` no app.
+- **Fotos:** bucket privado `trocas_oleo`, com limite de tamanho e só imagem.
+  O `anon` só pode inserir, em caminhos com UUID aleatório; não lista nem lê.
+  A RPC confere o caminho enviado. O dono vê a foto por URL assinada.
+- **Anti-abuso:** tabela de tentativas — token/PIN inválidos repetidos bloqueiam
+  por um tempo; limite de envios por dia.
+- **Token na URL:** a página lê de `st.query_params` e não o exibe nem o
+  registra em logs.
 
-**Aceite:** a definir junto com os dois pontos acima.
+**Decidido — multa cobrada direto:** ao ultrapassar o intervalo do plano, a
+cobrança `multa_manutencao` é gerada imediatamente pela RPC, sem etapa de
+conferência do dono. Como o hodômetro é informado sem login, a foto é a
+evidência; o dono pode cancelar a cobrança se a foto não confirmar o km.
+
+**Ponto em aberto — decidir antes de começar:**
+1. **Fórmula da multa** (a definir com o Alisson): valor fixo único ao
+   ultrapassar, valor por km excedente, ou valor por dia de atraso em reportar.
+
+**Aceite:** a definir após o ponto acima.
 
 ### Fase 8: Acabamento e publicação
 - Backup manual (ZIP com CSV de todas as tabelas), tratamento de erros amigável, estados vazios, paginação das listas grandes, revisão de responsividade no celular.
