@@ -9,10 +9,10 @@ from src.db import (
     clear_session_tokens,
     get_client,
     get_refresh_token_cookie,
+    gravar_sessao_ja_autenticada,
     marcar_atividade_cookie,
     salvar_tema_escuro_cookie,
     sessao_ativa_no_cookie,
-    set_session_tokens,
     sincronizar_refresh_token_cookie,
 )
 from src.ui import tema
@@ -29,7 +29,8 @@ def login(email: str, senha: str) -> None:
     resposta = get_client().auth.sign_in_with_password(
         {"email": email, "password": senha}
     )
-    set_session_tokens(resposta.session.access_token, resposta.session.refresh_token)
+    # sign_in_with_password já deixa o cliente autenticado sozinho; só falta o cookie.
+    gravar_sessao_ja_autenticada(resposta.session.refresh_token)
     st.session_state[_CHAVE_USUARIO] = {
         "id": resposta.user.id,
         "email": resposta.user.email,
@@ -62,7 +63,8 @@ def _tentar_restaurar_sessao() -> bool:
     if not resposta.session or not resposta.user:
         clear_session_tokens()
         return False
-    set_session_tokens(resposta.session.access_token, resposta.session.refresh_token)
+    # refresh_session já deixa o cliente autenticado sozinho; só falta o cookie.
+    gravar_sessao_ja_autenticada(resposta.session.refresh_token)
     st.session_state[_CHAVE_USUARIO] = {
         "id": resposta.user.id,
         "email": resposta.user.email,

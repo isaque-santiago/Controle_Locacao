@@ -64,8 +64,28 @@ def _get_cookie_controller() -> CookieController:
 
 
 def set_session_tokens(access_token: str, refresh_token: str) -> None:
-    """Aplica os tokens do usuário logado ao cliente, para o RLS valer."""
+    """Aplica os tokens do usuário logado ao cliente, para o RLS valer.
+
+    Usa apenas quando o cliente AINDA NÃO está autenticado com esses tokens (ex.: um
+    cliente novo recriado a partir de tokens salvos em outro lugar). `auth.set_session`
+    faz uma chamada de rede extra (`GET /auth/v1/user`) para validar o token — no login
+    e na restauração de sessão por cookie essa chamada é redundante (instável no projeto
+    de desenvolvimento) porque `sign_in_with_password`/`refresh_session` já deixam o
+    cliente autenticado sozinhos; nesses dois casos use `gravar_sessao_ja_autenticada`."""
     get_client().auth.set_session(access_token, refresh_token)
+    _gravar_refresh_token_cookie(refresh_token)
+
+
+def gravar_sessao_ja_autenticada(refresh_token: str) -> None:
+    """Grava só o cookie, para quando o cliente Supabase já está autenticado.
+
+    `sign_in_with_password` (login) e `refresh_session` (restaurar sessão pelo cookie,
+    no F5) já deixam o cliente com a sessão válida e os cabeçalhos de autorização
+    atualizados por conta própria (evento SIGNED_IN/TOKEN_REFRESHED); chamar
+    `set_session_tokens` depois delas só adicionaria uma segunda chamada de rede
+    (`auth.set_session` → `GET /auth/v1/user`) para revalidar um token que acabou de
+    ser emitido — redundante, e foi a causa de logins e F5 travando no projeto de
+    desenvolvimento."""
     _gravar_refresh_token_cookie(refresh_token)
 
 
