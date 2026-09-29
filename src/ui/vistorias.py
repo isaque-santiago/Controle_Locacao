@@ -24,7 +24,7 @@ from src.domain.vistorias import (
     tipos_faltantes,
 )
 from src.services import clientes, contratos, motos, vistorias
-from src.ui.componentes import cabecalho, chip_placa, proteger
+from src.ui.componentes import botao_acao, botao_voltar, cabecalho, chip_placa, proteger
 from src.ui.formatadores import formatar_data
 
 # ------------------------------------------------- formulário compartilhado --
@@ -154,10 +154,10 @@ def _rodape_paginacao(chave, exibidos, total, pagina, total_paginas):
         return
     st.caption(f"Mostrando {exibidos} de {total} · página {pagina} de {total_paginas}")
     anterior, proxima = st.columns(2)
-    if anterior.button("‹ Anterior", disabled=pagina <= 1, key=f"vist_ant_{chave}"):
+    if anterior.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key=f"vist_ant_{chave}"):
         st.session_state[f"vistorias_pagina_{chave}"] = pagina - 1
         st.rerun()
-    if proxima.button("Próxima ›", disabled=pagina >= total_paginas, key=f"vist_prox_{chave}"):
+    if proxima.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key=f"vist_prox_{chave}"):
         st.session_state[f"vistorias_pagina_{chave}"] = pagina + 1
         st.rerun()
 
@@ -404,7 +404,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
     pagina_atual, pagina, total_paginas = _paginar("lista", filtradas)
 
     st.write("")
-    larguras = [1.1, 2.6, 1, 1.1, 1.1, 2.4, 0.5]
+    larguras = [1.1, 2.5, 1, 1.1, 1.1, 2.4, 0.6]
     with st.container(key="vistorias_card_lista"):
         _cabecalho_tabela(
             st.columns(larguras, vertical_alignment="center"),
@@ -429,7 +429,12 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
                 _texto(escape(avarias), "color:var(--perigo-texto);") if avarias else _texto("Nenhuma", "color:var(--texto-2);"),
                 unsafe_allow_html=True,
             )
-            if contrato and linha[6].button("›", key=f"ver_vist_{v['id']}", help="Ver comparação"):
+            if contrato and botao_acao(
+                linha[6],
+                "comparar",
+                f"ver_vist_{v['id']}",
+                ajuda=f"Comparar as vistorias do contrato (vistoria de {formatar_data(v['data'])})",
+            ):
                 _abrir_comparacao(contrato["id"])
     _rodape_paginacao("lista", len(pagina_atual), len(filtradas), pagina, total_paginas)
 
@@ -547,7 +552,7 @@ def _exibir_comparacao(contratos_por_id, frota, pessoas):
         _voltar_lista()
         return
 
-    if st.button("‹ Vistorias", key="voltar_vistorias"):
+    if botao_voltar("vistorias", "voltar_vistorias"):
         _voltar_lista()
 
     st.markdown(

@@ -33,6 +33,21 @@ Severidades: **P0** bloqueador (overflow, ação perdida, diálogo sem saída) �
 | A-012 | A reverificar | Dashboard, Motos, Clientes, Contratos, Documentos, Relatórios, Vistorias, Manutenção, Cobranças, Configurações | ~30 ocorrências de exceção exibida na página, timeout de navegação e "diálogo não abriu", espalhadas por vários perfis/larguras isolados (não repetidas entre execuções independentes) | Vários perfis, dados extremo, execução da matriz completa (quase 2h contínuas) | — | **Não confirmado** |
 | A-013 | P0 (a reverificar) | Motos | Sessão perdida (`sessao-perdida`) após navegação por URL | WebKit, 1024 px, claro, dados extremo | 1 | A reverificar |
 
+## Resolução na Etapa 1 (29/09/2026)
+
+Verificada com o app real (login, sem credenciais) e com dados fictícios em 5 larguras × 2 temas
+(Motos, Clientes, Contratos, Cobranças, Manutenção, Documentos, Vistorias, Dashboard e diálogos):
+zero alvo < 44 px e zero overflow nas áreas tratadas.
+
+| ID | Situação | Como |
+|---|---|---|
+| A-001, A-002, A-003 | **Resolvido** | alvo mínimo nos controles nativos (menu, barra lateral, mostrar senha); login sem achados |
+| A-005, A-010 | **Resolvido**, exceto o abaixo | ações por linha, abas, links do menu, botões de diálogo, selects, radio/checkbox, expander e ajuda `?` ≥ 44 px |
+| A-007, A-011 | **Resolvido** (cenário e2e) | seletor de pagamento agora é `\bpagar\b`; rótulos de voltar/abrir atualizados |
+| — | **Pendente (Etapa 4)** | barra de ferramentas do `st.data_editor` (Adicionar linha, colunas, CSV, busca) no diálogo de Manutenção: 22 × 22 px, controle nativo do Streamlit |
+| A-004, A-009 | Aberto (Etapa 4/6) | overflow em Relatórios · Inadimplência (tabela) — não tratado nesta etapa |
+| A-006, A-008, A-012, A-013 | Aberto | reverificar com o app autenticado (exigem login do usuário) |
+
 > A-001 a A-003 vieram da execução só do login. A-004 a A-008 vêm de execuções autenticadas
 > pontuais (390 px, claro, Chromium desktop, dados normal e extremo). Os avisos de "diálogo
 > sem rolagem" em Documentos, Manutenção e Vistorias foram falso positivo (a rolagem fica no

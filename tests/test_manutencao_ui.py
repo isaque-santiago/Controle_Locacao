@@ -53,6 +53,16 @@ def test_historico_permite_concluir_so_manutencao_aberta(servicos):
     app = abrir("6_Manutencao.py")
     botoes = [b.key for b in app.button if b.key and b.key.startswith("concluir_man_")]
     assert botoes == ["concluir_man_h1"]
+    # Concluir e cancelar são ações distintas, cada uma com o próprio botão
+    cancelar = [b.key for b in app.button if b.key and b.key.startswith("cancelar_man_")]
+    assert cancelar == ["cancelar_man_h1"]
+
+
+def test_botoes_de_acao_tem_texto_e_nao_apenas_simbolo(servicos):
+    servicos["manutencao.listar_manutencoes"].return_value = HISTORICO
+    app = abrir("6_Manutencao.py")
+    rotulos = {b.key: b.label for b in app.button if b.key and b.key.startswith(("concluir_man_", "cancelar_man_"))}
+    assert rotulos == {"concluir_man_h1": "Concluir", "cancelar_man_h1": "Cancelar"}
 
 
 def test_dialogo_registrar_abre_com_previa_de_custo(servicos):

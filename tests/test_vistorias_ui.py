@@ -85,7 +85,7 @@ def test_seta_abre_a_comparacao_do_contrato(servicos):
     assert "Retrovisor direito trincado" in texto
     assert "Retrovisores" in texto and "Avaria" in texto
     assert any("fundo amarelo mudaram" in c.value for c in app.caption)
-    assert any(b.label == "‹ Vistorias" for b in app.button)
+    assert any(b.key == "voltar_vistorias" and b.label == "Voltar para vistorias" for b in app.button)
 
 
 def test_comparacao_sem_devolucao_mostra_pendente(servicos):
@@ -105,7 +105,7 @@ def test_voltar_retorna_para_a_lista(servicos):
     app.session_state["vistorias_visao"] = "comparacao"
     app.session_state["vistorias_contrato"] = "ct"
     app.run()
-    next(b for b in app.button if b.label == "‹ Vistorias").click().run()
+    next(b for b in app.button if b.key == "voltar_vistorias").click().run()
     assert "Entregas e devoluções registradas" in _texto(app)
 
 

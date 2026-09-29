@@ -15,8 +15,9 @@ from src.ui.componentes import (
     chip_placa,
     selo_situacao,
     tabela_html,
+    botao_acao,
 )
-from src.ui.formatadores import formatar_data, formatar_moeda
+from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
 
 _SITUACAO_ROTULO = {"vencida": "Vencida", "proxima": "Próxima"}
 _FILTROS_ALERTA = [("todas", "Todas"), ("vencida", "Vencidas"), ("proxima", "Próximas")]
@@ -85,10 +86,10 @@ def _rodape_paginacao(chave, exibidos, total, pagina, total_paginas):
         return
     st.caption(f"Mostrando {exibidos} de {total} · página {pagina} de {total_paginas}")
     anterior, proxima = st.columns(2)
-    if anterior.button("‹ Anterior", disabled=pagina <= 1, key=f"man_ant_{chave}"):
+    if anterior.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key=f"man_ant_{chave}"):
         st.session_state[f"manutencao_pagina_{chave}"] = pagina - 1
         st.rerun()
-    if proxima.button("Próxima ›", disabled=pagina >= total_paginas, key=f"man_prox_{chave}"):
+    if proxima.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key=f"man_prox_{chave}"):
         st.session_state[f"manutencao_pagina_{chave}"] = pagina + 1
         st.rerun()
 
@@ -257,24 +258,50 @@ def _dialog_registrar():
             _salvo("Manutenção registrada.")
 
 
-@st.dialog("Atualizar manutenção aberta")
-def _dialog_concluir(registro, moto):
+_IMPACTO_FINALIZAR = {
+    "concluida": (
+        "Ao concluir, a quilometragem é registrada, o plano de manutenção dos itens feitos "
+        "é reiniciado e a moto sai de manutenção quando não houver outro serviço aberto."
+    ),
+    "cancelada": (
+        "Ao cancelar, o serviço deixa de ser contado: o plano de manutenção não é reiniciado "
+        "e nada é cobrado do cliente. A moto sai de manutenção quando não houver outro serviço aberto. "
+        "Não é possível reabrir a manutenção depois."
+    ),
+}
+
+
+def _finalizar_manutencao(registro, moto, acao):
+    """Corpo compartilhado dos diálogos Concluir e Cancelar manutenção: cada um faz uma só coisa."""
+    concluir = acao == "concluida"
     st.markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
     st.write(f"{formatar_data(registro['data_entrada'])} · {registro['descricao']}")
+    (st.caption if concluir else st.warning)(_IMPACTO_FINALIZAR[acao])
     piso = max(moto["km_atual"], registro["km"])
-    with st.form("form_concluir_" + registro["id"]):
-        data_saida = st.date_input("Data de conclusão", hoje_br(), format="DD/MM/YYYY")
-        km = st.number_input("Km na conclusão", min_value=piso, value=piso, step=1)
-        acao = st.radio(
-            "Ação",
-            ["concluida", "cancelada"],
-            format_func=_STATUS_ROTULO.get,
-            horizontal=True,
+    with st.form(("form_concluir_" if concluir else "form_cancelar_") + registro["id"]):
+        data_saida = st.date_input(
+            "Data de conclusão" if concluir else "Data do cancelamento", hoje_br(), format="DD/MM/YYYY"
         )
-        if st.form_submit_button("Atualizar manutenção", type="primary", use_container_width=True):
+        km = st.number_input("Km na conclusão" if concluir else "Km atual da moto", min_value=piso, value=piso, step=1)
+        if st.form_submit_button(
+            "Concluir manutenção" if concluir else "Cancelar manutenção",
+            type="primary",
+            use_container_width=True,
+            key=None if concluir else "perigo_confirmar_cancelar_man",
+        ):
             with proteger():
                 manutencao.finalizar(registro["id"], acao, data_saida, km)
-                _salvo("Manutenção atualizada.")
+                _salvo("Manutenção concluída." if concluir else "Manutenção cancelada.")
+
+
+@st.dialog("Concluir manutenção")
+def _dialog_concluir(registro, moto):
+    _finalizar_manutencao(registro, moto, "concluida")
+
+
+@st.dialog("Cancelar manutenção")
+def _dialog_cancelar(registro, moto):
+    _finalizar_manutencao(registro, moto, "cancelada")
 
 
 @st.dialog("Item do catálogo")
@@ -387,7 +414,7 @@ def _aba_historico(frota):
     pagina_atual, pagina, total_paginas = _paginar("historico", filtrados)
 
     st.write("")
-    larguras = [1.1, 1.2, 1, 2.3, 1.4, 1.1, 1.1, 0.5]
+    larguras = [1.1, 1.2, 1, 2.1, 1.3, 1.1, 1.1, 1.2]
     with st.container(key="manutencao_card_historico"):
         _cabecalho_tabela(
             st.columns(larguras, vertical_alignment="center"),
@@ -413,8 +440,22 @@ def _aba_historico(frota):
                 unsafe_allow_html=True,
             )
             if registro["status"] == "aberta" and moto:
-                if linha[7].button("✓", key=f"concluir_man_{registro['id']}", help="Concluir ou cancelar"):
-                    _dialog_concluir(registro, moto)
+                # Duas ações distintas: concluir e cancelar nunca dividem o mesmo botão
+                with linha[7].container(horizontal=True, horizontal_alignment="right"):
+                    if botao_acao(
+                        st,
+                        "concluir",
+                        f"concluir_man_{registro['id']}",
+                        ajuda=f"Concluir a manutenção da moto {formatar_placa(moto['placa'])}",
+                    ):
+                        _dialog_concluir(registro, moto)
+                    if botao_acao(
+                        st,
+                        "cancelar",
+                        f"cancelar_man_{registro['id']}",
+                        ajuda=f"Cancelar a manutenção da moto {formatar_placa(moto['placa'])}",
+                    ):
+                        _dialog_cancelar(registro, moto)
     _rodape_paginacao("historico", len(pagina_atual), len(filtrados), pagina, total_paginas)
 
 
@@ -436,7 +477,7 @@ def _aba_catalogo(itens):
         if st.button("+ Novo item", key="man_novo_item", use_container_width=True):
             _dialog_item({})
     st.write("")
-    larguras = [3, 1.3, 1.3, 1, 0.5]
+    larguras = [3, 1.3, 1.3, 1, 0.8]
     with st.container(key="manutencao_card_catalogo"):
         _cabecalho_tabela(
             st.columns(larguras, vertical_alignment="center"),
@@ -463,7 +504,7 @@ def _aba_catalogo(itens):
                 unsafe_allow_html=True,
             )
             linha[3].markdown(_interruptor(item["ativo"]), unsafe_allow_html=True)
-            if linha[4].button("✎", key=f"editar_item_{item['id']}", help="Editar item"):
+            if botao_acao(linha[4], "editar", f"editar_item_{item['id']}", ajuda=f"Editar o item {item['nome']}"):
                 _dialog_item(item)
 
 

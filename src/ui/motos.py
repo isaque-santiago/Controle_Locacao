@@ -22,6 +22,8 @@ from src.ui.componentes import (
     selo_situacao,
     tabela_html,
     abrir_ficha_contrato,
+    botao_acao,
+    botao_voltar,
 )
 from src.ui.formatadores import (
     formatar_data,
@@ -206,7 +208,7 @@ def _exibir_lista():
     pagina_atual = filtradas[inicio : inicio + por_pagina]
 
     with st.container(key="motos_card_lista"):
-        cab = st.columns([1.3, 1.8, 1.5, 1.4, 1.5, 0.5], vertical_alignment="center")
+        cab = st.columns([1.3, 1.7, 1.5, 1.4, 1.4, 0.6], vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Placa", "Modelo", "Km atual", "Status", "Contrato atual", ""]):
             coluna.markdown(
                 f'<span class="fs-secundario texto-2">{rotulo}</span>',
@@ -218,18 +220,18 @@ def _exibir_lista():
                 unsafe_allow_html=True,
             )
         for moto in pagina_atual:
-            linha = st.columns([1.3, 1.8, 1.5, 1.4, 1.5, 0.5], vertical_alignment="center")
+            linha = st.columns([1.3, 1.7, 1.5, 1.4, 1.4, 0.6], vertical_alignment="center")
             linha[0].markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
             linha[1].markdown(
                 f'<span style="font-size:var(--fs-secundario);">{moto["marca"]} {moto["modelo"]}</span>',
                 unsafe_allow_html=True,
             )
-            sub_km, sub_botao = linha[2].columns([3, 1], vertical_alignment="center")
+            sub_km, sub_botao = linha[2].columns([2, 1], vertical_alignment="center")
             sub_km.markdown(
                 f'<span class="mono" style="font-size:var(--fs-secundario);">{moto["km_atual"]:,} km</span>'.replace(",", "."),
                 unsafe_allow_html=True,
             )
-            if sub_botao.button("✎", key=f"km_{moto['id']}", help="Atualizar km"):
+            if botao_acao(sub_botao, "km", f"km_{moto['id']}", ajuda=f"Atualizar o km da moto {formatar_placa(moto['placa'])}"):
                 _dialog_km(moto)
             linha[3].markdown(
                 selo_situacao(_STATUS_ROTULO[moto["status"]], moto["status"]),
@@ -241,16 +243,16 @@ def _exibir_lista():
                 f'{nomes_cliente.get(cliente_id, "—") if cliente_id else "—"}</span>',
                 unsafe_allow_html=True,
             )
-            if linha[5].button("→", key=f"ficha_{moto['id']}", help="Ver ficha"):
+            if botao_acao(linha[5], "abrir", f"ficha_{moto['id']}", ajuda=f"Abrir a ficha da moto {formatar_placa(moto['placa'])}"):
                 _ir_para_ficha(moto["id"])
 
     if total_paginas > 1:
         st.caption(f"Mostrando {len(pagina_atual)} de {len(filtradas)} · página {pagina} de {total_paginas}")
         col_ant, col_prox = st.columns(2)
-        if col_ant.button("‹ Anterior", disabled=pagina <= 1):
+        if col_ant.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1):
             st.session_state[pagina_chave] = pagina - 1
             st.rerun()
-        if col_prox.button("Próxima ›", disabled=pagina >= total_paginas):
+        if col_prox.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas):
             st.session_state[pagina_chave] = pagina + 1
             st.rerun()
 
@@ -287,7 +289,7 @@ def _card_contrato_ativo(moto_id):
             unsafe_allow_html=True,
         )
         with acao:
-            if st.button("Ver contrato →", key="ver_contrato_moto"):
+            if st.button("Ver contrato", key="ver_contrato_moto", icon=":material/arrow_forward:"):
                 abrir_ficha_contrato(contrato["id"])
         st.markdown(
             f"""
@@ -511,7 +513,7 @@ def _exibir_ficha(moto_id):
         _ir_para_lista()
         return
 
-    if st.button("‹ Motos", key="voltar_motos"):
+    if botao_voltar("motos", "voltar_motos"):
         _ir_para_lista()
 
     contrato = next((c for c in contratos.listar() if c["moto_id"] == moto_id and c["status"] == "ativo"), None)
@@ -575,7 +577,7 @@ def _exibir_ficha(moto_id):
             """,
             unsafe_allow_html=True,
         )
-        if st.button("✎ Atualizar km", key="km_ficha", help="Atualizar km"):
+        if st.button("Atualizar km", key="km_ficha", icon=":material/speed:", help="Atualizar a quilometragem da moto"):
             _dialog_km(moto)
 
     abas = st.tabs(

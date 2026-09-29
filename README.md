@@ -387,6 +387,8 @@ A interface segue um design system em camadas: **tokens → `estilos.css` → co
 
 Botões: primário (grafite no claro, amarelo no escuro), secundário, terciário e destrutivo (contorno vermelho; use a chave `perigo_*` no `st.button`). Estados de status usam sempre bolinha + texto, sem depender só da cor.
 
+Ações por linha usam `botao_acao(alvo, acao, chave, ajuda=...)` (`componentes.py`): ícone Material + texto real (nome acessível), alvo de 44 × 44 px (`--alvo-min`), só o ícone nas listas do desktop e ícone + texto no celular. O vocabulário fica em `ACOES` (Abrir, Editar, Pagar, Concluir, Cancelar, Regularizar, Comprovante, Atualizar km, Comparar); não use glifos como `→ ✓ ✎ ›` em rótulos. O retorno das fichas é `botao_voltar("motos", chave)`. Detalhes em `Arquivos/Design_UI.md`.
+
 ## Testes de navegador (UI/UX)
 
 `e2e/` contém a suíte Playwright do `Arquivos/Plano_Melhorias_UI_UX.md` (Etapa 0), separada

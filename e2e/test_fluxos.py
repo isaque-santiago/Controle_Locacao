@@ -91,26 +91,26 @@ def _abrir_ficha_e_voltar(c: Contexto, pagina: str, voltar: str) -> None:
         busca.press("Enter")
         aguardar_app(c.page)
         c.medir(f"{pagina} (busca)", f"{pagina}-busca")
-    if c.clicar(r"^(›|→|abrir|ver)", pagina):
+    if c.clicar(r"\b(abrir|ver contrato)\b", pagina):
         c.medir(f"{pagina} (ficha)", f"{pagina}-ficha")
         c.clicar(voltar, f"{pagina} (ficha)")
 
 
 def fluxo_buscar_e_abrir_fichas(c: Contexto) -> None:
-    _abrir_ficha_e_voltar(c, "Motos", r"‹ Motos")
-    _abrir_ficha_e_voltar(c, "Clientes", r"‹ Clientes")
+    _abrir_ficha_e_voltar(c, "Motos", r"voltar para motos")
+    _abrir_ficha_e_voltar(c, "Clientes", r"voltar para clientes")
 
 
 def fluxo_contrato(c: Contexto) -> None:
     c.visitar("Contratos")
     if c.clicar(r"novo contrato", "Contratos"):
         c.medir("Contratos (assistente)", "contratos-assistente")
-        c.clicar(r"‹ Contratos", "Contratos (assistente)")
+        c.clicar(r"voltar para contratos", "Contratos (assistente)")
 
 
 def fluxo_pagamento(c: Contexto) -> None:
     c.visitar("Cobranças")
-    c.abrir_dialogo(r"pagamento|pagar|✓", "Cobranças", "cobrancas-pagamento")
+    c.abrir_dialogo(r"\bpagar\b", "Cobranças", "cobrancas-pagamento")
 
 
 def fluxo_manutencao(c: Contexto) -> None:

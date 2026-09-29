@@ -396,6 +396,46 @@ def indicador_etapas(atual, rotulos):
     )
 
 
+# ------------------------------------------------------------------- ações --
+
+# Vocabulário único de ações por linha: a mesma ação tem sempre o mesmo texto e o mesmo
+# ícone (conjunto Material do Streamlit) em todas as páginas.
+ACOES = {
+    "abrir": ("Abrir", ":material/arrow_forward:"),
+    "editar": ("Editar", ":material/edit:"),
+    "pagar": ("Pagar", ":material/payments:"),
+    "concluir": ("Concluir", ":material/check:"),
+    "cancelar": ("Cancelar", ":material/close:"),
+    "regularizar": ("Regularizar", ":material/task_alt:"),
+    "comprovante": ("Comprovante", ":material/receipt_long:"),
+    "km": ("Atualizar km", ":material/speed:"),
+    "comparar": ("Comparar", ":material/compare_arrows:"),
+    "voltar": ("Voltar", ":material/arrow_back:"),
+}
+
+
+def botao_acao(alvo, acao, chave, ajuda=None, rotulo=None, desabilitado=False):
+    """Botão de ação por linha: ícone + texto. O texto é o nome acessível e a explicação
+    (`help`); dentro das listas o CSS o oculta visualmente no desktop (fica só o ícone de
+    44 × 44 px) e o mostra no celular. Devolve True quando clicado. `alvo` é a
+    coluna/container (ou `st`); `ajuda` detalha o alvo da ação (ex.: a placa)."""
+    padrao, icone = ACOES[acao]
+    texto = rotulo or padrao
+    return alvo.button(
+        texto,
+        key=chave,
+        icon=icone,
+        help=ajuda or texto,
+        type="tertiary",
+        disabled=desabilitado,
+    )
+
+
+def botao_voltar(destino, chave):
+    """Retorno contextual das fichas e do assistente: seta + `Voltar para <destino>`."""
+    return st.button(f"Voltar para {destino}", key=chave, icon=ACOES["voltar"][1], type="tertiary")
+
+
 # ---------------------------------------------------------------- navegação --
 
 

@@ -13,7 +13,7 @@ from src.domain.painel_cobrancas import (
 )
 from src.domain.valores import decimal_br, hoje_br
 from src.services import clientes, cobrancas, motos
-from src.ui.componentes import cabecalho, chip_placa, proteger
+from src.ui.componentes import botao_acao, cabecalho, chip_placa, proteger
 from src.ui.formatadores import formatar_data, formatar_moeda
 
 _FORMAS = ["pix", "dinheiro", "cartao", "transferencia", "outro"]
@@ -62,30 +62,32 @@ def _cartao(chave, colunas, linhas, acoes=None):
 
 def _acoes_abertas(chave):
     def desenhar(c):
-        col_msg, col_pagar = st.columns(2)
-        with col_msg.popover(
-            ":material/chat:",
-            help="Copiar mensagem de cobrança",
-            use_container_width=True,
-        ):
-            st.code(
-                mensagem_cobranca(
-                    c["cliente"],
-                    c["placa"],
-                    formatar_data(c["vencimento"]),
-                    formatar_moeda(c["saldo"]),
-                    c["encargos"]["dias_atraso"],
-                ),
-                language=None,
-                wrap_lines=True,
-            )
-        if col_pagar.button(
-            ":material/check:",
-            key=f"pagar_{chave}_{c['id']}",
-            help="Registrar pagamento",
-            use_container_width=True,
-        ):
-            _dialog_pagamento(c)
+        with st.container(horizontal=True, horizontal_alignment="right"):
+            with st.popover(
+                "Mensagem",
+                icon=":material/content_copy:",
+                help=f"Copiar a mensagem de cobrança de {c['cliente']}",
+                type="tertiary",
+                key=f"mensagem_{chave}_{c['id']}",
+            ):
+                st.code(
+                    mensagem_cobranca(
+                        c["cliente"],
+                        c["placa"],
+                        formatar_data(c["vencimento"]),
+                        formatar_moeda(c["saldo"]),
+                        c["encargos"]["dias_atraso"],
+                    ),
+                    language=None,
+                    wrap_lines=True,
+                )
+            if botao_acao(
+                st,
+                "pagar",
+                f"pagar_{chave}_{c['id']}",
+                ajuda=f"Registrar o pagamento de {c['cliente']}",
+            ):
+                _dialog_pagamento(c)
 
     return desenhar
 

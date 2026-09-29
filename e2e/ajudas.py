@@ -183,12 +183,18 @@ _JS_INTERATIVOS = (
     }
     // Links dentro de texto corrido são isentos do alvo mínimo.
     if (el.tagName === 'A' && el.parentElement && ['P', 'LI', 'TD', 'SPAN'].includes(el.parentElement.tagName)) continue;
-    // Entradas escondidas por trás de rótulo estilizado (checkbox/radio/upload) medem o rótulo.
-    if (el.tagName === 'INPUT' && ['checkbox', 'radio', 'file'].includes(el.type) && getComputedStyle(el).opacity === '0') continue;
+    // Botão auxiliar de 1 px do react-aria ("Descartar"): fora da ordem de tabulação, não é alvo de toque.
+    if (el.tagName === 'BUTTON' && el.getAttribute('tabindex') === '-1' && el.style.width === '1px') continue;
+    // Entradas escondidas por trás de rótulo estilizado (upload) medem o botão visível, não o <input>.
+    if (el.tagName === 'INPUT' && el.type === 'file' && getComputedStyle(el).opacity === '0') continue;
     // Campos de texto/seleção: o alvo é a caixa estilizada do Streamlit, não o <input> interno.
-    const caixa = ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)
-      ? (el.closest('[data-testid="stTextInputRootElement"], [data-testid="stNumberInputContainer"], [data-testid="stTextAreaRootElement"], [data-baseweb="select"]') || el)
-      : el;
+    // Radio/checkbox medem o rótulo que os contém; data e seleção medem o grupo (dia/mês/ano ou caixa de seleção).
+    const composto = '[data-testid="stTextInputRootElement"], [data-testid="stNumberInputContainer"], [data-testid="stTextAreaRootElement"], [data-baseweb="select"], [data-testid="stDateInputField"], .react-aria-ComboBox';
+    const caixa = (el.tagName === 'INPUT' && ['checkbox', 'radio'].includes(el.type))
+      ? (el.closest('label') || el)
+      : (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.getAttribute('role') === 'spinbutton')
+        ? (el.closest(composto) || el)
+        : el;
     const rc = caixa.getBoundingClientRect();
     if (rc.width < alvoMin - 0.5 || rc.height < alvoMin - 0.5) {
       const chave = info.el + '|' + info.rotulo;

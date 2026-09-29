@@ -15,6 +15,8 @@ from src.ui.componentes import (
     selo_situacao,
     tabela_html,
     abrir_ficha_cliente,
+    botao_acao,
+    botao_voltar,
 )
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
@@ -126,7 +128,7 @@ def _exibir_lista():
     pagina_atual = filtrados[inicio : inicio + por_pagina]
 
     with st.container(key="contratos_card_lista"):
-        cab = st.columns([1.5, 1.2, 1.1, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
+        cab = st.columns([1.4, 1.2, 1.1, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
         for coluna, rotulo in zip(
             cab, ["Cliente", "Moto", "Início", "Periodicidade", "Valor / período", "Status", ""]
         ):
@@ -139,7 +141,7 @@ def _exibir_lista():
         for contrato in pagina_atual:
             moto = frota.get(contrato["moto_id"])
             muted = "color:var(--texto-3);" if contrato["status"] != "ativo" else ""
-            linha = st.columns([1.5, 1.2, 1.1, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
+            linha = st.columns([1.4, 1.2, 1.1, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
             linha[0].markdown(f'<span style="font-size:var(--fs-secundario);{muted}">{nomes.get(contrato["cliente_id"], "—")}</span>', unsafe_allow_html=True)
             linha[1].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
             linha[2].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_data(contrato["data_inicio"])}</span>', unsafe_allow_html=True)
@@ -149,16 +151,21 @@ def _exibir_lista():
                 selo_situacao(_STATUS_ROTULO[contrato["status"]], contrato["status"]),
                 unsafe_allow_html=True,
             )
-            if linha[6].button("→", key=f"ficha_ct_{contrato['id']}", help="Ver contrato"):
+            if botao_acao(
+                linha[6],
+                "abrir",
+                f"ficha_ct_{contrato['id']}",
+                ajuda=f"Abrir o contrato de {nomes.get(contrato['cliente_id'], 'cliente')}",
+            ):
                 _ir_para_ficha(contrato["id"])
 
     if total_paginas > 1:
         st.caption(f"Mostrando {len(pagina_atual)} de {len(filtrados)} · página {pagina} de {total_paginas}")
         col_ant, col_prox = st.columns(2)
-        if col_ant.button("‹ Anterior", disabled=pagina <= 1, key="ct_ant"):
+        if col_ant.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key="ct_ant"):
             st.session_state[pagina_chave] = pagina - 1
             st.rerun()
-        if col_prox.button("Próxima ›", disabled=pagina >= total_paginas, key="ct_prox"):
+        if col_prox.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key="ct_prox"):
             st.session_state[pagina_chave] = pagina + 1
             st.rerun()
 
@@ -216,7 +223,7 @@ def _cartao_selecionavel(chave, icone_html, titulo, subtitulo, badge_html, selec
         unsafe_allow_html=True,
     )
     with st.container(key=chave):
-        col_info, col_badge, col_sel = st.columns([3, 1.6, 0.5], vertical_alignment="center")
+        col_info, col_badge, col_sel = st.columns([3, 1.6, 1], vertical_alignment="center")
         col_info.markdown(
             f"""
             <div style="display:flex;align-items:center;gap:12px;">
@@ -230,8 +237,13 @@ def _cartao_selecionavel(chave, icone_html, titulo, subtitulo, badge_html, selec
             unsafe_allow_html=True,
         )
         col_badge.markdown(badge_html, unsafe_allow_html=True)
-        rotulo_botao = "✓" if selecionado else "selecionar"
-        return col_sel.button(rotulo_botao, key=f"sel_{chave}", disabled=not elegivel)
+        return col_sel.button(
+            "Selecionado" if selecionado else "Selecionar",
+            key=f"sel_{chave}",
+            icon=":material/check:" if selecionado else None,
+            disabled=not elegivel,
+            use_container_width=True,
+        )
 
 
 def _wizard_etapa1():
@@ -440,7 +452,7 @@ def _wizard_etapa4():
 
 
 def _exibir_wizard():
-    if st.button("‹ Contratos", key="voltar_wizard"):
+    if botao_voltar("contratos", "voltar_wizard"):
         _ir_para_lista()
     etapa = st.session_state.setdefault("contrato_etapa", 1)
 
@@ -523,7 +535,7 @@ def _cabecalho_ficha(contrato, moto, cliente):
             unsafe_allow_html=True,
         )
     with col_acao:
-        if st.button("Ver cliente →", key="ver_cliente_contrato", use_container_width=True):
+        if st.button("Ver cliente", key="ver_cliente_contrato", icon=":material/arrow_forward:", use_container_width=True):
             abrir_ficha_cliente(cliente["id"])
         if contrato["status"] == "ativo":
             if st.button("Encerrar contrato", key="abrir_encerrar", use_container_width=True):
@@ -661,7 +673,7 @@ def _exibir_ficha(contrato_id):
         st.warning("Dados do contrato incompletos.")
         return
 
-    if st.button("‹ Contratos", key="voltar_contratos"):
+    if botao_voltar("contratos", "voltar_contratos"):
         _ir_para_lista()
 
     _cabecalho_ficha(contrato, moto, cliente)
