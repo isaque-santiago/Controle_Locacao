@@ -251,14 +251,65 @@ homologada apenas com base nas telas e testes isolados.
    - `20260921154000_permissoes_authenticated.sql`: permissões do papel `authenticated` (a RLS continua decidindo as linhas).
    - `20260922000000_restringe_rls_ao_dono.sql`: RLS e Storage só para o UUID do dono (ajuste o UUID em `is_dono()` antes de aplicar).
    - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
+   - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
 3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
    executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
    projeto conectado com `supabase link` e use `supabase db push`.
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
-5. Em homologação, execute `supabase/verificar_fluxos.sql`. O roteiro usa `ROLLBACK`.
+5. Em homologação, execute `supabase/verificar_fluxos.sql` e `supabase/verificar_portal_locatario.sql`. Os roteiros usam `ROLLBACK`.
 6. Reinicie o aplicativo com as dependências de `requirements.txt`.
 
 Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
+
+## Portal do locatário (Fase 7)
+
+O locatário entra com **login completo** por **CPF + senha** (o app converte o CPF no e-mail
+interno `<cpf>@portal.example.com` do Supabase Auth; o dono continua entrando com e-mail) e vê só a tela
+"Troca de óleo": moto e contrato ativos dele, situação do óleo e o formulário para
+reportar a troca com **foto do painel (hodômetro)** e **foto da nota fiscal** (cláusula 4.13
+do contrato). O dono continua com o app completo; o menu depende do papel (`rpc_meu_papel`).
+
+**Segurança.** As tabelas seguem com RLS só para o dono (`is_dono()`); o locatário não tem
+acesso direto a nenhuma tabela. Ele lê e grava apenas por RPCs `SECURITY DEFINER`
+(`rpc_portal_locatario`, `rpc_registrar_troca_oleo_locatario`), que o identificam por
+`auth.uid()` e só enxergam o contrato ativo dele. No Storage, o bucket `trocas_oleo` é
+privado (só imagens, até 10 MB): o locatário só envia para a própria pasta e não lê nem
+sobrescreve arquivos; o dono vê as fotos por URL assinada na ficha do cliente (aba "Portal").
+O cadastro público continua desativado e a `service_role` nunca é usada pelo app.
+
+**Como liberar um locatário.** Na ficha do cliente, aba "Portal", o dono clica em **"Criar
+acesso"**. O app chama a Edge Function `criar-locatario`, que cria o usuário no Supabase Auth
+(e-mail interno do CPF, senha **aleatória e individual**, nunca uma senha padrão) e o vincula
+ao cliente. O app mostra o CPF e a senha uma única vez (a senha não é gravada em lugar
+nenhum): entregue-os ao locatário. Ele pode trocar a senha no portal ("Alterar minha senha"),
+mas não é obrigado. "Gerar nova senha" redefine a senha e "Remover acesso" exclui o login.
+Não há "esqueci minha senha": quem redefine é o dono. O bloqueio de tentativas do Supabase
+Auth protege contra tentativas repetidas de senha.
+
+**Edge Function `criar-locatario`** (`supabase/functions/criar-locatario/index.ts`). Criar,
+redefinir e excluir usuários exige a `service_role`, que nunca vai para o app nem para o
+repositório: a função roda dentro do Supabase, onde essa chave é um segredo injetado
+automaticamente (`SUPABASE_SERVICE_ROLE_KEY`). Ela só atende o **dono** (repassa o JWT de quem
+chamou e confere `rpc_meu_papel() = 'dono'`), monta o e-mail a partir do CPF do cadastro e
+gera a senha com gerador criptográfico. O app só usa a anon key e a sessão do usuário.
+
+Publicar (uma vez por projeto Supabase — dev e produção são projetos diferentes):
+
+```bash
+supabase login
+supabase functions deploy criar-locatario --project-ref <ref-do-projeto>
+```
+
+Sem publicar a função, "Criar acesso" mostra um erro. Confira no painel: Edge Functions >
+`criar-locatario` (com "Verify JWT" ligado, que é o padrão) e os logs em caso de falha.
+
+**Regras da troca.** O hodômetro não pode ser menor que o último registrado. A troca grava
+uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o
+km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
+padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
+Configurações > "Multa por troca de óleo fora do intervalo". Valor 0,00 (padrão) não cobra
+multa. O app ainda não tem tela para cancelar cobrança: se a foto não confirmar o km, a
+multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
 
 ## Publicação no Streamlit Community Cloud
 
@@ -297,7 +348,7 @@ Use um projeto de homologação; os passos criam dados.
 9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
    Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente
    fica vazio; o cálculo usa a distância observada, sem extrapolar leituras ausentes.
-10. Gere e baixe o backup. Confira as 14 tabelas e as contagens em `manifesto.json`.
+10. Gere e baixe o backup. Confira as 15 tabelas e as contagens em `manifesto.json`.
     O ZIP não inclui os binários de fotos/comprovantes nem usuários do Auth. Evite
     alterações durante a geração, pois as leituras não formam um snapshot transacional.
 11. Confira os formulários e tabelas em celular. Saia da conta e verifique que os dados

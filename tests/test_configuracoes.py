@@ -14,6 +14,7 @@ ENTRADA = {
     "alerta_manutencao_dias": 15,
     "alerta_documento_dias": 30,
     "alerta_cnh_dias": 30,
+    "multa_troca_oleo_valor": "0,00",
 }
 
 
@@ -22,6 +23,11 @@ def test_validar_converte_percentuais_e_inteiros():
     assert dados["multa_atraso_percentual"] == "2.00"
     assert dados["juros_mensal_percentual"] == "1.50"
     assert dados["alerta_manutencao_km"] == 300
+
+
+def test_validar_converte_multa_fixa_de_troca_de_oleo():
+    dados = validar_configuracao({**ENTRADA, "multa_troca_oleo_valor": "R$ 1.250,50"})
+    assert dados["multa_troca_oleo_valor"] == "1250.50"
 
 
 @pytest.mark.parametrize(
@@ -35,6 +41,9 @@ def test_validar_converte_percentuais_e_inteiros():
         ("carencia_dias", "2,5"),
         ("alerta_cnh_dias", ""),
         ("alerta_manutencao_km", "999999999"),
+        ("multa_troca_oleo_valor", "abc"),
+        ("multa_troca_oleo_valor", "-5"),
+        ("multa_troca_oleo_valor", "10,999"),
     ],
 )
 def test_validar_rejeita_valores_invalidos(campo, valor):
@@ -55,7 +64,12 @@ def test_exemplo_encargos_respeita_carencia():
     assert exemplo["total"] == Decimal("500.00")
 
 
-DO_BANCO = {**ENTRADA, "multa_atraso_percentual": 2, "juros_mensal_percentual": Decimal("1.50")}
+DO_BANCO = {
+    **ENTRADA,
+    "multa_atraso_percentual": 2,
+    "juros_mensal_percentual": Decimal("1.50"),
+    "multa_troca_oleo_valor": Decimal("0.00"),
+}
 
 
 def _abrir_pagina():
