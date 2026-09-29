@@ -6,13 +6,12 @@ monta o HTML. Não coloque cores nem tamanhos em `style=` — use as classes e t
 
 from contextlib import contextmanager
 from datetime import date
-from decimal import Decimal
 from html import escape
-from math import ceil
-import pandas as pd
+
 import streamlit as st
 from postgrest.exceptions import APIError
-from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa, mascarar_cpf
+
+from src.ui.formatadores import formatar_placa
 
 # Situação -> cor semântica. A cor de status é a única que "grita"; estados
 # neutros/operacionais (alugada, aberta) só recebem o selo cinza.
@@ -194,90 +193,6 @@ def cartao_kpi(titulo, valor):
 
 
 # ------------------------------------------------------------------ tabelas --
-
-
-def tabela(linhas, chave="tabela", colunas=None):
-    if not linhas:
-        mostrar_vazio()
-        return
-    pagina = 1
-    paginas = ceil(len(linhas) / 25)
-    if paginas > 1:
-        if st.session_state.get(chave + "_pagina", 1) > paginas:
-            st.session_state[chave + "_pagina"] = paginas
-        pagina = st.number_input(
-            "Página", min_value=1, max_value=paginas, value=1, key=chave + "_pagina"
-        )
-    st.caption(f"{len(linhas)} registro(s) • página {pagina} de {paginas}")
-    registros = []
-    for linha in linhas[(pagina - 1) * 25 : pagina * 25]:
-        registro = {}
-        for nome, valor in linha.items():
-            if (
-                nome.startswith("_")
-                or nome == "id"
-                or nome.endswith("_id")
-                or (colunas and nome not in colunas)
-                or isinstance(valor, (dict, list))
-            ):
-                continue
-            if nome == "cpf":
-                valor = mascarar_cpf(valor or "")
-            elif nome == "placa":
-                valor = formatar_placa(valor) if valor else valor
-            elif nome in {"situacao", "status"} and valor:
-                valor = f"● {str(valor).replace('_', ' ')}"
-            elif isinstance(valor, Decimal) or nome in {
-                "valor",
-                "saldo",
-                "valor_pago",
-                "valor_periodo",
-                "custo_total",
-                "custo_pecas",
-                "custo_mao_obra",
-                "receita_recebida",
-                "custo_manutencao",
-                "custo_documentos",
-                "resultado",
-                "custo_por_km",
-                "valor_aquisicao",
-                "valor_locacao_sugerido",
-                "caucao_valor",
-                "multa_juros",
-            }:
-                valor = formatar_moeda(valor) if valor is not None else "—"
-            elif (
-                isinstance(valor, date)
-                or nome.startswith("data_")
-                or nome in {"vencimento", "cnh_validade", "ultima_data", "proxima_data"}
-            ):
-                valor = formatar_data(valor)
-            registro[nome.replace("_", " ").capitalize()] = valor
-        registros.append(registro)
-    quadro = pd.DataFrame(registros)
-
-    def estilo_linha(linha):
-        cor = None
-        for coluna in ("Situacao", "Status"):
-            if coluna in linha:
-                cor = CORES_STATUS_TEXTO.get(
-                    str(linha[coluna]).lstrip("● ").replace(" ", "_")
-                )
-        return [f"color: {cor}; font-weight: 600" if cor else "" for _ in linha]
-
-    estilizado = quadro.style.apply(estilo_linha, axis=1)
-    if "Placa" in quadro.columns:
-        estilizado = estilizado.set_properties(
-            subset=["Placa"],
-            **{
-                "background-color": "#1E2227",
-                "color": "#FAFAF9",
-                "font-family": "'IBM Plex Mono', monospace",
-                "font-weight": "600",
-                "letter-spacing": "0.03em",
-            },
-        )
-    st.dataframe(estilizado, hide_index=True, use_container_width=True)
 
 
 def tabela_html(cabecalhos, linhas, vazio=None):
@@ -492,6 +407,7 @@ def selecionar(titulo, linhas, rotulo, chave):
 
 def abrir_ficha_contrato(contrato_id):
     """Abre a página de contratos com a ficha indicada já selecionada."""
+    st.session_state.pop("contratos_ficha_abas_indice", None)  # ficha nova abre na primeira aba
     st.session_state["contratos_visao"] = "ficha"
     st.session_state["contratos_id_selecionado"] = contrato_id
     st.switch_page("pages/4_Contratos.py")
@@ -499,6 +415,7 @@ def abrir_ficha_contrato(contrato_id):
 
 def abrir_ficha_cliente(cliente_id):
     """Abre a página de clientes com a ficha indicada já selecionada."""
+    st.session_state.pop("clientes_ficha_abas_indice", None)
     st.session_state["clientes_visao"] = "ficha"
     st.session_state["clientes_id_selecionado"] = cliente_id
     st.switch_page("pages/3_Clientes.py")

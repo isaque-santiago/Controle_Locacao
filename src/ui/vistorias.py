@@ -34,6 +34,7 @@ from src.ui.componentes import (
     vazio_lista,
 )
 from src.ui.formatadores import formatar_data
+from src.ui.listas import barra_filtros, paginar, rodape_paginacao
 
 # ------------------------------------------------- formulário compartilhado --
 
@@ -96,7 +97,6 @@ _ESTADO_ITEM = {
     "nao_aplicavel": ("N/A", "var(--texto-3)"),
 }
 _LINHA = "var(--linha)"
-_POR_PAGINA = 8
 _PREFIXO_REGISTRO = "vistreg_"
 _FUSO = ZoneInfo("America/Sao_Paulo")
 
@@ -128,46 +128,6 @@ def _cabecalho_tabela(colunas, rotulos):
             f'<span class="fs-secundario texto-2">{rotulo}</span>',
             unsafe_allow_html=True,
         )
-
-
-def _pills(chave, opcoes, contagens, padrao="todas"):
-    """Filtros em pílula (mesmo padrão das demais listas). Devolve o valor ativo."""
-    atual = st.session_state.get(f"vistorias_{chave}", padrao)
-    with st.container(key=f"vistorias_filtros_{chave}"):
-        colunas = st.columns(len(opcoes))
-        for coluna, (valor, rotulo) in zip(colunas, opcoes):
-            total = contagens.get(valor)
-            texto = f"{rotulo} · {total}" if total is not None else rotulo
-            if coluna.button(
-                texto,
-                key=f"pill_vist_{chave}_{valor}",
-                type="primary" if atual == valor else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state[f"vistorias_{chave}"] = valor
-                st.session_state[f"vistorias_pagina_{chave}"] = 1
-                st.rerun()
-    return atual
-
-
-def _paginar(chave, registros):
-    total_paginas = max(1, -(-len(registros) // _POR_PAGINA))
-    pagina = min(st.session_state.get(f"vistorias_pagina_{chave}", 1), total_paginas)
-    inicio = (pagina - 1) * _POR_PAGINA
-    return registros[inicio : inicio + _POR_PAGINA], pagina, total_paginas
-
-
-def _rodape_paginacao(chave, exibidos, total, pagina, total_paginas):
-    if total_paginas <= 1:
-        return
-    st.caption(f"Mostrando {exibidos} de {total} · página {pagina} de {total_paginas}")
-    anterior, proxima = st.columns(2)
-    if anterior.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key=f"vist_ant_{chave}"):
-        st.session_state[f"vistorias_pagina_{chave}"] = pagina - 1
-        st.rerun()
-    if proxima.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key=f"vist_prox_{chave}"):
-        st.session_state[f"vistorias_pagina_{chave}"] = pagina + 1
-        st.rerun()
 
 
 # ---------------------------------------------------------------- diálogos --
@@ -382,16 +342,15 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
         _dialog_registrar(pendentes, frota, pessoas)
 
     contagem = {valor: len(filtrar_por_tipo(todas, valor)) for valor, _ in _FILTROS_TIPO}
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        filtro = _pills("filtro_tipo", _FILTROS_TIPO, contagem)
-    with col_busca:
-        busca = st.text_input(
-            "Buscar",
-            placeholder="Buscar por cliente ou placa",
-            label_visibility="collapsed",
-            key="vistorias_busca",
-        ).casefold()
+    filtros = barra_filtros(
+        "vistorias",
+        _FILTROS_TIPO,
+        padrao="todas",
+        contagens=contagem,
+        grupo="Tipo",
+        busca="Buscar por cliente ou placa",
+    )
+    busca = filtros.busca.casefold()
 
     def texto_busca(v):
         contrato = contratos_por_id.get(v["contrato_id"], {})
@@ -400,13 +359,13 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
 
     filtradas = [
         v
-        for v in filtrar_por_tipo(todas, filtro)
+        for v in filtrar_por_tipo(todas, filtros.valor)
         if busca.replace("-", "") in texto_busca(v)
     ]
     filtradas.sort(key=lambda v: v["data"], reverse=True)
-    pagina_atual, pagina, total_paginas = _paginar("lista", filtradas)
+    filtros.resumo(len(filtradas), ("vistoria", "vistorias"))
+    pagina_atual, pagina = paginar("vistorias", filtradas)
 
-    st.write("")
     larguras = [1.1, 2.5, 1, 1.1, 1.1, 2.4, 0.6]
     with st.container(key="vistorias_card_lista"):
         _cabecalho_tabela(
@@ -438,7 +397,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
                 ajuda=f"Comparar as vistorias do contrato (vistoria de {formatar_data(v['data'])})",
             ):
                 _abrir_comparacao(contrato["id"])
-    _rodape_paginacao("lista", len(pagina_atual), len(filtradas), pagina, total_paginas)
+    rodape_paginacao("vistorias", pagina)
 
 
 # -------------------------------------------------------------- comparação --

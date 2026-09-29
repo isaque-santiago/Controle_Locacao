@@ -18,6 +18,7 @@ from src.ui.componentes import (
     proteger,
     tabela_html,
 )
+from src.ui.listas import abas, aba_ativa, barra_filtros
 from src.ui.formatadores import (
     formatar_data,
     formatar_mes,
@@ -82,22 +83,6 @@ def _exportacao(chave, linhas):
     )
 
 
-def _pills_custo():
-    atual = st.session_state.get("relatorios_custo_visao", "modelo")
-    with st.container(key="relatorios_filtros"):
-        colunas = st.columns([1, 1, 4])
-        for coluna, (valor, rotulo) in zip(colunas, _VISOES_CUSTO):
-            if coluna.button(
-                rotulo,
-                key=f"pill_rel_{valor}",
-                type="primary" if atual == valor else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["relatorios_custo_visao"] = valor
-                st.rerun()
-    return atual
-
-
 # ------------------------------------------------------------------- abas --
 
 
@@ -137,8 +122,7 @@ def _aba_resultado(resultado):
 
 
 def _aba_custo(resultado):
-    visao = _pills_custo()
-    st.write("")
+    visao = barra_filtros("relatorios_custo", _VISOES_CUSTO, padrao="modelo", grupo="Visão").valor
     if visao == "modelo":
         linhas = agrupar_por_modelo(resultado)
         larguras = proporcoes([g["custo_total"] for g in linhas])
@@ -307,13 +291,15 @@ def exibir():
         hoje, inicio, fim = _periodo()
         dados = relatorios.resultado_por_moto(inicio, fim)
 
-        guias = st.tabs(list(_ABAS))
-        with guias[0]:
-            _aba_resultado(dados["resultado"])
-        with guias[1]:
-            _aba_custo(dados["resultado"])
-        with guias[2]:
-            _aba_inadimplencia(relatorios.inadimplencia(hoje))
-        with guias[3]:
-            _aba_fluxo(dados["fluxo"], hoje)
+        guias = abas("relatorios_abas", _ABAS)
+        desenho = (
+            lambda: _aba_resultado(dados["resultado"]),
+            lambda: _aba_custo(dados["resultado"]),
+            lambda: _aba_inadimplencia(relatorios.inadimplencia(hoje)),
+            lambda: _aba_fluxo(dados["fluxo"], hoje),
+        )
+        for guia, desenhar in zip(guias, desenho):
+            with guia:
+                if aba_ativa(guia):
+                    desenhar()
         st.caption(_NOTA_CRITERIOS)

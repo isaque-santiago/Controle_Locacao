@@ -20,11 +20,12 @@ from src.ui.componentes import (
     botao_acao,
     botao_voltar,
 )
+from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
 
 _STATUS_ROTULO = {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}
-_FILTROS = ["Todos", "ativo", "encerrado", "cancelado"]
+_OPCOES_FILTRO = [("Todos", "Todos")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("ativo", "encerrado", "cancelado")]
 _PERIODOS = ["diario", "semanal", "quinzenal", "mensal"]
 _PERIODOS_ROTULO = {"diario": "Diário", "semanal": "Semanal", "quinzenal": "Quinzenal", "mensal": "Mensal"}
 _ETAPAS_WIZARD = ["Cliente", "Moto", "Condições", "Confirmar"]
@@ -49,6 +50,7 @@ def _ir_para_lista():
 
 
 def _ir_para_ficha(contrato_id):
+    reiniciar_abas("contratos_ficha_abas")
     st.session_state["contratos_visao"] = "ficha"
     st.session_state["contratos_id_selecionado"] = contrato_id
     st.rerun()
@@ -82,46 +84,26 @@ def _exibir_lista():
     ):
         _iniciar_wizard()
 
-    filtro_atual = st.session_state.get("contratos_filtro", "ativo")
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        with st.container(key="contratos_filtros"):
-            pills = st.columns(len(_FILTROS))
-            rotulos_pill = ["Todos"] + [_STATUS_ROTULO[f] for f in _FILTROS[1:]]
-            for coluna, valor, rotulo in zip(pills, _FILTROS, rotulos_pill):
-                total_pill = len(registros) if valor == "Todos" else contagem.get(valor, 0)
-                if coluna.button(
-                    f"{rotulo} · {total_pill}",
-                    key=f"pill_ct_{valor}",
-                    type="primary" if filtro_atual == valor else "secondary",
-                    use_container_width=True,
-                ):
-                    st.session_state["contratos_filtro"] = valor
-                    st.rerun()
-    with col_busca:
-        busca = st.text_input(
-            "Buscar", placeholder="Buscar por cliente ou placa", label_visibility="collapsed"
-        )
-
-    busca_normalizada = busca.casefold()
+    filtros = barra_filtros(
+        "contratos",
+        _OPCOES_FILTRO,
+        padrao="ativo",
+        contagens={"Todos": len(registros), **contagem},
+        busca="Buscar por cliente ou placa",
+    )
+    busca = filtros.busca.casefold()
     filtrados = [
         c
         for c in registros
-        if (filtro_atual == "Todos" or c["status"] == filtro_atual)
+        if (filtros.valor == "Todos" or c["status"] == filtros.valor)
         and (
-            busca_normalizada in nomes.get(c["cliente_id"], "").casefold()
-            or busca_normalizada in frota.get(c["moto_id"], {}).get("placa", "").casefold()
+            busca in nomes.get(c["cliente_id"], "").casefold()
+            or busca in frota.get(c["moto_id"], {}).get("placa", "").casefold()
         )
     ]
     filtrados.sort(key=lambda c: c["data_inicio"], reverse=True)
-
-    st.write("")
-    pagina_chave = "contratos_pagina"
-    por_pagina = 7
-    total_paginas = max(1, -(-len(filtrados) // por_pagina))
-    pagina = min(st.session_state.get(pagina_chave, 1), total_paginas)
-    inicio = (pagina - 1) * por_pagina
-    pagina_atual = filtrados[inicio : inicio + por_pagina]
+    filtros.resumo(len(filtrados), ("contrato", "contratos"))
+    pagina_atual, pagina = paginar("contratos", filtrados)
 
     with st.container(key="contratos_card_lista"):
         cab = st.columns([1.4, 1.2, 1.1, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
@@ -155,15 +137,7 @@ def _exibir_lista():
             ):
                 _ir_para_ficha(contrato["id"])
 
-    if total_paginas > 1:
-        st.caption(f"Mostrando {len(pagina_atual)} de {len(filtrados)} · página {pagina} de {total_paginas}")
-        col_ant, col_prox = st.columns(2)
-        if col_ant.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key="ct_ant"):
-            st.session_state[pagina_chave] = pagina - 1
-            st.rerun()
-        if col_prox.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key="ct_prox"):
-            st.session_state[pagina_chave] = pagina + 1
-            st.rerun()
+    rodape_paginacao("contratos", pagina)
 
 
 # ----------------------------------------------------------------- wizard --
@@ -676,13 +650,13 @@ def _exibir_ficha(contrato_id):
     st.write("")
     _faixa_dados_contrato(contrato)
 
-    abas = st.tabs(["Cobranças", "Vistorias", "Manutenções"])
-    with abas[0]:
-        _aba_cobrancas(contrato)
-    with abas[1]:
-        _aba_vistorias(contrato)
-    with abas[2]:
-        _aba_manutencoes(contrato)
+    guias = abas("contratos_ficha_abas", ["Cobranças", "Vistorias", "Manutenções"])
+    desenho = (_aba_cobrancas, _aba_vistorias, _aba_manutencoes)
+    for guia, desenhar in zip(guias, desenho):
+        with guia:
+            if aba_ativa(guia):
+                desenhar(contrato)
+
 
 
 def exibir():

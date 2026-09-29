@@ -132,10 +132,13 @@ def servicos():
         yield mocks
 
 
-def abrir(nome):
+def abrir(nome, **estado):
+    """Abre a página com sessão de teste; `estado` entra no session_state (ex.: a aba lembrada)."""
     app = AppTest.from_file(str(RAIZ / "pages" / nome), default_timeout=20)
     app.session_state["usuario"] = {"id": "teste", "email": "teste@example.com"}
     app.session_state["ultima_atividade"] = time()
+    for chave, valor in estado.items():
+        app.session_state[chave] = valor
     return app.run()
 
 
@@ -264,7 +267,15 @@ def test_relatorios_renderiza_abas_com_dados_e_alterna_custo(servicos):
     assert not app.exception and not app.error
     html = " ".join(m.value for m in app.markdown)
     assert "R$ 850,00" in html and "Setembro de 2026" in html
+    assert "R$ 63,00" not in html  # só a aba ativa executa
+
+    app.session_state["relatorios_abas_indice"] = 2  # Inadimplência
+    app.run()
+    html = " ".join(m.value for m in app.markdown)
     assert "R$ 63,00" in html and "6,0%" in html
-    next(b for b in app.button if b.label == "Por moto").click().run()
+
+    app.session_state["relatorios_abas_indice"] = 1  # Custo de manutenção
+    app.run()
+    app.pills[0].set_value("moto").run()
     assert not app.exception and not app.error
     assert "R$ 0,20" in " ".join(m.value for m in app.markdown)

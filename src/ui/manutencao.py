@@ -19,6 +19,7 @@ from src.ui.componentes import (
     tabela_html,
     botao_acao,
 )
+from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
 
 _SITUACAO_ROTULO = {"vencida": "Vencida", "proxima": "Próxima"}
@@ -27,7 +28,6 @@ _FILTROS_TIPO = [("todas", "Todas"), ("preventiva", "Preventiva"), ("corretiva",
 _STATUS_ROTULO = {"aberta": "Aberta", "concluida": "Concluída", "cancelada": "Cancelada"}
 # "aberta" é estado operacional (sem tinta); concluída usa o verde de "ok".
 _STATUS_SELO = {"aberta": "aberta", "concluida": "ok", "cancelada": "cancelada"}
-_POR_PAGINA = 8
 _PREFIXO_REGISTRO = "manreg_"
 
 
@@ -54,46 +54,6 @@ def _cabecalho_tabela(colunas, rotulos):
             f'<span class="fs-secundario texto-2">{rotulo}</span>',
             unsafe_allow_html=True,
         )
-
-
-def _pills(chave, opcoes, contagens, padrao="todas"):
-    """Filtros em pílula (mesmo padrão de Motos/Clientes/Contratos). Devolve o valor ativo."""
-    atual = st.session_state.get(f"manutencao_{chave}", padrao)
-    with st.container(key=f"manutencao_filtros_{chave}"):
-        colunas = st.columns(len(opcoes))
-        for coluna, (valor, rotulo) in zip(colunas, opcoes):
-            total = contagens.get(valor)
-            texto = f"{rotulo} · {total}" if total is not None else rotulo
-            if coluna.button(
-                texto,
-                key=f"pill_man_{chave}_{valor}",
-                type="primary" if atual == valor else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state[f"manutencao_{chave}"] = valor
-                st.session_state[f"manutencao_pagina_{chave}"] = 1
-                st.rerun()
-    return atual
-
-
-def _paginar(chave, registros):
-    total_paginas = max(1, -(-len(registros) // _POR_PAGINA))
-    pagina = min(st.session_state.get(f"manutencao_pagina_{chave}", 1), total_paginas)
-    inicio = (pagina - 1) * _POR_PAGINA
-    return registros[inicio : inicio + _POR_PAGINA], pagina, total_paginas
-
-
-def _rodape_paginacao(chave, exibidos, total, pagina, total_paginas):
-    if total_paginas <= 1:
-        return
-    st.caption(f"Mostrando {exibidos} de {total} · página {pagina} de {total_paginas}")
-    anterior, proxima = st.columns(2)
-    if anterior.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key=f"man_ant_{chave}"):
-        st.session_state[f"manutencao_pagina_{chave}"] = pagina - 1
-        st.rerun()
-    if proxima.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key=f"man_prox_{chave}"):
-        st.session_state[f"manutencao_pagina_{chave}"] = pagina + 1
-        st.rerun()
 
 
 # ---------------------------------------------------------------- diálogos --
@@ -356,15 +316,15 @@ def _aba_alertas(pendentes):
         "vencida": sum(a["situacao"] == "vencida" for a in pendentes),
         "proxima": sum(a["situacao"] == "proxima" for a in pendentes),
     }
-    filtro = _pills("filtro_alerta", _FILTROS_ALERTA, contagem)
-    visiveis = [a for a in pendentes if filtro == "todas" or a["situacao"] == filtro]
+    filtros = barra_filtros("manutencao_alertas", _FILTROS_ALERTA, padrao="todas", contagens=contagem)
+    visiveis = [a for a in pendentes if filtros.valor == "todas" or a["situacao"] == filtros.valor]
+    filtros.resumo(len(visiveis), ("alerta", "alertas"))
     visiveis.sort(
         key=lambda a: (
             a["situacao"] != "vencida",
             a["km_restantes"] if a.get("km_restantes") is not None else float("inf"),
         )
     )
-    st.write("")
     linhas = []
     for a in visiveis:
         proxima = " / ".join(
@@ -404,24 +364,24 @@ def _aba_historico(frota):
         "preventiva": sum(m["tipo"] == "preventiva" for m in todos),
         "corretiva": sum(m["tipo"] == "corretiva" for m in todos),
     }
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        filtro = _pills("filtro_tipo", _FILTROS_TIPO, contagem)
-    with col_busca:
-        busca = st.text_input(
-            "Buscar",
-            placeholder="Buscar por moto ou oficina",
-            label_visibility="collapsed",
-            key="manutencao_busca_historico",
-        ).casefold()
+    filtros = barra_filtros(
+        "manutencao_historico",
+        _FILTROS_TIPO,
+        padrao="todas",
+        contagens=contagem,
+        grupo="Tipo",
+        busca="Buscar por moto ou oficina",
+    )
+    busca = filtros.busca.casefold()
 
     filtrados = [
         m
         for m in todos
-        if (filtro == "todas" or m["tipo"] == filtro)
+        if (filtros.valor == "todas" or m["tipo"] == filtros.valor)
         and busca in f"{frota.get(m['moto_id'], {}).get('placa', '')} {m.get('oficina') or ''}".casefold()
     ]
-    pagina_atual, pagina, total_paginas = _paginar("historico", filtrados)
+    filtros.resumo(len(filtrados), ("manutenção", "manutenções"))
+    pagina_atual, pagina = paginar("manutencao_historico", filtrados)
 
     st.write("")
     larguras = [1.1, 1.2, 1, 2.1, 1.3, 1.1, 1.1, 1.2]
@@ -465,7 +425,7 @@ def _aba_historico(frota):
                         ajuda=f"Cancelar a manutenção da moto {formatar_placa(moto['placa'])}",
                     ):
                         _dialog_cancelar(registro, moto)
-    _rodape_paginacao("historico", len(pagina_atual), len(filtrados), pagina, total_paginas)
+    rodape_paginacao("manutencao_historico", pagina)
 
 
 def _interruptor(ativo):
@@ -533,10 +493,13 @@ def exibir():
         ):
             _dialog_registrar()
 
-        aba_alertas, aba_historico, aba_catalogo = st.tabs(["Alertas", "Histórico", "Catálogo"])
-        with aba_alertas:
-            _aba_alertas(pendentes)
-        with aba_historico:
-            _aba_historico(frota)
-        with aba_catalogo:
-            _aba_catalogo(manutencao.listar_catalogo())
+        guias = abas("manutencao_abas", ["Alertas", "Histórico", "Catálogo"])
+        desenho = (
+            lambda: _aba_alertas(pendentes),
+            lambda: _aba_historico(frota),
+            lambda: _aba_catalogo(manutencao.listar_catalogo()),
+        )
+        for guia, desenhar in zip(guias, desenho):
+            with guia:
+                if aba_ativa(guia):
+                    desenhar()
