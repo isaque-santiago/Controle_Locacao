@@ -93,18 +93,37 @@ def proteger():
 # ---------------------------------------------------------------- estrutura --
 
 
-def cabecalho_pagina(titulo, sub=None, sobretitulo=None, lateral=None):
-    """Cabeçalho padrão de página: sobretítulo, título (h1), subtítulo e bloco lateral opcional (HTML)."""
+def cabecalho_pagina(titulo, sub=None, sobretitulo=None, lateral=None, acao=None):
+    """Cabeçalho padrão de página: sobretítulo, título (h1), descrição/resumo e, opcionalmente,
+    um indicador contextual (`lateral`, HTML) ou a ação primária da página.
+
+    `acao` é um dicionário `{"rotulo", "chave", "icone"?, "ajuda"?, "formulario"?}`. O botão é
+    do Streamlit (fora do HTML) e fica à direita do título no desktop; quando o cabeçalho fica
+    estreito, vai para depois da descrição em largura total (ver `.st-key-pagina_cabecalho`).
+    Use `"formulario": True` dentro de um `st.form` (botão de envio). Devolve True se clicado.
+    Cada página tem no máximo uma ação primária aqui."""
     partes = ""
     if sobretitulo:
         partes += f'<div class="painel-sobretitulo">{escape(sobretitulo)}</div>'
     partes += f'<h1 class="rotulo pagina-titulo">{escape(titulo)}</h1>'
     if sub:
         partes += f'<div class="pagina-sub">{sub}</div>'
-    st.markdown(
-        f'<div class="painel-cabecalho"><div>{partes}</div>{lateral or ""}</div>',
-        unsafe_allow_html=True,
-    )
+    if acao is None:
+        st.markdown(
+            f'<div class="painel-cabecalho"><div>{partes}</div>{lateral or ""}</div>',
+            unsafe_allow_html=True,
+        )
+        return False
+    with st.container(key="pagina_cabecalho"):
+        st.markdown(f'<div class="pagina-cabecalho__texto">{partes}</div>', unsafe_allow_html=True)
+        botao = st.form_submit_button if acao.get("formulario") else st.button
+        return botao(
+            acao["rotulo"],
+            key=acao["chave"],
+            icon=acao.get("icone", ":material/add:"),
+            help=acao.get("ajuda"),
+            type="primary",
+        )
 
 
 def cartao_html(titulo, corpo, meta=None):
@@ -119,14 +138,31 @@ def cartao_html(titulo, corpo, meta=None):
 
 
 def estado_vazio(titulo, texto=None, compacto=False):
-    """Estado vazio: ícone, título e descrição curta (ou uma linha compacta dentro de listas)."""
+    """Estado vazio: ícone, título e explicação (motivo + próximo passo). No modo compacto (dentro
+    de listas) vira uma linha com o título e, se houver, a explicação logo abaixo."""
     if compacto:
-        return f'<div class="vazio vazio--linha">{escape(titulo)}</div>'
+        descricao = f'<span class="vazio__texto">{escape(texto)}</span>' if texto else ""
+        return f'<div class="vazio vazio--linha"><div><div class="vazio__titulo">{escape(titulo)}</div>{descricao}</div></div>'
     descricao = f'<div class="vazio__texto">{escape(texto)}</div>' if texto else ""
     return (
         '<div class="vazio"><div class="vazio__icone"></div>'
         f'<div class="vazio__titulo">{escape(titulo)}</div>{descricao}</div>'
     )
+
+
+def vazio_lista(encontrado, ausente, tem_registros, acao=None):
+    """Linha de lista vazia (HTML) que explica o motivo e o próximo passo. Com registros
+    cadastrados, o filtro/busca ocultou tudo (`encontrado`); sem registros, vale `ausente` e
+    aponta a `acao` de cadastro do cabeçalho.
+    Ex.: `vazio_lista("Nenhuma moto encontrada.", "Ainda não há motos cadastradas.", bool(registros), "Nova moto")`."""
+    if tem_registros:
+        return estado_vazio(
+            encontrado,
+            "Nenhum resultado para o filtro ou a busca atual. Limpe a busca ou escolha outro filtro.",
+            compacto=True,
+        )
+    passo = f"Use “{acao}”, no topo da página, para cadastrar." if acao else None
+    return estado_vazio(ausente, passo, compacto=True)
 
 
 def mostrar_vazio(titulo="Nenhum registro encontrado", texto=None):
@@ -244,10 +280,11 @@ def tabela(linhas, chave="tabela", colunas=None):
     st.dataframe(estilizado, hide_index=True, use_container_width=True)
 
 
-def tabela_html(cabecalhos, linhas):
+def tabela_html(cabecalhos, linhas, vazio=None):
     """Tabela somente leitura, hairline entre linhas, sem zebra — para abas sem
     ação por linha (Plano de manutenção, Histórico, Contratos...). Cada célula
-    de `linhas` já vem pronta como HTML (use selo_situacao/chip_placa/mono)."""
+    de `linhas` já vem pronta como HTML (use selo_situacao/chip_placa/mono).
+    `vazio` é o HTML do estado vazio (ex.: `vazio_lista(...)`); sem ele, a mensagem genérica."""
     def celula(conteudo, tag, rotulo=None):
         # data-label: no celular o cabeçalho some e cada célula mostra o próprio rótulo (ver estilos.css)
         atributo = f' data-label="{escape(str(rotulo), quote=True)}"' if rotulo else ""
@@ -257,7 +294,7 @@ def tabela_html(cabecalhos, linhas):
     if not linhas:
         corpo = (
             f'<tr><td colspan="{len(cabecalhos)}">'
-            f'{estado_vazio("Nenhum registro encontrado.", compacto=True)}</td></tr>'
+            f'{vazio or estado_vazio("Nenhum registro encontrado.", compacto=True)}</td></tr>'
         )
     else:
         corpo = "".join(

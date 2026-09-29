@@ -67,6 +67,21 @@ itens com "·" decorativo fora de listas realmente compactas.
   mesmo texto e ícone em todas as páginas (`ACOES`); nunca um glifo Unicode (`→ ✓ ✎ ›`). "Pagar" é sólido (grafite
   no claro, amarelo no escuro); "Cancelar" é contorno vermelho. Concluir e cancelar são ações distintas, cada uma
   com o próprio botão e diálogo. Retorno das fichas: `botao_voltar("motos", chave)` → "Voltar para motos".
+- **Cabeçalho de página** (`cabecalho_pagina` em `componentes.py`, Etapa 2 do Plano de melhorias): todas as páginas
+  usam o mesmo componente — sobretítulo opcional, título (h1), descrição/resumo contextual e uma linha
+  divisória. A ação primária da página (no máximo uma, ex.: "Nova moto", "Salvar alterações") é passada em
+  `acao={"rotulo", "chave", "icone"?, "ajuda"?, "formulario"?}`: é um botão do Streamlit (fora do HTML), primário,
+  com ícone Material (`:material/add:` por padrão; nunca `+` no rótulo) e a função devolve `True` ao clicar. No
+  desktop fica à direita do título, alinhado à base do texto; quando o cabeçalho tem menos de 34 rem (consulta ao
+  contêiner `.st-key-pagina_cabecalho`, não à janela) desce para depois da descrição em largura total. Dentro de
+  `st.form`, `"formulario": True` usa o botão de envio. Sem `acao`, o cabeçalho é só HTML (`lateral` aceita um
+  indicador contextual, como o do Dashboard). As fichas (moto, cliente, contrato, vistoria) mantêm cabeçalho próprio
+  até a Etapa 6.
+- **Estados vazios**: sempre dizem o motivo e, quando possível, o próximo passo. `vazio_lista(encontrado, ausente,
+  tem_registros, acao)` monta a linha das listas: com registros cadastrados, "Nenhum resultado para o filtro ou a
+  busca atual…"; sem registros, "Ainda não há … cadastrados" + "Use “Nova moto”, no topo da página, para cadastrar".
+  `tabela_html(..., vazio=...)` aceita o mesmo HTML. Alertas (`st.info/warning/error/success`) seguem o estilo
+  único de `[data-testid="stAlert"]` (faixa lateral colorida); o texto específico é revisto na Etapa 7.
 - **Foco**: anel de 2 px `--foco` em botões, links, campos, abas, resumos de expander e no rótulo de
   radio/checkbox/toggle, nos dois temas.
 - **Modais**: usados para formulários únicos (registrar pagamento, encerrar contrato, registrar manutenção,

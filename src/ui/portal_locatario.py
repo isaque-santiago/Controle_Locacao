@@ -13,7 +13,7 @@ import streamlit as st
 from src.domain.manutencao_regras import calcular_proxima_manutencao, calcular_situacao
 from src.domain.valores import hoje_br
 from src.services import portal_locatario
-from src.ui.componentes import cabecalho, chip_placa, proteger, selo_situacao
+from src.ui.componentes import cabecalho, cabecalho_pagina, chip_placa, proteger, selo_situacao
 from src.ui.formatadores import formatar_data, formatar_moeda
 
 _ROTULO_SITUACAO = {
@@ -155,10 +155,9 @@ def exibir():
     cabecalho("Portal do locatário", exibir_titulo=False)
     with proteger():
         dados = portal_locatario.dados_portal()
-        st.markdown(
-            f'<h1 class="rotulo pagina-titulo">Olá, {escape(dados["nome"].split()[0])}</h1>'
-            '<div class="pagina-sub">Registre aqui a troca de óleo da sua moto.</div>',
-            unsafe_allow_html=True,
+        cabecalho_pagina(
+            f"Olá, {dados['nome'].split()[0]}",
+            sub="Registre aqui a troca de óleo da sua moto.",
         )
         if not dados["contratos"]:
             st.info("Você não tem contrato ativo no momento.")

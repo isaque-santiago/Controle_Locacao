@@ -16,6 +16,8 @@ from src.services import (
 from src.domain.valores import hoje_br, decimal_br
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    vazio_lista,
     proteger,
     campo_data,
     chip_placa,
@@ -158,19 +160,13 @@ def _exibir_lista():
     contratos_ativos = {c["moto_id"]: c["cliente_id"] for c in contratos.listar() if c["status"] == "ativo"}
     nomes_cliente = {c["id"]: c["nome"] for c in clientes.listar()}
 
-    col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
-    col_titulo.markdown(
-        f"""
-        <h1 class="rotulo pagina-titulo">Motos</h1>
-        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{len(registros)} moto(s) cadastrada(s)</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    with col_botao:
-        if st.button("+ Nova moto", type="primary", use_container_width=True):
-            _dialog_nova_moto()
+    if cabecalho_pagina(
+        "Motos",
+        sub=f"{len(registros)} moto(s) cadastrada(s)",
+        acao={"rotulo": "Nova moto", "chave": "motos_nova"},
+    ):
+        _dialog_nova_moto()
 
-    st.write("")
     filtro_atual = st.session_state.get("motos_filtro", "Todas")
     col_pills, col_busca = st.columns([3, 1.3])
     with col_pills:
@@ -216,7 +212,7 @@ def _exibir_lista():
             )
         if not pagina_atual:
             st.markdown(
-                '<div class="vazio vazio--linha">Nenhuma moto encontrada.</div>',
+                vazio_lista("Nenhuma moto encontrada.", "Ainda não há motos cadastradas.", bool(registros), "Nova moto"),
                 unsafe_allow_html=True,
             )
         for moto in pagina_atual:

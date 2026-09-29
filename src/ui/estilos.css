@@ -157,6 +157,23 @@ h3 {font-size: var(--fs-subtitulo);}
 .painel-cabecalho h1 {margin: 0;}
 .painel-status {display: flex; align-items: center; gap: var(--e2); color: var(--texto-2); font-size: var(--fs-legenda);}
 .painel-status::before {content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--sucesso);}
+/* Cabeçalho com ação primária (componentes.cabecalho_pagina): texto à esquerda e botão à direita,
+   alinhados pela base do texto; quando o cabeçalho fica estreito o botão desce para depois da
+   descrição e ocupa a largura toda (consulta ao próprio contêiner, não à janela). */
+.st-key-pagina_cabecalho {
+  display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: flex-end;
+  gap: var(--e3) var(--e4); padding-bottom: var(--e5); margin-bottom: var(--e5); border-bottom: 1px solid var(--linha);
+  container-type: inline-size;
+}
+.st-key-pagina_cabecalho > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+.st-key-pagina_cabecalho > [data-testid="stElementContainer"]:has(.pagina-cabecalho__texto) {flex: 1 1 22rem;}
+.st-key-pagina_cabecalho > [data-testid="stElementContainer"]:has(button) {flex: 0 0 auto;}
+.st-key-pagina_cabecalho button {white-space: nowrap;}
+@container (max-width: 34rem) {
+  .st-key-pagina_cabecalho > [data-testid="stElementContainer"]:has(button) {flex: 1 1 100%; width: 100% !important;}
+  .st-key-pagina_cabecalho [data-testid="stButton"], .st-key-pagina_cabecalho [data-testid="stFormSubmitButton"] {width: 100%;}
+  .st-key-pagina_cabecalho button {width: 100%;}
+}
 [data-baseweb="tab-list"] {gap: var(--e5); border-bottom: 1px solid var(--linha);}
 [data-baseweb="tab"], [data-testid="stTab"], [role="tab"] {padding: .65rem var(--e2); min-height: var(--alvo-min); min-width: var(--alvo-min); font-size: var(--fs-corpo); font-weight: 500; justify-content: center; flex: 0 0 auto; white-space: nowrap;}
 [data-testid="stTabsScrollLeft"], [data-testid="stTabsScrollRight"] {min-width: var(--alvo-min); min-height: var(--alvo-min);}
@@ -560,6 +577,8 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .vazio__texto {font-size: var(--fs-secundario); max-width: 36ch;}
 /* Variante em linha: dentro de listas e cartões, sem ocupar a altura de um bloco */
 .vazio--linha {flex-direction: row; justify-content: flex-start; text-align: left; gap: var(--e3); padding: 22px var(--e5); font-size: var(--fs-secundario);}
+.vazio--linha .vazio__titulo {font-family: inherit; font-size: var(--fs-secundario); font-weight: 500;}
+.vazio--linha .vazio__texto {display: block; max-width: none; font-size: var(--fs-legenda);}
 .vazio--linha::before {
   content: ""; width: 20px; height: 20px; border-radius: 0; background: var(--texto-3); flex: none;
   -webkit-mask: var(--ico-vazio) center / contain no-repeat; mask: var(--ico-vazio) center / contain no-repeat;

@@ -10,6 +10,8 @@ from src.domain.valores import hoje_br, decimal_br
 from src.domain.manutencao_regras import preparar_itens_adicionais
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    vazio_lista,
     proteger,
     selecionar,
     chip_placa,
@@ -384,7 +386,15 @@ def _aba_alertas(pendentes):
                 selo_situacao(_SITUACAO_ROTULO[a["situacao"]], a["situacao"]),
             ]
         )
-    tabela_html(["Moto", "Item", "Km atual", "Próxima", "Restante", "Situação"], linhas)
+    tabela_html(
+        ["Moto", "Item", "Km atual", "Próxima", "Restante", "Situação"],
+        linhas,
+        vazio=vazio_lista(
+            "Nenhum alerta neste filtro.",
+            "Nenhuma manutenção vencida ou próxima.",
+            bool(pendentes),
+        ),
+    )
 
 
 def _aba_historico(frota):
@@ -422,8 +432,7 @@ def _aba_historico(frota):
         )
         if not pagina_atual:
             st.markdown(
-                '<div class="vazio vazio--linha">'
-                "Nenhuma manutenção encontrada.</div>",
+                vazio_lista("Nenhuma manutenção encontrada.", "Ainda não há manutenções registradas.", bool(todos), "Registrar manutenção"),
                 unsafe_allow_html=True,
             )
         for registro in pagina_atual:
@@ -485,8 +494,7 @@ def _aba_catalogo(itens):
         )
         if not itens:
             st.markdown(
-                '<div class="vazio vazio--linha">'
-                "Nenhum item no catálogo.</div>",
+                vazio_lista("Nenhum item no catálogo.", "Ainda não há itens no catálogo.", False),
                 unsafe_allow_html=True,
             )
         for item in itens:
@@ -518,17 +526,12 @@ def exibir():
         vencidas = sum(a["situacao"] == "vencida" for a in pendentes)
         proximas = len(pendentes) - vencidas
 
-        col_titulo, col_botao = st.columns([5, 1.4], vertical_alignment="center")
-        col_titulo.markdown(
-            f"""
-            <h1 class="rotulo pagina-titulo">Manutenção</h1>
-            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{vencidas} vencida(s) · {proximas} próxima(s)</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        with col_botao:
-            if st.button("+ Registrar manutenção", type="primary", use_container_width=True):
-                _dialog_registrar()
+        if cabecalho_pagina(
+            "Manutenção",
+            sub=f"{vencidas} vencida(s) · {proximas} próxima(s)",
+            acao={"rotulo": "Registrar manutenção", "chave": "manutencao_registrar"},
+        ):
+            _dialog_registrar()
 
         aba_alertas, aba_historico, aba_catalogo = st.tabs(["Alertas", "Histórico", "Catálogo"])
         with aba_alertas:

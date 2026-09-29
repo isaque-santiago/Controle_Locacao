@@ -67,7 +67,7 @@ def test_botoes_de_acao_tem_texto_e_nao_apenas_simbolo(servicos):
 
 def test_dialogo_registrar_abre_com_previa_de_custo(servicos):
     app = abrir("6_Manutencao.py")
-    next(b for b in app.button if b.label == "+ Registrar manutenção").click().run()
+    next(b for b in app.button if b.label == "Registrar manutenção").click().run()
     assert not app.exception and not app.error
     assert any(b.label == "Salvar manutenção" for b in app.button)
     texto = " ".join(m.value for m in app.markdown)

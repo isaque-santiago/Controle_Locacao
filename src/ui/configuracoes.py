@@ -9,7 +9,7 @@ import streamlit as st
 from src.domain.configuracoes import exemplo_encargos
 from src.domain.valores import hoje_br
 from src.services import configuracoes
-from src.ui.componentes import cabecalho, proteger, sucesso
+from src.ui.componentes import cabecalho, cabecalho_pagina, proteger, sucesso
 from src.ui.formatadores import formatar_moeda
 
 
@@ -48,16 +48,15 @@ def _exemplo(multa, juros, carencia):
 def _formulario(config):
     entrada = {}
     with st.form("configuracoes", border=False):
-        titulo, acao = st.columns([5, 1], vertical_alignment="top")
-        titulo.markdown(
-            """
-            <h1 class="rotulo pagina-titulo">Configurações</h1>
-            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">Parâmetros do sistema</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        salvar = acao.form_submit_button(
-            "Salvar alterações", type="primary", use_container_width=True
+        salvar = cabecalho_pagina(
+            "Configurações",
+            sub="Parâmetros do sistema",
+            acao={
+                "rotulo": "Salvar alterações",
+                "chave": "configuracoes_salvar",
+                "icone": ":material/save:",
+                "formulario": True,
+            },
         )
 
         with st.container(key="config_card_encargos"):

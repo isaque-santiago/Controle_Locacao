@@ -84,7 +84,7 @@ def _roteiro_regularizar():
 
 def test_botao_novo_documento_abre_dialogo(servicos):
     app = abrir("7_Documentos.py")
-    next(b for b in app.button if b.label == "+ Novo documento").click().run()
+    next(b for b in app.button if b.label == "Novo documento").click().run()
     assert not app.error
     assert any(b.label == "Salvar documento" for b in app.button)
     assert any(e.label == "Valor (R$)" for e in app.text_input)
