@@ -13,6 +13,7 @@ from src.ui.componentes import (
     CORES_BORDA,
     barra_proporcional,
     cabecalho,
+    cabecalho_pagina,
     chip_placa,
     proteger,
     tabela_html,
@@ -302,14 +303,7 @@ def exibir():
         inicio = st.session_state.get("relatorios_de", hoje.replace(day=1))
         fim = st.session_state.get("relatorios_ate", hoje)
         subtitulo = _periodo_texto(inicio, fim) if isinstance(inicio, date) and isinstance(fim, date) else ""
-        st.markdown(
-            f"""
-            <h1 class="rotulo pagina-titulo">Relatórios</h1>
-            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{escape(subtitulo)}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.write("")
+        cabecalho_pagina("Relatórios", sub=escape(subtitulo))
         hoje, inicio, fim = _periodo()
         dados = relatorios.resultado_por_moto(inicio, fim)
 

@@ -160,7 +160,7 @@ def test_paginas_com_dados(servicos, nome):
 
 def test_dialog_nova_moto_abre_com_campos_do_formulario(servicos):
     app = abrir("2_Motos.py")
-    next(b for b in app.button if b.label == "+ Nova moto").click().run()
+    next(b for b in app.button if b.label == "Nova moto").click().run()
     assert not app.error
     rotulos = {entrada.label for entrada in app.text_input}
     assert {"Placa", "Marca", "Modelo", "Valor de aquisição (R$)"} <= rotulos

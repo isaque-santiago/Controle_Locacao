@@ -389,6 +389,8 @@ Botões: primário (grafite no claro, amarelo no escuro), secundário, terciári
 
 Ações por linha usam `botao_acao(alvo, acao, chave, ajuda=...)` (`componentes.py`): ícone Material + texto real (nome acessível), alvo de 44 × 44 px (`--alvo-min`), só o ícone nas listas do desktop e ícone + texto no celular. O vocabulário fica em `ACOES` (Abrir, Editar, Pagar, Concluir, Cancelar, Regularizar, Comprovante, Atualizar km, Comparar); não use glifos como `→ ✓ ✎ ›` em rótulos. O retorno das fichas é `botao_voltar("motos", chave)`. Detalhes em `Arquivos/Design_UI.md`.
 
+Todas as páginas montam o cabeçalho com `cabecalho_pagina(titulo, sub=..., acao={"rotulo": "Nova moto", "chave": "motos_nova"})`: a ação primária (no máximo uma, botão do Streamlit com ícone) fica à direita do título no desktop e, quando o cabeçalho estreita, vai para depois da descrição em largura total; a função devolve `True` quando o botão é clicado (`"formulario": True` dentro de `st.form`). Listas vazias usam `vazio_lista(...)`, que informa o motivo (filtro/busca ou ainda sem cadastros) e o próximo passo.
+
 ## Testes de navegador (UI/UX)
 
 `e2e/` contém a suíte Playwright do `Arquivos/Plano_Melhorias_UI_UX.md` (Etapa 0), separada

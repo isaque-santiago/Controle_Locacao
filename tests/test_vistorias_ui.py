@@ -65,7 +65,8 @@ def test_lista_vazia(servicos):
     servicos["vistorias.listar"].return_value = []
     app = abrir("8_Vistorias.py")
     assert not app.exception and not app.error
-    assert "Nenhuma vistoria encontrada." in _texto(app)
+    assert "Ainda não há vistorias registradas." in _texto(app)
+    assert "Registrar vistoria" in _texto(app)  # próximo passo aponta a ação do cabeçalho
 
 
 def test_seta_abre_a_comparacao_do_contrato(servicos):
@@ -112,7 +113,7 @@ def test_voltar_retorna_para_a_lista(servicos):
 def test_dialogo_registrar_oferece_so_tipos_faltantes(servicos):
     servicos["vistorias.listar"].return_value = [ENTREGA]
     app = abrir("8_Vistorias.py")
-    next(b for b in app.button if b.label == "+ Registrar vistoria").click().run()
+    next(b for b in app.button if b.label == "Registrar vistoria").click().run()
     assert not app.exception and not app.error
     assert any(b.label == "Salvar vistoria" for b in app.button)
     tipo = next(r for r in app.radio if r.label == "Tipo")
@@ -122,7 +123,7 @@ def test_dialogo_registrar_oferece_so_tipos_faltantes(servicos):
 def test_dialogo_sem_contratos_pendentes_avisa(servicos):
     servicos["vistorias.listar"].return_value = [ENTREGA, DEVOLUCAO]
     app = abrir("8_Vistorias.py")
-    next(b for b in app.button if b.label == "+ Registrar vistoria").click().run()
+    next(b for b in app.button if b.label == "Registrar vistoria").click().run()
     assert any("já têm vistoria" in i.value for i in app.info)
 
 

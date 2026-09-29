@@ -9,6 +9,8 @@ from src.services import contratos, motos, clientes, cobrancas, vistorias, manut
 from src.domain.valores import hoje_br, decimal_br
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    vazio_lista,
     proteger,
     campo_data,
     chip_placa,
@@ -73,19 +75,13 @@ def _exibir_lista():
     frota = {m["id"]: m for m in motos.listar()}
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
 
-    col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
-    col_titulo.markdown(
-        f"""
-        <h1 class="rotulo pagina-titulo">Contratos</h1>
-        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{contagem.get('ativo', 0)} contrato(s) ativo(s)</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    with col_botao:
-        if st.button("+ Novo contrato", type="primary", use_container_width=True):
-            _iniciar_wizard()
+    if cabecalho_pagina(
+        "Contratos",
+        sub=f"{contagem.get('ativo', 0)} contrato(s) ativo(s)",
+        acao={"rotulo": "Novo contrato", "chave": "contratos_novo"},
+    ):
+        _iniciar_wizard()
 
-    st.write("")
     filtro_atual = st.session_state.get("contratos_filtro", "ativo")
     col_pills, col_busca = st.columns([3, 1.3])
     with col_pills:
@@ -135,7 +131,7 @@ def _exibir_lista():
             coluna.markdown(f'<span class="fs-secundario texto-2">{rotulo}</span>', unsafe_allow_html=True)
         if not pagina_atual:
             st.markdown(
-                '<div class="vazio vazio--linha">Nenhum contrato encontrado.</div>',
+                vazio_lista("Nenhum contrato encontrado.", "Ainda não há contratos cadastrados.", bool(registros), "Novo contrato"),
                 unsafe_allow_html=True,
             )
         for contrato in pagina_atual:

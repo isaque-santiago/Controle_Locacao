@@ -13,7 +13,7 @@ from src.domain.painel_cobrancas import (
 )
 from src.domain.valores import decimal_br, hoje_br
 from src.services import clientes, cobrancas, motos
-from src.ui.componentes import botao_acao, cabecalho, chip_placa, proteger
+from src.ui.componentes import botao_acao, cabecalho, cabecalho_pagina, chip_placa, proteger
 from src.ui.formatadores import formatar_data, formatar_moeda
 
 _FORMAS = ["pix", "dinheiro", "cartao", "transferencia", "outro"]
@@ -259,14 +259,7 @@ def exibir():
             if qtd_clientes
             else "Nenhuma cobrança em atraso"
         )
-        st.markdown(
-            f"""
-            <h1 class="rotulo pagina-titulo">Cobranças</h1>
-            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{subtitulo}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.write("")
+        cabecalho_pagina("Cobranças", sub=subtitulo)
 
         por_aba = {
             aba: [

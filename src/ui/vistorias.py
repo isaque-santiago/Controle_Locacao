@@ -24,7 +24,15 @@ from src.domain.vistorias import (
     tipos_faltantes,
 )
 from src.services import clientes, contratos, motos, vistorias
-from src.ui.componentes import botao_acao, botao_voltar, cabecalho, chip_placa, proteger
+from src.ui.componentes import (
+    botao_acao,
+    botao_voltar,
+    cabecalho,
+    cabecalho_pagina,
+    chip_placa,
+    proteger,
+    vazio_lista,
+)
 from src.ui.formatadores import formatar_data
 
 # ------------------------------------------------- formulário compartilhado --
@@ -366,17 +374,12 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
         and (faltantes := tipos_faltantes(tipos_por_contrato.get(c["id"], [])))
     ]
 
-    col_titulo, col_botao = st.columns([5, 1.6], vertical_alignment="center")
-    col_titulo.markdown(
-        """
-        <h1 class="rotulo pagina-titulo">Vistorias</h1>
-        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">Entregas e devoluções registradas</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    with col_botao:
-        if st.button("+ Registrar vistoria", type="primary", use_container_width=True):
-            _dialog_registrar(pendentes, frota, pessoas)
+    if cabecalho_pagina(
+        "Vistorias",
+        sub="Entregas e devoluções registradas",
+        acao={"rotulo": "Registrar vistoria", "chave": "vistorias_registrar"},
+    ):
+        _dialog_registrar(pendentes, frota, pessoas)
 
     contagem = {valor: len(filtrar_por_tipo(todas, valor)) for valor, _ in _FILTROS_TIPO}
     col_pills, col_busca = st.columns([3, 1.3])
@@ -412,8 +415,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
         )
         if not pagina_atual:
             st.markdown(
-                '<div class="vazio vazio--linha">'
-                "Nenhuma vistoria encontrada.</div>",
+                vazio_lista("Nenhuma vistoria encontrada.", "Ainda não há vistorias registradas.", bool(todas), "Registrar vistoria"),
                 unsafe_allow_html=True,
             )
         for v in pagina_atual:

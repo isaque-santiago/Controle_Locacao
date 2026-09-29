@@ -10,6 +10,9 @@ from src.domain.valores import hoje_br
 from src.domain.cnh_regras import situacao_cnh
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    estado_vazio,
+    vazio_lista,
     proteger,
     campo_data,
     chip_placa,
@@ -120,19 +123,13 @@ def _exibir_lista():
     contratos_ativos = {c["cliente_id"]: c["moto_id"] for c in contratos_todos if c["status"] == "ativo"}
     placas = {m["id"]: m["placa"] for m in motos.listar()}
 
-    col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
-    col_titulo.markdown(
-        f"""
-        <h1 class="rotulo pagina-titulo">Clientes</h1>
-        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{len(registros)} cliente(s) cadastrado(s)</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    with col_botao:
-        if st.button("+ Novo cliente", type="primary", use_container_width=True):
-            _dialog_novo_cliente()
+    if cabecalho_pagina(
+        "Clientes",
+        sub=f"{len(registros)} cliente(s) cadastrado(s)",
+        acao={"rotulo": "Novo cliente", "chave": "clientes_novo"},
+    ):
+        _dialog_novo_cliente()
 
-    st.write("")
     filtro_atual = st.session_state.get("clientes_filtro", "Todos")
     col_pills, col_busca = st.columns([3, 1.3])
     with col_pills:
@@ -179,7 +176,7 @@ def _exibir_lista():
             )
         if not pagina_atual:
             st.markdown(
-                '<div class="vazio vazio--linha">Nenhum cliente encontrado.</div>',
+                vazio_lista("Nenhum cliente encontrado.", "Ainda não há clientes cadastrados.", bool(registros), "Novo cliente"),
                 unsafe_allow_html=True,
             )
         for cliente in pagina_atual:
@@ -374,7 +371,7 @@ def _aba_contratos(cliente):
             )
         if not registros:
             st.markdown(
-                '<div class="vazio vazio--linha">Nenhum registro encontrado.</div>',
+                estado_vazio("Este cliente ainda não tem contratos.", "Os contratos aparecem aqui depois de criados em Contratos.", compacto=True),
                 unsafe_allow_html=True,
             )
         for c in registros:

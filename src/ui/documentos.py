@@ -10,6 +10,8 @@ from src.domain.documentos import situacao_documento, sugerir_proximo_documento
 from src.domain.valores import hoje_br, decimal_br
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    vazio_lista,
     proteger,
     campo_data,
     chip_placa,
@@ -268,7 +270,7 @@ def _dialog_comprovante(documento, moto):
 
 # ---------------------------------------------------------------- listagem --
 
-def _tabela(visiveis, frota, hoje, alerta_dias):
+def _tabela(visiveis, frota, hoje, alerta_dias, total):
     pagina_atual, pagina, total_paginas = _paginar(visiveis)
     larguras = [1.2, 1.3, 1.4, 1.1, 1.1, 1.2, 0.55, 0.55, 0.55]
     with st.container(key="documentos_card_lista"):
@@ -278,8 +280,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias):
         )
         if not pagina_atual:
             st.markdown(
-                '<div class="vazio vazio--linha">'
-                "Nenhum documento encontrado.</div>",
+                vazio_lista("Nenhum documento encontrado.", "Ainda não há documentos cadastrados.", total > 0, "Novo documento"),
                 unsafe_allow_html=True,
             )
         for doc in pagina_atual:
@@ -335,17 +336,12 @@ def exibir():
         vencidos = sum(s == "vencido" for s in situacoes.values())
         a_vencer = sum(s == "a_vencer" for s in situacoes.values())
 
-        col_titulo, col_botao = st.columns([5, 1.4], vertical_alignment="center")
-        col_titulo.markdown(
-            f"""
-            <h1 class="rotulo pagina-titulo">Documentos</h1>
-            <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">{vencidos} vencido(s) · {a_vencer} a vencer</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        with col_botao:
-            if st.button("+ Novo documento", type="primary", use_container_width=True):
-                _dialog_novo({})
+        if cabecalho_pagina(
+            "Documentos",
+            sub=f"{vencidos} vencido(s) · {a_vencer} a vencer",
+            acao={"rotulo": "Novo documento", "chave": "documentos_novo"},
+        ):
+            _dialog_novo({})
 
         contagem = {
             "todos": len(todos),
@@ -378,7 +374,7 @@ def exibir():
             key=lambda d: (_ORDEM_SITUACAO[situacoes[d["id"]]], d["regularizado"], str(d["vencimento"]))
         )
         st.write("")
-        _tabela(visiveis, frota, hoje, alerta_dias)
+        _tabela(visiveis, frota, hoje, alerta_dias, len(todos))
 
         # Sugestão do ano seguinte, deixada pela regularização anterior.
         if sugestao := st.session_state.pop(_CHAVE_SUGESTAO, None):
