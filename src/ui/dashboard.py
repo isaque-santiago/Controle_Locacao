@@ -14,6 +14,7 @@ from src.ui.componentes import (
     item_alerta,
     kpi,
     kpi_grade,
+    botao_acao,
     legenda_ocupacao,
     proteger,
     selo_situacao,
@@ -113,7 +114,7 @@ def _faixa_instrumentos(dados, contagem, devedores_count, ordens_concluidas):
     )
 
 
-_COLUNAS_HOJE = [2, 1.3, 1.3, 1.1, 2, 0.5]
+_COLUNAS_HOJE = [1.9, 1.3, 1.3, 1.1, 1.9, 0.8]
 
 
 def _situacao_cobranca_html(cobranca):
@@ -174,8 +175,11 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
                     unsafe_allow_html=True,
                 )
                 linha[4].markdown(_situacao_cobranca_html(c), unsafe_allow_html=True)
-                if linha[5].button(
-                    "✓", key=f"pagar_hoje_{c['id']}", help="Registrar pagamento"
+                if botao_acao(
+                    linha[5],
+                    "pagar",
+                    f"pagar_hoje_{c['id']}",
+                    ajuda=f"Registrar o pagamento de {nomes.get(c['cliente_id'], 'cliente')}",
                 ):
                     st.session_state["cobranca_rapida"] = c["id"]
                     st.switch_page("pages/5_Cobrancas.py")

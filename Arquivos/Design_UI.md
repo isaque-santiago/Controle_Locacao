@@ -58,8 +58,17 @@ itens com "·" decorativo fora de listas realmente compactas.
 - **Selo de status**: bolinha de 6-8px colorida + texto (tabelas) ou círculo maior com borda tracejada + número
   dentro (alertas do Dashboard/Manutenção) — remete a adesivo de vistoria.
 - **Chip de placa**: `mono`, fundo `grafite-900`, texto `neblina-0`, `border-radius: 6px`, letter-spacing.
-- **Botões**: ação primária de página = grafite sólido com label; ação por linha de tabela = ícone só (ex.:
-  check para "registrar pagamento"); ação destrutiva (encerrar contrato) = contorno vermelho, nunca preenchido.
+- **Botões**: ação primária de página = grafite sólido com label; ação destrutiva (encerrar contrato) = contorno
+  vermelho, nunca preenchido. Todo controle interativo tem alvo mínimo de 44 × 44 px (`--alvo-min`).
+- **Ações por linha** (`botao_acao` em `componentes.py`, Etapa 1 do Plano de melhorias): `st.button(type="tertiary")`
+  com ícone Material + texto real. O texto é o nome acessível e a dica (`help`, com o alvo: "Abrir a ficha da moto
+  ABC-1D23"); nas listas do desktop só o ícone aparece (44 × 44 px), no celular (≤ 640 px) o texto volta
+  (Pagar, Editar, Abrir, Concluir, Cancelar, Regularizar, Comprovante, Atualizar km, Comparar). A mesma ação usa o
+  mesmo texto e ícone em todas as páginas (`ACOES`); nunca um glifo Unicode (`→ ✓ ✎ ›`). "Pagar" é sólido (grafite
+  no claro, amarelo no escuro); "Cancelar" é contorno vermelho. Concluir e cancelar são ações distintas, cada uma
+  com o próprio botão e diálogo. Retorno das fichas: `botao_voltar("motos", chave)` → "Voltar para motos".
+- **Foco**: anel de 2 px `--foco` em botões, links, campos, abas, resumos de expander e no rótulo de
+  radio/checkbox/toggle, nos dois temas.
 - **Modais**: usados para formulários únicos (registrar pagamento, encerrar contrato, registrar manutenção,
   novo/regularizar documento, registrar vistoria) — não para fluxos de múltiplas etapas.
 - **Assistente (wizard)**: só o "Novo contrato" usa esse padrão — indicador de progresso com círculos numerados

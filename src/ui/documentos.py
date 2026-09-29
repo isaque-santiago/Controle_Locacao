@@ -14,6 +14,7 @@ from src.ui.componentes import (
     campo_data,
     chip_placa,
     selo_situacao,
+    botao_acao,
 )
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
 
@@ -98,10 +99,10 @@ def _rodape_paginacao(exibidos, total, pagina, total_paginas):
         return
     st.caption(f"Mostrando {exibidos} de {total} · página {pagina} de {total_paginas}")
     anterior, proxima = st.columns(2)
-    if anterior.button("‹ Anterior", disabled=pagina <= 1, key="doc_ant"):
+    if anterior.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key="doc_ant"):
         st.session_state["documentos_pagina"] = pagina - 1
         st.rerun()
-    if proxima.button("Próxima ›", disabled=pagina >= total_paginas, key="doc_prox"):
+    if proxima.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key="doc_prox"):
         st.session_state["documentos_pagina"] = pagina + 1
         st.rerun()
 
@@ -269,7 +270,7 @@ def _dialog_comprovante(documento, moto):
 
 def _tabela(visiveis, frota, hoje, alerta_dias):
     pagina_atual, pagina, total_paginas = _paginar(visiveis)
-    larguras = [1.3, 1.4, 1.5, 1.2, 1.2, 1.2, 0.4, 0.4, 0.4]
+    larguras = [1.2, 1.3, 1.4, 1.1, 1.1, 1.2, 0.55, 0.55, 0.55]
     with st.container(key="documentos_card_lista"):
         _cabecalho_tabela(
             st.columns(larguras, vertical_alignment="center"),
@@ -299,17 +300,24 @@ def _tabela(visiveis, frota, hoje, alerta_dias):
                 selo_situacao(rotulo_situacao, "em_dia" if doc["regularizado"] else situacao),
                 unsafe_allow_html=True,
             )
-            if linha[6].button(
-                "↗",
-                key=f"comprovante_doc_{doc['id']}",
-                help="Ver comprovante" if doc.get("arquivo_path") else "Sem comprovante anexado",
-                disabled=not doc.get("arquivo_path") or not moto,
+            tipo_doc = _TIPOS.get(doc["tipo"], doc["tipo"])
+            if botao_acao(
+                linha[6],
+                "comprovante",
+                f"comprovante_doc_{doc['id']}",
+                ajuda=f"Ver o comprovante do {tipo_doc}" if doc.get("arquivo_path") else "Sem comprovante anexado",
+                desabilitado=not doc.get("arquivo_path") or not moto,
             ):
                 _dialog_comprovante(doc, moto)
-            if linha[7].button("✎", key=f"editar_doc_{doc['id']}", help="Editar documento"):
+            if botao_acao(linha[7], "editar", f"editar_doc_{doc['id']}", ajuda=f"Editar o documento {tipo_doc}"):
                 _dialog_editar(doc)
             if not doc["regularizado"] and moto:
-                if linha[8].button("✓", key=f"regularizar_doc_{doc['id']}", help="Marcar como regularizado"):
+                if botao_acao(
+                    linha[8],
+                    "regularizar",
+                    f"regularizar_doc_{doc['id']}",
+                    ajuda=f"Marcar o documento {tipo_doc} como regularizado",
+                ):
                     _dialog_regularizar(doc, moto)
     _rodape_paginacao(len(pagina_atual), len(visiveis), pagina, total_paginas)
 

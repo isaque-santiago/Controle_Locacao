@@ -16,6 +16,8 @@ from src.ui.componentes import (
     selo_situacao,
     tabela_html,
     abrir_ficha_contrato,
+    botao_acao,
+    botao_voltar,
 )
 from src.ui.clientes_portal import aba_portal
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
@@ -169,7 +171,7 @@ def _exibir_lista():
     pagina_atual = filtrados[inicio : inicio + por_pagina]
 
     with st.container(key="clientes_card_lista"):
-        cab = st.columns([1.6, 1.3, 1.3, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
+        cab = st.columns([1.5, 1.3, 1.3, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
         for coluna, rotulo in zip(cab, ["Nome", "CPF", "WhatsApp", "CNH", "Status", "Moto atual", ""]):
             coluna.markdown(
                 f'<span class="fs-secundario texto-2">{rotulo}</span>',
@@ -181,7 +183,7 @@ def _exibir_lista():
                 unsafe_allow_html=True,
             )
         for cliente in pagina_atual:
-            linha = st.columns([1.6, 1.3, 1.3, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
+            linha = st.columns([1.5, 1.3, 1.3, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
             cor_avatar = "var(--chip-fundo)" if cliente["status"] == "ativo" else "var(--avatar-inativo)"
             linha[0].markdown(
                 f"""
@@ -221,16 +223,16 @@ def _exibir_lista():
                 chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span style="color:var(--texto-3);">—</span>',
                 unsafe_allow_html=True,
             )
-            if linha[6].button("→", key=f"ficha_cli_{cliente['id']}", help="Ver ficha"):
+            if botao_acao(linha[6], "abrir", f"ficha_cli_{cliente['id']}", ajuda=f"Abrir a ficha de {cliente['nome']}"):
                 _ir_para_ficha(cliente["id"])
 
     if total_paginas > 1:
         st.caption(f"Mostrando {len(pagina_atual)} de {len(filtrados)} · página {pagina} de {total_paginas}")
         col_ant, col_prox = st.columns(2)
-        if col_ant.button("‹ Anterior", disabled=pagina <= 1, key="cli_ant"):
+        if col_ant.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key="cli_ant"):
             st.session_state[pagina_chave] = pagina - 1
             st.rerun()
-        if col_prox.button("Próxima ›", disabled=pagina >= total_paginas, key="cli_prox"):
+        if col_prox.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key="cli_prox"):
             st.session_state[pagina_chave] = pagina + 1
             st.rerun()
 
@@ -274,7 +276,7 @@ def _card_contrato_ativo(cliente_id):
             unsafe_allow_html=True,
         )
         with acao:
-            if st.button("Ver contrato →", key="ver_contrato_cliente"):
+            if st.button("Ver contrato", key="ver_contrato_cliente", icon=":material/arrow_forward:"):
                 abrir_ficha_contrato(contrato["id"])
         st.markdown(
             f"""
@@ -460,7 +462,7 @@ def _exibir_ficha(cliente_id):
         _ir_para_lista()
         return
 
-    if st.button("‹ Clientes", key="voltar_clientes"):
+    if botao_voltar("clientes", "voltar_clientes"):
         _ir_para_lista()
 
     contrato = _contrato_ativo_de(cliente_id)

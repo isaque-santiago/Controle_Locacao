@@ -194,12 +194,12 @@ def _aba_custo(resultado):
 
 
 def _indicador(rotulo, valor, cor=None, ultimo=False):
-    borda = "" if ultimo else "border-right:1px solid var(--linha);"
-    estilo_cor = f"color:{cor};" if cor else ""
+    """Item da faixa de indicadores; `ultimo` é mantido só por compatibilidade (o CSS trata o último item)."""
+    estilo_cor = f' style="color:{cor};"' if cor else ""
     return (
-        f'<div style="flex:1;padding:16px 22px;{borda}display:flex;flex-direction:column;gap:6px;">'
-        f'<span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">{rotulo}</span>'
-        f'<span class="mono" style="font-size:24px;font-weight:600;{estilo_cor}">{valor}</span></div>'
+        '<div class="indicadores__item">'
+        f'<span class="indicadores__rotulo rotulo">{rotulo}</span>'
+        f'<span class="indicadores__valor mono"{estilo_cor}>{valor}</span></div>'
     )
 
 
@@ -207,8 +207,7 @@ def _aba_inadimplencia(dados):
     st.caption("Posição atual de cobranças em atraso, independente do período selecionado.")
     percentual = dados["percentual_carteira"]
     st.markdown(
-        '<div style="display:flex;background:var(--superficie);border:1px solid var(--linha);'
-        'border-radius:var(--raio-sm);margin-bottom:20px;">'
+        '<div class="indicadores">'
         + _indicador("total em atraso", formatar_moeda(dados["total_atraso"]), _VERMELHO if dados["total_atraso"] else None)
         + _indicador(
             "% da carteira do mês",

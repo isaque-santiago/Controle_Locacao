@@ -118,15 +118,7 @@ div.react-aria-SelectionIndicator {background: var(--marca) !important; border-c
 body button[kind="primary"] *, body button[kind="primaryFormSubmit"] * {color: var(--btn-primario-texto) !important;}
 body button[kind="secondary"] *, body button[kind="secondaryFormSubmit"] *, body button[kind="tertiary"] *,
 body [data-testid="stDownloadButton"] button * {color: inherit !important;}
-/* Registrar pagamento (✔) em Cobranças: ação positiva sólida, como no cartão Hoje do dashboard */
-[data-testid="stApp"] [class*="st-key-cobrancas_card"] [class*="st-key-pagar_"] button {background: var(--btn-primario) !important; border-color: var(--btn-primario) !important; color: var(--btn-primario-texto) !important;}
-[data-testid="stApp"] [class*="st-key-cobrancas_card"] [class*="st-key-pagar_"] button:hover:not(:disabled) {background: var(--btn-primario-hover) !important; border-color: var(--btn-primario-hover) !important; color: var(--btn-primario-texto) !important;}
-
-/* ========================================
-   DARK MODE — ÍCONES DE AÇÃO
-======================================== */
-[data-testid="stApp"] [class*=" st-key-ficha_"] button::after, [data-testid="stApp"] [class*=" st-key-ver_vist_"] button::after,
-[data-testid="stApp"] [class*=" st-key-editar_doc_"] button::after, [data-testid="stApp"] [class*=" st-key-editar_item_"] button::after,
-[data-testid="stApp"] [class*=" st-key-km_"] button::after, [data-testid="stApp"] [class*=" st-key-regularizar_doc_"] button::after,
-[data-testid="stApp"] [class*=" st-key-concluir_man_"] button::after, [data-testid="stApp"] [class*=" st-key-comprovante_doc_"] button::after {background: #C9CED3 !important;}
-[data-testid="stApp"] [class*=" st-key-pagar_hoje_"] button::after {background: var(--btn-primario-texto) !important;}
+/* Ações por linha (botao_acao): borda, ícone e texto herdam os tokens do tema; o "Pagar" sólido segue --btn-primario (amarelo) */
+[data-testid="stApp"] [data-testid="stMain"] button[kind="tertiary"] {color: var(--texto-2) !important;}
+[data-testid="stApp"] [data-testid="stMain"] [class*="st-key-pagar_"] button[kind="tertiary"] {color: var(--btn-primario-texto) !important;}
+[data-testid="stApp"] [data-testid="stMain"] [class*="st-key-cancelar_man_"] button[kind="tertiary"] {color: var(--perigo-texto) !important;}
