@@ -23,10 +23,11 @@ from src.ui.componentes import (
     botao_voltar,
 )
 from src.ui.clientes_portal import aba_portal
+from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 
 _STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
-_FILTROS = ["Todos", "ativo", "bloqueado", "inativo"]
+_OPCOES_FILTRO = [("Todos", "Todos")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("ativo", "bloqueado", "inativo")]
 
 
 def _html(valor, padrao="—"):
@@ -43,6 +44,7 @@ def _salvo(mensagem="Alterações salvas."):
 
 
 def _ir_para_ficha(cliente_id):
+    reiniciar_abas("clientes_ficha_abas")
     st.session_state["clientes_visao"] = "ficha"
     st.session_state["clientes_id_selecionado"] = cliente_id
     st.rerun()
@@ -130,42 +132,23 @@ def _exibir_lista():
     ):
         _dialog_novo_cliente()
 
-    filtro_atual = st.session_state.get("clientes_filtro", "Todos")
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        with st.container(key="clientes_filtros"):
-            pills = st.columns(len(_FILTROS))
-            rotulos_pill = ["Todos"] + [_STATUS_ROTULO[f] for f in _FILTROS[1:]]
-            for coluna, valor, rotulo in zip(pills, _FILTROS, rotulos_pill):
-                total_pill = len(registros) if valor == "Todos" else contagem.get(valor, 0)
-                if coluna.button(
-                    f"{rotulo} · {total_pill}",
-                    key=f"pill_cli_{valor}",
-                    type="primary" if filtro_atual == valor else "secondary",
-                    use_container_width=True,
-                ):
-                    st.session_state["clientes_filtro"] = valor
-                    st.rerun()
-    with col_busca:
-        busca = st.text_input(
-            "Buscar", placeholder="Buscar por nome ou CPF", label_visibility="collapsed"
-        )
-
-    busca_normalizada = busca.casefold()
+    filtros = barra_filtros(
+        "clientes",
+        _OPCOES_FILTRO,
+        padrao="Todos",
+        contagens={"Todos": len(registros), **contagem},
+        busca="Buscar por nome ou CPF",
+    )
+    busca = filtros.busca.casefold()
+    digitos = "".join(ch for ch in busca if ch.isdigit())  # o CPF pode ser digitado com pontos e traço
     filtrados = [
         c
         for c in registros
-        if (filtro_atual == "Todos" or c["status"] == filtro_atual)
-        and (busca_normalizada in c["nome"].casefold() or busca_normalizada in (c.get("cpf") or ""))
+        if (filtros.valor == "Todos" or c["status"] == filtros.valor)
+        and (busca in c["nome"].casefold() or (digitos and digitos in (c.get("cpf") or "")))
     ]
-
-    st.write("")
-    pagina_chave = "clientes_pagina"
-    por_pagina = 6
-    total_paginas = max(1, -(-len(filtrados) // por_pagina))
-    pagina = min(st.session_state.get(pagina_chave, 1), total_paginas)
-    inicio = (pagina - 1) * por_pagina
-    pagina_atual = filtrados[inicio : inicio + por_pagina]
+    filtros.resumo(len(filtrados), ("cliente", "clientes"))
+    pagina_atual, pagina = paginar("clientes", filtrados)
 
     with st.container(key="clientes_card_lista"):
         cab = st.columns([1.5, 1.3, 1.3, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
@@ -223,15 +206,7 @@ def _exibir_lista():
             if botao_acao(linha[6], "abrir", f"ficha_cli_{cliente['id']}", ajuda=f"Abrir a ficha de {cliente['nome']}"):
                 _ir_para_ficha(cliente["id"])
 
-    if total_paginas > 1:
-        st.caption(f"Mostrando {len(pagina_atual)} de {len(filtrados)} · página {pagina} de {total_paginas}")
-        col_ant, col_prox = st.columns(2)
-        if col_ant.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key="cli_ant"):
-            st.session_state[pagina_chave] = pagina - 1
-            st.rerun()
-        if col_prox.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key="cli_prox"):
-            st.session_state[pagina_chave] = pagina + 1
-            st.rerun()
+    rodape_paginacao("clientes", pagina)
 
 
 def _data_iso(valor):
@@ -526,15 +501,17 @@ def _exibir_ficha(cliente_id):
     parcelas = [c for c in cobrancas.listar() if c["cliente_id"] == cliente_id]
     historicos = cobrancas.historicos_pagamentos([c["id"] for c in parcelas])
 
-    abas = st.tabs(["Resumo", "Contratos", "Pagamentos", "Portal"])
-    with abas[0]:
-        _aba_resumo(cliente, parcelas, historicos)
-    with abas[1]:
-        _aba_contratos(cliente)
-    with abas[2]:
-        _aba_pagamentos(parcelas, historicos)
-    with abas[3]:
-        aba_portal(cliente)
+    guias = abas("clientes_ficha_abas", ["Resumo", "Contratos", "Pagamentos", "Portal"])
+    desenho = (
+        lambda: _aba_resumo(cliente, parcelas, historicos),
+        lambda: _aba_contratos(cliente),
+        lambda: _aba_pagamentos(parcelas, historicos),
+        lambda: aba_portal(cliente),
+    )
+    for guia, desenhar in zip(guias, desenho):
+        with guia:
+            if aba_ativa(guia):
+                desenhar()
 
 
 def formatar_placa_simples(moto):

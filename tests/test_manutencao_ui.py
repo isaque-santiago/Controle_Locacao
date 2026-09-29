@@ -50,7 +50,7 @@ def test_cabecalho_e_alertas_ordenados(servicos):
 
 def test_historico_permite_concluir_so_manutencao_aberta(servicos):
     servicos["manutencao.listar_manutencoes"].return_value = HISTORICO
-    app = abrir("6_Manutencao.py")
+    app = abrir("6_Manutencao.py", manutencao_abas_indice=1)
     botoes = [b.key for b in app.button if b.key and b.key.startswith("concluir_man_")]
     assert botoes == ["concluir_man_h1"]
     # Concluir e cancelar são ações distintas, cada uma com o próprio botão
@@ -60,7 +60,7 @@ def test_historico_permite_concluir_so_manutencao_aberta(servicos):
 
 def test_botoes_de_acao_tem_texto_e_nao_apenas_simbolo(servicos):
     servicos["manutencao.listar_manutencoes"].return_value = HISTORICO
-    app = abrir("6_Manutencao.py")
+    app = abrir("6_Manutencao.py", manutencao_abas_indice=1)
     rotulos = {b.key: b.label for b in app.button if b.key and b.key.startswith(("concluir_man_", "cancelar_man_"))}
     assert rotulos == {"concluir_man_h1": "Concluir", "cancelar_man_h1": "Cancelar"}
 

@@ -43,10 +43,9 @@ def test_lista_mostra_cabecalho_colunas_e_linhas(servicos):
 def test_filtro_por_tipo_e_contagens(servicos):
     servicos["vistorias.listar"].return_value = [DEVOLUCAO, ENTREGA]
     app = abrir("8_Vistorias.py")
-    rotulos = [b.label for b in app.button]
-    assert {"Todas · 2", "Entrega · 1", "Devolução · 1"} <= set(rotulos)
+    assert app.pills[0].options == ["Todas · 2", "Entrega · 1", "Devolução · 1"]
 
-    next(b for b in app.button if b.label == "Devolução · 1").click().run()
+    app.pills[0].set_value("devolucao").run()
     texto = _texto(app)
     assert "Retrovisor direito trincado" in texto
     assert "01/09/2026" not in texto

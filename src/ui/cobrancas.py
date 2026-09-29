@@ -14,6 +14,7 @@ from src.domain.painel_cobrancas import (
 from src.domain.valores import decimal_br, hoje_br
 from src.services import clientes, cobrancas, motos
 from src.ui.componentes import botao_acao, cabecalho, cabecalho_pagina, chip_placa, proteger
+from src.ui.listas import abas, aba_ativa
 from src.ui.formatadores import formatar_data, formatar_moeda
 
 _FORMAS = ["pix", "dinheiro", "cartao", "transferencia", "outro"]
@@ -279,9 +280,11 @@ def exibir():
         if alvo:
             _dialog_pagamento(alvo)
 
-        guias = st.tabs([f"{aba} · {len(por_aba[aba])}" for aba in ABAS])
+        guias = abas("cobrancas_abas", [f"{aba} · {len(por_aba[aba])}" for aba in ABAS])
         for aba, guia in zip(ABAS, guias):
             with guia:
+                if not aba_ativa(guia):
+                    continue
                 if por_aba[aba]:
                     _DESENHO_ABA[aba](por_aba[aba])
                 else:

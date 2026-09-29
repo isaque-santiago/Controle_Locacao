@@ -27,6 +27,7 @@ from src.ui.componentes import (
     botao_acao,
     botao_voltar,
 )
+from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
 from src.ui.formatadores import (
     formatar_data,
     formatar_moeda,
@@ -40,7 +41,7 @@ _STATUS_ROTULO = {
     "manutencao": "Manutenção",
     "inativa": "Inativa",
 }
-_FILTROS = ["Todas", "disponivel", "alugada", "manutencao", "inativa"]
+_OPCOES_FILTRO = [("Todas", "Todas")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("disponivel", "alugada", "manutencao", "inativa")]
 
 
 def _salvo(mensagem="Alterações salvas."):
@@ -49,6 +50,7 @@ def _salvo(mensagem="Alterações salvas."):
 
 
 def _ir_para_ficha(moto_id):
+    reiniciar_abas("motos_ficha_abas")
     st.session_state["motos_visao"] = "ficha"
     st.session_state["motos_id_selecionado"] = moto_id
     st.rerun()
@@ -167,41 +169,21 @@ def _exibir_lista():
     ):
         _dialog_nova_moto()
 
-    filtro_atual = st.session_state.get("motos_filtro", "Todas")
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        with st.container(key="motos_filtros"):
-            pills = st.columns(len(_FILTROS))
-            rotulos_pill = ["Todas"] + [_STATUS_ROTULO[f] for f in _FILTROS[1:]]
-            for coluna, valor, rotulo in zip(pills, _FILTROS, rotulos_pill):
-                total_pill = len(registros) if valor == "Todas" else contagem.get(valor, 0)
-                if coluna.button(
-                    f"{rotulo} · {total_pill}",
-                    key=f"pill_{valor}",
-                    type="primary" if filtro_atual == valor else "secondary",
-                    use_container_width=True,
-                ):
-                    st.session_state["motos_filtro"] = valor
-                    st.rerun()
-    with col_busca:
-        busca = st.text_input(
-            "Buscar", placeholder="Buscar por placa ou modelo", label_visibility="collapsed"
-        )
-
+    filtros = barra_filtros(
+        "motos",
+        _OPCOES_FILTRO,
+        padrao="Todas",
+        contagens={"Todas": len(registros), **contagem},
+        busca="Buscar por placa ou modelo",
+    )
     filtradas = [
         m
         for m in registros
-        if (filtro_atual == "Todas" or m["status"] == filtro_atual)
-        and busca.casefold() in f"{m['placa']} {m['marca']} {m['modelo']}".casefold()
+        if (filtros.valor == "Todas" or m["status"] == filtros.valor)
+        and filtros.busca.casefold() in f"{m['placa']} {m['marca']} {m['modelo']}".casefold()
     ]
-
-    st.write("")
-    pagina_chave = "motos_pagina"
-    por_pagina = 7
-    total_paginas = max(1, -(-len(filtradas) // por_pagina))
-    pagina = min(st.session_state.get(pagina_chave, 1), total_paginas)
-    inicio = (pagina - 1) * por_pagina
-    pagina_atual = filtradas[inicio : inicio + por_pagina]
+    filtros.resumo(len(filtradas), ("moto", "motos"))
+    pagina_atual, pagina = paginar("motos", filtradas)
 
     with st.container(key="motos_card_lista"):
         cab = st.columns([1.3, 1.7, 1.5, 1.4, 1.4, 0.6], vertical_alignment="center")
@@ -242,15 +224,7 @@ def _exibir_lista():
             if botao_acao(linha[5], "abrir", f"ficha_{moto['id']}", ajuda=f"Abrir a ficha da moto {formatar_placa(moto['placa'])}"):
                 _ir_para_ficha(moto["id"])
 
-    if total_paginas > 1:
-        st.caption(f"Mostrando {len(pagina_atual)} de {len(filtradas)} · página {pagina} de {total_paginas}")
-        col_ant, col_prox = st.columns(2)
-        if col_ant.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1):
-            st.session_state[pagina_chave] = pagina - 1
-            st.rerun()
-        if col_prox.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas):
-            st.session_state[pagina_chave] = pagina + 1
-            st.rerun()
+    rodape_paginacao("motos", pagina)
 
 
 # ------------------------------------------------------------------ ficha --
@@ -576,21 +550,16 @@ def _exibir_ficha(moto_id):
         if st.button("Atualizar km", key="km_ficha", icon=":material/speed:", help="Atualizar a quilometragem da moto"):
             _dialog_km(moto)
 
-    abas = st.tabs(
-        ["Resumo", "Plano de manutenção", "Histórico", "Documentos", "Contratos", "Financeiro"]
+    guias = abas(
+        "motos_ficha_abas",
+        ["Resumo", "Plano de manutenção", "Histórico", "Documentos", "Contratos", "Financeiro"],
     )
-    with abas[0]:
-        _aba_resumo(moto)
-    with abas[1]:
-        _aba_plano(moto)
-    with abas[2]:
-        _aba_historico(moto)
-    with abas[3]:
-        _aba_documentos(moto)
-    with abas[4]:
-        _aba_contratos(moto)
-    with abas[5]:
-        _aba_financeiro(moto)
+    desenho = (_aba_resumo, _aba_plano, _aba_historico, _aba_documentos, _aba_contratos, _aba_financeiro)
+    for guia, desenhar in zip(guias, desenho):
+        with guia:
+            if aba_ativa(guia):
+                desenhar(moto)
+
 
 
 def exibir():

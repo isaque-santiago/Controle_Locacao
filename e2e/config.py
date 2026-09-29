@@ -43,13 +43,14 @@ class Pagina:
     caminho: str  # url_path do Streamlit ("" = página inicial)
 
 
-# Espelha app.py. Se as páginas mudarem lá, ajuste aqui.
+# Espelha app.py, na ordem do menu agrupado (Operação, Cadastros, Frota, Gestão, Sistema).
+# Se as páginas mudarem lá, ajuste aqui.
 PAGINAS = (
     Pagina("Dashboard", ""),
-    Pagina("Motos", "Motos"),
-    Pagina("Clientes", "Clientes"),
     Pagina("Contratos", "Contratos"),
     Pagina("Cobranças", "Cobrancas"),
+    Pagina("Motos", "Motos"),
+    Pagina("Clientes", "Clientes"),
     Pagina("Manutenção", "Manutencao"),
     Pagina("Documentos", "Documentos"),
     Pagina("Vistorias", "Vistorias"),

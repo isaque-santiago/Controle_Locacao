@@ -88,8 +88,38 @@ itens com "·" decorativo fora de listas realmente compactas.
   novo/regularizar documento, registrar vistoria) — não para fluxos de múltiplas etapas.
 - **Assistente (wizard)**: só o "Novo contrato" usa esse padrão — indicador de progresso com círculos numerados
   conectados por linha, navegação Voltar/Avançar.
-- **Tabs**: usadas nas fichas (Moto, Cliente, Contrato) e em páginas com múltiplas visões (Cobranças, Manutenção,
-  Relatórios) — sublinhado `grafite-900` no item ativo, sem pílula.
+- **Navegação lateral** (Etapa 3): o menu do dono é agrupado por área com `st.navigation({seção: [páginas]})`, sem
+  mudar nenhuma rota — **Operação** (Dashboard, Contratos, Cobranças), **Cadastros** (Motos, Clientes), **Frota**
+  (Manutenção, Documentos, Vistorias), **Gestão** (Relatórios), **Sistema** (Configurações). Os títulos de seção são
+  do próprio Streamlit; o item ativo mantém a barra `amarelo-farol` nos dois temas. O locatário continua com um
+  menu de um item. *Ação rápida "Novo contrato" persistente na barra lateral: avaliada e não adotada* — "Novo
+  contrato" já é a ação primária do cabeçalho de Contratos (a um clique do menu) e um botão fixo competiria com
+  os alertas do Dashboard e com as ações destrutivas; reavaliar se a medição de uso mostrar o contrário.
+- **Filtros e busca** (`barra_filtros` em `src/ui/listas.py`): pílulas nativas do Streamlit (`st.pills`, grupo
+  `radiogroup` com `aria-checked`) que **quebram de linha** em vez de empilhar em colunas; alvo de 44 px, rótulo
+  inteiro (`Alugada · 9`, contagem no rótulo) e o filtro escolhido leva um **check** além do preenchimento
+  (grafite no claro, amarelo no escuro), então não depende só da cor. Não há como desmarcar: sempre existe um filtro
+  (o "padrão" da lista — `Todas`, ou `Ativo` em Contratos). A busca é o `st.text_input` com ícone de lupa: só
+  aplica com Enter ou ao sair do campo (nunca a cada tecla). No desktop a busca fica ao lado das pílulas; no celular
+  (≤ 640 px) desce para linha própria. Abaixo da barra, `filtros.resumo(n, ("moto", "motos"))` mostra **quantos
+  resultados** restaram, os **filtros ativos** como chips de texto (`Situação: Alugada`, `Busca: “pop”`) e o botão
+  **Limpar filtros** (uma ação: filtro padrão, sem busca, página 1), que só aparece com filtro ativo.
+- **Paginação** (`paginar` + `rodape_paginacao`): `Anterior`, "Mostrando 11 a 20 de 23 · página 2 de 3", `Próxima` e
+  seletor "Itens por página" (10, 25 ou 50; padrão 10). Sem `number_input`. O rodapé some enquanto tudo cabe em 10
+  itens. A página volta a 1 quando o filtro, a busca ou os itens por página mudam, e é corrigida se a lista encolher.
+  No celular os dois botões dividem a linha e o seletor ocupa a linha de baixo. A aritmética é pura, em
+  `src/domain/paginacao.py`.
+- **Contexto preservado**: filtro, busca, itens por página, página e aba ficam em `st.session_state`
+  (`persist_state="session"` nos widgets), por isso abrir uma ficha (ou outra página) e voltar devolve a lista como
+  estava. Uma ficha nova volta à primeira aba (`reiniciar_abas`). *Limite*: a posição de rolagem não é preservada
+  (o Streamlit não a expõe); a página, o filtro e a busca são.
+- **Abas** (`abas` + `aba_ativa` em `src/ui/listas.py`): `st.tabs` nativo com estado (`on_change="rerun"`), usado nas
+  fichas (Moto, Cliente, Contrato) e nas páginas com várias visões (Cobranças, Manutenção, Relatórios). Estratégia
+  única: (1) **as abas quebram de linha** em telas estreitas, nenhuma some fora da área visível (o indicador
+  deslizante e as setas de rolagem foram desligados; a ativa é marcada por sublinhado de 3 px e negrito, `--texto` no
+  claro e `--marca` no escuro); (2) a **aba ativa é lembrada** entre execuções, inclusive quando o rótulo muda de
+  contagem (`Hoje · 3` → `Hoje · 2` após registrar um pagamento) e na volta de outra página; (3) **só o conteúdo da
+  aba ativa executa** (`if aba_ativa(guia): …`), o que também evita consultas das abas ocultas.
 - **Tabelas**: hairline entre linhas, sem zebra, sem sombra. Números sempre `mono` e alinhados à esquerda, sob o cabeçalho da coluna (decisão de 25/09/2026, valores monetários incluídos). Selos de status com largura única (104px, `--selo-largura`) e texto curto.
 - **Barras/medidores**: usadas em vez de gráficos de biblioteca — barra de ocupação segmentada (Dashboard), barra
   proporcional em Relatórios. Mantém a página autocontida em HTML/CSS puro.

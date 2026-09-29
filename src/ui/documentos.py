@@ -18,6 +18,7 @@ from src.ui.componentes import (
     selo_situacao,
     botao_acao,
 )
+from src.ui.listas import barra_filtros, paginar, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
 
 _TIPOS = {
@@ -35,7 +36,6 @@ _FILTROS = [
     ("a_vencer", "A vencer"),
     ("em_dia", "Em dia"),
 ]
-_POR_PAGINA = 10
 _EXTENSOES = ["pdf", "png", "jpg", "jpeg"]
 _CHAVE_SUGESTAO = "documentos_sugestao"
 
@@ -69,44 +69,6 @@ def _situacao(documento, hoje, alerta_dias):
 
 def _data(valor):
     return valor if isinstance(valor, date) else date.fromisoformat(str(valor)[:10])
-
-
-def _pills(opcoes, contagens):
-    """Filtros em pílula (mesmo padrão de Motos/Clientes/Contratos). Devolve o valor ativo."""
-    atual = st.session_state.get("documentos_filtro", "todos")
-    with st.container(key="documentos_filtros"):
-        colunas = st.columns(len(opcoes))
-        for coluna, (valor, rotulo) in zip(colunas, opcoes):
-            if coluna.button(
-                f"{rotulo} · {contagens[valor]}",
-                key=f"pill_doc_{valor}",
-                type="primary" if atual == valor else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["documentos_filtro"] = valor
-                st.session_state["documentos_pagina"] = 1
-                st.rerun()
-    return atual
-
-
-def _paginar(registros):
-    total_paginas = max(1, -(-len(registros) // _POR_PAGINA))
-    pagina = min(st.session_state.get("documentos_pagina", 1), total_paginas)
-    inicio = (pagina - 1) * _POR_PAGINA
-    return registros[inicio : inicio + _POR_PAGINA], pagina, total_paginas
-
-
-def _rodape_paginacao(exibidos, total, pagina, total_paginas):
-    if total_paginas <= 1:
-        return
-    st.caption(f"Mostrando {exibidos} de {total} · página {pagina} de {total_paginas}")
-    anterior, proxima = st.columns(2)
-    if anterior.button("Anterior", icon=":material/chevron_left:", disabled=pagina <= 1, key="doc_ant"):
-        st.session_state["documentos_pagina"] = pagina - 1
-        st.rerun()
-    if proxima.button("Próxima", icon=":material/chevron_right:", icon_position="right", disabled=pagina >= total_paginas, key="doc_prox"):
-        st.session_state["documentos_pagina"] = pagina + 1
-        st.rerun()
 
 
 # ---------------------------------------------------------------- diálogos --
@@ -271,7 +233,7 @@ def _dialog_comprovante(documento, moto):
 # ---------------------------------------------------------------- listagem --
 
 def _tabela(visiveis, frota, hoje, alerta_dias, total):
-    pagina_atual, pagina, total_paginas = _paginar(visiveis)
+    pagina_atual, pagina = paginar("documentos", visiveis)
     larguras = [1.2, 1.3, 1.4, 1.1, 1.1, 1.2, 0.55, 0.55, 0.55]
     with st.container(key="documentos_card_lista"):
         _cabecalho_tabela(
@@ -320,7 +282,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias, total):
                     ajuda=f"Marcar o documento {tipo_doc} como regularizado",
                 ):
                     _dialog_regularizar(doc, moto)
-    _rodape_paginacao(len(pagina_atual), len(visiveis), pagina, total_paginas)
+    rodape_paginacao("documentos", pagina)
 
 
 # ---------------------------------------------------------------- página --
@@ -349,30 +311,25 @@ def exibir():
             "a_vencer": a_vencer,
             "em_dia": len(todos) - vencidos - a_vencer,
         }
-        col_pills, col_busca = st.columns([3, 1.3], vertical_alignment="center")
-        with col_pills:
-            filtro = _pills(_FILTROS, contagem)
-        with col_busca:
-            busca = (
-                st.text_input(
-                    "Buscar",
-                    placeholder="Buscar por placa",
-                    label_visibility="collapsed",
-                    key="documentos_busca",
-                )
-                .casefold()
-                .replace("-", "")
-            )
+        filtros = barra_filtros(
+            "documentos",
+            _FILTROS,
+            padrao="todos",
+            contagens=contagem,
+            busca="Buscar por placa",
+        )
+        busca = filtros.busca.casefold().replace("-", "")
 
         visiveis = [
             d
             for d in todos
-            if (filtro == "todos" or situacoes[d["id"]] == filtro)
+            if (filtros.valor == "todos" or situacoes[d["id"]] == filtros.valor)
             and busca in frota.get(d["moto_id"], {}).get("placa", "").casefold()
         ]
         visiveis.sort(
             key=lambda d: (_ORDEM_SITUACAO[situacoes[d["id"]]], d["regularizado"], str(d["vencimento"]))
         )
+        filtros.resumo(len(visiveis), ("documento", "documentos"))
         st.write("")
         _tabela(visiveis, frota, hoje, alerta_dias, len(todos))
 

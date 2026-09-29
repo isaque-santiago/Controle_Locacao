@@ -33,14 +33,13 @@ def test_cabecalho_contagens_e_situacoes(servicos):
     assert "1 vencido(s) · 0 a vencer" in texto
     assert "Regularizado" in texto and "Vencido" in texto and "Em dia" in texto
     assert "apólice 445871" in texto
-    rotulos = [b.label for b in app.button]
-    assert {"Todos · 3", "Vencido · 1", "A vencer · 0", "Em dia · 2"} <= set(rotulos)
+    assert app.pills[0].options == ["Todos · 3", "Vencido · 1", "A vencer · 0", "Em dia · 2"]
 
 
 def test_filtro_vencido_mostra_so_vencidos(servicos):
     servicos["documentos.listar_todos"].return_value = [EM_DIA, VENCIDO]
     app = abrir("7_Documentos.py")
-    next(b for b in app.button if b.label.startswith("Vencido")).click().run()
+    app.pills[0].set_value("vencido").run()
     texto = _texto(app)
     assert "31/01/2020" in texto
     assert "01/01/2999" not in texto

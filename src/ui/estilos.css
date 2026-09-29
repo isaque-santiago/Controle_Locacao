@@ -174,13 +174,16 @@ h3 {font-size: var(--fs-subtitulo);}
   .st-key-pagina_cabecalho [data-testid="stButton"], .st-key-pagina_cabecalho [data-testid="stFormSubmitButton"] {width: 100%;}
   .st-key-pagina_cabecalho button {width: 100%;}
 }
-[data-baseweb="tab-list"] {gap: var(--e5); border-bottom: 1px solid var(--linha);}
+/* Abas: quebram de linha em telas estreitas (nenhuma fica escondida fora da área visível) */
+[role="tablist"] {gap: var(--e1) var(--e5); border-bottom: 1px solid var(--linha); flex-wrap: wrap; overflow: visible;}
+[data-testid="stTabs"] > [data-orientation="horizontal"] {overflow: visible;}
 [data-baseweb="tab"], [data-testid="stTab"], [role="tab"] {padding: .65rem var(--e2); min-height: var(--alvo-min); min-width: var(--alvo-min); font-size: var(--fs-corpo); font-weight: 500; justify-content: center; flex: 0 0 auto; white-space: nowrap;}
 [data-testid="stTabsScrollLeft"], [data-testid="stTabsScrollRight"] {min-width: var(--alvo-min); min-height: var(--alvo-min);}
 /* Âncoras de título (link "Link to heading"): o app não usa; ficam fora da ordem de tabulação */
 [data-testid="stHeaderActionElements"] {display: none;}
-[data-baseweb="tab"][aria-selected="true"] {font-weight: 600;}
-[data-baseweb="tab-highlight"] {background: var(--grafite);}
+[role="tab"][aria-selected="true"] {font-weight: 600; box-shadow: inset 0 -3px 0 var(--texto);}
+/* Com as abas em várias linhas o indicador deslizante perderia a posição: a marca fica na própria aba (acima) */
+.react-aria-SelectionIndicator, [data-testid="stTabsScrollLeft"], [data-testid="stTabsScrollRight"] {display: none;}
 
 /* ========================================
    SIDEBAR
@@ -427,15 +430,56 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 [data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
 [data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
-/* Pílulas de filtro: ativa (primary) e inativa (secondary) com o mesmo tamanho */
-[class*="_filtros"] button, .st-key-contrato_periodicidade button {
+/* Pílula de escolha do assistente de contrato: ativa (primary) e inativa (secondary) com o mesmo tamanho */
+.st-key-contrato_periodicidade button {
   min-height: var(--alvo-min) !important; height: auto !important; padding: 4px var(--e4) !important; border-radius: 999px !important;
   font-size: var(--fs-secundario) !important; font-weight: 500 !important; border-width: 1px !important; border-style: solid !important;
 }
-[class*="_filtros"] button[kind="secondary"], .st-key-contrato_periodicidade button[kind="secondary"] {
-  background: var(--superficie) !important; border-color: var(--linha) !important; color: var(--texto) !important;
+.st-key-contrato_periodicidade button[kind="secondary"] {background: var(--superficie) !important; border-color: var(--linha) !important; color: var(--texto) !important;}
+.st-key-contrato_periodicidade button[kind="secondary"] * {color: var(--texto) !important;}
+
+/* Barra de filtros das listas (barra_filtros): pílulas nativas que quebram de linha, busca ao lado no desktop
+   e em linha própria no celular; o filtro escolhido leva um "check", então não depende só da cor */
+[class*="_barra_filtros"] {flex-wrap: wrap; gap: var(--e3) var(--e4); align-items: center; margin-bottom: var(--e2);}
+[class*="_barra_filtros"] > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+[class*="_barra_filtros"] > [data-testid="stElementContainer"]:has([data-testid="stButtonGroup"]) {flex: 1 1 auto;}
+[class*="_barra_filtros"] > [data-testid="stElementContainer"]:has([data-testid="stTextInput"]) {flex: 1 1 16rem; max-width: 26rem;}
+[class*="_barra_filtros"] [role="radiogroup"] {flex-wrap: wrap; gap: var(--e2);}
+[class*="_barra_filtros"] button[data-variant="pills"] {
+  min-height: var(--alvo-min); padding: 4px var(--e4); border-radius: 999px; border: 1px solid var(--linha-forte);
+  background: var(--superficie); font-size: var(--fs-secundario); font-weight: 500; white-space: nowrap;
 }
-[class*="_filtros"] button[kind="secondary"] *, .st-key-contrato_periodicidade button[kind="secondary"] * {color: var(--texto) !important;}
+[class*="_barra_filtros"] button[data-variant="pills"], [class*="_barra_filtros"] button[data-variant="pills"] * {color: var(--texto) !important;}
+[class*="_barra_filtros"] button[data-variant="pills"][aria-checked="false"]:hover {background: var(--superficie-hover);}
+[class*="_barra_filtros"] button[data-variant="pills"][aria-checked="true"] {background: var(--btn-primario); border-color: var(--btn-primario); font-weight: 600;}
+[class*="_barra_filtros"] button[data-variant="pills"][aria-checked="true"], [class*="_barra_filtros"] button[data-variant="pills"][aria-checked="true"] * {color: var(--btn-primario-texto) !important;}
+[class*="_barra_filtros"] button[data-variant="pills"][aria-checked="true"]::before {
+  content: ""; flex: none; width: 14px; height: 14px; margin-right: var(--e2); background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.8' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3.2 3.2L13 4.8' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+[class*="_barra_filtros"] button[data-variant="pills"] {display: inline-flex; align-items: center; justify-content: center;}
+@media (max-width: 640px) {
+  [class*="_barra_filtros"] > [data-testid="stElementContainer"]:has([data-testid="stTextInput"]) {flex: 1 1 100%; max-width: none;}
+}
+/* Resumo dos resultados, filtros ativos e "Limpar filtros" */
+[class*="_resumo_filtros"] {flex-wrap: wrap; gap: var(--e2) var(--e3); align-items: center; margin-bottom: var(--e3);}
+[class*="_resumo_filtros"] > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+.filtros-resumo {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2) var(--e3); font-size: var(--fs-secundario); color: var(--texto-2);}
+.filtros-resumo strong {color: var(--texto); font-weight: 600;}
+.filtro-ativo {border: 1px solid var(--linha-forte); border-radius: 999px; padding: 2px var(--e3); font-size: var(--fs-legenda); color: var(--texto); background: var(--superficie);}
+/* Paginação: informação à esquerda, Anterior/Próxima e itens por página à direita; quebra no celular */
+[class*="_paginacao"] {flex-wrap: wrap; gap: var(--e3); align-items: center; justify-content: flex-end; margin-top: var(--e4);}
+[class*="_paginacao"] > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+[class*="_paginacao"] > [data-testid="stElementContainer"]:has(.paginacao__info) {flex: 1 1 14rem; margin-right: auto;}
+[class*="_paginacao"] > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"]) {flex: 0 0 9.5rem;}
+.paginacao__info {font-size: var(--fs-secundario); color: var(--texto-2);}
+@media (max-width: 480px) {
+  [class*="_paginacao"] > [data-testid="stElementContainer"]:has(.paginacao__info) {flex-basis: 100%;}
+  [class*="_paginacao"] > [data-testid="stElementContainer"]:has([data-testid="stButton"]) {flex: 1 1 40%;}
+  [class*="_paginacao"] > [data-testid="stElementContainer"]:has([data-testid="stButton"]) button {width: 100%;}
+  [class*="_paginacao"] > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"]) {flex: 1 1 100%;}
+}
 
 /* ========================================
    INPUTS

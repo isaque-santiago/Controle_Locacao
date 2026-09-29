@@ -76,10 +76,9 @@ input::placeholder, textarea::placeholder {color: var(--texto-3) !important; -we
 /* ========================================
    DARK MODE — ABAS E ALERTAS
 ======================================== */
-[data-baseweb="tab"], [data-baseweb="tab"] p {color: var(--texto-2) !important; background: transparent !important;}
-[data-baseweb="tab"][aria-selected="true"], [data-baseweb="tab"][aria-selected="true"] p {color: var(--marca) !important;}
-[data-baseweb="tab-highlight"] {background: var(--marca) !important;}
-[data-baseweb="tab-border"] {background: var(--linha) !important;}
+[role="tab"], [role="tab"] p {color: var(--texto-2) !important; background: transparent !important;}
+[role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"] p {color: var(--marca) !important;}
+[role="tab"][aria-selected="true"] {box-shadow: inset 0 -3px 0 var(--marca);}
 .react-aria-TabList {border-bottom: 1px solid var(--linha) !important; box-shadow: none !important;}
 .react-aria-Tab, .react-aria-Tab * {color: var(--texto-2) !important; background: transparent !important;}
 .react-aria-Tab:hover, .react-aria-Tab:hover * {color: var(--texto) !important;}
