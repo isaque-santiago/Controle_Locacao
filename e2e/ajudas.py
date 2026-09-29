@@ -47,7 +47,11 @@ def entrar(page: Page, email: str, senha: str) -> None:
     page.get_by_label("E-mail").fill(email)
     page.get_by_label("Senha", exact=True).fill(senha)
     page.get_by_role("button", name="Entrar no painel").click()
-    page.get_by_role("button", name="Entrar no painel").wait_for(state="detached", timeout=30_000)
+    # Não espera o botão "desanexar": durante o rerun do Streamlit o React pode manter
+    # brevemente o nó antigo e o novo no DOM ao mesmo tempo (mesmo texto/testid), o que
+    # deixa get_by_role ambíguo por uma fração de segundo. O sinal confiável de que
+    # logou é a barra lateral autenticada (botão "Sair").
+    page.get_by_role("button", name="Sair").wait_for(state="visible", timeout=30_000)
     aguardar_app(page)
     # Dá tempo ao componente que grava o cookie de sessão antes das próximas navegações.
     page.wait_for_timeout(1_200)
