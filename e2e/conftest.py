@@ -86,7 +86,9 @@ def _cenarios(config) -> list[Cenario]:
 def pytest_generate_tests(metafunc):
     if "cenario" in metafunc.fixturenames:
         cenarios = _cenarios(metafunc.config)
-        # scope="session": o login é feito uma vez por cenário e reaproveitado entre módulos.
+        # scope="session": o cenário (e a página autenticada que ele resolve) é reaproveitado
+        # entre módulos. O login por senha em si é feito uma vez por PERFIL, não por cenário
+        # (ver pagina_logada / _contextos_autenticados).
         metafunc.parametrize("cenario", cenarios, ids=[c.id for c in cenarios], scope="session")
 
 
@@ -178,6 +180,24 @@ def navegador(playwright_sessao: Playwright, cenario: Cenario, request):
     browser.close()
 
 
+@pytest.fixture(scope="session")
+def _contextos_autenticados(playwright_sessao: Playwright, request):
+    """Um único contexto (e login) por PERFIL, reaproveitado entre larguras e temas.
+
+    O login por senha do Supabase Auth tem limite de taxa bem mais apertado que o de
+    renovar sessão (poucas dezenas a cada poucos minutos): um contexto novo por cenário
+    faria até 40 logins por execução da matriz e estoura esse limite. Em vez disso, cada
+    perfil (chromium-desktop, chromium-movel, firefox, webkit) loga uma única vez; a
+    largura e o tema mudam depois, no mesmo contexto (viewport, emulação de tema e o
+    cookie tema_escuro), com um reload — o app já suporta isso (é o mesmo mecanismo do
+    F5, preservado pelo cookie de refresh token)."""
+    cache: dict[str, tuple[Browser, "playwright.sync_api.BrowserContext", Page]] = {}
+    yield cache
+    for browser, contexto, _pagina in cache.values():
+        contexto.close()
+        browser.close()
+
+
 def _novo_contexto(playwright: Playwright, navegador: Browser, cenario: Cenario):
     perfil = PERFIS[cenario.perfil]
     opcoes = {
@@ -220,15 +240,47 @@ def pagina_anonima(playwright_sessao, navegador, cenario):
 
 
 @pytest.fixture(scope="session")
-def pagina_logada(playwright_sessao, navegador, cenario):
-    """Página autenticada; o login é feito uma vez por cenário."""
-    from e2e.ajudas import entrar
+def pagina_logada(playwright_sessao: Playwright, _contextos_autenticados, cenario: Cenario, request):
+    """Página autenticada no perfil do cenário; loga por senha só na primeira vez."""
+    from e2e.ajudas import aguardar_app, entrar
 
     cred = credenciais()
     if cred is None:
         pytest.skip("sem credenciais de teste")
-    contexto = _novo_contexto(playwright_sessao, navegador, cenario)
-    page = _pagina_com_console(contexto)
-    entrar(page, *cred)
+
+    if cenario.perfil not in _contextos_autenticados:
+        perfil = PERFIS[cenario.perfil]
+        lancador = getattr(playwright_sessao, perfil.navegador)
+        browser = lancador.launch(headless=not request.config.getoption("--visivel"))
+        opcoes = {"locale": "pt-BR", "timezone_id": "America/Sao_Paulo"}
+        if perfil.movel:
+            opcoes.update(playwright_sessao.devices["Pixel 7"])
+        contexto = browser.new_context(**opcoes)
+        contexto.set_default_timeout(20_000)
+        page = _pagina_com_console(contexto)
+        try:
+            entrar(page, *cred)  # único login por senha deste perfil na execução inteira
+        except Exception as erro:
+            # Cacheia a FALHA também: sem isso, cada cenário deste perfil tentaria logar
+            # de novo, insistindo contra um limite de taxa do Supabase Auth já estourado
+            # e piorando a situação em vez de só reportar o problema uma vez.
+            contexto.close()
+            browser.close()
+            _contextos_autenticados[cenario.perfil] = erro
+            raise
+        _contextos_autenticados[cenario.perfil] = (browser, contexto, page)
+
+    guardado = _contextos_autenticados[cenario.perfil]
+    if isinstance(guardado, Exception):
+        pytest.fail(f"login do perfil {cenario.perfil} já tinha falhado nesta execução: {guardado}")
+    _browser, contexto, page = guardado
+    # O app não segue prefers-color-scheme (config.toml fixa base=light): o tema vem do
+    # cookie tema_escuro, lido no carregamento da página.
+    contexto.add_cookies(
+        [{"name": "tema_escuro", "value": "1" if cenario.tema == "escuro" else "0", "url": base_url()}]
+    )
+    page.emulate_media(color_scheme="dark" if cenario.tema == "escuro" else "light")
+    page.set_viewport_size({"width": cenario.largura, "height": cenario.altura})
+    page.reload()
+    aguardar_app(page)
     yield page
-    contexto.close()
