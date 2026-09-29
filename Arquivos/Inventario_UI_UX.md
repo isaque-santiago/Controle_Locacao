@@ -50,3 +50,13 @@ ponto de gravar e fecham sem salvar; a submissão real entra nas Etapas 5 e 9.
 | `vazio` | migrations + `supabase/seed.sql`, sem seeds de exemplo |
 | `normal` | + `supabase/seed_exemplos.sql` |
 | `extremo` | + `supabase/seed_e2e.sql` (textos longos, valores grandes, listas extensas) |
+
+## Execução da suíte (situação em 29/09/2026)
+
+| Combinação | Executado | Observação |
+|---|---|---|
+| Login (sem credenciais) | ✅ 4 perfis × 5 larguras × 2 temas | sem achados P0 |
+| Autenticado, 390 px, claro, Chromium desktop | ✅ dados `normal` e `extremo` | achados A-001 a A-008 em `Achados_UI_UX.md` |
+| Autenticado, matriz completa (4 perfis × 5 larguras × 2 temas) | ✅ dados `extremo` | achados A-009 a A-013; arquivo detalhado da execução foi perdido (ver "Sobre a matriz completa" em `Achados_UI_UX.md`) — capturas preservadas em `e2e/capturas/extremo/` |
+| Autenticado, matriz completa, dados `vazio` | ❌ não executado | pulado a pedido do usuário |
+| Autenticado, matriz completa, dados `normal` | ❌ não executado | só o cenário único (390 px, claro, Chromium desktop) foi coberto |

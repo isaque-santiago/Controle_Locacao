@@ -27,11 +27,40 @@ Severidades: **P0** bloqueador (overflow, ação perdida, diálogo sem saída) �
 | A-006 | P2 | Todas as páginas autenticadas | `console.error` de recurso com 404 a cada página (origem a identificar) | Chromium desktop, 390 px | 8 | Aberto |
 | A-007 | INFO | Cobranças | Fluxo 5: botão de pagamento não localizado pelo rótulo `pagamento\|pagar\|✓`; ajustar o seletor do cenário | Chromium desktop, 390 px, dados normal | 0 | Aberto |
 | A-008 | INFO | Configurações | `httpx.ReadTimeout` do Supabase exibido como exceção na página em uma execução (não reproduzido nas outras); tratar em Feedback e recuperação | Chromium desktop, 390 px, dados extremo | 7 | Aberto |
+| A-009 | P0 | Relatórios · aba Inadimplência | `stMain`/`stMainBlockContainer` rolam na horizontal (overflow confirmado de forma independente em 3 execuções distintas) | 4 perfis (Chromium desktop, Chromium móvel, Firefox, WebKit), 320 e 390 px, claro e escuro, dados normal e extremo | 4 (tabela) / 6 | **Confirmado** |
+| A-010 | P1 | Todas as páginas | Ações por linha, abas, links do menu e botões de diálogo com altura < 44 px — sistemático, mesma causa em praticamente todo controle do app (14.162 ocorrências na matriz completa; ver "Sobre a matriz completa" abaixo) | Todos os perfis, todas as larguras, dados extremo | 1 | Aberto |
+| A-011 | INFO | Cobranças | Fluxo 5: botão de pagamento não localizado em quase toda combinação de perfil/largura/tema — o seletor do cenário (`pagamento\|pagar\|✓`) precisa ser trocado pelo rótulo real do botão da lista | Todos os perfis, dados normal e extremo | 0 (ajuste do cenário e2e) | Aberto |
+| A-012 | A reverificar | Dashboard, Motos, Clientes, Contratos, Documentos, Relatórios, Vistorias, Manutenção, Cobranças, Configurações | ~30 ocorrências de exceção exibida na página, timeout de navegação e "diálogo não abriu", espalhadas por vários perfis/larguras isolados (não repetidas entre execuções independentes) | Vários perfis, dados extremo, execução da matriz completa (quase 2h contínuas) | — | **Não confirmado** |
+| A-013 | P0 (a reverificar) | Motos | Sessão perdida (`sessao-perdida`) após navegação por URL | WebKit, 1024 px, claro, dados extremo | 1 | A reverificar |
 
 > A-001 a A-003 vieram da execução só do login. A-004 a A-008 vêm de execuções autenticadas
-> (390 px, claro, Chromium desktop, dados normal e extremo). Os avisos de "diálogo sem
-> rolagem" em Documentos, Manutenção e Vistorias foram falso positivo (a rolagem fica no
+> pontuais (390 px, claro, Chromium desktop, dados normal e extremo). Os avisos de "diálogo
+> sem rolagem" em Documentos, Manutenção e Vistorias foram falso positivo (a rolagem fica no
 > contêiner que envolve o diálogo) e a medição foi corrigida. Com dados extremos (30 motos,
 > textos longos, 999.999 km) a lista de Motos não apresentou overflow nem sobreposição em
-> 390 px. A matriz completa (5 larguras, 2 temas, 4 perfis) e o estado `vazio` ainda não
-> foram executados.
+> 390 px. O estado `vazio` ainda não foi executado.
+
+## Sobre a matriz completa (28–29/09/2026, dados extremo)
+
+Rodada com os 4 perfis, 5 larguras e 2 temas (40 cenários autenticados + login), levou
+quase 2h. Resultado bruto: 363 testes aprovados, 35 com erro; 14.699 achados (P0: 72,
+P1: 14.162, P2: 427, INFO: 38).
+
+**O arquivo detalhado dessa execução foi perdido**: uma verificação isolada rodada logo
+depois sobrescreveu `e2e/resultados/achados.json`/`achados.md` antes de o achado curado ser
+extraído. Preservado:
+
+- as 730 capturas de tela em `e2e/capturas/extremo/` (todas as combinações);
+- os totais por severidade acima;
+- a lista de achados P0/INFO, copiada para a tabela acima e resumida em A-009 a A-013.
+
+A-009 (overflow em Relatórios · Inadimplência) é o único P0 da matriz reproduzido de forma
+independente em execuções separadas (antes e depois da matriz completa) — trate como real.
+Os demais P0 "isolados" (A-012, A-013: exceções, timeouts, diálogo que não abriu, sessão
+perdida) apareceram uma única vez cada, espalhados por perfis e larguras sem padrão, ao fim
+de quase 2h de execução contínua com dezenas de contextos de navegador abertos — quando
+verifiquei isoladamente o cenário com mais erros consecutivos (WebKit 1440 escuro, 9 erros),
+ele passou limpo. É mais provável que sejam desgaste da execução longa (timeout do
+Supabase, memória do navegador) do que bugs reais de UI, mas **não foram descartados**:
+antes de fechar a Etapa 1, reverificar cada um isoladamente (rodando só aquele perfil e
+largura) para confirmar ou descartar.
