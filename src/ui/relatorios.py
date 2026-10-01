@@ -102,6 +102,7 @@ def _aba_resultado(resultado):
             ]
             for r, largura in zip(linhas, larguras)
         ],
+        legenda="Resultado por moto",
     )
     _exportacao(
         "resultado_por_moto",
@@ -138,6 +139,7 @@ def _aba_custo(resultado):
                 ]
                 for g, largura in zip(linhas, larguras)
             ],
+            legenda="Custo por modelo",
         )
         exportacao = [
             {
@@ -164,6 +166,7 @@ def _aba_custo(resultado):
                 ]
                 for r, largura in zip(linhas, larguras)
             ],
+            legenda="Custo por moto",
         )
         exportacao = [
             {
@@ -215,6 +218,7 @@ def _aba_inadimplencia(dados):
             ]
             for l in linhas
         ],
+        legenda="Inadimplência",
     )
     _exportacao(
         "inadimplencia",
@@ -253,6 +257,7 @@ def _aba_fluxo(fluxo, hoje):
             ]
             for m, largura in zip(fluxo, larguras)
         ],
+        legenda="Fluxo de caixa por mês",
     )
     _exportacao(
         "fluxo_de_caixa",

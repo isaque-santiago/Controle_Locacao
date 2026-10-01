@@ -256,39 +256,6 @@ h3 {font-size: var(--fs-subtitulo);}
 .cartao__titulo, .secao-titulo {margin: 0 !important; padding: 0 !important; font-family: var(--fonte-titulo) !important; font-size: var(--fs-subtitulo) !important; font-weight: 600 !important; letter-spacing: .01em; line-height: 1.3;}
 .cartao__meta {font-size: var(--fs-legenda); color: var(--texto-2);}
 .cartao__corpo {padding: var(--e4) var(--e5);}
-/* Listas em colunas do Streamlit dentro de containers com chave *_card_* */
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]), [class*="st-key-cobrancas_card"] {
-  background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-md);
-  box-shadow: var(--sombra-1); padding: 0 0 var(--e1); overflow: hidden;
-}
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) [data-testid="stHorizontalBlock"],
-[class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"] {
-  padding: 10px var(--e5); border-bottom: 1px solid var(--linha-sutil); align-items: center;
-  transition: background-color var(--transicao);
-}
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) [data-testid="stHorizontalBlock"]:hover,
-[class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:hover {background: var(--superficie-hover);}
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) [data-testid="stHorizontalBlock"]:last-of-type,
-[class*="st-key-cobrancas_card"] [data-testid="stHorizontalBlock"]:last-of-type {border-bottom: none;}
-/* Dados de Clientes, Motos, Contratos e Vistorias: linhas maiores e mais legíveis.
-   O texto das linhas usa var(--fs-secundario); redefini-lo no escopo evita mexer nas páginas. */
-.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista {
-  --fs-secundario: var(--fs-corpo);
-}
-:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] {
-  padding-top: 13px; padding-bottom: 13px;
-}
-/* Primeira coluna (nome, placa, data) em destaque */
-:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child span:not(.chip-placa) {
-  font-weight: 600;
-}
-/* Cabeçalho da lista: rótulo pequeno em caixa alta, para não competir com os dados */
-:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] {
-  padding-top: 10px; padding-bottom: 10px;
-}
-:is(.st-key-clientes_card_lista, .st-key-clientes_card_contratos, .st-key-motos_card_lista, .st-key-contratos_card_lista, .st-key-vistorias_card_lista) > div:first-child > [data-testid="stHorizontalBlock"] span {
-  font-size: var(--fs-legenda); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-2);
-}
 /* Fichas: rótulo discreto em cima (Primeiras Letras Maiúsculas) e valor grande embaixo */
 .campo {gap: 3px;}
 .campo > span:first-child, .cartao--faixa > div > span:first-child {
@@ -396,8 +363,7 @@ button[kind="tertiary"] {border-radius: var(--raio-campo); color: var(--texto-2)
 button[kind="tertiary"]:hover:not(:disabled) {background: var(--superficie-hover); color: var(--texto);}
 button:disabled {opacity: .5; cursor: not-allowed;}
 button[kind="primary"]:disabled, button[kind="primaryFormSubmit"]:disabled {background: var(--btn-primario) !important; border-color: var(--btn-primario) !important;}
-button[kind="secondary"] *, button[kind="secondaryFormSubmit"] *, button[kind="tertiary"] *, [data-testid="stDownloadButton"] button *,
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button *, [class*="st-key-cobrancas_card"] button * {color: inherit !important;}
+button[kind="secondary"] *, button[kind="secondaryFormSubmit"] *, button[kind="tertiary"] *, [data-testid="stDownloadButton"] button * {color: inherit !important;}
 /* Destrutivo: contorno vermelho, nunca preenchido (Design_UI.md) */
 .st-key-abrir_encerrar button, [class*="st-key-perigo_"] button {background: transparent !important; border: 1px solid var(--perigo) !important; color: var(--perigo-texto) !important;}
 .st-key-abrir_encerrar button *, [class*="st-key-perigo_"] button * {color: var(--perigo-texto) !important;}
@@ -412,24 +378,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 [data-testid="stFileUploaderDropzone"]:focus-within {outline: 2px solid var(--foco); outline-offset: 2px;}
 [data-testid="stSidebar"] :is(a, button, summary):focus-visible {outline-color: var(--marca) !important;}
-/* Botões dentro das listas: contorno discreto, altura mínima de alvo */
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button, [class*="st-key-cobrancas_card"] button {
-  background: transparent !important; border: 1px solid var(--linha) !important; border-radius: var(--raio-sm) !important;
-  color: var(--texto-2) !important; min-height: var(--alvo-min) !important; padding: 2px var(--e3) !important; font-size: var(--fs-secundario); font-weight: 500;
-}
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button:hover:not(:disabled), [class*="st-key-cobrancas_card"] button:hover:not(:disabled) {
-  border-color: var(--linha-campo-hover) !important; color: var(--texto) !important; background: var(--superficie-elevada) !important;
-}
-/* Placa clicável (Clientes > Contratos): botão com a aparência do chip de placa */
-[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button {
-  background: var(--chip-fundo) !important; border: none !important; border-radius: var(--raio-sm) !important; color: var(--chip-texto) !important;
-  font-family: var(--fonte-mono) !important; font-weight: 600 !important; letter-spacing: .05em; min-height: var(--alvo-min) !important; padding: 3px var(--e3) !important;
-}
-[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button:hover:not(:disabled) {
-  background: var(--chip-fundo) !important; color: var(--chip-texto) !important; box-shadow: 0 0 0 2px var(--linha-forte);
-}
-[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button * {color: var(--chip-texto) !important;}
-[data-testid="stApp"] .st-key-clientes_card_contratos [class*="st-key-placa_contrato_"] button p {font-size: var(--fs-legenda) !important;}
 /* Pílula de escolha do assistente de contrato: ativa (primary) e inativa (secondary) com o mesmo tamanho */
 .st-key-contrato_periodicidade button {
   min-height: var(--alvo-min) !important; height: auto !important; padding: 4px var(--e4) !important; border-radius: 999px !important;
@@ -524,6 +472,8 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 /* ========================================
    TABLES
 ======================================== */
+/* Texto só para leitores de tela */
+.so-leitor {position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
 .tabela-leitura {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-md); box-shadow: var(--sombra-1); overflow: auto;}
 .tabela-leitura table {width: 100%; border-collapse: collapse; font-size: var(--fs-secundario);}
 .tabela-leitura th, .tabela-leitura td {border-width: 0 0 1px 0; border-style: solid; border-color: var(--linha-sutil);}
@@ -540,14 +490,9 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 [data-testid="stDataFrame"] {border-radius: var(--raio-md); overflow: hidden;}
 .chip-placa {background: var(--chip-fundo); color: var(--chip-texto); padding: 3px var(--e2); border-radius: var(--raio-sm); font-weight: 600; font-size: var(--fs-legenda); letter-spacing: .05em;}
 .chip-placa--grande {padding: var(--e2) 14px; font-size: 18px; border-radius: var(--raio-campo);}
-/* Grupo de ações da linha (st.container horizontal dentro de uma coluna): sem o respiro nem a divisória de linha de lista */
-[class*="st-key-"][class*="_card_"] [data-testid="stColumn"] [data-testid="stHorizontalBlock"] {padding: 0; border-bottom: 0; background: transparent; flex-wrap: nowrap; gap: var(--e2);}
 /* A seta (chevron) do popover é escondida; o ícone do rótulo permanece */
 [data-testid="stPopoverButton"] [aria-hidden="true"]:not([data-testid="stIconMaterial"]) {display: none;}
 [data-testid="stPopoverButton"] > div {margin: 0;}
-.st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {border-bottom: 1px solid var(--linha-sutil);}
-.st-key-dashboard_card_hoje .mono {white-space: nowrap;}
-.st-key-dashboard_card_hoje [data-testid="stMarkdownContainer"] p {white-space: normal;}
 
 /* ========================================
    BADGES / STATUS
@@ -569,9 +514,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 /* Em tabelas e listas todos os selos têm a mesma largura, com o texto centralizado. Nas listas em colunas
    do Streamlit a largura nunca passa da coluna (min(..., 100%)); textos mais longos crescem além do piso. */
 .tabela-leitura .badge {min-width: var(--selo-largura); justify-content: center;}
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) .badge, [class*="st-key-cobrancas_card"] .badge {
-  min-width: min(var(--selo-largura), 100%); justify-content: center;
-}
 
 /* ========================================
    ALERTS
@@ -722,14 +664,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 [data-testid="stMain"] button[kind="tertiary"] [data-testid="stIconMaterial"] {font-size: 20px; margin: 0;}
 /* Voltar contextual das fichas: sem contorno, alinhado à esquerda */
 [data-testid="stMain"] [class*="st-key-voltar_"] button[kind="tertiary"] {border-color: transparent !important; padding-left: var(--e2) !important; margin-left: calc(-1 * var(--e2));}
-/* Dentro das listas (desktop): só o ícone, com o texto oculto visualmente mas lido por leitores de tela */
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button[kind="tertiary"] [data-testid="stMarkdownContainer"],
-[class*="st-key-cobrancas_card"] button[kind="tertiary"] [data-testid="stMarkdownContainer"] {
-  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
-}
-[class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button[kind="tertiary"], [class*="st-key-cobrancas_card"] button[kind="tertiary"] {
-  width: var(--alvo-min); padding: 0 !important; position: relative;
-}
 /* Pagar: a ação positiva e frequente é sólida em toda parte (Hoje do dashboard e Cobranças) */
 [data-testid="stApp"] [data-testid="stMain"] [class*="st-key-pagar_"] button[kind="tertiary"] {
   background: var(--btn-primario) !important; border-color: var(--btn-primario) !important; color: var(--btn-primario-texto) !important;
@@ -741,6 +675,56 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 [data-testid="stMain"] [class*="st-key-cancelar_man_"] button[kind="tertiary"] {border-color: var(--perigo) !important; color: var(--perigo-texto) !important;}
 [data-testid="stMain"] [class*="st-key-cancelar_man_"] button[kind="tertiary"]:hover:not(:disabled) {background: var(--perigo-fundo) !important;}
 [data-testid="stMain"] button[kind="tertiary"]:disabled {opacity: .45;}
+
+/* ========================================
+   REGISTROS — listas interativas em cartões (src/ui/registros.py)
+   Estrutura explícita: lista_<prefixo> > reg_<prefixo>_<id> > (.registro + regacoes_<prefixo>_<id>).
+   Nada aqui depende da posição de colunas; a quebra em telas estreitas usa container query
+   (largura do cartão da lista, não da janela), então vale também em janela dividida.
+======================================== */
+[data-testid="stApp"] [class*="st-key-lista_"] {
+  container-type: inline-size; container-name: lista; gap: 0;
+  background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-md); box-shadow: var(--sombra-1); overflow: hidden;
+}
+[data-testid="stApp"] [class*="st-key-reg_"] {
+  display: grid; grid-template-columns: minmax(170px, .9fr) minmax(0, 3fr) var(--regacoes-largura, auto); grid-template-areas: "id dados acoes";
+  align-items: center; gap: var(--e2) var(--e5);
+  padding: var(--e3) var(--e5); border-bottom: 1px solid var(--linha-sutil); transition: background-color var(--transicao);
+}
+[data-testid="stApp"] [class*="st-key-reg_"]:hover {background: var(--superficie-hover);}
+[data-testid="stApp"] [class*="st-key-lista_"] > [data-testid="stLayoutWrapper"]:last-child > [class*="st-key-reg_"] {border-bottom: 0;}
+/* Largura reservada às ações (no desktop), para os dados alinharem entre as linhas; vem do nº de ações em `lista_registros(prefixo, acoes=N)` */
+[class*="st-key-lista_"][class*="__a1"] {--regacoes-largura: 150px;}
+[class*="st-key-lista_"][class*="__a2"] {--regacoes-largura: 270px;}
+[class*="st-key-lista_"][class*="__a3"] {--regacoes-largura: 410px;}
+[class*="st-key-reg_"] > [data-testid="stElementContainer"]:has(.registro__id) {grid-area: id; min-width: 0;}
+[class*="st-key-reg_"] > [data-testid="stElementContainer"]:has(.registro__dados) {grid-area: dados; min-width: 0;}
+[class*="st-key-reg_"] > [data-testid="stLayoutWrapper"]:has([class*="st-key-regacoes_"]) {grid-area: acoes; justify-self: end; min-width: 0;}
+/* O Streamlit dá margem inferior negativa ao container de markdown (compensa o <p>); aqui ela cortaria o bloco */
+[class*="st-key-reg_"] [data-testid="stMarkdownContainer"] {margin-bottom: 0 !important;}
+.registro__id {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2) var(--e3); min-width: 0;}
+.registro__titulo {font-size: var(--fs-corpo); font-weight: 600; overflow-wrap: anywhere; min-width: 0;}
+.registro__subtitulo {flex-basis: 100%; font-size: var(--fs-secundario); color: var(--texto-2); overflow-wrap: anywhere;}
+.registro__selo {display: flex;}
+.registro__dados {display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: var(--e2) var(--e4); margin: 0; padding: 0;}
+.registro__campo {min-width: 0; margin: 0;}
+.registro__campo--largo {grid-column: span 2;}
+.registro__rotulo {margin: 0; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3);}
+.registro__valor {margin: 0; font-size: var(--fs-secundario); overflow-wrap: anywhere;}
+/* Opções de escolha do assistente: a escolhida leva barra lateral (e o botão vira "Selecionado"); a indisponível fica esmaecida */
+[data-testid="stApp"] [class*="st-key-reg_"][class*="__sel"] {background: var(--superficie-hover); box-shadow: inset 4px 0 0 var(--texto);}
+[data-testid="stApp"] [class*="st-key-reg_"][class*="__off"] {opacity: .6;}
+/* Ações: o texto fica sempre visível (nenhuma ação depende só de ícone ou dica) */
+[data-testid="stApp"] [class*="st-key-regacoes_"] {flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--e2);}
+[data-testid="stApp"] [class*="st-key-regacoes_"] button[kind="tertiary"] {width: auto; white-space: nowrap;}
+@container lista (max-width: 1000px) {
+  [data-testid="stApp"] [class*="st-key-reg_"] {grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "id acoes" "dados dados";}
+}
+@container lista (max-width: 560px) {
+  [data-testid="stApp"] [class*="st-key-reg_"] {grid-template-columns: minmax(0, 1fr); grid-template-areas: "id" "acoes" "dados"; padding: var(--e3) var(--e4);}
+  [class*="st-key-reg_"] > [data-testid="stLayoutWrapper"]:has([class*="st-key-regacoes_"]) {justify-self: start;}
+  [data-testid="stApp"] [class*="st-key-regacoes_"] {justify-content: flex-start;}
+}
 
 /* ========================================
    RESPONSIVE
@@ -763,16 +747,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   [data-testid="stMetricValue"] {font-size: 1.5rem;}
   [data-testid="stHorizontalBlock"] {flex-wrap: wrap;}
   .cartao__cab {padding: var(--e3) var(--e4);}
-  /* Listas em cartão viram tabela com rolagem lateral (cabeçalho e colunas alinhados) */
-  [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]), [class*="st-key-cobrancas_card"] {
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-  }
-  [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) > div > [data-testid="stHorizontalBlock"],
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] {flex-wrap: nowrap !important; min-width: 720px;}
-  [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"],
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
-    min-width: 0 !important; width: auto !important; flex: 1 1 0 !important;
-  }
   /* Faixas de dados das fichas (km atual, cliente, contrato...): 2 por linha em vez de 4 espremidas */
   .cartao--faixa {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));}
   .cartao--faixa > div {min-width: 0; border-right: 0 !important; border-bottom: 1px solid var(--linha); padding: var(--e3) var(--e4) !important;}
@@ -785,42 +759,12 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .st-key-moto_faixa_km .st-key-km_ficha button [data-testid="stMarkdownContainer"] {
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
-  /* Ações das listas: no celular o texto volta (Pagar, Editar, Abrir, Concluir, Regularizar...) */
-  [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button[kind="tertiary"], [class*="st-key-cobrancas_card"] button[kind="tertiary"] {
-    width: auto; padding: 0 var(--e3) !important;
-  }
-  [class*="st-key-"][class*="_card_"]:not([class*="st-key-config_"]) button[kind="tertiary"] [data-testid="stMarkdownContainer"],
-  [class*="st-key-cobrancas_card"] button[kind="tertiary"] [data-testid="stMarkdownContainer"] {
-    position: static; width: auto; height: auto; margin: 0; overflow: visible; clip-path: none; white-space: nowrap;
-  }
   /* Ficha da moto: placa e nome empilhados e alinhados à esquerda, em vez de lado a lado com alturas diferentes */
   .moto-cab {flex-direction: column; align-items: flex-start !important; gap: var(--e2) !important;}
   .moto-cab h1 {font-size: 24px !important; line-height: 1.15;}
   /* Selo de situação logo acima do nome/modelo */
   .moto-cab > div {display: flex; flex-direction: column; gap: var(--e2);}
   .moto-cab > div > div:last-child {order: -1; margin-top: 0 !important;}
-  /* Motos > lista: cada moto vira um bloco (placa + situação + ação / modelo / km + contrato), sem rolagem lateral */
-  .st-key-motos_card_lista {overflow: visible;}
-  .st-key-motos_card_lista > div:first-child {display: none;}
-  [data-testid="stApp"] .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] {
-    display: grid !important; grid-template-columns: 136px minmax(0, 1fr) auto; gap: var(--e2) var(--e3); align-items: center;
-    grid-template-areas: "placa sit btn" "modelo modelo modelo" "km contr contr";
-    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
-  }
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: placa;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: modelo;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: km;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: sit; justify-self: start;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: contr;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: btn; justify-self: end;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) span {font-weight: 600; overflow-wrap: anywhere;}
-  /* Km atual e botão de editar lado a lado, sem o espaçamento de linha de tabela */
-  .st-key-motos_card_lista [data-testid="stColumn"] [data-testid="stHorizontalBlock"] {padding: 0 !important; border-bottom: 0; flex-wrap: nowrap; gap: var(--e2);}
-  .st-key-motos_card_lista [data-testid="stColumn"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width: auto !important; min-width: 0 !important; flex: 0 0 auto !important;}
-  .st-key-motos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {
-    content: "Contrato"; display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
-  }
   /* Dados pessoais: campos curtos em 2 colunas (valores menores); e-mail e endereço em linha inteira */
   .grade-dados--duas {grid-template-columns: repeat(2, minmax(0, 1fr)); --fs-dado: 18px;}
   .grade-dados--duas .campo--largo {grid-column: 1 / -1;}
@@ -837,35 +781,11 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   /* O selo da CNH tem a largura do texto, não da linha inteira */
   .cartao--faixa-cliente .badge {align-self: flex-start;}
   .cartao--faixa-cliente > div:nth-child(4) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
-  /* Clientes > lista: cada cliente vira um bloco (nome + situação + ação / CPF + WhatsApp / CNH + moto), sem rolagem lateral */
-  .st-key-clientes_card_lista {overflow: visible;}
-  .st-key-clientes_card_lista > div:first-child {display: none;}
-  [data-testid="stApp"] .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] {
-    display: grid !important; grid-template-columns: minmax(0, 1fr) 112px auto; gap: var(--e3) var(--e3); align-items: center;
-    grid-template-areas: "nome sit btn" "cpf whats whats" "cnh moto moto";
-    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
-  }
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: nome;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: cpf;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: whats;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: cnh;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: sit; justify-self: end;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: moto;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: btn; justify-self: end;}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) span {overflow-wrap: anywhere;}
-  /* Rótulo pequeno acima de CPF, WhatsApp, CNH e moto (o cabeçalho da tabela some no celular) */
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(6)) [data-testid="stMarkdownContainer"]::before {
-    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
-  }
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "CPF";}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "WhatsApp";}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "CNH";}
-  .st-key-clientes_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Moto atual";}
   /* Tabelas somente leitura (fichas, relatórios): cada linha vira um cartão com os campos em 2 colunas, rótulo acima do valor */
   .tabela-leitura {background: none; border: 0; box-shadow: none; overflow: visible;}
   .tabela-leitura table, .tabela-leitura tbody {display: block; width: 100%;}
-  .tabela-leitura thead {display: none;}
+  /* Cabeçalho só visualmente oculto: segue disponível para leitores de tela (cada célula repete o rótulo) */
+  .tabela-leitura thead {position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
   .tabela-leitura tr {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3) var(--e4);
     background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-md); box-shadow: var(--sombra-1);
@@ -880,53 +800,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   /* Nº ímpar de campos: o último (ex.: Situação) ocupa a linha inteira, e o selo se estica até as bordas do cartão */
   .tabela-leitura td:last-child:nth-child(odd) {grid-column: 1 / -1;}
   .tabela-leitura td:last-child:nth-child(odd) .badge {align-self: stretch; width: auto;}
-  /* Clientes > ficha > Contratos: cada contrato vira um bloco (moto + situação / início, fim, valor) */
-  .st-key-clientes_card_contratos {overflow: visible;}
-  .st-key-clientes_card_contratos > div:first-child {display: none;}
-  [data-testid="stApp"] .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] {
-    display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3) var(--e3); align-items: center;
-    grid-template-areas: "moto moto sit" "ini fim val";
-    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
-  }
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: moto;}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: ini;}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: fim;}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: sit; justify-self: end;}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: val;}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(5)) [data-testid="stMarkdownContainer"]::before {
-    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
-  }
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Início";}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Fim";}
-  .st-key-clientes_card_contratos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Valor / período";}
-  /* Placa e modelo lado a lado, sem o espaçamento de linha de tabela */
-  .st-key-clientes_card_contratos [data-testid="stColumn"] [data-testid="stHorizontalBlock"] {padding: 0 !important; border-bottom: 0; flex-wrap: nowrap; gap: var(--e3);}
-  .st-key-clientes_card_contratos [data-testid="stColumn"] [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width: auto !important; min-width: 0 !important; flex: 0 1 auto !important;}
-  /* Contratos > lista: cada contrato vira um bloco (cliente + situação + ação / moto, início, periodicidade / valor), sem rolagem lateral */
-  .st-key-contratos_card_lista {overflow: visible;}
-  .st-key-contratos_card_lista > div:first-child {display: none;}
-  [data-testid="stApp"] .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] {
-    display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: var(--e3) var(--e3); align-items: center;
-    grid-template-areas: "cli cli sit btn" "moto ini per per" "val val val val";
-    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
-  }
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: cli;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: ini;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: per;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: val;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: sit; justify-self: end;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: btn; justify-self: end;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) span {overflow-wrap: anywhere;}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(4), :nth-child(5)) [data-testid="stMarkdownContainer"]::before {
-    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
-  }
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Moto";}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Início";}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Periodicidade";}
-  .st-key-contratos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Valor / período";}
   /* Ficha do contrato: cliente e moto empilhados (selo de situação acima), em vez de um título longo quebrando no meio */
   .contrato-cab {display: flex; flex-direction: column; gap: var(--e2);}
   .contrato-cab > div {order: -1; margin-top: 0 !important; align-self: flex-start;}
@@ -937,139 +810,4 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .cartao--faixa-contrato {--fs-dado: 18px;}
   .cartao--faixa-contrato > div:nth-child(4) {border-bottom: 1px solid var(--linha);}
   .cartao--faixa-contrato > div:nth-child(5) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
-  /* Cobranças (todas as abas): cada cobrança vira um bloco em grade, sem rolagem lateral; o cabeçalho some e cada valor ganha rótulo */
-  [class*="st-key-cobrancas_card"] {overflow: visible;}
-  [class*="st-key-cobrancas_card"] > div:first-child {display: none;}
-  [data-testid="stApp"] [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] {
-    display: grid !important; gap: var(--e3); align-items: center; padding: var(--e3) var(--e4) !important; min-width: 0 !important;
-  }
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] [data-testid="stMarkdownContainer"] {overflow-wrap: anywhere;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+2) [data-testid="stMarkdownContainer"]::before {
-    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
-  }
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: cli;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Moto";}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: ven;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Vencimento";}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: c4;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: c5;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: c6;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: c7;}
-  [class*="st-key-cobrancas_card"] > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: act; justify-self: end;}
-  /* Hoje: cliente + ação / moto, vencimento, valor */
-  [data-testid="stApp"] .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cli cli c5" "moto ven c4";
-  }
-  .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
-  .st-key-cobrancas_card_hoje > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {justify-self: end;}
-  /* Próximos 7 dias: cliente + "1ª parcela" / moto, vencimento, valor */
-  [data-testid="stApp"] .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "cli cli c5" "moto ven c4";
-  }
-  .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
-  .st-key-cobrancas_card_proximos > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {justify-self: end;}
-  /* Pagas: cliente + valor / moto, vencimento, pago em / forma */
-  [data-testid="stApp"] .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "cli cli cli" "moto ven c4" "c5 c6 c6";
-  }
-  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Pago em";}
-  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Forma";}
-  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
-  .st-key-cobrancas_card_pagas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {justify-self: start;}
-  /* Atrasadas: cliente + ação / moto, vencimento, atraso / original, encargos, total */
-  [data-testid="stApp"] .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "cli cli cli" "moto ven c4" "c5 c6 c7" "act act act";
-  }
-  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Atraso";}
-  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Original";}
-  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Encargos";}
-  .st-key-cobrancas_card_atrasadas > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) [data-testid="stMarkdownContainer"]::before {content: "Total";}
-  /* Manutenção (histórico e catálogo), Documentos e Vistorias: cada linha vira um bloco em grade de 3 colunas, sem rolagem lateral;
-     linha 1 = identificação + situação/ação, demais linhas = dados rotulados */
-  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) {overflow: visible;}
-  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div:first-child {display: none;}
-  [data-testid="stApp"] :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] {display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3); align-items: center; padding: var(--e3) var(--e4) !important; min-width: 0 !important;}
-  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] [data-testid="stMarkdownContainer"] {overflow-wrap: anywhere;}
-  :is(.st-key-manutencao_card_historico, .st-key-manutencao_card_catalogo, .st-key-documentos_card_lista, .st-key-vistorias_card_lista) > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] [data-testid="stMarkdownContainer"]::before {display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;}
-  [data-testid="stApp"] .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "moto moto sit" "dat tip cus" "des des des" "ofi ofi ofi" "btn btn btn";}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: dat;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: tip;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: des;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: ofi;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: cus;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: sit;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: btn; justify-self: end;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) [data-testid="stMarkdownContainer"]::before {content: "Data";}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Tipo";}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Descrição";}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Oficina";}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Custo";}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: none;}
-  .st-key-manutencao_card_historico > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) [data-testid="stMarkdownContainer"]::before {content: none;}
-  [data-testid="stApp"] .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "ite ite ite" "km dia ati" "btn btn btn";}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: ite;}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: km;}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: dia;}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: ati;}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: btn; justify-self: end;}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Intervalo km";}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Intervalo dias";}
-  .st-key-manutencao_card_catalogo > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Ativo";}
-  [data-testid="stApp"] .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "moto moto sit" "tip ven val" "ref ref ref" "b7 b7 b8" "b9 b9 b9";}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: moto;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: tip;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: ref;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: ven;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: val;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: sit;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: b7;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(8) {grid-area: b8;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(9) {grid-area: b9;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Tipo";}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Referência";}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Vencimento";}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {justify-self: end;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+7) button {width: 100% !important;}
-  .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+7) [data-testid="stElementContainer"], .st-key-documentos_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(n+7) [data-testid="stButton"] {width: 100% !important;}
-  [data-testid="stApp"] .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] {grid-template-areas: "con con con" "dat tip km" "com ava ava" "btn btn btn";}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) {grid-area: dat;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) {grid-area: con;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) {grid-area: tip;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) {grid-area: km;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) {grid-area: com;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) {grid-area: ava;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(7) {grid-area: btn; justify-self: end;}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(1) [data-testid="stMarkdownContainer"]::before {content: "Data";}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Tipo";}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Km";}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(5) [data-testid="stMarkdownContainer"]::before {content: "Combustível";}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(6) [data-testid="stMarkdownContainer"]::before {content: "Avarias";}
-  .st-key-vistorias_card_lista > div > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: none;}
-  /* Dashboard > Hoje: sem rolagem lateral; cada cobrança vira um bloco (cliente + situação + ação / moto, data, valor) */
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_cab"], .st-key-dashboard_card_hoje [data-testid="stLayoutWrapper"]:has(> [class*="st-key-hoje_cab"]) {display: none;}
-  [data-testid="stApp"] .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stHorizontalBlock"] {
-    display: grid !important; grid-template-columns: fit-content(58%) minmax(104px, max-content) minmax(0, 1fr) auto; gap: var(--e2) var(--e3); align-items: center;
-    grid-template-areas: "cli sit . btn" "moto venc valor valor";
-    padding: var(--e3) var(--e4) !important; min-width: 0 !important;
-  }
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"] {min-width: 0 !important; width: auto !important; flex: none !important;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(1) {grid-area: cli;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(2) {grid-area: moto;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(3) {grid-area: venc;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(4) {grid-area: valor;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(5) {grid-area: sit; justify-self: start;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(6) {grid-area: btn; justify-self: end;}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(1) span {font-weight: 600; font-size: var(--fs-corpo); overflow-wrap: anywhere;}
-  /* Rótulo pequeno acima de moto, vencimento e valor (o cabeçalho da tabela some no celular) */
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:is(:nth-child(2), :nth-child(3), :nth-child(4)) [data-testid="stMarkdownContainer"]::before {
-    display: block; font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); margin-bottom: 2px;
-  }
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(2) [data-testid="stMarkdownContainer"]::before {content: "Moto";}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(3) [data-testid="stMarkdownContainer"]::before {content: "Vencimento";}
-  .st-key-dashboard_card_hoje [class*="st-key-hoje_linha_"] [data-testid="stColumn"]:nth-child(4) [data-testid="stMarkdownContainer"]::before {content: "Valor";}
 }

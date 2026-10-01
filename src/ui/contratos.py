@@ -2,6 +2,7 @@
 ContratoNovo.dc.html e ContratoFicha.dc.html do mockup."""
 
 from datetime import date, timedelta
+from html import escape
 
 import streamlit as st
 
@@ -21,6 +22,7 @@ from src.ui.componentes import (
     botao_voltar,
 )
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
+from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
 
@@ -105,12 +107,7 @@ def _exibir_lista():
     filtros.resumo(len(filtrados), ("contrato", "contratos"))
     pagina_atual, pagina = paginar("contratos", filtrados)
 
-    with st.container(key="contratos_card_lista"):
-        cab = st.columns([1.4, 1.2, 1.1, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
-        for coluna, rotulo in zip(
-            cab, ["Cliente", "Moto", "Início", "Periodicidade", "Valor / período", "Status", ""]
-        ):
-            coluna.markdown(f'<span class="fs-secundario texto-2">{rotulo}</span>', unsafe_allow_html=True)
+    with lista_registros("contratos", acoes=1):
         if not pagina_atual:
             st.markdown(
                 vazio_lista("Nenhum contrato encontrado.", "Ainda não há contratos cadastrados.", bool(registros), "Novo contrato"),
@@ -119,23 +116,28 @@ def _exibir_lista():
         for contrato in pagina_atual:
             moto = frota.get(contrato["moto_id"])
             muted = "color:var(--texto-3);" if contrato["status"] != "ativo" else ""
-            linha = st.columns([1.4, 1.2, 1.1, 1.2, 1.1, 1.1, 0.55], vertical_alignment="center")
-            linha[0].markdown(f'<span style="font-size:var(--fs-secundario);{muted}">{nomes.get(contrato["cliente_id"], "—")}</span>', unsafe_allow_html=True)
-            linha[1].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
-            linha[2].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_data(contrato["data_inicio"])}</span>', unsafe_allow_html=True)
-            linha[3].markdown(f'<span style="font-size:var(--fs-secundario);{muted or "color:var(--texto-2);"}">{_PERIODOS_ROTULO.get(contrato["periodicidade"], contrato["periodicidade"])}</span>', unsafe_allow_html=True)
-            linha[4].markdown(f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>', unsafe_allow_html=True)
-            linha[5].markdown(
-                selo_situacao(_STATUS_ROTULO[contrato["status"]], contrato["status"]),
-                unsafe_allow_html=True,
-            )
-            if botao_acao(
-                linha[6],
-                "abrir",
-                f"ficha_ct_{contrato['id']}",
-                ajuda=f"Abrir o contrato de {nomes.get(contrato['cliente_id'], 'cliente')}",
-            ):
-                _ir_para_ficha(contrato["id"])
+            nome = nomes.get(contrato["cliente_id"], "—")
+            periodo = _PERIODOS_ROTULO.get(contrato["periodicidade"], contrato["periodicidade"])
+            campos = [
+                campo("Moto", chip_placa(moto["placa"]) if moto else "—"),
+                campo("Início", f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_data(contrato["data_inicio"])}</span>'),
+                campo("Periodicidade", f'<span style="font-size:var(--fs-secundario);{muted or "color:var(--texto-2);"}">{escape(periodo)}</span>'),
+                campo("Valor / período", f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>'),
+            ]
+            with registro(
+                "contratos",
+                contrato["id"],
+                f'<span style="{muted}">{escape(nome)}</span>',
+                campos,
+                selo=selo_situacao(_STATUS_ROTULO[contrato["status"]], contrato["status"]),
+            ) as acoes:
+                if botao_acao(
+                    acoes,
+                    "abrir",
+                    f"ficha_ct_{contrato['id']}",
+                    ajuda=f"Abrir o contrato de {nomes.get(contrato['cliente_id'], 'cliente')}",
+                ):
+                    _ir_para_ficha(contrato["id"])
 
     rodape_paginacao("contratos", pagina)
 
@@ -180,39 +182,27 @@ def _avatar_circulo(texto, cor="var(--chip-fundo)"):
 
 
 def _cartao_selecionavel(chave, icone_html, titulo, subtitulo, badge_html, selecionado, elegivel):
-    borda = "2px solid var(--texto)" if selecionado else "1px solid var(--linha)"
-    fundo = "var(--superficie-hover)" if selecionado else "var(--superficie)"
-    opacidade = "1" if elegivel else "0.55"
-    st.markdown(
-        f"""
-        <style>.st-key-{chave} {{
-          border:{borda} !important; background:{fundo} !important; border-radius:var(--raio-lg);
-          padding:14px 16px; opacity:{opacidade}; margin-bottom:10px;
-        }}</style>
-        """,
-        unsafe_allow_html=True,
-    )
-    with st.container(key=chave):
-        col_info, col_badge, col_sel = st.columns([3, 1.6, 1], vertical_alignment="center")
-        col_info.markdown(
-            f"""
-            <div style="display:flex;align-items:center;gap:12px;">
-              {icone_html}
-              <div>
-                <div style="font-size:var(--fs-secundario);font-weight:500;">{titulo}</div>
-                <div class="mono" style="font-size:var(--fs-legenda);color:var(--texto-2);">{subtitulo}</div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        col_badge.markdown(badge_html, unsafe_allow_html=True)
-        return col_sel.button(
-            "Selecionado" if selecionado else "Selecionar",
-            key=f"sel_{chave}",
-            icon=":material/check:" if selecionado else None,
-            disabled=not elegivel,
-            use_container_width=True,
+    """Opção de escolha do assistente: identidade + situação e um botão `Selecionar`. A opção
+    escolhida muda o texto do botão para `Selecionado` (não depende só da cor da borda)."""
+    estado = "selecionado" if selecionado else (None if elegivel else "indisponivel")
+    identidade = f'<span style="display:inline-flex;align-items:center;gap:12px;">{icone_html}<span>{escape(titulo)}</span></span>'
+    with registro(
+        "contrato_selecao",
+        chave,
+        identidade,
+        [],
+        selo=badge_html or None,
+        subtitulo=f'<span class="mono">{subtitulo}</span>',
+        estado=estado,
+    ) as acoes:
+        return botao_acao(
+            acoes,
+            "selecionar",
+            f"sel_{chave}",
+            rotulo="Selecionado" if selecionado else None,
+            icone=":material/check_circle:" if selecionado else None,
+            ajuda=f"Escolher {titulo}",
+            desabilitado=not elegivel,
         )
 
 
@@ -230,29 +220,30 @@ def _wizard_etapa1():
         if busca_normalizada in c["nome"].casefold() or busca_normalizada in (c.get("cpf") or "")
     ]
     selecionado_id = st.session_state.get("contrato_cliente_id")
-    for cliente in candidatos:
-        elegivel = cliente["status"] == "ativo"
-        moto_atual = contratos_ativos.get(cliente["id"])
-        if not elegivel:
-            badge = f'<span style="font-size:var(--fs-legenda);color:var(--perigo-texto);">{"bloqueado" if cliente["status"] == "bloqueado" else "inativo"} · não pode alugar</span>'
-        elif moto_atual:
-            badge = f'<span style="font-size:var(--fs-legenda);color:var(--texto-2);">já aluga {placas.get(moto_atual, "—")}</span>'
-        else:
-            badge = ""
-        avatar_cor = "var(--chip-fundo)" if elegivel else "var(--avatar-inativo)"
-        if _cartao_selecionavel(
-            f"cli_card_{cliente['id']}",
-            _avatar_circulo(_iniciais(cliente["nome"]), avatar_cor),
-            cliente["nome"],
-            mascarar_cpf(cliente.get("cpf") or ""),
-            badge,
-            selecionado_id == cliente["id"],
-            elegivel,
-        ):
-            st.session_state["contrato_cliente_id"] = cliente["id"]
-            st.rerun()
     if not candidatos:
         st.info("Nenhum cliente encontrado.")
+    with lista_registros("contrato_selecao_clientes", acoes=1):
+        for cliente in candidatos:
+            elegivel = cliente["status"] == "ativo"
+            moto_atual = contratos_ativos.get(cliente["id"])
+            if not elegivel:
+                badge = f'<span style="font-size:var(--fs-legenda);color:var(--perigo-texto);">{"bloqueado" if cliente["status"] == "bloqueado" else "inativo"} · não pode alugar</span>'
+            elif moto_atual:
+                badge = f'<span style="font-size:var(--fs-legenda);color:var(--texto-2);">já aluga {escape(placas.get(moto_atual, "—"))}</span>'
+            else:
+                badge = ""
+            avatar_cor = "var(--chip-fundo)" if elegivel else "var(--avatar-inativo)"
+            if _cartao_selecionavel(
+                f"cli_card_{cliente['id']}",
+                _avatar_circulo(escape(_iniciais(cliente["nome"])), avatar_cor),
+                cliente["nome"],
+                escape(mascarar_cpf(cliente.get("cpf") or "")).replace("*", "&#42;"),
+                badge,
+                selecionado_id == cliente["id"],
+                elegivel,
+            ):
+                st.session_state["contrato_cliente_id"] = cliente["id"]
+                st.rerun()
 
 
 def _wizard_etapa2():
@@ -267,23 +258,23 @@ def _wizard_etapa2():
         if busca_normalizada in m["placa"].casefold() or busca_normalizada in f"{m['marca']} {m['modelo']}".casefold()
     ]
     selecionado_id = st.session_state.get("contrato_moto_id")
-    for moto in candidatos:
-        km_fmt = f"{moto['km_atual']:,}".replace(",", ".")
-        sugerida = formatar_moeda(moto.get("valor_locacao_sugerido")) if moto.get("valor_locacao_sugerido") else "—"
-        subtitulo = f"{km_fmt} km · sugerida {sugerida}/mês"
-        if _cartao_selecionavel(
-            f"moto_card_{moto['id']}",
-            chip_placa(moto["placa"]),
-            f"{moto['marca']} {moto['modelo']}",
-            subtitulo,
-            "",
-            selecionado_id == moto["id"],
-            True,
-        ):
-            st.session_state["contrato_moto_id"] = moto["id"]
-            st.rerun()
     if not candidatos:
         st.info("Nenhuma moto disponível encontrada.")
+    with lista_registros("contrato_selecao_motos", acoes=1):
+        for moto in candidatos:
+            km_fmt = f"{moto['km_atual']:,}".replace(",", ".")
+            sugerida = formatar_moeda(moto.get("valor_locacao_sugerido")) if moto.get("valor_locacao_sugerido") else "—"
+            if _cartao_selecionavel(
+                f"moto_card_{moto['id']}",
+                chip_placa(moto["placa"]),
+                f"{moto['marca']} {moto['modelo']}",
+                f"{km_fmt} km · sugerida {sugerida}/mês",
+                "",
+                selecionado_id == moto["id"],
+                True,
+            ):
+                st.session_state["contrato_moto_id"] = moto["id"]
+                st.rerun()
 
 
 def _wizard_etapa3():
@@ -386,7 +377,7 @@ def _wizard_etapa4():
                 f'<span class="mono">{formatar_moeda(item["valor"])}</span>',
             ]
         )
-    tabela_html(["Item", "Vencimento", "Valor"], linhas)
+    tabela_html(["Item", "Vencimento", "Valor"], linhas, legenda="Cobranças previstas do contrato")
 
     st.write("")
     st.markdown('<h3 class="rotulo" style="margin:0 0 10px;font-size:14px;">Vistoria de entrega</h3>', unsafe_allow_html=True)
@@ -568,7 +559,7 @@ def _aba_cobrancas(contrato):
                 situacao_html,
             ]
         )
-    tabela_html(["Tipo", "Vencimento", "Pago em", "Valor", "Situação"], linhas)
+    tabela_html(["Tipo", "Vencimento", "Pago em", "Valor", "Situação"], linhas, legenda="Cobranças do contrato")
 
 
 def _aba_vistorias(contrato):
@@ -627,7 +618,7 @@ def _aba_manutencoes(contrato):
         ]
         for m in registros
     ]
-    tabela_html(["Data", "Tipo", "Descrição", "Km", "Cobrada do cliente", "Custo"], linhas)
+    tabela_html(["Data", "Tipo", "Descrição", "Km", "Cobrada do cliente", "Custo"], linhas, legenda="Manutenções durante o contrato")
     st.caption("Mostrando apenas manutenções realizadas durante a vigência deste contrato.")
 
 

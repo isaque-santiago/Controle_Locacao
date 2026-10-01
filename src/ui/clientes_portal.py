@@ -84,6 +84,7 @@ def _trocas(cliente):
             ]
             for t in trocas
         ],
+        legenda="Trocas de óleo reportadas",
     )
     if not trocas:
         return
