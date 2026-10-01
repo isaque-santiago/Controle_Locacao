@@ -2,6 +2,7 @@
 pagamento em diálogo — segue Cobrancas.dc.html do mockup."""
 
 from datetime import date
+from decimal import Decimal
 from html import escape
 
 import streamlit as st
@@ -12,9 +13,11 @@ from src.domain.painel_cobrancas import (
     pertence_a_aba,
     resumo_atraso,
 )
-from src.domain.valores import decimal_br, hoje_br
+from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
+from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, motos
 from src.ui.componentes import botao_acao, cabecalho, cabecalho_pagina, chip_placa, proteger
+from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario
 from src.ui.listas import abas, aba_ativa
 from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda
@@ -111,28 +114,29 @@ def _dialog_pagamento(c):
     enc = cobrancas.calcular_encargos_cobranca(
         c, data, cobrancas.configuracao_encargos()
     )
-    linha = "display:flex;justify-content:space-between;"
+    def linha(rotulo, valor, total=False):
+        classe = "resumo-linhas__linha resumo-linhas__linha--total" if total else "resumo-linhas__linha"
+        return f'<div class="{classe}"><span>{rotulo}</span><span class="mono">{valor}</span></div>'
+
     st.markdown(
-        f"""
-        <div style="background:var(--fundo);border-radius:var(--raio-sm);padding:12px 14px;font-size:var(--fs-secundario);">
-          <div style="{linha}"><span>Valor original (saldo)</span><span class="mono">{formatar_moeda(c["saldo"])}</span></div>
-          <div style="{linha}"><span>Multa</span><span class="mono">{formatar_moeda(enc["multa"])}</span></div>
-          <div style="{linha}"><span>Juros ({enc["dias_atraso"]} dia(s) de atraso)</span><span class="mono">{formatar_moeda(enc["juros"])}</span></div>
-          <div style="{linha}font-weight:600;border-top:1px solid var(--linha);margin-top:6px;padding-top:6px;"><span>Total</span><span class="mono">{formatar_moeda(enc["total"])}</span></div>
-        </div>
-        """,
+        '<div class="resumo-linhas">'
+        + linha("Valor original (saldo)", formatar_moeda(c["saldo"]))
+        + linha("Multa", formatar_moeda(enc["multa"]))
+        + linha(f'Juros ({enc["dias_atraso"]} dia(s) de atraso)', formatar_moeda(enc["juros"]))
+        + linha("Total", formatar_moeda(enc["total"]), total=True)
+        + "</div>",
         unsafe_allow_html=True,
     )
     sufixo = f"{c['id']}_{data.isoformat()}"
-    col_p, col_e = st.columns(2)
-    principal = col_p.text_input(
-        "Principal recebido (R$)", str(c["saldo"]), key=f"pg_principal_{sufixo}"
-    )
-    extras = col_e.text_input(
-        "Multa e juros recebidos (R$)",
-        str(enc["multa"] + enc["juros"]),
-        key=f"pg_extras_{sufixo}",
-    )
+    with linha_campos([1, 1], "pg_valores") as (col_principal, col_extras):
+        with col_principal:
+            principal = campo_moeda(
+                "Principal recebido", c["saldo"], f"pg_principal_{sufixo}", obrigatorio=True, ao_vivo=True
+            )
+        with col_extras:
+            extras = campo_moeda(
+                "Multa e juros recebidos", enc["multa"] + enc["juros"], f"pg_extras_{sufixo}", ao_vivo=True
+            )
     st.caption("Principal menor que o saldo deixa a cobrança em aberto com o restante.")
     forma = st.radio(
         "Forma de pagamento",
@@ -142,19 +146,28 @@ def _dialog_pagamento(c):
         key=f"pg_forma_{c['id']}",
     )
     observacoes = st.text_area("Observações", key=f"pg_obs_{c['id']}")
-    if st.button("Confirmar pagamento", type="primary", use_container_width=True):
-        try:
+    legenda_obrigatorios()
+
+    saldo = Decimal(str(c["saldo"]))
+    erro = primeiro_erro(
+        erro_de(decimal_campo, principal, "Principal recebido", positivo=True),
+        erro_de(decimal_campo, extras, "Multa e juros recebidos"),
+    )
+    if not erro and decimal_campo(principal, "Principal recebido") > saldo:
+        erro = f"Principal recebido: não pode ser maior que o saldo da cobrança ({formatar_moeda(saldo)})."
+    acao = rodape_formulario("Confirmar pagamento", "pagamento", desabilitado=bool(erro), motivo=erro)
+    if acao.cancelou:
+        st.rerun()
+    if acao.confirmou:
+        with proteger():
             cobrancas.registrar_pagamento(
                 c["id"],
                 data,
-                decimal_br(principal, positivo=True),
-                decimal_br(extras),
+                decimal_campo(principal, "Principal recebido", positivo=True),
+                decimal_campo(extras, "Multa e juros recebidos"),
                 forma,
                 observacoes or None,
             )
-        except ValueError as erro:
-            st.error(str(erro))
-        else:
             _salvo()
 
 

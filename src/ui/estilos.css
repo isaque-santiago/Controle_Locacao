@@ -378,14 +378,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 [data-testid="stFileUploaderDropzone"]:focus-within {outline: 2px solid var(--foco); outline-offset: 2px;}
 [data-testid="stSidebar"] :is(a, button, summary):focus-visible {outline-color: var(--marca) !important;}
-/* Pílula de escolha do assistente de contrato: ativa (primary) e inativa (secondary) com o mesmo tamanho */
-.st-key-contrato_periodicidade button {
-  min-height: var(--alvo-min) !important; height: auto !important; padding: 4px var(--e4) !important; border-radius: 999px !important;
-  font-size: var(--fs-secundario) !important; font-weight: 500 !important; border-width: 1px !important; border-style: solid !important;
-}
-.st-key-contrato_periodicidade button[kind="secondary"] {background: var(--superficie) !important; border-color: var(--linha) !important; color: var(--texto) !important;}
-.st-key-contrato_periodicidade button[kind="secondary"] * {color: var(--texto) !important;}
-
 /* Barra de filtros das listas (barra_filtros): pílulas nativas que quebram de linha, busca ao lado no desktop
    e em linha própria no celular; o filtro escolhido leva um "check", então não depende só da cor */
 [class*="_barra_filtros"] {flex-wrap: wrap; gap: var(--e3) var(--e4); align-items: center; margin-bottom: var(--e2);}
@@ -725,6 +717,109 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   [class*="st-key-reg_"] > [data-testid="stLayoutWrapper"]:has([class*="st-key-regacoes_"]) {justify-self: start;}
   [data-testid="stApp"] [class*="st-key-regacoes_"] {justify-content: flex-start;}
 }
+
+/* ========================================
+   FORMULÁRIOS (src/ui/formularios.py)
+   Campos tipados, linhas de campos que empilham, rodapé de ações, indicador de etapas e blocos de impacto.
+   Tudo responde à largura do próprio contêiner (diálogo ou página), não à da janela.
+======================================== */
+/* Prefixo "R$" e sufixos (%, km, dias) dentro da moldura do campo: ficam fora do valor digitado, que continua só numérico */
+[class*="st-key-moeda_"] [data-testid="stTextInputRootElement"]::before {
+  content: "R$"; flex: none; align-self: center; padding-left: var(--e3);
+  font-family: var(--fonte-mono); font-size: var(--fs-secundario); color: var(--texto-2);
+}
+[class*="st-key-moeda_"] [data-testid="stTextInputRootElement"] input {text-align: right;}
+[class*="st-key-sfx_"] :is([data-testid="stTextInputRootElement"], [data-testid="stNumberInputContainer"])::after {
+  flex: none; align-self: center; order: 1; padding-inline: var(--e2) var(--e3);
+  font-family: var(--fonte-mono); font-size: var(--fs-secundario); color: var(--texto-2);
+}
+[class*="st-key-sfx_"] [data-testid="stNumberInputContainer"] > div {order: 2;}
+[class*="st-key-sfx_"] [data-testid="stTextInputRootElement"] > div:last-child {order: 2;}
+[class*="st-key-sfx_pct_"] [data-testid="stTextInputRootElement"]::after {content: "%";}
+[class*="st-key-sfx_km_"] [data-testid="stNumberInputContainer"]::after {content: "km";}
+[class*="st-key-sfx_dias_"] [data-testid="stNumberInputContainer"]::after {content: "dias";}
+[class*="st-key-sfx_pct_"] [data-testid="stTextInputRootElement"] input,
+[class*="st-key-sfx_"] [data-testid="stNumberInputContainer"] input {text-align: right;}
+
+/* Campos lado a lado: cada um mantém pelo menos ~12 rem; abaixo disso a linha quebra e eles empilham,
+   na ordem em que foram declarados (a mesma ordem de leitura e de tabulação) */
+[class*="st-key-camposlinha_"] > [data-testid="stHorizontalBlock"] {flex-wrap: wrap; gap: 0 var(--e4);}
+[class*="st-key-camposlinha_"] > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex: 1 1 12rem; min-width: min(12rem, 100%); width: auto !important;}
+
+/* Rodapé de formulário (rodape_formulario): Cancelar e ação principal à direita, a principal por último.
+   Em contêiner estreito as duas empilham em largura total, com a principal embaixo, e o motivo (quando a
+   confirmação está indisponível) aparece escrito logo acima. */
+[class*="st-key-rodape_"] {
+  display: flex; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; align-items: center;
+  gap: var(--e3) var(--e3); margin-top: var(--e4); container-type: inline-size;
+}
+[class*="st-key-rodape_"] > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+[class*="st-key-rodape_"] > [data-testid="stElementContainer"]:has(.rodape-form__motivo) {flex: 1 1 100%;}
+[class*="st-key-rodape_"] button {white-space: nowrap;}
+.rodape-form__motivo {font-size: var(--fs-secundario); color: var(--texto-2); border-left: 3px solid var(--alerta); padding: var(--e1) var(--e3);}
+@container (max-width: 22rem) {
+  [class*="st-key-rodape_"] {flex-direction: column; align-items: stretch;}
+  [class*="st-key-rodape_"] > [data-testid="stElementContainer"], [class*="st-key-rodape_"] [data-testid="stButton"],
+  [class*="st-key-rodape_"] [data-testid="stFormSubmitButton"], [class*="st-key-rodape_"] button {width: 100% !important;}
+}
+/* Dentro de um st.form o rodapé não precisa de margem extra */
+[data-testid="stForm"] [class*="st-key-rodape_"] {margin-top: var(--e3);}
+
+/* Leitura calculada (subtotal, custo total): mesmo rótulo e altura dos campos ao lado */
+.leitura {display: flex; flex-direction: column; gap: 2px;}
+.leitura__rotulo {font-size: var(--fs-secundario); font-weight: 500; color: var(--texto-2);}
+.leitura__valor {display: flex; align-items: center; min-height: var(--alvo-min); font-family: var(--fonte-mono); font-size: var(--fs-corpo);}
+.leitura--total .leitura__valor {font-size: var(--fs-subtitulo); font-weight: 600;}
+.resumo-custos {display: flex; flex-wrap: wrap; gap: var(--e2) var(--e6); padding: var(--e2) 0;}
+
+/* Quadro de impacto de ação destrutiva: o que será alterado, antes da confirmação */
+.impacto {border: 1px solid var(--perigo); border-radius: var(--raio-md); background: var(--perigo-fundo); padding: var(--e3) var(--e4); margin: var(--e3) 0; font-size: var(--fs-secundario);}
+.impacto__titulo {font-weight: 600; color: var(--perigo-texto); margin-bottom: var(--e1);}
+.impacto ul {margin: 0; padding-left: var(--e5);}
+.impacto li {margin: 2px 0; overflow-wrap: anywhere;}
+.impacto p {margin: var(--e2) 0 0; color: var(--texto-2);}
+.impacto__lista {margin-top: var(--e1);}
+.dialogo-identidade {margin-left: var(--e2);}
+
+/* Resumo de valores do pagamento */
+.resumo-linhas {background: var(--fundo); border-radius: var(--raio-sm); padding: var(--e3) var(--e4); font-size: var(--fs-secundario);}
+.resumo-linhas__linha {display: flex; justify-content: space-between; gap: var(--e3);}
+.resumo-linhas__linha--total {font-weight: 600; border-top: 1px solid var(--linha); margin-top: var(--e2); padding-top: var(--e2);}
+
+/* Assistente de contrato: indicador de etapas, resumo da seleção e cartão de confirmação */
+.etapas {margin: var(--e4) 0 var(--e5);}
+.etapas__lista {display: flex; align-items: flex-start; list-style: none; margin: 0; padding: 0;}
+.etapa {position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: var(--e2); text-align: center;}
+.etapa + .etapa::before {content: ""; position: absolute; top: 14px; right: 50%; width: 100%; height: 1px; background: var(--linha-forte);}
+.etapa--concluida + .etapa::before, .etapa--atual::before {background: var(--texto);}
+.etapa__num {
+  position: relative; z-index: 1; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-legenda); font-weight: 600; border: 1px solid var(--linha-forte); background: var(--superficie); color: var(--texto-3);
+}
+.etapa--concluida .etapa__num, .etapa--atual .etapa__num {background: var(--chip-fundo); border-color: var(--chip-fundo); color: var(--chip-texto);}
+.etapa--atual .etapa__num {box-shadow: 0 0 0 3px var(--linha-forte);}
+.etapa__rotulo {font-size: var(--fs-secundario); color: var(--texto-3); overflow-wrap: anywhere;}
+.etapa--concluida .etapa__rotulo {color: var(--texto-2);}
+.etapa--atual .etapa__rotulo {color: var(--texto); font-weight: 600;}
+.etapas__resumo {margin: var(--e3) 0 0; font-size: var(--fs-secundario); color: var(--texto-2);}
+@media (max-width: 640px) {
+  /* Só o rótulo da etapa atual cabe ao lado dos círculos; o resumo "Etapa N de 4: …" cobre o resto */
+  .etapa:not(.etapa--atual) .etapa__rotulo {display: none;}
+  .etapa--atual {flex: 2 1 0;}
+}
+.wizard-resumo {display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); align-items: center; font-size: var(--fs-secundario);}
+.wizard-resumo > span {display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--e2); min-width: 0; overflow-wrap: anywhere;}
+.wizard-resumo__rotulo {font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3); text-transform: uppercase; letter-spacing: .04em;}
+.st-key-wizard_resumo {gap: var(--e1); padding-bottom: var(--e3); margin-bottom: var(--e4); border-bottom: 1px solid var(--linha);}
+.st-key-wizard_resumo_acoes {flex-direction: row; flex-wrap: wrap; gap: var(--e2);}
+.st-key-wizard_resumo_acoes > [data-testid="stElementContainer"] {width: auto !important;}
+.resumo-contrato {background: var(--chip-fundo); border-radius: var(--raio-sm); padding: var(--e4) var(--e5); color: var(--chip-texto);}
+.resumo-contrato__titulo {font-size: 17px; margin-bottom: var(--e3); overflow-wrap: anywhere;}
+.resumo-contrato__grade {display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--e3);}
+.resumo-contrato__item {display: flex; flex-direction: column; gap: 2px; min-width: 0;}
+.resumo-contrato__rotulo {font-size: var(--fs-legenda); color: var(--texto-3);}
+.resumo-contrato__valor {font-size: var(--fs-secundario); overflow-wrap: anywhere;}
+.wizard-secao {margin: 0 0 var(--e3); font-size: var(--fs-subtitulo);}
 
 /* ========================================
    RESPONSIVE

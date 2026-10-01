@@ -95,9 +95,14 @@ def _formulario(dados, contrato, previsto):
             + f"Se passar disso, é cobrada uma multa fixa de **{formatar_moeda(multa)}**."
         )
 
+    # O formulário só é esvaziado quando o envio dá certo: o número da tentativa entra na chave
+    # e sobe após o sucesso. Com `clear_on_submit` o que foi digitado sumia até em caso de erro.
     chave = f"troca_oleo_{contrato['contrato_id']}"
-    with st.form(chave, clear_on_submit=True):
-        km = st.text_input("Hodômetro atual (km)", placeholder="Ex.: 12500")
+    tentativa = st.session_state.get(chave + "_tentativa", 0)
+    with st.form(f"{chave}_{tentativa}"):
+        km = st.text_input(
+            "Hodômetro atual (km)", placeholder="Ex.: 12500", type="phone", icon="", autocomplete="off"
+        )
         foto = st.file_uploader(
             "Foto do painel (mostrando o hodômetro)", type=["jpg", "jpeg", "png"]
         )
@@ -133,13 +138,15 @@ def _formulario(dados, contrato, previsto):
         )
     else:
         st.session_state["mensagem_sucesso"] = "Troca de óleo registrada. Obrigado!"
+    st.session_state[chave + "_tentativa"] = tentativa + 1
     st.rerun()
 
 
 def _alterar_senha():
     """Opcional: o locatário pode trocar a senha gerada por uma própria."""
     with st.expander("Alterar minha senha (opcional)"):
-        with st.form("trocar_senha", clear_on_submit=True):
+        tentativa = st.session_state.get("trocar_senha_tentativa", 0)
+        with st.form(f"trocar_senha_{tentativa}"):
             nova = st.text_input("Nova senha", type="password", autocomplete="new-password")
             confirmacao = st.text_input(
                 "Repita a nova senha", type="password", autocomplete="new-password"
@@ -148,7 +155,9 @@ def _alterar_senha():
             enviar = st.form_submit_button("Salvar nova senha", use_container_width=True)
         if enviar:
             portal_locatario.trocar_senha(nova, confirmacao)
-            st.success("Senha alterada. Use a nova senha no próximo acesso.")
+            st.session_state["trocar_senha_tentativa"] = tentativa + 1
+            st.session_state["mensagem_sucesso"] = "Senha alterada. Use a nova senha no próximo acesso."
+            st.rerun()
 
 
 def exibir():

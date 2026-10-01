@@ -1,20 +1,16 @@
 """Configurações: encargos, alertas e backup manual — segue Configuracoes.dc.html
 do mockup (cartões em largura total, exemplo de cálculo, backup em ZIP)."""
 
-from decimal import Decimal
 from html import escape
 
 import streamlit as st
 
-from src.domain.configuracoes import exemplo_encargos
+from src.domain.configuracoes import LIMITE_INTEIRO as _LIMITE, exemplo_encargos
 from src.domain.valores import hoje_br
 from src.services import configuracoes
 from src.ui.componentes import cabecalho, cabecalho_pagina, proteger, sucesso
 from src.ui.formatadores import formatar_moeda
-
-
-def _percentual(valor):
-    return f"{Decimal(str(valor)):.2f}".replace(".", ",")
+from src.ui.formularios import campo_inteiro, campo_moeda, campo_percentual, linha_campos
 
 
 def _titulo_cartao(titulo, descricao):
@@ -64,16 +60,19 @@ def _formulario(config):
                 "Encargos por atraso",
                 "Aplicados sobre o saldo em aberto após a carência.",
             )
-            c1, c2, c3 = st.columns(3)
-            entrada["multa_atraso_percentual"] = c1.text_input(
-                "Multa por atraso (%)", _percentual(config["multa_atraso_percentual"])
-            )
-            entrada["juros_mensal_percentual"] = c2.text_input(
-                "Juros mensal (%)", _percentual(config["juros_mensal_percentual"])
-            )
-            entrada["carencia_dias"] = c3.text_input(
-                "Carência (dias)", str(config["carencia_dias"])
-            )
+            with linha_campos([1, 1, 1], "cfg_encargos") as (c1, c2, c3):
+                with c1:
+                    entrada["multa_atraso_percentual"] = campo_percentual(
+                        "Multa por atraso", config["multa_atraso_percentual"], "cfg_multa"
+                    )
+                with c2:
+                    entrada["juros_mensal_percentual"] = campo_percentual(
+                        "Juros mensal", config["juros_mensal_percentual"], "cfg_juros"
+                    )
+                with c3:
+                    entrada["carencia_dias"] = campo_inteiro(
+                        "Carência", config["carencia_dias"], "cfg_carencia", sufixo="dias", maximo=_LIMITE
+                    )
             _exemplo(
                 config["multa_atraso_percentual"],
                 config["juros_mensal_percentual"],
@@ -85,17 +84,20 @@ def _formulario(config):
                 "Alertas de manutenção",
                 'Quando um item entra em situação "próxima" antes de vencer.',
             )
-            c1, c2 = st.columns(2)
-            entrada["alerta_manutencao_km"] = c1.text_input(
-                "Avisar (km antes)", str(config["alerta_manutencao_km"])
-            )
-            entrada["alerta_manutencao_dias"] = c2.text_input(
-                "Avisar (dias antes)", str(config["alerta_manutencao_dias"])
-            )
-            entrada["multa_troca_oleo_valor"] = st.text_input(
-                "Multa por troca de óleo fora do intervalo (R$)",
-                _percentual(config.get("multa_troca_oleo_valor") or 0),
-                help="Valor fixo cobrado do locatário quando ele reporta a troca de óleo "
+            with linha_campos([1, 1], "cfg_manutencao") as (c1, c2):
+                with c1:
+                    entrada["alerta_manutencao_km"] = campo_inteiro(
+                        "Avisar antes", config["alerta_manutencao_km"], "cfg_alerta_km", sufixo="km", maximo=_LIMITE
+                    )
+                with c2:
+                    entrada["alerta_manutencao_dias"] = campo_inteiro(
+                        "Avisar antes", config["alerta_manutencao_dias"], "cfg_alerta_dias", sufixo="dias", maximo=_LIMITE
+                    )
+            entrada["multa_troca_oleo_valor"] = campo_moeda(
+                "Multa por troca de óleo fora do intervalo",
+                config.get("multa_troca_oleo_valor") or 0,
+                "cfg_multa_oleo",
+                ajuda="Valor fixo cobrado do locatário quando ele reporta a troca de óleo "
                 "depois do intervalo do plano. Deixe 0,00 para não cobrar multa.",
             )
 
@@ -104,13 +106,15 @@ def _formulario(config):
                 "Alertas de documentos e CNH",
                 'Dias antes do vencimento para marcar como "a vencer".',
             )
-            c1, c2 = st.columns(2)
-            entrada["alerta_documento_dias"] = c1.text_input(
-                "Documentos da moto (dias)", str(config["alerta_documento_dias"])
-            )
-            entrada["alerta_cnh_dias"] = c2.text_input(
-                "CNH do cliente (dias)", str(config["alerta_cnh_dias"])
-            )
+            with linha_campos([1, 1], "cfg_documentos") as (c1, c2):
+                with c1:
+                    entrada["alerta_documento_dias"] = campo_inteiro(
+                        "Documentos da moto", config["alerta_documento_dias"], "cfg_alerta_doc", sufixo="dias", maximo=_LIMITE
+                    )
+                with c2:
+                    entrada["alerta_cnh_dias"] = campo_inteiro(
+                        "CNH do cliente", config["alerta_cnh_dias"], "cfg_alerta_cnh", sufixo="dias", maximo=_LIMITE
+                    )
     return salvar, entrada
 
 

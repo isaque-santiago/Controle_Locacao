@@ -108,7 +108,7 @@ def test_tela_mostra_erro_de_validacao_sem_salvar():
         patch("src.repositories.configuracoes.atualizar") as gravar,
     ):
         app = _abrir_pagina()
-        app.text_input[2].set_value("-3")
+        app.text_input(key="cfg_multa_oleo").set_value("-3")
         app.button[0].click().run()
     assert not gravar.called
-    assert "Carência" in app.error[0].value
+    assert "Multa por troca de óleo" in app.error[0].value

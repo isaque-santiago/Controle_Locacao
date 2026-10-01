@@ -3,7 +3,7 @@
 from decimal import Decimal
 from pathlib import Path
 from time import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from postgrest.exceptions import APIError
@@ -136,6 +136,44 @@ class TestTelas:
             app.button[0].click().run()
         registrar.assert_not_called()
         assert [e.value for e in app.error] == ["Anexe a foto do painel e a foto da nota fiscal."]
+
+    def test_envio_recusado_nao_apaga_o_hodometro_digitado(self):
+        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
+        app.text_input[0].set_value("6100")
+        with (
+            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
+            patch("src.services.portal_locatario.registrar_troca_oleo"),
+        ):
+            app.button[0].click().run()
+        assert app.error  # fotos faltando
+        assert app.text_input[0].value == "6100"
+
+    def test_envio_com_erro_do_servico_mantem_o_formulario_e_com_sucesso_limpa(self):
+        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
+        app.text_input[0].set_value("6100")
+        foto = MagicMock()
+        foto.name, foto.getvalue.return_value = "a.png", PNG
+        with (
+            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
+            patch("src.ui.portal_locatario.st.file_uploader", return_value=foto),
+            patch(
+                "src.services.portal_locatario.registrar_troca_oleo",
+                side_effect=ValueError("O hodômetro não pode ser menor que o último registrado (5900 km)."),
+            ),
+        ):
+            app.button[0].click().run()
+            assert any("não pode ser menor" in e.value for e in app.error)
+            assert app.text_input[0].value == "6100"
+        with (
+            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
+            patch("src.ui.portal_locatario.st.file_uploader", return_value=foto),
+            patch("src.services.portal_locatario.registrar_troca_oleo", return_value={"excedeu": False}),
+        ):
+            app.button[0].click().run()
+        assert app.text_input[0].value == ""
 
     def test_usuario_sem_papel_nao_ve_nenhuma_tela(self):
         app = _abrir("app.py", None)

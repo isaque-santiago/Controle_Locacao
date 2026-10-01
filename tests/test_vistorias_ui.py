@@ -187,11 +187,11 @@ def test_itens_adicionais_invalidos_mostram_erro_sem_gravar():
 def test_salvar_recusa_data_anterior_ao_inicio_do_contrato():
     with patch("src.services.vistorias.registrar_vistoria") as registrar:
         app = _abrir_dialogo_registro()
-        next(d for d in app.date_input if d.label == "Data").set_value(date(2026, 8, 1))
-        next(b for b in app.button if b.label == "Salvar vistoria").click().run()
+        next(d for d in app.date_input if d.label == "Data").set_value(date(2026, 8, 1)).run()
 
     registrar.assert_not_called()
-    assert any("anteceder o início do contrato" in e.value for e in app.error)
+    assert app.button(key="vistreg_salvar").disabled
+    assert any("anteceder o início do contrato" in m.value for m in app.markdown)
 
 
 def test_falha_no_envio_de_foto_nao_desfaz_a_vistoria():

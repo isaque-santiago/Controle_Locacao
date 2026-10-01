@@ -135,6 +135,23 @@ itens com "·" decorativo fora de listas realmente compactas.
   horizontal no documento (conferido de 320 a 1600 px). `estado="selecionado"|"indisponivel"` serve às listas de
   escolha (assistente): barra lateral + botão "Selecionado" com ícone, nunca só a cor. Dado tabular sem ação não é
   cartão: é `tabela_html`.
+- **Formulários** (`src/ui/formularios.py` + `src/domain/entradas.py`, Etapa 5): cada tipo de dado tem um campo —
+  `campo_moeda` (prefixo `R$` desenhado pelo CSS, valor `1.234,56`, alinhado à direita), `campo_percentual` e
+  `campo_inteiro(sufixo="%"|"km"|"dias")` (unidade dentro da moldura, depois do valor e antes dos botões `−`/`+`),
+  `campo_cpf`/`campo_telefone` (teclado numérico, máscara, `validate=` do navegador com mensagem própria),
+  `campo_placa`, `campo_email`. Obrigatório = `*` no rótulo + legenda. Erro de validação sempre cita o campo e como
+  corrigir (`decimal_campo`, `inteiro_campo`). **Linhas de campos** são `linha_campos(pesos, chave)`: container
+  `camposlinha_*` com `flex-wrap`, cada coluna com mínimo de 12 rem, então a linha quebra e empilha na ordem de leitura
+  (nunca por `nth-child`). **Rodapé** é `rodape_formulario(...)`: Cancelar à esquerda e ação principal por último;
+  container query de 22 rem empilha em largura total, com o motivo do bloqueio escrito acima do botão
+  (`.rodape-form__motivo`, faixa âmbar). Destrutivo: `perigo=True` + quadro `.impacto` (borda e título de perigo) com o
+  que será alterado + caixa de confirmação; o botão neutro diz o que acontece (“Manter manutenção”). Valores
+  calculados (subtotal, custo total) usam `.leitura`, com o mesmo rótulo e altura dos campos.
+- **Assistente de contrato** (Etapa 5): `indicador_etapas` é `<nav><ol>` com `.etapa--concluida|atual|futura`,
+  `aria-current="step"` e “(concluída)” para leitor de tela; ≤ 640 px só a etapa atual mostra o rótulo e a linha
+  “Etapa N de 4: …” cobre o resto. `.wizard-resumo` mostra cliente e moto escolhidos com `Alterar`, e as condições
+  digitadas ficam em `contrato_rascunho` (voltar ou alterar etapa anterior não perde nada). O cartão de confirmação
+  `.resumo-contrato` usa grade `auto-fit`, sem `style` por cartão.
 - **Tabelas somente leitura** (`tabela_html(cabecalhos, linhas, legenda=...)`): `<th scope="col">`, `role` explícito
   em table/row/columnheader/cell (a semântica sobrevive quando o CSS, no celular, transforma cada linha em cartão e
   esconde o cabeçalho só visualmente), `legenda` como nome acessível e cabeçalho `""` para coluna decorativa (barra

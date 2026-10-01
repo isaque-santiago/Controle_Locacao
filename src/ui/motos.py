@@ -14,7 +14,8 @@ from src.services import (
     clientes,
     cobrancas,
 )
-from src.domain.valores import hoje_br, decimal_br
+from src.domain.entradas import decimal_campo
+from src.domain.valores import hoje_br
 from src.ui.componentes import (
     cabecalho,
     cabecalho_pagina,
@@ -27,6 +28,15 @@ from src.ui.componentes import (
     abrir_ficha_contrato,
     botao_acao,
     botao_voltar,
+)
+from src.ui.formularios import (
+    campo_inteiro,
+    campo_moeda,
+    campo_placa,
+    legenda_obrigatorios,
+    linha_campos,
+    rodape_formulario,
+    rotulo_obrigatorio,
 )
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
@@ -82,65 +92,76 @@ def _dialog_editar_moto(moto):
 
 def _formulario_moto(moto):
     moto = moto or {}
+    ano_atual = hoje_br().year
     with st.form("form_moto_" + moto.get("id", "novo")):
         dados = {}
-        for campo, titulo in [
-            ("placa", "Placa"),
-            ("marca", "Marca"),
-            ("modelo", "Modelo"),
-            ("renavam", "Renavam"),
-            ("chassi", "Chassi"),
-            ("cor", "Cor"),
-        ]:
-            dados[campo] = st.text_input(titulo, value=moto.get(campo) or "")
-        col1, col2 = st.columns(2)
-        dados["ano_fabricacao"] = col1.number_input(
-            "Ano fabricação", min_value=1900, max_value=2100,
-            value=moto.get("ano_fabricacao") or 2026,
-        )
-        dados["ano_modelo"] = col2.number_input(
-            "Ano modelo", min_value=1900, max_value=2100,
-            value=moto.get("ano_modelo") or 2026,
-        )
+        dados["placa"] = campo_placa("Placa", moto.get("placa"), "moto_placa", obrigatorio=True)
+        with linha_campos([1, 1], "moto_marca_modelo") as (col_marca, col_modelo):
+            dados["marca"] = col_marca.text_input(rotulo_obrigatorio("Marca"), value=moto.get("marca") or "")
+            dados["modelo"] = col_modelo.text_input(rotulo_obrigatorio("Modelo"), value=moto.get("modelo") or "")
+        with linha_campos([1, 1], "moto_renavam_chassi") as (col_renavam, col_chassi):
+            dados["renavam"] = col_renavam.text_input("Renavam", value=moto.get("renavam") or "")
+            dados["chassi"] = col_chassi.text_input("Chassi", value=moto.get("chassi") or "")
+        dados["cor"] = st.text_input("Cor", value=moto.get("cor") or "")
+        with linha_campos([1, 1], "moto_anos") as (col_fabricacao, col_modelo_ano):
+            with col_fabricacao:
+                dados["ano_fabricacao"] = campo_inteiro(
+                    "Ano de fabricação", moto.get("ano_fabricacao") or ano_atual, "moto_ano_fabricacao",
+                    minimo=1900, maximo=2100,
+                )
+            with col_modelo_ano:
+                dados["ano_modelo"] = campo_inteiro(
+                    "Ano do modelo", moto.get("ano_modelo") or ano_atual, "moto_ano_modelo",
+                    minimo=1900, maximo=2100,
+                )
         if not moto:
-            dados["km_atual"] = st.number_input(
-                "Quilometragem inicial", min_value=0, step=1
-            )
-        aquisicao = st.text_input(
-            "Valor de aquisição (R$)", str(moto.get("valor_aquisicao") or "0")
-        )
-        locacao = st.text_input(
-            "Locação sugerida (R$)", str(moto.get("valor_locacao_sugerido") or "0")
-        )
+            dados["km_atual"] = campo_inteiro("Quilometragem inicial", 0, "moto_km", sufixo="km")
+        with linha_campos([1, 1], "moto_valores") as (col_aquisicao, col_locacao):
+            with col_aquisicao:
+                aquisicao = campo_moeda("Valor de aquisição", moto.get("valor_aquisicao"), "moto_aquisicao")
+            with col_locacao:
+                locacao = campo_moeda(
+                    "Locação sugerida",
+                    moto.get("valor_locacao_sugerido"),
+                    "moto_locacao",
+                    ajuda="Valor mensal sugerido ao criar contratos; cada contrato pode usar outro valor.",
+                )
         data = campo_data("Data de aquisição", moto.get("data_aquisicao"))
         dados["data_aquisicao"] = data.isoformat() if data else None
         dados["observacoes"] = st.text_area("Observações", moto.get("observacoes") or "")
-        if st.form_submit_button("Salvar moto", type="primary", use_container_width=True):
-            dados.update(
-                valor_aquisicao=str(decimal_br(aquisicao)),
-                valor_locacao_sugerido=str(decimal_br(locacao)),
-            )
-            if moto:
-                motos.atualizar(moto["id"], dados)
-            else:
-                motos.criar(dados)
-            _salvo()
+        legenda_obrigatorios()
+        acao = rodape_formulario("Salvar moto", "moto", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                dados.update(
+                    valor_aquisicao=str(decimal_campo(aquisicao, "Valor de aquisição")),
+                    valor_locacao_sugerido=str(decimal_campo(locacao, "Locação sugerida")),
+                )
+                if moto:
+                    motos.atualizar(moto["id"], dados)
+                else:
+                    motos.criar(dados)
+                _salvo()
 
 
 @st.dialog("Atualizar quilometragem")
 def _dialog_km(moto):
     st.markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
     with st.form("form_km_" + moto["id"]):
-        km = st.number_input(
-            "Nova leitura", min_value=0, value=moto["km_atual"], step=1
-        )
+        km = campo_inteiro("Nova leitura", moto["km_atual"], "moto_nova_leitura", sufixo="km")
         confirmar = st.checkbox(
             "Confirmo o lançamento de uma leitura histórica menor "
             "(o km atual será mantido)"
         )
-        if st.form_submit_button("Registrar leitura", type="primary", use_container_width=True):
-            motos.atualizar_km(moto["id"], km, confirmar_km_menor=confirmar)
-            _salvo("Quilometragem atualizada.")
+        acao = rodape_formulario("Registrar leitura", "kmmoto", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                motos.atualizar_km(moto["id"], km, confirmar_km_menor=confirmar)
+                _salvo("Quilometragem atualizada.")
 
 
 @st.dialog("Regularizar documento")
@@ -148,9 +169,13 @@ def _dialog_regularizar(documento):
     st.write(f"**{documento['tipo'].upper()}** · vencimento {formatar_data(documento['vencimento'])}")
     with st.form("form_regularizar_" + documento["id"]):
         data = campo_data("Data de regularização", hoje_br().isoformat())
-        if st.form_submit_button("Confirmar", type="primary", use_container_width=True):
-            documentos.regularizar(documento["id"], data or hoje_br())
-            _salvo("Documento regularizado.")
+        acao = rodape_formulario("Confirmar regularização", "regmoto", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                documentos.regularizar(documento["id"], data or hoje_br())
+                _salvo("Documento regularizado.")
 
 
 # ------------------------------------------------------------------ lista --

@@ -20,13 +20,13 @@ CAMPOS_INTEIROS = {
 CAMPOS_MONETARIOS = {
     "multa_troca_oleo_valor": "Multa por troca de óleo fora do intervalo",
 }
-_LIMITE_INTEIRO = 100_000
+LIMITE_INTEIRO = 100_000
 
 
 def _inteiro(valor, rotulo):
     texto = str(valor).strip()
-    if not texto.isdigit() or int(texto) > _LIMITE_INTEIRO:
-        raise ValueError(f"{rotulo}: informe um número inteiro entre 0 e {_LIMITE_INTEIRO}.")
+    if not texto.isdigit() or int(texto) > LIMITE_INTEIRO:
+        raise ValueError(f"{rotulo}: informe um número inteiro entre 0 e {LIMITE_INTEIRO}.")
     return int(texto)
 
 

@@ -7,6 +7,8 @@ from html import escape
 import streamlit as st
 
 from src.services import contratos, motos, clientes, cobrancas, vistorias, manutencao
+from src.domain.encerramento import cobrancas_a_cancelar
+from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
 from src.domain.valores import hoje_br, decimal_br
 from src.ui.componentes import (
     cabecalho,
@@ -20,7 +22,9 @@ from src.ui.componentes import (
     abrir_ficha_cliente,
     botao_acao,
     botao_voltar,
+    indicador_etapas,
 )
+from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario, rotulo_obrigatorio
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
@@ -31,6 +35,7 @@ _OPCOES_FILTRO = [("Todos", "Todos")] + [(chave, _STATUS_ROTULO[chave]) for chav
 _PERIODOS = ["diario", "semanal", "quinzenal", "mensal"]
 _PERIODOS_ROTULO = {"diario": "Diário", "semanal": "Semanal", "quinzenal": "Quinzenal", "mensal": "Mensal"}
 _ETAPAS_WIZARD = ["Cliente", "Moto", "Condições", "Confirmar"]
+_LIMITE_IMPACTO = 8  # cobranças listadas no diálogo de encerramento; as demais viram "e mais N"
 
 
 def _salvo(mensagem="Alterações salvas."):
@@ -38,15 +43,24 @@ def _salvo(mensagem="Alterações salvas."):
     st.rerun()
 
 
+_CHAVES_WIZARD = (
+    "contratos_visao",
+    "contratos_id_selecionado",
+    "contrato_etapa",
+    "contrato_cliente_id",
+    "contrato_moto_id",
+    "contrato_condicoes",
+    "contrato_rascunho",
+    "wiz_inicio",
+    "wiz_fim",
+    "wiz_valor",
+    "wiz_caucao",
+    "wiz_periodicidade",
+)
+
+
 def _ir_para_lista():
-    for chave in (
-        "contratos_visao",
-        "contratos_id_selecionado",
-        "contrato_etapa",
-        "contrato_cliente_id",
-        "contrato_moto_id",
-        "contrato_condicoes",
-    ):
+    for chave in _CHAVES_WIZARD:
         st.session_state.pop(chave, None)
     st.rerun()
 
@@ -59,6 +73,8 @@ def _ir_para_ficha(contrato_id):
 
 
 def _iniciar_wizard():
+    for chave in _CHAVES_WIZARD:
+        st.session_state.pop(chave, None)
     st.session_state["contratos_visao"] = "wizard"
     st.session_state["contrato_etapa"] = 1
     st.rerun()
@@ -143,35 +159,6 @@ def _exibir_lista():
 
 
 # ----------------------------------------------------------------- wizard --
-
-def _indicador_etapas_contrato(atual):
-    itens = ""
-    for i, rotulo in enumerate(_ETAPAS_WIZARD, start=1):
-        concluido = i < atual
-        corrente = i == atual
-        if concluido or corrente:
-            cor_fundo, cor_borda, cor_texto = "var(--chip-fundo)", "var(--chip-fundo)", "var(--chip-texto)"
-        else:
-            cor_fundo, cor_borda, cor_texto = "transparent", "var(--linha)", "var(--texto-3)"
-        anel = "box-shadow:0 0 0 3px var(--linha-forte);" if corrente else ""
-        rotulo_cor = "var(--texto)" if corrente else ("var(--texto-2)" if concluido else "var(--texto-3)")
-        rotulo_peso = "600" if corrente else "500"
-        if i > 1:
-            cor_linha = "var(--texto)" if i <= atual else "var(--linha)"
-            itens += f'<div style="flex-grow:1;height:1px;background:{cor_linha};margin:14px 12px 0;"></div>'
-        itens += f"""
-        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:120px;">
-          <div style="width:28px;height:28px;border-radius:50%;background:{cor_fundo};border:1px solid {cor_borda};
-                      {anel}display:flex;align-items:center;justify-content:center;color:{cor_texto};
-                      font-size:var(--fs-legenda);font-weight:600;flex-shrink:0;">{i}</div>
-          <span style="font-size:var(--fs-secundario);color:{rotulo_cor};font-weight:{rotulo_peso};">{rotulo}</span>
-        </div>
-        """
-    st.markdown(
-        f'<div style="display:flex;align-items:flex-start;padding:20px 40px;">{itens}</div>',
-        unsafe_allow_html=True,
-    )
-
 
 def _avatar_circulo(texto, cor="var(--chip-fundo)"):
     return (
@@ -277,69 +264,141 @@ def _wizard_etapa2():
                 st.rerun()
 
 
-def _wizard_etapa3():
+def _guardar_rascunho():
+    """Guarda o que a etapa 3 já tem nos campos (mesmo inválido), para voltar e revisar etapas
+    anteriores sem perder o progresso. Campos de widget somem do estado quando saem da tela."""
+    rascunho = dict(st.session_state.get("contrato_rascunho", {}))
+    for chave, campo_estado in (
+        ("data_inicio", "wiz_inicio"),
+        ("data_fim_prevista", "wiz_fim"),
+        ("valor_periodo", "wiz_valor"),
+        ("caucao_valor", "wiz_caucao"),
+        ("periodicidade", "wiz_periodicidade"),
+    ):
+        if campo_estado in st.session_state:
+            valor = st.session_state[campo_estado]
+            rascunho[chave] = valor.isoformat() if isinstance(valor, date) else valor
+    st.session_state["contrato_rascunho"] = rascunho
+
+
+def _ir_para_etapa(etapa):
+    """Troca de etapa sem perder cliente, moto nem condições (também usado como `on_click`)."""
+    _guardar_rascunho()
+    st.session_state["contrato_etapa"] = etapa
+
+
+def _resumo_selecao(cliente, moto, etapa):
+    """Cliente e moto já escolhidos, com `Alterar` para revisar a etapa correspondente."""
+    with st.container(key="wizard_resumo"):
+        st.markdown(
+            f'<div class="wizard-resumo"><span><span class="wizard-resumo__rotulo">Cliente</span> {escape(cliente["nome"])}</span>'
+            f'<span><span class="wizard-resumo__rotulo">Moto</span> {chip_placa(moto["placa"])} '
+            f'{escape(moto["marca"])} {escape(moto["modelo"])}</span></div>',
+            unsafe_allow_html=True,
+        )
+        with st.container(key="wizard_resumo_acoes"):
+            st.button(
+                "Alterar cliente",
+                key=f"alterar_cliente_{etapa}",
+                icon=":material/edit:",
+                type="tertiary",
+                on_click=_ir_para_etapa,
+                args=(1,),
+            )
+            st.button(
+                "Alterar moto",
+                key=f"alterar_moto_{etapa}",
+                icon=":material/edit:",
+                type="tertiary",
+                on_click=_ir_para_etapa,
+                args=(2,),
+            )
+
+
+def _dados_selecionados():
     moto = next(m for m in motos.listar() if m["id"] == st.session_state["contrato_moto_id"])
-    condicoes_atuais = st.session_state.get("contrato_condicoes", {})
+    cliente = next(c for c in clientes.listar() if c["id"] == st.session_state["contrato_cliente_id"])
+    return cliente, moto
 
-    col_data, col_periodo = st.columns([1, 2.5])
-    with col_data:
-        inicio = campo_data("Data de início", condicoes_atuais.get("data_inicio") or hoje_br().isoformat())
-    with col_periodo:
-        st.markdown('<span style="font-size:var(--fs-legenda);color:var(--texto-2);">Periodicidade</span>', unsafe_allow_html=True)
-        periodicidade_atual = st.session_state.get("wizard_periodicidade", "mensal")
-        with st.container(key="contrato_periodicidade"):
-            cols = st.columns(len(_PERIODOS))
-            for coluna, valor in zip(cols, _PERIODOS):
-                if coluna.button(
-                    _PERIODOS_ROTULO[valor],
-                    key=f"periodo_{valor}",
-                    type="primary" if periodicidade_atual == valor else "secondary",
-                ):
-                    st.session_state["wizard_periodicidade"] = valor
-                    st.rerun()
 
-    col_valor, col_caucao = st.columns(2)
-    valor = col_valor.text_input(
-        "Valor do período (R$)",
-        condicoes_atuais.get("valor_periodo") or str(moto.get("valor_locacao_sugerido") or "0"),
+def _texto_rascunho(rascunho, chave, campo_estado):
+    """Texto digitado antes de sair da etapa, enquanto o campo ainda não voltou ao estado."""
+    return rascunho.get(chave) if chave in rascunho and campo_estado not in st.session_state else None
+
+
+def _wizard_etapa3():
+    cliente, moto = _dados_selecionados()
+    _resumo_selecao(cliente, moto, 3)
+    rascunho = st.session_state.get("contrato_rascunho") or st.session_state.get("contrato_condicoes", {})
+    hoje = hoje_br()
+
+    with linha_campos([1, 1], "wiz_datas") as (col_inicio, col_fim):
+        with col_inicio:
+            inicio = campo_data(
+                rotulo_obrigatorio("Data de início"), rascunho.get("data_inicio") or hoje.isoformat(), key="wiz_inicio"
+            )
+        with col_fim:
+            fim = campo_data(
+                rotulo_obrigatorio("Fim previsto"),
+                rascunho.get("data_fim_prevista") or (hoje + timedelta(days=30)).isoformat(),
+                key="wiz_fim",
+                help="O prazo é obrigatório nesta versão do assistente.",
+            )
+    periodicidade = st.radio(
+        "Periodicidade",
+        _PERIODOS,
+        index=_PERIODOS.index(rascunho.get("periodicidade", "mensal")),
+        format_func=_PERIODOS_ROTULO.get,
+        horizontal=True,
+        key="wiz_periodicidade",
     )
-    caucao = col_caucao.text_input("Caução (R$)", condicoes_atuais.get("caucao_valor") or "0")
+    with linha_campos([1, 1], "wiz_valores") as (col_valor, col_caucao):
+        with col_valor:
+            valor = campo_moeda(
+                "Valor do período",
+                moto.get("valor_locacao_sugerido"),
+                "wiz_valor",
+                obrigatorio=True,
+                ao_vivo=True,
+                texto=_texto_rascunho(rascunho, "valor_periodo", "wiz_valor"),
+            )
+        with col_caucao:
+            caucao = campo_moeda(
+                "Caução",
+                0,
+                "wiz_caucao",
+                ao_vivo=True,
+                texto=_texto_rascunho(rascunho, "caucao_valor", "wiz_caucao"),
+            )
+    st.caption(f"Km inicial: {moto['km_atual']:,} km (leitura atual da moto).".replace(",", "."))
+    legenda_obrigatorios()
 
-    col_fim, col_km = st.columns(2)
-    fim_padrao = (
-        date.fromisoformat(condicoes_atuais["data_fim_prevista"])
-        if condicoes_atuais.get("data_fim_prevista")
-        else hoje_br() + timedelta(days=30)
+    erro = primeiro_erro(
+        None if inicio else "Data de início: informe a data.",
+        None if fim else "Fim previsto: informe a data.",
+        "Fim previsto: escolha uma data igual ou posterior ao início." if inicio and fim and fim < inicio else None,
+        erro_de(decimal_campo, valor, "Valor do período", positivo=True),
+        erro_de(decimal_campo, caucao, "Caução"),
     )
-    fim = col_fim.date_input("Fim previsto", value=fim_padrao, format="DD/MM/YYYY")
-    col_km.text_input("Km inicial", f"{moto['km_atual']:,}".replace(",", "."), disabled=True)
-    st.caption("Prazo definido é obrigatório nesta versão do assistente.")
-
-    col_voltar, col_avancar = st.columns(2)
-    if col_voltar.button("Voltar", key="voltar_3"):
-        st.session_state["contrato_etapa"] = 2
+    acao = rodape_formulario("Avançar", "wiz3", desabilitado=bool(erro), motivo=erro, cancelar="Voltar")
+    if acao.cancelou:
+        _ir_para_etapa(2)
         st.rerun()
-    if col_avancar.button("Avançar", type="primary", key="avancar_3"):
-        try:
-            valor_dec = decimal_br(valor, positivo=True)
-            caucao_dec = decimal_br(caucao)
-        except ValueError as erro:
-            st.error(str(erro))
-            return
+    if acao.confirmou:
         st.session_state["contrato_condicoes"] = {
             "data_inicio": inicio.isoformat(),
             "data_fim_prevista": fim.isoformat(),
-            "periodicidade": periodicidade_atual,
-            "valor_periodo": str(valor_dec),
-            "caucao_valor": str(caucao_dec),
+            "periodicidade": periodicidade,
+            "valor_periodo": str(decimal_campo(valor, "Valor do período", positivo=True)),
+            "caucao_valor": str(decimal_campo(caucao, "Caução")),
         }
-        st.session_state["contrato_etapa"] = 4
+        _ir_para_etapa(4)
         st.rerun()
 
 
 def _wizard_etapa4():
-    moto = next(m for m in motos.listar() if m["id"] == st.session_state["contrato_moto_id"])
-    cliente = next(c for c in clientes.listar() if c["id"] == st.session_state["contrato_cliente_id"])
+    cliente, moto = _dados_selecionados()
+    _resumo_selecao(cliente, moto, 4)
     condicoes = st.session_state["contrato_condicoes"]
 
     agenda = contratos.previa_agenda(
@@ -350,66 +409,67 @@ def _wizard_etapa4():
     )
     caucao_dec = decimal_br(condicoes["caucao_valor"])
 
+    def item(rotulo, valor, mono=True):
+        classe = "resumo-contrato__valor mono" if mono else "resumo-contrato__valor"
+        return (
+            f'<div class="resumo-contrato__item"><span class="resumo-contrato__rotulo">{rotulo}</span>'
+            f'<span class="{classe}">{valor}</span></div>'
+        )
+
+    titulo = f"{cliente['nome']} vai alugar {moto['placa']} · {moto['marca']} {moto['modelo']}"
     st.markdown(
         f"""
-        <div style="background:var(--chip-fundo);border-radius:var(--raio-sm);padding:20px 24px;color:var(--chip-texto);">
-          <div class="rotulo" style="font-size:17px;margin-bottom:12px;">{cliente['nome']} vai alugar {moto['placa']} · {moto['marca']} {moto['modelo']}</div>
-          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;">
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">periodicidade</span><span style="font-size:var(--fs-secundario);">{_PERIODOS_ROTULO[condicoes['periodicidade']]}</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(condicoes['valor_periodo'])}</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">início</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(condicoes['data_inicio'])}</span></div>
-            <div style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:var(--fs-legenda);color:var(--texto-3);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(condicoes['caucao_valor'])}</span></div>
+        <div class="resumo-contrato">
+          <div class="resumo-contrato__titulo rotulo">{escape(titulo)}</div>
+          <div class="resumo-contrato__grade">
+            {item("periodicidade", _PERIODOS_ROTULO[condicoes['periodicidade']], mono=False)}
+            {item("valor / período", formatar_moeda(condicoes['valor_periodo']))}
+            {item("início", formatar_data(condicoes['data_inicio']))}
+            {item("fim previsto", formatar_data(condicoes['data_fim_prevista']))}
+            {item("caução", formatar_moeda(condicoes['caucao_valor']))}
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
     st.write("")
-    st.markdown('<h3 class="rotulo" style="margin:0 0 10px;font-size:14px;">Prévia da agenda de cobranças</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 class="rotulo wizard-secao">Prévia da agenda de cobranças</h3>', unsafe_allow_html=True)
     linhas = []
     if caucao_dec > 0:
         linhas.append(["Caução", f'<span class="mono">{formatar_data(condicoes["data_inicio"])}</span>', f'<span class="mono">{formatar_moeda(caucao_dec)}</span>'])
-    for item in agenda:
+    for parcela in agenda:
         linhas.append(
             [
-                f"Parcela {item['numero']}",
-                f'<span class="mono">{formatar_data(item["vencimento"].isoformat())}</span>',
-                f'<span class="mono">{formatar_moeda(item["valor"])}</span>',
+                f"Parcela {parcela['numero']}",
+                f'<span class="mono">{formatar_data(parcela["vencimento"].isoformat())}</span>',
+                f'<span class="mono">{formatar_moeda(parcela["valor"])}</span>',
             ]
         )
     tabela_html(["Item", "Vencimento", "Valor"], linhas, legenda="Cobranças previstas do contrato")
 
     st.write("")
-    st.markdown('<h3 class="rotulo" style="margin:0 0 10px;font-size:14px;">Vistoria de entrega</h3>', unsafe_allow_html=True)
+    st.markdown('<h3 class="rotulo wizard-secao">Vistoria de entrega</h3>', unsafe_allow_html=True)
     with st.form("novo_contrato_" + moto["id"]):
         vistoria = campos_vistoria("entrega", moto["km_atual"])
-        col_voltar, col_criar = st.columns(2)
-        voltar = col_voltar.form_submit_button("Voltar")
-        criar = col_criar.form_submit_button("Criar contrato", type="primary")
-    if voltar:
-        st.session_state["contrato_etapa"] = 3
+        acao = rodape_formulario("Criar contrato", "wiz4", formulario=True, cancelar="Voltar")
+    if acao.cancelou:
+        _ir_para_etapa(3)
         st.rerun()
-    if criar:
-        dados_vistoria = preparar_vistoria(vistoria)
-        contratos.criar_com_vistoria(
-            {
-                "moto_id": moto["id"],
-                "cliente_id": cliente["id"],
-                "km_inicial": dados_vistoria["km"],
-                **condicoes,
-            },
-            dados_vistoria,
-        )
-        for chave in (
-            "contratos_visao",
-            "contrato_etapa",
-            "contrato_cliente_id",
-            "contrato_moto_id",
-            "contrato_condicoes",
-            "wizard_periodicidade",
-        ):
-            st.session_state.pop(chave, None)
-        _salvo("Contrato criado. Anexe as fotos da vistoria na página Vistorias.")
+    if acao.confirmou:
+        with proteger():
+            dados_vistoria = preparar_vistoria(vistoria)
+            contratos.criar_com_vistoria(
+                {
+                    "moto_id": moto["id"],
+                    "cliente_id": cliente["id"],
+                    "km_inicial": dados_vistoria["km"],
+                    **condicoes,
+                },
+                dados_vistoria,
+            )
+            for chave in _CHAVES_WIZARD:
+                st.session_state.pop(chave, None)
+            _salvo("Contrato criado. Anexe as fotos da vistoria na página Vistorias.")
 
 
 def _exibir_wizard():
@@ -417,33 +477,36 @@ def _exibir_wizard():
         _ir_para_lista()
     etapa = st.session_state.setdefault("contrato_etapa", 1)
 
-    col_titulo, col_cancelar = st.columns([4, 1], vertical_alignment="center")
-    col_titulo.markdown(
-        """
-        <h1 class="rotulo" style="margin:0;font-size:24px;">Novo contrato</h1>
-        <div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:2px;">assistente em 4 etapas</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    with col_cancelar:
-        if st.button("Cancelar", use_container_width=True):
-            _ir_para_lista()
-
-    _indicador_etapas_contrato(etapa)
-    st.write("")
+    cabecalho_pagina("Novo contrato", sub="Assistente em 4 etapas")
+    indicador_etapas(etapa, _ETAPAS_WIZARD, nome="Etapas do novo contrato")
 
     if etapa == 1:
         _wizard_etapa1()
-        if st.button("Avançar", type="primary", disabled=not st.session_state.get("contrato_cliente_id")):
+        acao = rodape_formulario(
+            "Avançar",
+            "wiz1",
+            desabilitado=not st.session_state.get("contrato_cliente_id"),
+            motivo="Selecione um cliente para continuar.",
+            cancelar="Cancelar",
+        )
+        if acao.cancelou:
+            _ir_para_lista()
+        if acao.confirmou:
             st.session_state["contrato_etapa"] = 2
             st.rerun()
     elif etapa == 2:
         _wizard_etapa2()
-        col_voltar, col_avancar = st.columns(2)
-        if col_voltar.button("Voltar", key="voltar_2"):
+        acao = rodape_formulario(
+            "Avançar",
+            "wiz2",
+            desabilitado=not st.session_state.get("contrato_moto_id"),
+            motivo="Selecione uma moto disponível para continuar.",
+            cancelar="Voltar",
+        )
+        if acao.cancelou:
             st.session_state["contrato_etapa"] = 1
             st.rerun()
-        if col_avancar.button("Avançar", type="primary", key="avancar_2", disabled=not st.session_state.get("contrato_moto_id")):
+        if acao.confirmou:
             st.session_state["contrato_etapa"] = 3
             st.rerun()
     elif etapa == 3:
@@ -451,28 +514,57 @@ def _exibir_wizard():
     elif etapa == 4:
         _wizard_etapa4()
 
-    st.caption(f"Etapa {etapa} de 4")
-
 
 # ------------------------------------------------------------------ ficha --
 
 @st.dialog("Encerrar contrato")
 def _dialog_encerrar(contrato, moto, cliente):
-    st.markdown(f'{chip_placa(moto["placa"])} <span style="margin-left:8px;">{cliente["nome"]}</span>', unsafe_allow_html=True)
-    with st.form("encerrar_" + contrato["id"]):
-        data = campo_data("Data de encerramento", hoje_br().isoformat())
-        km_final = st.number_input(
-            "Km final", min_value=contrato["km_inicial"], value=moto["km_atual"], step=1
-        )
-        st.caption(f"deve ser maior ou igual ao km inicial ({contrato['km_inicial']:,} km)".replace(",", "."))
-        devolvida = st.checkbox("Caução devolvida ao cliente", value=True)
-        st.caption(f"Cobranças em aberto com vencimento após {formatar_data((data or hoje_br()).isoformat())} serão canceladas automaticamente.")
-        moto_atual = next(m for m in motos.listar() if m["id"] == contrato["moto_id"])
-        vistoria = campos_vistoria("devolucao", moto_atual["km_atual"])
-        if st.form_submit_button("Confirmar encerramento", type="primary", use_container_width=True):
-            contratos.encerrar_com_vistoria(
-                contrato["id"], data or hoje_br(), preparar_vistoria(vistoria), devolvida
-            )
+    st.markdown(f'{chip_placa(moto["placa"])} <span class="dialogo-identidade">{escape(cliente["nome"])}</span>', unsafe_allow_html=True)
+    inicio = date.fromisoformat(str(contrato["data_inicio"])[:10])
+    data = campo_data(
+        rotulo_obrigatorio("Data de encerramento"), max(hoje_br(), inicio).isoformat(), key="enc_data", min_value=inicio
+    )
+    moto_atual = next(m for m in motos.listar() if m["id"] == contrato["moto_id"])
+    vistoria = campos_vistoria(
+        "devolucao", moto_atual["km_atual"], ajuda_km=f"Vale como km final do contrato (início: {contrato['km_inicial']:,} km).".replace(",", ".")
+    )
+    devolvida = st.checkbox("Caução devolvida ao cliente", value=True, key="enc_caucao")
+
+    afetadas = cobrancas_a_cancelar(cobrancas.listar_por_contrato(contrato["id"]), data) if data else []
+    impacto = (
+        f"As {len(afetadas)} cobranças abaixo serão canceladas:" if len(afetadas) > 1
+        else ("A cobrança abaixo será cancelada:" if afetadas else "Nenhuma cobrança será cancelada.")
+    )
+    itens = "".join(
+        f'<li>{escape(c["tipo"].capitalize())} · vence <span class="mono">{formatar_data(c["vencimento"])}</span> · '
+        f'<span class="mono">{formatar_moeda(c["saldo"])}</span></li>'
+        for c in afetadas[:_LIMITE_IMPACTO]
+    )
+    resto = len(afetadas) - _LIMITE_IMPACTO
+    mais = f"<li>e mais {resto} cobrança(s)</li>" if resto > 0 else ""
+    st.markdown(
+        '<div class="impacto" role="group" aria-label="O que o encerramento altera">'
+        '<div class="impacto__titulo">O que acontece ao encerrar</div>'
+        "<ul>"
+        f"<li>O contrato passa a Encerrado e a moto volta a ficar disponível.</li>"
+        f"<li>{impacto}</li></ul>"
+        f'<ul class="impacto__lista">{itens}{mais}</ul>'
+        "<p>Cobranças já vencidas até a data, ou com pagamento parcial, continuam em aberto.</p></div>",
+        unsafe_allow_html=True,
+    )
+    confirmou_impacto = st.checkbox(
+        "Entendo o que será alterado e quero encerrar o contrato.", key="enc_confirma"
+    )
+    erro = primeiro_erro(None if data else "Data de encerramento: informe a data.")
+    motivo = erro or (None if confirmou_impacto else "Marque a confirmação acima para encerrar o contrato.")
+    acao = rodape_formulario(
+        "Encerrar contrato", "enc", desabilitado=bool(motivo), motivo=motivo, perigo=True
+    )
+    if acao.cancelou:
+        st.rerun()
+    if acao.confirmou:
+        with proteger():
+            contratos.encerrar_com_vistoria(contrato["id"], data, preparar_vistoria(vistoria), devolvida)
             _salvo("Contrato encerrado.")
 
 

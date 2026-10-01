@@ -7,7 +7,8 @@ import streamlit as st
 
 from src.services import documentos, motos, configuracoes
 from src.domain.documentos import situacao_documento, sugerir_proximo_documento
-from src.domain.valores import hoje_br, decimal_br
+from src.domain.entradas import decimal_campo
+from src.domain.valores import hoje_br
 from src.ui.componentes import (
     cabecalho,
     cabecalho_pagina,
@@ -17,6 +18,14 @@ from src.ui.componentes import (
     chip_placa,
     selo_situacao,
     botao_acao,
+)
+from src.ui.formularios import (
+    campo_inteiro,
+    campo_moeda,
+    legenda_obrigatorios,
+    linha_campos,
+    rodape_formulario,
+    rotulo_obrigatorio,
 )
 from src.ui.listas import barra_filtros, paginar, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
@@ -101,22 +110,20 @@ def _dialogo_documento(documento):
             format_func=_TIPOS.get,
             horizontal=True,
         )
-        col_ano, col_venc = st.columns([1, 2])
-        ano = col_ano.number_input(
-            "Ano de referência",
-            min_value=1900,
-            max_value=2100,
-            value=documento.get("ano_referencia") or hoje_br().year,
-            step=1,
-        )
-        with col_venc:
-            vencimento = campo_data("Vencimento", documento.get("vencimento"))
-        col_valor, col_desc = st.columns([1, 2])
-        valor = col_valor.text_input(
-            "Valor (R$)", str(documento.get("valor") or "0").replace(".", ",")
-        )
-        descricao = col_desc.text_input(
-            "Descrição (ex.: apólice 221004)", documento.get("descricao") or ""
+        with linha_campos([1, 1], "doc_ano_vencimento") as (col_ano, col_venc):
+            with col_ano:
+                ano = campo_inteiro(
+                    "Ano de referência",
+                    documento.get("ano_referencia") or hoje_br().year,
+                    "documento_ano",
+                    minimo=1900,
+                    maximo=2100,
+                )
+            with col_venc:
+                vencimento = campo_data(rotulo_obrigatorio("Vencimento"), documento.get("vencimento"))
+        valor = campo_moeda("Valor", documento.get("valor"), "documento_valor")
+        descricao = st.text_input(
+            "Descrição", documento.get("descricao") or "", placeholder="ex.: apólice 221004"
         )
         arquivo = st.file_uploader(
             "Comprovante (opcional) — PDF ou imagem", type=_EXTENSOES, key="documento_arquivo"
@@ -126,24 +133,21 @@ def _dialogo_documento(documento):
         observacoes = st.text_area(
             "Observações", documento.get("observacoes") or "", height=68
         )
-        col_cancelar, col_salvar = st.columns(2)
-        cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
-        salvar = col_salvar.form_submit_button(
-            "Salvar documento", type="primary", use_container_width=True
-        )
-        if cancelar:
+        legenda_obrigatorios()
+        acao = rodape_formulario("Salvar documento", "documento", formulario=True)
+        if acao.cancelou:
             st.rerun()
-        if salvar:
+        if acao.confirmou:
             with proteger():
                 if not vencimento:
-                    raise ValueError("Informe o vencimento do documento.")
+                    raise ValueError("Vencimento: informe a data de vencimento do documento.")
                 dados = {
                     "moto_id": moto_id,
                     "tipo": tipo,
                     "ano_referencia": int(ano),
                     "vencimento": vencimento.isoformat(),
                     "descricao": descricao.strip() or None,
-                    "valor": str(decimal_br(valor)),
+                    "valor": str(decimal_campo(valor, "Valor")),
                     "observacoes": observacoes.strip() or None,
                 }
                 if editando:
@@ -188,14 +192,10 @@ def _dialog_regularizar(documento, moto):
                 value=True,
                 help="Abre o cadastro já preenchido, com o vencimento em branco para você informar.",
             )
-        col_cancelar, col_confirmar = st.columns(2)
-        cancelar = col_cancelar.form_submit_button("Cancelar", use_container_width=True)
-        confirmar = col_confirmar.form_submit_button(
-            "Confirmar", type="primary", use_container_width=True
-        )
-        if cancelar:
+        acao = rodape_formulario("Confirmar regularização", "regdoc", formulario=True)
+        if acao.cancelou:
             st.rerun()
-        if confirmar:
+        if acao.confirmou:
             with proteger():
                 if arquivo:
                     _anexar(documento["id"], documento["moto_id"], arquivo)

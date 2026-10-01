@@ -168,3 +168,19 @@ class TestPrepararItensAdicionais:
             preparar_itens_adicionais(
                 [{"descricao": "", "quantidade": "2", "valor_unitario": "10"}]
             )
+
+    def test_linha_com_valores_padrao_dos_campos_brasileiros_conta_como_vazia(self):
+        # os campos de dinheiro começam em "0,00" e a quantidade em "1"
+        assert preparar_itens_adicionais(
+            [{"descricao": "  ", "quantidade": "1", "valor_unitario": "0,00"}]
+        ) == []
+
+    def test_erros_citam_a_peca_ou_servico(self):
+        with pytest.raises(ValueError, match="Quantidade de Pastilha"):
+            preparar_itens_adicionais(
+                [{"descricao": "Pastilha", "quantidade": "0", "valor_unitario": "10,00"}]
+            )
+        with pytest.raises(ValueError, match="Valor unitário de Pastilha"):
+            preparar_itens_adicionais(
+                [{"descricao": "Pastilha", "quantidade": "1", "valor_unitario": "dez"}]
+            )

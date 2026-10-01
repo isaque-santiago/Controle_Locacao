@@ -71,4 +71,4 @@ def test_dialogo_registrar_abre_com_previa_de_custo(servicos):
     assert not app.exception and not app.error
     assert any(b.label == "Salvar manutenção" for b in app.button)
     texto = " ".join(m.value for m in app.markdown)
-    assert "custo total" in texto
+    assert "Custo total" in texto
