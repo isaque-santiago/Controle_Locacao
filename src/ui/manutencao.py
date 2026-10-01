@@ -1,12 +1,14 @@
 """Manutenção: alertas, histórico e catálogo — segue Manutencao.dc.html do mockup."""
 
+from datetime import date
 from decimal import Decimal
 from html import escape
 
 import streamlit as st
 
 from src.services import manutencao, motos, alertas
-from src.domain.valores import hoje_br, decimal_br
+from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
+from src.domain.valores import hoje_br
 from src.domain.manutencao_regras import preparar_itens_adicionais
 from src.ui.componentes import (
     cabecalho,
@@ -18,6 +20,14 @@ from src.ui.componentes import (
     selo_situacao,
     tabela_html,
     botao_acao,
+)
+from src.ui.formularios import (
+    campo_inteiro,
+    campo_moeda,
+    legenda_obrigatorios,
+    linha_campos,
+    rodape_formulario,
+    rotulo_obrigatorio,
 )
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
@@ -50,21 +60,11 @@ def _texto(texto, estilo=""):
     return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
 
-def _cabecalho_tabela(colunas, rotulos):
-    for coluna, rotulo in zip(colunas, rotulos):
-        coluna.markdown(
-            f'<span class="fs-secundario texto-2">{rotulo}</span>',
-            unsafe_allow_html=True,
-        )
-
-
-# ---------------------------------------------------------------- diálogos --
-
 def _valor_tolerante(texto, positivo=False):
     """Valor para a prévia ao vivo: entrada inválida conta como zero (o erro
-    aparece só ao salvar, via decimal_br)."""
+    aparece junto ao botão de salvar, via decimal_campo)."""
     try:
-        return decimal_br(texto, positivo=positivo)
+        return decimal_campo(texto, "Campo", positivo=positivo)
     except ValueError:
         return Decimal("0.00")
 
@@ -84,7 +84,7 @@ def _remover_linha(n):
 
 
 def _linhas_adicionais():
-    """Peças e serviços fora do plano: uma linha de campos por item (com rótulos visíveis e botão
+    """Peças e serviços fora do plano: um grupo de campos por item (com rótulos visíveis e botão
     `Remover`), no lugar da tabela editável em canvas, que não segue o tema nem funciona bem no celular.
     Adicionar e remover são callbacks (rodam antes da reexecução, também dentro do diálogo).
     Devolve os registros no formato de `preparar_itens_adicionais`."""
@@ -92,18 +92,20 @@ def _linhas_adicionais():
     st.caption("Outras peças ou serviços")
     registros = []
     for n in ids:
-        c_desc, c_qtd, c_valor, c_remover = st.columns([3, 1, 1.4, 1.2], vertical_alignment="bottom")
-        descricao = c_desc.text_input("Descrição", key=f"{_PREFIXO_REGISTRO}extra_desc_{n}")
-        quantidade = c_qtd.text_input("Quantidade", "1", key=f"{_PREFIXO_REGISTRO}extra_qtd_{n}")
-        valor = c_valor.text_input("Valor unitário (R$)", "0", key=f"{_PREFIXO_REGISTRO}extra_valor_{n}")
-        botao_acao(
-            c_remover,
-            "remover",
-            f"{_PREFIXO_REGISTRO}extra_remover_{n}",
-            ajuda=f"Remover {descricao.strip() or 'esta linha'} da lista de peças e serviços",
-            on_click=_remover_linha,
-            args=(n,),
-        )
+        with st.container(border=True, key=f"{_PREFIXO_REGISTRO}extra_grupo_{n}"):
+            descricao = st.text_input("Descrição", key=f"{_PREFIXO_REGISTRO}extra_desc_{n}")
+            with linha_campos([1, 1, 1], f"man_extra_{n}", vertical_alignment="bottom") as (c_qtd, c_valor, c_remover):
+                quantidade = c_qtd.text_input("Quantidade", "1", key=f"{_PREFIXO_REGISTRO}extra_qtd_{n}")
+                with c_valor:
+                    valor = campo_moeda("Valor unitário", 0, f"{_PREFIXO_REGISTRO}extra_valor_{n}", ao_vivo=True)
+                botao_acao(
+                    c_remover,
+                    "remover",
+                    f"{_PREFIXO_REGISTRO}extra_remover_{n}",
+                    ajuda=f"Remover {descricao.strip() or 'esta linha'} da lista de peças e serviços",
+                    on_click=_remover_linha,
+                    args=(n,),
+                )
         registros.append({"descricao": descricao, "quantidade": quantidade, "valor_unitario": valor})
     st.button(
         "Adicionar peça ou serviço",
@@ -112,6 +114,14 @@ def _linhas_adicionais():
         on_click=_adicionar_linha,
     )
     return registros
+
+
+def _leitura(rotulo, valor_html):
+    """Valor calculado (não editável), com o mesmo rótulo e altura dos campos ao lado."""
+    return (
+        f'<div class="leitura"><span class="leitura__rotulo">{escape(rotulo)}</span>'
+        f'<span class="leitura__valor">{valor_html}</span></div>'
+    )
 
 
 @st.dialog("Registrar manutenção", width="large")
@@ -128,36 +138,39 @@ def _dialog_registrar():
         lambda m: f"{m['placa']} · {m['marca']} {m['modelo']}",
         _PREFIXO_REGISTRO + "moto",
     )
-    col_tipo, col_status = st.columns(2)
-    tipo = col_tipo.radio(
-        "Tipo", ["Preventiva", "Corretiva"], horizontal=True, key=_PREFIXO_REGISTRO + "tipo"
-    ).lower()
-    status_rotulo = col_status.radio(
-        "Status", ["Concluída", "Aberta"], horizontal=True, key=_PREFIXO_REGISTRO + "status"
-    )
+    with linha_campos([1, 1], "man_tipo_status") as (col_tipo, col_status):
+        tipo = col_tipo.radio(
+            "Tipo", ["Preventiva", "Corretiva"], horizontal=True, key=_PREFIXO_REGISTRO + "tipo"
+        ).lower()
+        status_rotulo = col_status.radio(
+            "Status", ["Concluída", "Aberta"], horizontal=True, key=_PREFIXO_REGISTRO + "status"
+        )
     concluida = status_rotulo == "Concluída"
 
-    col_entrada, col_saida, col_km = st.columns(3)
-    entrada = col_entrada.date_input(
-        "Data de entrada", hoje_br(), format="DD/MM/YYYY", key=_PREFIXO_REGISTRO + "entrada"
-    )
-    saida = col_saida.date_input(
-        "Data de saída",
-        entrada,
-        min_value=entrada,
-        format="DD/MM/YYYY",
-        disabled=not concluida,
-        key=_PREFIXO_REGISTRO + "saida",
-    )
-    km = col_km.number_input(
-        "Km",
-        min_value=moto["km_atual"],
-        value=moto["km_atual"],
-        step=1,
-        key=f"{_PREFIXO_REGISTRO}km_{moto['id']}",
-    )
-    oficina = st.text_input("Oficina", key=_PREFIXO_REGISTRO + "oficina")
-    descricao = st.text_area("Descrição", height=80, key=_PREFIXO_REGISTRO + "descricao")
+    with linha_campos([1, 1], "man_datas") as (col_entrada, col_saida):
+        entrada = col_entrada.date_input(
+            "Data de entrada", hoje_br(), format="DD/MM/YYYY", key=_PREFIXO_REGISTRO + "entrada"
+        )
+        saida = col_saida.date_input(
+            "Data de saída",
+            entrada,
+            min_value=entrada,
+            format="DD/MM/YYYY",
+            disabled=not concluida,
+            key=_PREFIXO_REGISTRO + "saida",
+            help=None if concluida else "A data de saída só vale para manutenção concluída.",
+        )
+    with linha_campos([1, 2], "man_km_oficina") as (col_km, col_oficina):
+        with col_km:
+            km = campo_inteiro(
+                "Km",
+                moto["km_atual"],
+                f"{_PREFIXO_REGISTRO}km_{moto['id']}",
+                sufixo="km",
+                minimo=moto["km_atual"],
+            )
+        oficina = col_oficina.text_input("Oficina", key=_PREFIXO_REGISTRO + "oficina")
+    descricao = st.text_area(rotulo_obrigatorio("Descrição"), height=80, key=_PREFIXO_REGISTRO + "descricao")
 
     escolhidos = st.multiselect(
         "Itens do plano substituídos ou revisados",
@@ -167,26 +180,24 @@ def _dialog_registrar():
         help="Itens marcados aqui zeram o contador do plano da moto.",
     )
     linhas_plano = []
-    if escolhidos:
-        cab = st.columns([3, 1, 1.4, 1.4])
-        _cabecalho_tabela(cab, ["Item", "Qtd.", "Unitário (R$)", "Subtotal"])
     for id in escolhidos:
         item = next(i for i in itens if i["id"] == id)
-        c_nome, c_qtd, c_valor, c_sub = st.columns([3, 1, 1.4, 1.4], vertical_alignment="center")
-        c_nome.markdown(
-            _texto(item["nome"]) + ' <span style="font-size:var(--fs-legenda);color:var(--texto-3);">(plano)</span>',
-            unsafe_allow_html=True,
-        )
-        qtd = c_qtd.text_input("Quantidade", "1", key=f"{_PREFIXO_REGISTRO}qtd_{id}", label_visibility="collapsed")
-        valor = c_valor.text_input("Valor unitário", "0", key=f"{_PREFIXO_REGISTRO}valor_{id}", label_visibility="collapsed")
-        subtotal = _valor_tolerante(qtd, positivo=True) * _valor_tolerante(valor)
-        c_sub.markdown(_mono(formatar_moeda(subtotal)), unsafe_allow_html=True)
+        with st.container(border=True, key=f"{_PREFIXO_REGISTRO}plano_{id}"):
+            st.markdown(
+                _texto(escape(item["nome"])) + ' <span class="texto-3 fs-legenda">(plano)</span>',
+                unsafe_allow_html=True,
+            )
+            with linha_campos([1, 1, 1], f"man_plano_{id}", vertical_alignment="bottom") as (c_qtd, c_valor, c_sub):
+                qtd = c_qtd.text_input("Quantidade", "1", key=f"{_PREFIXO_REGISTRO}qtd_{id}")
+                with c_valor:
+                    valor = campo_moeda("Valor unitário", 0, f"{_PREFIXO_REGISTRO}valor_{id}", ao_vivo=True)
+                subtotal = _valor_tolerante(qtd, positivo=True) * _valor_tolerante(valor)
+                c_sub.markdown(_leitura("Subtotal", formatar_moeda(subtotal)), unsafe_allow_html=True)
         linhas_plano.append((item, qtd, valor, subtotal))
 
     registros_adicionais = _linhas_adicionais()
 
-    col_mao, col_pecas, col_total = st.columns(3, vertical_alignment="bottom")
-    mao_obra = col_mao.text_input("Custo de mão de obra (R$)", "0", key=_PREFIXO_REGISTRO + "mao_obra")
+    mao_obra = campo_moeda("Custo de mão de obra", 0, _PREFIXO_REGISTRO + "mao_obra", ao_vivo=True)
     pecas = sum((s for *_, s in linhas_plano), Decimal("0.00")) + sum(
         (
             _valor_tolerante(str(r.get("quantidade") or "1"), positivo=True)
@@ -197,37 +208,41 @@ def _dialog_registrar():
         Decimal("0.00"),
     )
     total = pecas + _valor_tolerante(mao_obra)
-    col_pecas.markdown(
-        f'<div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">custo de peças</span>'
-        f'{_mono(formatar_moeda(pecas), "font-size:15px;")}</div>',
-        unsafe_allow_html=True,
-    )
-    col_total.markdown(
-        f'<div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">custo total</span>'
-        f'{_mono(formatar_moeda(total), "font-size:18px;font-weight:600;")}</div>',
+    st.markdown(
+        '<div class="resumo-custos">'
+        f'<div class="leitura"><span class="leitura__rotulo">Custo de peças</span><span class="leitura__valor">{formatar_moeda(pecas)}</span></div>'
+        f'<div class="leitura leitura--total"><span class="leitura__rotulo">Custo total</span><span class="leitura__valor">{formatar_moeda(total)}</span></div>'
+        "</div>",
         unsafe_allow_html=True,
     )
     cobrar = st.checkbox(
         "Cobrar do cliente (gera cobrança de dano no contrato vigente)",
         key=_PREFIXO_REGISTRO + "cobrar",
     )
+    legenda_obrigatorios()
 
-    col_cancelar, col_salvar = st.columns(2)
-    if col_cancelar.button("Cancelar", use_container_width=True, key=_PREFIXO_REGISTRO + "cancelar"):
+    erro = primeiro_erro(
+        None if descricao.strip() else "Descrição: informe o serviço realizado.",
+        erro_de(decimal_campo, mao_obra, "Custo de mão de obra"),
+        *(
+            erro_de(decimal_campo, qtd, f"Quantidade de {item['nome']}", positivo=True)
+            or erro_de(decimal_campo, valor, f"Valor unitário de {item['nome']}")
+            for item, qtd, valor, _ in linhas_plano
+        ),
+        erro_de(preparar_itens_adicionais, registros_adicionais),
+    )
+    acao = rodape_formulario("Salvar manutenção", "manreg", desabilitado=bool(erro), motivo=erro)
+    if acao.cancelou:
         _limpar_registro()
         st.rerun()
-    if col_salvar.button(
-        "Salvar manutenção", type="primary", use_container_width=True, key=_PREFIXO_REGISTRO + "salvar"
-    ):
+    if acao.confirmou:
         with proteger():
-            if not descricao.strip():
-                raise ValueError("Informe a descrição do serviço.")
             lista = [
                 {
                     "item_id": item["id"],
                     "descricao": item["nome"],
-                    "quantidade": decimal_br(qtd, positivo=True),
-                    "valor_unitario": decimal_br(valor),
+                    "quantidade": decimal_campo(qtd, f"Quantidade de {item['nome']}", positivo=True),
+                    "valor_unitario": decimal_campo(valor, f"Valor unitário de {item['nome']}"),
                 }
                 for item, qtd, valor, _ in linhas_plano
             ]
@@ -241,7 +256,7 @@ def _dialog_registrar():
                 status="concluida" if concluida else "aberta",
                 data_saida=saida if concluida else None,
                 oficina=oficina,
-                custo_mao_obra=decimal_br(mao_obra),
+                custo_mao_obra=decimal_campo(mao_obra, "Custo de mão de obra"),
                 cobrar_do_cliente=cobrar,
                 itens=lista,
             )
@@ -263,26 +278,53 @@ _IMPACTO_FINALIZAR = {
 
 
 def _finalizar_manutencao(registro, moto, acao):
-    """Corpo compartilhado dos diálogos Concluir e Cancelar manutenção: cada um faz uma só coisa."""
+    """Corpo compartilhado dos diálogos Concluir e Cancelar manutenção. Concluir é um formulário
+    simples; cancelar é destrutivo (não pode ser desfeito), então mostra o registro afetado e só
+    libera o botão depois de a pessoa marcar que entendeu o impacto."""
     concluir = acao == "concluida"
+    entrada = date.fromisoformat(str(registro["data_entrada"])[:10])
     st.markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
     st.write(f"{formatar_data(registro['data_entrada'])} · {registro['descricao']}")
-    (st.caption if concluir else st.warning)(_IMPACTO_FINALIZAR[acao])
     piso = max(moto["km_atual"], registro["km"])
-    with st.form(("form_concluir_" if concluir else "form_cancelar_") + registro["id"]):
-        data_saida = st.date_input(
-            "Data de conclusão" if concluir else "Data do cancelamento", hoje_br(), format="DD/MM/YYYY"
+    rotulo_data = "Data de conclusão" if concluir else "Data do cancelamento"
+    rotulo_km = "Km na conclusão" if concluir else "Km atual da moto"
+    inicio_data = max(hoje_br(), entrada)
+    if concluir:
+        st.caption(_IMPACTO_FINALIZAR[acao])
+        with st.form("form_concluir_" + registro["id"]):
+            data_saida = st.date_input(
+                rotulo_data, inicio_data, min_value=entrada, format="DD/MM/YYYY", key="manfin_data"
+            )
+            km = campo_inteiro(rotulo_km, piso, "manfin_km", sufixo="km", minimo=piso)
+            resultado = rodape_formulario("Concluir manutenção", "manfin", formulario=True)
+    else:
+        st.markdown(
+            '<div class="impacto" role="group" aria-label="O que o cancelamento altera">'
+            '<div class="impacto__titulo">O que acontece ao cancelar</div>'
+            f"<ul><li>{escape(_IMPACTO_FINALIZAR[acao])}</li></ul></div>",
+            unsafe_allow_html=True,
         )
-        km = st.number_input("Km na conclusão" if concluir else "Km atual da moto", min_value=piso, value=piso, step=1)
-        if st.form_submit_button(
-            "Concluir manutenção" if concluir else "Cancelar manutenção",
-            type="primary",
-            use_container_width=True,
-            key=None if concluir else "perigo_confirmar_cancelar_man",
-        ):
-            with proteger():
-                manutencao.finalizar(registro["id"], acao, data_saida, km)
-                _salvo("Manutenção concluída." if concluir else "Manutenção cancelada.")
+        data_saida = st.date_input(
+            rotulo_data, inicio_data, min_value=entrada, format="DD/MM/YYYY", key="manfin_data"
+        )
+        km = campo_inteiro(rotulo_km, piso, "manfin_km", sufixo="km", minimo=piso)
+        entendeu = st.checkbox(
+            "Entendo que o cancelamento não pode ser desfeito.", key="manfin_confirma"
+        )
+        resultado = rodape_formulario(
+            "Cancelar manutenção",
+            "manfin",
+            perigo=True,
+            desabilitado=not entendeu,
+            motivo="Marque a confirmação acima para cancelar a manutenção.",
+            cancelar="Manter manutenção",
+        )
+    if resultado.cancelou:
+        st.rerun()
+    if resultado.confirmou:
+        with proteger():
+            manutencao.finalizar(registro["id"], acao, data_saida, km)
+            _salvo("Manutenção concluída." if concluir else "Manutenção cancelada.")
 
 
 @st.dialog("Concluir manutenção")
@@ -298,19 +340,29 @@ def _dialog_cancelar(registro, moto):
 @st.dialog("Item do catálogo")
 def _dialog_item(item):
     with st.form("form_catalogo_" + item.get("id", "novo")):
-        nome = st.text_input("Nome", item.get("nome", ""))
-        col_km, col_dias = st.columns(2)
-        km = col_km.number_input(
-            "Intervalo km (0 sem limite)", min_value=0, value=item.get("intervalo_km") or 0, step=1
-        )
-        dias = col_dias.number_input(
-            "Intervalo dias (0 sem limite)", min_value=0, value=item.get("intervalo_dias") or 0, step=1
-        )
+        nome = st.text_input(rotulo_obrigatorio("Nome"), item.get("nome", ""))
+        with linha_campos([1, 1], "man_intervalos") as (col_km, col_dias):
+            with col_km:
+                km = campo_inteiro(
+                    "Intervalo em km", item.get("intervalo_km") or 0, "item_km", sufixo="km",
+                    ajuda="Use 0 quando o item não tiver limite em km.",
+                )
+            with col_dias:
+                dias = campo_inteiro(
+                    "Intervalo em dias", item.get("intervalo_dias") or 0, "item_dias", sufixo="dias",
+                    ajuda="Use 0 quando o item não tiver limite em dias.",
+                )
         ativo = st.checkbox("Ativo", item.get("ativo", True))
-        if st.form_submit_button("Salvar item", type="primary", use_container_width=True):
+        legenda_obrigatorios()
+        acao = rodape_formulario("Salvar item", "item", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
             with proteger():
-                if not nome.strip() or not (km or dias):
-                    raise ValueError("Informe o nome e pelo menos um intervalo.")
+                if not nome.strip():
+                    raise ValueError("Nome: informe o nome do item.")
+                if not (km or dias):
+                    raise ValueError("Intervalo: informe km, dias ou os dois (0 significa sem limite).")
                 dados = {
                     "nome": nome,
                     "intervalo_km": km or None,

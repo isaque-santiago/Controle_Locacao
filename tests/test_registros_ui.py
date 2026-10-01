@@ -170,7 +170,7 @@ def test_pecas_e_servicos_adicionais_usam_campos_e_nao_tabela_em_canvas(servicos
     app.button(key="manreg_extra_adicionar").click().run()
     assert not app.exception and not app.error
     rotulos = [e.label for e in app.text_input if e.key and e.key.startswith("manreg_extra_")]
-    assert rotulos == ["Descrição", "Quantidade", "Valor unitário (R$)"]
+    assert rotulos == ["Descrição", "Quantidade", "Valor unitário"]
     assert [b.label for b in app.button if b.key == "manreg_extra_remover_0"] == ["Remover"]
 
 

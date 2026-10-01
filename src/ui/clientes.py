@@ -6,6 +6,7 @@ from html import escape
 import streamlit as st
 
 from src.services import clientes, contratos, cobrancas, motos, configuracoes
+from src.domain.entradas import formatar_telefone
 from src.domain.valores import hoje_br
 from src.domain.cnh_regras import situacao_cnh
 from src.ui.componentes import (
@@ -23,6 +24,15 @@ from src.ui.componentes import (
     botao_voltar,
 )
 from src.ui.clientes_portal import aba_portal
+from src.ui.formularios import (
+    campo_cpf,
+    campo_email,
+    campo_telefone,
+    legenda_obrigatorios,
+    linha_campos,
+    rodape_formulario,
+    rotulo_obrigatorio,
+)
 from src.ui.registros import campo, lista_registros, registro
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
@@ -98,30 +108,41 @@ def _formulario_cliente(cliente):
     cliente = cliente or {}
     with st.form("form_cliente_" + cliente.get("id", "novo")):
         dados = {}
-        for campo, titulo in [
-            ("nome", "Nome completo"),
-            ("cpf", "CPF"),
-            ("telefone", "Telefone"),
-            ("whatsapp", "WhatsApp"),
-            ("email", "E-mail"),
-            ("endereco", "Endereço"),
-            ("cnh_numero", "Número da CNH"),
-            ("cnh_categoria", "Categoria da CNH"),
-        ]:
-            dados[campo] = st.text_input(titulo, cliente.get(campo) or "")
-        validade = campo_data("Validade da CNH", cliente.get("cnh_validade"))
-        dados["cnh_validade"] = validade.isoformat() if validade else None
+        dados["nome"] = st.text_input(rotulo_obrigatorio("Nome completo"), cliente.get("nome") or "")
+        dados["cpf"] = campo_cpf("CPF", cliente.get("cpf"), "cliente_cpf", obrigatorio=True)
+        with linha_campos([1, 1], "cliente_telefones") as (col_telefone, col_whatsapp):
+            with col_telefone:
+                telefone = campo_telefone("Telefone", cliente.get("telefone"), "cliente_telefone")
+            with col_whatsapp:
+                whatsapp = campo_telefone("WhatsApp", cliente.get("whatsapp"), "cliente_whatsapp")
+        dados["email"] = campo_email("E-mail", cliente.get("email"), "cliente_email")
+        dados["endereco"] = st.text_input("Endereço", cliente.get("endereco") or "")
+        with linha_campos([2, 1], "cliente_cnh") as (col_numero, col_categoria):
+            dados["cnh_numero"] = col_numero.text_input("Número da CNH", cliente.get("cnh_numero") or "")
+            dados["cnh_categoria"] = col_categoria.text_input("Categoria da CNH", cliente.get("cnh_categoria") or "")
         opcoes = ["ativo", "bloqueado", "inativo"]
-        dados["status"] = st.selectbox(
-            "Status", opcoes, index=opcoes.index(cliente.get("status", "ativo"))
-        )
+        with linha_campos([1, 1], "cliente_validade_status") as (col_validade, col_status):
+            with col_validade:
+                validade = campo_data("Validade da CNH", cliente.get("cnh_validade"))
+            dados["status"] = col_status.selectbox(
+                "Status", opcoes, index=opcoes.index(cliente.get("status", "ativo")),
+                format_func=_STATUS_ROTULO.get,
+            )
+        dados["cnh_validade"] = validade.isoformat() if validade else None
         dados["observacoes"] = st.text_area("Observações", cliente.get("observacoes") or "")
-        if st.form_submit_button("Salvar cliente", type="primary", use_container_width=True):
-            if cliente:
-                clientes.atualizar(cliente["id"], dados)
-            else:
-                clientes.criar(dados)
-            _salvo()
+        legenda_obrigatorios()
+        acao = rodape_formulario("Salvar cliente", "cliente", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                dados["telefone"] = formatar_telefone(telefone)
+                dados["whatsapp"] = formatar_telefone(whatsapp)
+                if cliente:
+                    clientes.atualizar(cliente["id"], dados)
+                else:
+                    clientes.criar(dados)
+                _salvo()
 
 
 # ------------------------------------------------------------------ lista --

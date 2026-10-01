@@ -34,26 +34,34 @@ from src.ui.componentes import (
     vazio_lista,
 )
 from src.ui.formatadores import formatar_data
+from src.ui.formularios import campo_inteiro, linha_campos, rodape_formulario
 from src.ui.listas import barra_filtros, paginar, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
 
 # ------------------------------------------------- formulário compartilhado --
 
 
-def campos(chave, km):
-    leitura = st.number_input(
-        "Quilometragem da vistoria", min_value=km, value=km, step=1, key=chave + "_km"
+def campos(chave, km, ajuda_km=None):
+    """Campos da vistoria dentro de outro formulário (entrega no assistente, devolução no
+    encerramento). Os itens do checklist ficam em pares, na ordem de leitura, e empilham em tela estreita."""
+    leitura = campo_inteiro(
+        "Quilometragem da vistoria", km, chave + "_km", sufixo="km", minimo=km, ajuda=ajuda_km
     )
     combustivel = st.selectbox(
-        "Combustível", ["vazio", "1/4", "1/2", "3/4", "cheio"], key=chave + "_comb"
+        "Combustível", list(NIVEIS_COMBUSTIVEL), format_func=_combustivel, key=chave + "_comb"
     )
+    st.caption("Checklist")
     checklist = {}
-    for item in vistorias.checklist_padrao():
-        checklist[item] = st.selectbox(
-            item.replace("_", " ").capitalize(),
-            ["ok", "avaria", "ausente", "nao_aplicavel"],
-            key=chave + item,
-        )
+    itens = list(vistorias.checklist_padrao())
+    for inicio in range(0, len(itens), 2):
+        with linha_campos([1, 1], f"{chave}_item_{inicio}") as colunas:
+            for coluna, item in zip(colunas, itens[inicio : inicio + 2]):
+                checklist[item] = coluna.selectbox(
+                    rotulo_item(item),
+                    list(ESTADOS_ITEM),
+                    format_func=lambda estado: _ESTADO_ITEM[estado][0],
+                    key=chave + item,
+                )
     adicionais = st.text_area(
         "Itens adicionais (um por linha: nome=estado)", key=chave + "_extras"
     )
@@ -177,28 +185,30 @@ def _dialog_registrar(pendentes, frota, pessoas):
     contrato, faltantes = mapa[escolhido]
     moto = frota[contrato["moto_id"]]
 
-    col_tipo, col_data, col_km = st.columns([1.4, 1, 1])
-    tipo = col_tipo.radio(
+    tipo = st.radio(
         "Tipo",
         faltantes,
         format_func=_TIPO_ROTULO.get,
         horizontal=True,
         key=f"{_PREFIXO_REGISTRO}tipo_{escolhido}",
     )
-    dia = col_data.date_input(
-        "Data",
-        hoje_br(),
-        max_value=hoje_br(),
-        format="DD/MM/YYYY",
-        key=_PREFIXO_REGISTRO + "data",
-    )
-    km = col_km.number_input(
-        "Km",
-        min_value=moto["km_atual"],
-        value=moto["km_atual"],
-        step=1,
-        key=f"{_PREFIXO_REGISTRO}km_{escolhido}",
-    )
+    inicio_contrato = date.fromisoformat(str(contrato["data_inicio"])[:10])
+    with linha_campos([1, 1], "vist_data_km") as (col_data, col_km):
+        dia = col_data.date_input(
+            "Data",
+            hoje_br(),
+            max_value=hoje_br(),
+            format="DD/MM/YYYY",
+            key=_PREFIXO_REGISTRO + "data",
+        )
+        with col_km:
+            km = campo_inteiro(
+                "Km",
+                moto["km_atual"],
+                f"{_PREFIXO_REGISTRO}km_{escolhido}",
+                sufixo="km",
+                minimo=moto["km_atual"],
+            )
     combustivel = st.radio(
         "Nível de combustível",
         NIVEIS_COMBUSTIVEL,
@@ -210,15 +220,16 @@ def _dialog_registrar(pendentes, frota, pessoas):
 
     st.caption("Checklist")
     checklist = {}
-    esquerda, direita = st.columns(2)
-    for indice, item in enumerate(checklist_inicial()):
-        coluna = esquerda if indice % 2 == 0 else direita
-        checklist[item] = coluna.selectbox(
-            rotulo_item(item),
-            ESTADOS_ITEM,
-            format_func=lambda e: _ESTADO_ITEM[e][0],
-            key=f"{_PREFIXO_REGISTRO}item_{item}",
-        )
+    itens = list(checklist_inicial())
+    for inicio in range(0, len(itens), 2):
+        with linha_campos([1, 1], f"vist_check_{inicio}") as colunas:
+            for coluna, item in zip(colunas, itens[inicio : inicio + 2]):
+                checklist[item] = coluna.selectbox(
+                    rotulo_item(item),
+                    ESTADOS_ITEM,
+                    format_func=lambda e: _ESTADO_ITEM[e][0],
+                    key=f"{_PREFIXO_REGISTRO}item_{item}",
+                )
     with st.expander("Itens adicionais"):
         adicionais = st.text_area(
             "Um por linha, no formato nome=estado (ok, avaria, ausente ou nao_aplicavel)",
@@ -238,16 +249,17 @@ def _dialog_registrar(pendentes, frota, pessoas):
         key=_PREFIXO_REGISTRO + "fotos",
     )
 
-    col_cancelar, col_salvar = st.columns(2)
-    if col_cancelar.button("Cancelar", use_container_width=True, key=_PREFIXO_REGISTRO + "cancelar"):
+    erro = None
+    if not dia:
+        erro = "Data: informe a data da vistoria."
+    elif dia < inicio_contrato:
+        erro = f"Data: a vistoria não pode anteceder o início do contrato ({formatar_data(inicio_contrato.isoformat())})."
+    acao = rodape_formulario("Salvar vistoria", "vistreg", desabilitado=bool(erro), motivo=erro)
+    if acao.cancelou:
         _limpar_registro()
         st.rerun()
-    if col_salvar.button(
-        "Salvar vistoria", type="primary", use_container_width=True, key=_PREFIXO_REGISTRO + "salvar"
-    ):
+    if acao.confirmou:
         with proteger():
-            if dia < date.fromisoformat(str(contrato["data_inicio"])[:10]):
-                raise ValueError("A data da vistoria não pode anteceder o início do contrato.")
             dados = preparar(
                 {
                     "km": km,

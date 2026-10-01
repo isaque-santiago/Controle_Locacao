@@ -168,7 +168,7 @@ def test_dialog_nova_moto_abre_com_campos_do_formulario(servicos):
     next(b for b in app.button if b.label == "Nova moto").click().run()
     assert not app.error
     rotulos = {entrada.label for entrada in app.text_input}
-    assert {"Placa", "Marca", "Modelo", "Valor de aquisição (R$)"} <= rotulos
+    assert {"Placa *", "Marca *", "Modelo *", "Valor de aquisição"} <= rotulos
     assert any(b.label == "Salvar moto" for b in app.button)
 
 
@@ -192,9 +192,7 @@ def _abrir_dialogo_pagamento():
 
 def test_pagamento_parcial_envia_principal_separado(servicos):
     app = _abrir_dialogo_pagamento()
-    next(e for e in app.text_input if e.label == "Principal recebido (R$)").set_value(
-        "30,50"
-    )
+    next(e for e in app.text_input if e.key.startswith("pg_principal_")).set_value("30,50")
     next(b for b in app.button if b.label == "Confirmar pagamento").click().run()
     assert not app.error
     assert servicos["cobrancas.registrar_pagamento"].call_args.args[2:4] == (
@@ -210,7 +208,7 @@ def test_cobranca_rapida_do_dashboard_abre_o_dialogo_de_pagamento(servicos):
     app.session_state["cobranca_rapida"] = "c"
     app.run()
     assert not app.exception
-    assert any(e.label == "Principal recebido (R$)" for e in app.text_input)
+    assert any(e.key.startswith("pg_principal_") for e in app.text_input)
 
 
 def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):

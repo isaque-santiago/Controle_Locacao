@@ -337,27 +337,24 @@ def barra_proporcional(percentual, cor="#2F9E6E"):
     return f'<div class="barra barra--fina {segmento}"><i style="width:{largura}%"></i></div>'
 
 
-def indicador_etapas(atual, rotulos):
-    """Assistente (wizard): círculos numerados conectados por linha — só usado em Novo contrato."""
+def indicador_etapas(atual, rotulos, nome="Etapas"):
+    """Indicador do assistente (Novo contrato): lista ordenada de etapas, com círculos numerados
+    conectados por linha. A etapa atual leva `aria-current="step"` e as concluídas dizem “concluída”
+    para leitores de tela. Em tela estreita só o rótulo da etapa atual aparece nos círculos, e a
+    linha de resumo (“Etapa 2 de 4: Moto”) segue sempre visível, então nenhum rótulo estoura a largura."""
     itens = ""
     for i, rotulo in enumerate(rotulos, start=1):
-        concluido = i <= atual
-        cor_fundo = "var(--grafite)" if concluido else "transparent"
-        cor_borda = "var(--texto)" if concluido else "var(--texto-3)"
-        cor_texto = "#FAFAF9" if concluido else "var(--texto-3)"
-        if i > 1:
-            cor_linha = "var(--texto)" if i <= atual else "var(--texto-3)"
-            itens += f'<div style="flex:1;height:2px;background:{cor_linha};margin-top:1.05rem;"></div>'
-        itens += f"""
-        <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem;">
-          <div class="mono" style="width:2.1rem;height:2.1rem;border-radius:50%;background:{cor_fundo};
-                      border:2px solid {cor_borda};display:flex;align-items:center;justify-content:center;
-                      color:{cor_texto};font-weight:600;">{i}</div>
-          <span class="fs-legenda texto-2" style="white-space:nowrap;">{rotulo}</span>
-        </div>
-        """
+        estado = "concluida" if i < atual else ("atual" if i == atual else "futura")
+        marca = ' aria-current="step"' if i == atual else ""
+        aviso = '<span class="so-leitor"> (concluída)</span>' if i < atual else ""
+        itens += (
+            f'<li class="etapa etapa--{estado}"{marca}><span class="etapa__num">{i}</span>'
+            f'<span class="etapa__rotulo">{escape(rotulo)}{aviso}</span></li>'
+        )
+    resumo = f"Etapa {atual} de {len(rotulos)}: {escape(rotulos[atual - 1])}"
     st.markdown(
-        f'<div style="display:flex;align-items:flex-start;margin:1rem 0 1.5rem;">{itens}</div>',
+        f'<nav class="etapas" aria-label="{escape(nome, quote=True)}"><ol class="etapas__lista">{itens}</ol>'
+        f'<p class="etapas__resumo">{resumo}</p></nav>',
         unsafe_allow_html=True,
     )
 
