@@ -1,6 +1,8 @@
 """Dashboard: faixa de indicadores, Hoje e Alertas — segue Arquivos/Design_UI.md
 e o artboard Main.dc.html do mockup (link na seção 1 do documento)."""
 
+from html import escape
+
 import streamlit as st
 
 from src.services import dashboard, alertas, cobrancas, configuracoes, clientes, manutencao
@@ -19,6 +21,7 @@ from src.ui.componentes import (
     proteger,
     selo_situacao,
 )
+from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_moeda_compacta
 
 _DIAS = [
@@ -114,9 +117,6 @@ def _faixa_instrumentos(dados, contagem, devedores_count, ordens_concluidas):
     )
 
 
-_COLUNAS_HOJE = [1.9, 1.3, 1.3, 1.1, 1.9, 0.8]
-
-
 def _situacao_cobranca_html(cobranca):
     if cobranca["situacao"] == "atrasada":
         dias = max((hoje_br() - _iso_data(cobranca["vencimento"])).days, 0)
@@ -131,7 +131,8 @@ def _iso_data(valor):
 
 
 def _cartao_hoje(cobrancas_hoje, placas, nomes):
-    with st.container(key="dashboard_card_hoje"):
+    # O container externo existe só para o CSS de página (colunas Hoje/Alertas empilham em telas estreitas)
+    with st.container(key="dashboard_card_hoje"), lista_registros("dashboard_hoje", acoes=1):
         st.markdown(
             """
             <div class="cartao__cab">
@@ -141,45 +142,30 @@ def _cartao_hoje(cobrancas_hoje, placas, nomes):
             """,
             unsafe_allow_html=True,
         )
-        with st.container(key="hoje_cab"):
-            cab = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
-            for coluna, rotulo in zip(
-                cab, ["Cliente", "Moto", "Vencimento", "Valor", "Situação", ""]
-            ):
-                coluna.markdown(
-                    f'<span class="fs-legenda texto-2" style="font-weight:600;display:block;">{rotulo}</span>',
-                    unsafe_allow_html=True,
-                )
         if not cobrancas_hoje:
             st.markdown(
                 estado_vazio("Nenhuma cobrança vencendo hoje ou atrasada.", compacto=True),
                 unsafe_allow_html=True,
             )
         for c in cobrancas_hoje:
-            with st.container(key=f"hoje_linha_{c['id']}"):
-                linha = st.columns(_COLUNAS_HOJE, vertical_alignment="center")
-                linha[0].markdown(
-                    f'<span class="fs-secundario">{nomes.get(c["cliente_id"], "—")}</span>',
-                    unsafe_allow_html=True,
-                )
-                linha[1].markdown(
-                    f'<span class="mono fs-secundario texto-2">{placas.get(c["moto_id"], "—")}</span>',
-                    unsafe_allow_html=True,
-                )
-                linha[2].markdown(
-                    f'<span class="mono fs-secundario">{formatar_data(c["vencimento"])}</span>',
-                    unsafe_allow_html=True,
-                )
-                linha[3].markdown(
-                    f'<span class="mono fs-secundario">{formatar_moeda(c["valor"])}</span>',
-                    unsafe_allow_html=True,
-                )
-                linha[4].markdown(_situacao_cobranca_html(c), unsafe_allow_html=True)
+            nome = nomes.get(c["cliente_id"], "—")
+            campos = [
+                campo("Moto", f'<span class="mono fs-secundario texto-2">{escape(placas.get(c["moto_id"], "—"))}</span>'),
+                campo("Vencimento", f'<span class="mono fs-secundario">{formatar_data(c["vencimento"])}</span>'),
+                campo("Valor", f'<span class="mono fs-secundario">{formatar_moeda(c["valor"])}</span>'),
+            ]
+            with registro(
+                "dashboard_hoje",
+                c["id"],
+                f'<span class="fs-secundario">{escape(nome)}</span>',
+                campos,
+                selo=_situacao_cobranca_html(c),
+            ) as acoes:
                 if botao_acao(
-                    linha[5],
+                    acoes,
                     "pagar",
                     f"pagar_hoje_{c['id']}",
-                    ajuda=f"Registrar o pagamento de {nomes.get(c['cliente_id'], 'cliente')}",
+                    ajuda=f"Registrar o pagamento de {nome if nome != '—' else 'cliente'}",
                 ):
                     st.session_state["cobranca_rapida"] = c["id"]
                     st.switch_page("pages/5_Cobrancas.py")

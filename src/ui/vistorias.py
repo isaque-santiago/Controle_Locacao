@@ -35,6 +35,7 @@ from src.ui.componentes import (
 )
 from src.ui.formatadores import formatar_data
 from src.ui.listas import barra_filtros, paginar, rodape_paginacao
+from src.ui.registros import campo, lista_registros, registro
 
 # ------------------------------------------------- formulário compartilhado --
 
@@ -120,14 +121,6 @@ def _mono(texto, estilo=""):
 
 def _texto(texto, estilo=""):
     return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
-
-
-def _cabecalho_tabela(colunas, rotulos):
-    for coluna, rotulo in zip(colunas, rotulos):
-        coluna.markdown(
-            f'<span class="fs-secundario texto-2">{rotulo}</span>',
-            unsafe_allow_html=True,
-        )
 
 
 # ---------------------------------------------------------------- diálogos --
@@ -302,15 +295,6 @@ def _dialog_fotos(vistoria):
 # ------------------------------------------------------------------- lista --
 
 
-def _rotulo_contrato(contrato, frota, pessoas):
-    if not contrato:
-        return "—"
-    moto = frota.get(contrato["moto_id"])
-    nome = escape(pessoas.get(contrato["cliente_id"], "—"))
-    placa = chip_placa(moto["placa"]) if moto else "—"
-    return f'{_texto(nome)} <span style="color:var(--texto-2);">→</span> {placa}'
-
-
 def _abrir_comparacao(contrato_id):
     st.session_state["vistorias_visao"] = "comparacao"
     st.session_state["vistorias_contrato"] = contrato_id
@@ -366,12 +350,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
     filtros.resumo(len(filtradas), ("vistoria", "vistorias"))
     pagina_atual, pagina = paginar("vistorias", filtradas)
 
-    larguras = [1.1, 2.5, 1, 1.1, 1.1, 2.4, 0.6]
-    with st.container(key="vistorias_card_lista"):
-        _cabecalho_tabela(
-            st.columns(larguras, vertical_alignment="center"),
-            ["Data", "Contrato", "Tipo", "Km", "Combustível", "Avarias", ""],
-        )
+    with lista_registros("vistorias", acoes=1):
         if not pagina_atual:
             st.markdown(
                 vazio_lista("Nenhuma vistoria encontrada.", "Ainda não há vistorias registradas.", bool(todas), "Registrar vistoria"),
@@ -379,24 +358,29 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
             )
         for v in pagina_atual:
             contrato = contratos_por_id.get(v["contrato_id"])
+            moto = frota.get(contrato["moto_id"]) if contrato else None
+            cliente = pessoas.get(contrato["cliente_id"], "—") if contrato else "—"
             avarias = resumo_avarias(v)
-            linha = st.columns(larguras, vertical_alignment="center")
-            linha[0].markdown(_mono(formatar_data(v["data"])), unsafe_allow_html=True)
-            linha[1].markdown(_rotulo_contrato(contrato, frota, pessoas), unsafe_allow_html=True)
-            linha[2].markdown(_texto(_TIPO_ROTULO[v["tipo"]]), unsafe_allow_html=True)
-            linha[3].markdown(_mono(_km(v["km"])), unsafe_allow_html=True)
-            linha[4].markdown(_texto(_combustivel(v.get("nivel_combustivel"))), unsafe_allow_html=True)
-            linha[5].markdown(
-                _texto(escape(avarias), "color:var(--perigo-texto);") if avarias else _texto("Nenhuma", "color:var(--texto-2);"),
-                unsafe_allow_html=True,
-            )
-            if contrato and botao_acao(
-                linha[6],
-                "comparar",
-                f"ver_vist_{v['id']}",
-                ajuda=f"Comparar as vistorias do contrato (vistoria de {formatar_data(v['data'])})",
-            ):
-                _abrir_comparacao(contrato["id"])
+            campos = [
+                campo("Moto", chip_placa(moto["placa"]) if moto else "—"),
+                campo("Data", _mono(formatar_data(v["data"]))),
+                campo("Tipo", _texto(_TIPO_ROTULO[v["tipo"]])),
+                campo("Km", _mono(_km(v["km"]))),
+                campo("Combustível", _texto(_combustivel(v.get("nivel_combustivel")))),
+                campo(
+                    "Avarias",
+                    _texto(escape(avarias), "color:var(--perigo-texto);") if avarias else _texto("Nenhuma", "color:var(--texto-2);"),
+                    largo=True,
+                ),
+            ]
+            with registro("vistorias", v["id"], _texto(escape(cliente)), campos, acoes=bool(contrato)) as acoes:
+                if contrato and botao_acao(
+                    acoes,
+                    "comparar",
+                    f"ver_vist_{v['id']}",
+                    ajuda=f"Comparar as vistorias do contrato (vistoria de {formatar_data(v['data'])})",
+                ):
+                    _abrir_comparacao(contrato["id"])
     rodape_paginacao("vistorias", pagina)
 
 

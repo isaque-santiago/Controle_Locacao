@@ -36,8 +36,8 @@ _SITUACOES = {
     "ativo": "verde",
     "encerrado": "azul",
 }
-# Cor cheia e cor de texto por situação. Só a tabela `st.dataframe` (canvas, sem
-# acesso às variáveis CSS) e os gráficos usam estes hex; o HTML usa as classes abaixo.
+# Cor cheia e cor de texto por situação. Só os gráficos (canvas, sem acesso às
+# variáveis CSS) usam estes hex; o HTML usa as classes abaixo.
 CORES_BORDA = {
     "vermelho": "#D64545",
     "amarelo": "#F2B705",
@@ -195,33 +195,47 @@ def cartao_kpi(titulo, valor):
 # ------------------------------------------------------------------ tabelas --
 
 
-def tabela_html(cabecalhos, linhas, vazio=None):
-    """Tabela somente leitura, hairline entre linhas, sem zebra — para abas sem
-    ação por linha (Plano de manutenção, Histórico, Contratos...). Cada célula
-    de `linhas` já vem pronta como HTML (use selo_situacao/chip_placa/mono).
-    `vazio` é o HTML do estado vazio (ex.: `vazio_lista(...)`); sem ele, a mensagem genérica."""
-    def celula(conteudo, tag, rotulo=None):
-        # data-label: no celular o cabeçalho some e cada célula mostra o próprio rótulo (ver estilos.css)
-        atributo = f' data-label="{escape(str(rotulo), quote=True)}"' if rotulo else ""
-        return f"<{tag}{atributo}>{conteudo}</{tag}>"
+def tabela_html(cabecalhos, linhas, vazio=None, legenda=None):
+    """Tabela somente leitura (dados tabulares sem ação por linha: plano de manutenção, históricos,
+    relatórios...), hairline entre linhas, sem zebra. Cada célula de `linhas` já vem pronta como HTML
+    (use selo_situacao/chip_placa/mono). `vazio` é o HTML do estado vazio (ex.: `vazio_lista(...)`);
+    `legenda` é o nome da tabela para leitores de tela (visualmente oculto).
 
-    ths = "".join(celula(c, "th") for c in cabecalhos)
+    Semântica: `<th scope="col">` e papéis ARIA explícitos (table, row, columnheader, cell), que
+    continuam valendo quando o CSS transforma as linhas em cartões no celular. Cabeçalho vazio
+    ("") marca uma coluna decorativa (ex.: barra de proporção), ignorada por leitores de tela.
+    Interativos (com botões) usam `registro`, não esta função."""
+
+    def celula(conteudo, tag, rotulo=None, decorativa=False):
+        # data-label: no celular o cabeçalho some e cada célula mostra o próprio rótulo (ver estilos.css)
+        atributos = f' data-label="{escape(str(rotulo), quote=True)}"' if rotulo and tag == "td" else ""
+        papel = "columnheader" if tag == "th" else "cell"
+        if decorativa:
+            return f'<{tag} role="{papel}" aria-hidden="true"{atributos}>{conteudo}</{tag}>'
+        escopo = ' scope="col"' if tag == "th" else ""
+        return f'<{tag} role="{papel}"{escopo}{atributos}>{conteudo}</{tag}>'
+
+    ths = "".join(celula(c, "th", decorativa=not c) for c in cabecalhos)
     if not linhas:
         corpo = (
-            f'<tr><td colspan="{len(cabecalhos)}">'
+            f'<tr role="row"><td role="cell" colspan="{len(cabecalhos)}">'
             f'{vazio or estado_vazio("Nenhum registro encontrado.", compacto=True)}</td></tr>'
         )
     else:
         corpo = "".join(
-            "<tr>" + "".join(celula(valor, "td", rotulo) for rotulo, valor in zip(cabecalhos, linha)) + "</tr>"
+            '<tr role="row">'
+            + "".join(celula(valor, "td", rotulo, decorativa=not rotulo) for rotulo, valor in zip(cabecalhos, linha))
+            + "</tr>"
             for linha in linhas
         )
+    nome = f' aria-label="{escape(legenda, quote=True)}"' if legenda else ""
+    legenda_html = f'<caption class="so-leitor">{escape(legenda)}</caption>' if legenda else ""
     st.markdown(
         f"""
         <div class="tabela-leitura">
-          <table>
-            <thead><tr>{ths}</tr></thead>
-            <tbody>{corpo}</tbody>
+          <table role="table"{nome}>
+            {legenda_html}<thead role="rowgroup"><tr role="row">{ths}</tr></thead>
+            <tbody role="rowgroup">{corpo}</tbody>
           </table>
         </div>
         """,
@@ -358,28 +372,32 @@ ACOES = {
     "pagar": ("Pagar", ":material/payments:"),
     "concluir": ("Concluir", ":material/check:"),
     "cancelar": ("Cancelar", ":material/close:"),
+    "remover": ("Remover", ":material/delete:"),
     "regularizar": ("Regularizar", ":material/task_alt:"),
     "comprovante": ("Comprovante", ":material/receipt_long:"),
     "km": ("Atualizar km", ":material/speed:"),
     "comparar": ("Comparar", ":material/compare_arrows:"),
+    "selecionar": ("Selecionar", ":material/radio_button_unchecked:"),
     "voltar": ("Voltar", ":material/arrow_back:"),
 }
 
 
-def botao_acao(alvo, acao, chave, ajuda=None, rotulo=None, desabilitado=False):
-    """Botão de ação por linha: ícone + texto. O texto é o nome acessível e a explicação
-    (`help`); dentro das listas o CSS o oculta visualmente no desktop (fica só o ícone de
-    44 × 44 px) e o mostra no celular. Devolve True quando clicado. `alvo` é a
-    coluna/container (ou `st`); `ajuda` detalha o alvo da ação (ex.: a placa)."""
-    padrao, icone = ACOES[acao]
+def botao_acao(alvo, acao, chave, ajuda=None, rotulo=None, desabilitado=False, on_click=None, args=None, icone=None):
+    """Botão de ação de um registro: ícone + texto sempre visíveis (o texto também é a dica,
+    `help`). Devolve True quando clicado. `alvo` é o grupo de ações do registro
+    (`registro(...) as acoes`), uma coluna/container ou `st`; `ajuda` detalha o alvo da ação
+    (ex.: a placa). `on_click`/`args` rodam antes da reexecução (útil em diálogos)."""
+    padrao, icone_padrao = ACOES[acao]
     texto = rotulo or padrao
     return alvo.button(
         texto,
         key=chave,
-        icon=icone,
+        icon=icone or icone_padrao,
         help=ajuda or texto,
         type="tertiary",
         disabled=desabilitado,
+        on_click=on_click,
+        args=args,
     )
 
 

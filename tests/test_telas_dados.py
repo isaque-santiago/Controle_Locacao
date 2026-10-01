@@ -6,6 +6,8 @@ from unittest.mock import patch
 from pathlib import Path
 from decimal import Decimal
 import pytest
+from src.domain.valores import hoje_br
+from src.ui.formatadores import formatar_mes
 from streamlit.testing.v1 import AppTest
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -266,7 +268,8 @@ def test_relatorios_renderiza_abas_com_dados_e_alterna_custo(servicos):
     app = abrir("9_Relatorios.py")
     assert not app.exception and not app.error
     html = " ".join(m.value for m in app.markdown)
-    assert "R$ 850,00" in html and "Setembro de 2026" in html
+    # o período padrão é o mês corrente (muda com a data de hoje)
+    assert "R$ 850,00" in html and formatar_mes(hoje_br()) in html
     assert "R$ 63,00" not in html  # só a aba ativa executa
 
     app.session_state["relatorios_abas_indice"] = 2  # Inadimplência

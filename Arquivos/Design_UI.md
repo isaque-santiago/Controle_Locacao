@@ -61,9 +61,10 @@ itens com "·" decorativo fora de listas realmente compactas.
 - **Botões**: ação primária de página = grafite sólido com label; ação destrutiva (encerrar contrato) = contorno
   vermelho, nunca preenchido. Todo controle interativo tem alvo mínimo de 44 × 44 px (`--alvo-min`).
 - **Ações por linha** (`botao_acao` em `componentes.py`, Etapa 1 do Plano de melhorias): `st.button(type="tertiary")`
-  com ícone Material + texto real. O texto é o nome acessível e a dica (`help`, com o alvo: "Abrir a ficha da moto
-  ABC-1D23"); nas listas do desktop só o ícone aparece (44 × 44 px), no celular (≤ 640 px) o texto volta
-  (Pagar, Editar, Abrir, Concluir, Cancelar, Regularizar, Comprovante, Atualizar km, Comparar). A mesma ação usa o
+  com ícone Material + texto real. O texto é o nome acessível, o rótulo visível e a dica (`help`, com o alvo: "Abrir a
+  ficha da moto ABC-1D23"); desde a Etapa 4 **o texto fica sempre visível** (antes sumia nas listas do desktop),
+  porque nenhuma ação pode depender só de ícone ou dica (Pagar, Editar, Abrir, Concluir, Cancelar, Regularizar,
+  Comprovante, Atualizar km, Comparar, Selecionar, Remover). A mesma ação usa o
   mesmo texto e ícone em todas as páginas (`ACOES`); nunca um glifo Unicode (`→ ✓ ✎ ›`). "Pagar" é sólido (grafite
   no claro, amarelo no escuro); "Cancelar" é contorno vermelho. Concluir e cancelar são ações distintas, cada uma
   com o próprio botão e diálogo. Retorno das fichas: `botao_voltar("motos", chave)` → "Voltar para motos".
@@ -120,6 +121,27 @@ itens com "·" decorativo fora de listas realmente compactas.
   claro e `--marca` no escuro); (2) a **aba ativa é lembrada** entre execuções, inclusive quando o rótulo muda de
   contagem (`Hoje · 3` → `Hoje · 2` após registrar um pagamento) e na volta de outra página; (3) **só o conteúdo da
   aba ativa executa** (`if aba_ativa(guia): …`), o que também evita consultas das abas ocultas.
+- **Listas interativas** (`src/ui/registros.py`, Etapa 4): todo conjunto de registros com ação (Motos, Clientes,
+  Contratos, Cobranças, Documentos, Manutenção — histórico e catálogo —, Vistorias, "Hoje" do Dashboard, contratos na
+  ficha do cliente, documentos na ficha da moto e as opções do assistente de contrato) é uma lista de **cartões**:
+  identidade (placa ou nome + selo de situação), **dados rotulados** (`<dl>`, rótulo pequeno em cima do valor) e um
+  **grupo de ações**. Estrutura por chaves de container (`lista_<prefixo>` > `reg_<prefixo>_<id>` >
+  `regacoes_<prefixo>_<id>`) e classes (`.registro__id`, `.registro__campo`, `.registro__rotulo`, `.registro__valor`):
+  nada de `nth-child` nem de coluna posicional, então reordenar campos no Python não associa o conteúdo ao rótulo
+  errado. `lista_registros(prefixo, acoes=N)` reserva a coluna de ações no desktop para os dados alinharem entre as
+  linhas. Layout por **container query** (largura do cartão da lista, também vale em janela dividida): ≥ 1000 px
+  uma linha só (identidade | dados | ações, ~70 px de altura); até 1000 px as ações sobem ao lado da identidade e os
+  dados vão para a linha de baixo; até 560 px tudo empilha, com as ações **logo abaixo da identidade**. Sem rolagem
+  horizontal no documento (conferido de 320 a 1600 px). `estado="selecionado"|"indisponivel"` serve às listas de
+  escolha (assistente): barra lateral + botão "Selecionado" com ícone, nunca só a cor. Dado tabular sem ação não é
+  cartão: é `tabela_html`.
+- **Tabelas somente leitura** (`tabela_html(cabecalhos, linhas, legenda=...)`): `<th scope="col">`, `role` explícito
+  em table/row/columnheader/cell (a semântica sobrevive quando o CSS, no celular, transforma cada linha em cartão e
+  esconde o cabeçalho só visualmente), `legenda` como nome acessível e cabeçalho `""` para coluna decorativa (barra
+  de proporção, `aria-hidden`). Overflow lateral localizado só se uma tabela precisar comparar colunas (hoje nenhuma).
+- **Sem canvas**: `st.dataframe` e `st.data_editor` não são usados — não seguem o tema escuro nem o celular. As peças
+  e serviços extras do registro de manutenção são linhas de campos (Descrição, Quantidade, Valor unitário) com
+  "Remover" e "Adicionar peça ou serviço".
 - **Tabelas**: hairline entre linhas, sem zebra, sem sombra. Números sempre `mono` e alinhados à esquerda, sob o cabeçalho da coluna (decisão de 25/09/2026, valores monetários incluídos). Selos de status com largura única (104px, `--selo-largura`) e texto curto.
 - **Barras/medidores**: usadas em vez de gráficos de biblioteca — barra de ocupação segmentada (Dashboard), barra
   proporcional em Relatórios. Mantém a página autocontida em HTML/CSS puro.

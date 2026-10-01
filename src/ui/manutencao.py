@@ -1,8 +1,8 @@
 """Manutenção: alertas, histórico e catálogo — segue Manutencao.dc.html do mockup."""
 
 from decimal import Decimal
+from html import escape
 
-import pandas as pd
 import streamlit as st
 
 from src.services import manutencao, motos, alertas
@@ -21,6 +21,7 @@ from src.ui.componentes import (
 )
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, rodape_paginacao
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
+from src.ui.registros import campo, lista_registros, registro
 
 _SITUACAO_ROTULO = {"vencida": "Vencida", "proxima": "Próxima"}
 _FILTROS_ALERTA = [("todas", "Todas"), ("vencida", "Vencidas"), ("proxima", "Próximas")]
@@ -29,6 +30,7 @@ _STATUS_ROTULO = {"aberta": "Aberta", "concluida": "Concluída", "cancelada": "C
 # "aberta" é estado operacional (sem tinta); concluída usa o verde de "ok".
 _STATUS_SELO = {"aberta": "aberta", "concluida": "ok", "cancelada": "cancelada"}
 _PREFIXO_REGISTRO = "manreg_"
+_CHAVE_EXTRAS = _PREFIXO_REGISTRO + "extras_ids"
 
 
 def _salvo(mensagem="Alterações salvas."):
@@ -70,6 +72,46 @@ def _valor_tolerante(texto, positivo=False):
 def _limpar_registro():
     for chave in [c for c in st.session_state if str(c).startswith(_PREFIXO_REGISTRO)]:
         del st.session_state[chave]
+
+
+def _adicionar_linha():
+    ids = st.session_state.setdefault(_CHAVE_EXTRAS, [])
+    ids.append(max(ids, default=-1) + 1)
+
+
+def _remover_linha(n):
+    st.session_state[_CHAVE_EXTRAS].remove(n)
+
+
+def _linhas_adicionais():
+    """Peças e serviços fora do plano: uma linha de campos por item (com rótulos visíveis e botão
+    `Remover`), no lugar da tabela editável em canvas, que não segue o tema nem funciona bem no celular.
+    Adicionar e remover são callbacks (rodam antes da reexecução, também dentro do diálogo).
+    Devolve os registros no formato de `preparar_itens_adicionais`."""
+    ids = st.session_state.setdefault(_CHAVE_EXTRAS, [])
+    st.caption("Outras peças ou serviços")
+    registros = []
+    for n in ids:
+        c_desc, c_qtd, c_valor, c_remover = st.columns([3, 1, 1.4, 1.2], vertical_alignment="bottom")
+        descricao = c_desc.text_input("Descrição", key=f"{_PREFIXO_REGISTRO}extra_desc_{n}")
+        quantidade = c_qtd.text_input("Quantidade", "1", key=f"{_PREFIXO_REGISTRO}extra_qtd_{n}")
+        valor = c_valor.text_input("Valor unitário (R$)", "0", key=f"{_PREFIXO_REGISTRO}extra_valor_{n}")
+        botao_acao(
+            c_remover,
+            "remover",
+            f"{_PREFIXO_REGISTRO}extra_remover_{n}",
+            ajuda=f"Remover {descricao.strip() or 'esta linha'} da lista de peças e serviços",
+            on_click=_remover_linha,
+            args=(n,),
+        )
+        registros.append({"descricao": descricao, "quantidade": quantidade, "valor_unitario": valor})
+    st.button(
+        "Adicionar peça ou serviço",
+        key=_PREFIXO_REGISTRO + "extra_adicionar",
+        icon=":material/add:",
+        on_click=_adicionar_linha,
+    )
+    return registros
 
 
 @st.dialog("Registrar manutenção", width="large")
@@ -141,20 +183,7 @@ def _dialog_registrar():
         c_sub.markdown(_mono(formatar_moeda(subtotal)), unsafe_allow_html=True)
         linhas_plano.append((item, qtd, valor, subtotal))
 
-    st.caption("Outras peças ou serviços")
-    adicionais = st.data_editor(
-        pd.DataFrame([{"descricao": "", "quantidade": "1", "valor_unitario": "0"}]),
-        key=_PREFIXO_REGISTRO + "adicionais",
-        num_rows="dynamic",
-        hide_index=True,
-        width="stretch",
-        column_config={
-            "descricao": st.column_config.TextColumn("Descrição", required=False),
-            "quantidade": st.column_config.TextColumn("Quantidade", required=False),
-            "valor_unitario": st.column_config.TextColumn("Valor unitário (R$)", required=False),
-        },
-    )
-    registros_adicionais = adicionais.to_dict("records")
+    registros_adicionais = _linhas_adicionais()
 
     col_mao, col_pecas, col_total = st.columns(3, vertical_alignment="bottom")
     mao_obra = col_mao.text_input("Custo de mão de obra (R$)", "0", key=_PREFIXO_REGISTRO + "mao_obra")
@@ -349,6 +378,7 @@ def _aba_alertas(pendentes):
     tabela_html(
         ["Moto", "Item", "Km atual", "Próxima", "Restante", "Situação"],
         linhas,
+        legenda="Alertas de manutenção",
         vazio=vazio_lista(
             "Nenhum alerta neste filtro.",
             "Nenhuma manutenção vencida ou próxima.",
@@ -384,60 +414,47 @@ def _aba_historico(frota):
     pagina_atual, pagina = paginar("manutencao_historico", filtrados)
 
     st.write("")
-    larguras = [1.1, 1.2, 1, 2.1, 1.3, 1.1, 1.1, 1.2]
-    with st.container(key="manutencao_card_historico"):
-        _cabecalho_tabela(
-            st.columns(larguras, vertical_alignment="center"),
-            ["Data", "Moto", "Tipo", "Descrição", "Oficina", "Custo", "Status", ""],
-        )
+    with lista_registros("manutencao_historico", acoes=2):
         if not pagina_atual:
             st.markdown(
                 vazio_lista("Nenhuma manutenção encontrada.", "Ainda não há manutenções registradas.", bool(todos), "Registrar manutenção"),
                 unsafe_allow_html=True,
             )
-        for registro in pagina_atual:
-            moto = frota.get(registro["moto_id"])
-            linha = st.columns(larguras, vertical_alignment="center")
-            linha[0].markdown(_mono(formatar_data(registro["data_entrada"])), unsafe_allow_html=True)
-            linha[1].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
-            linha[2].markdown(_texto(registro["tipo"].capitalize()), unsafe_allow_html=True)
-            linha[3].markdown(_texto(registro["descricao"]), unsafe_allow_html=True)
-            linha[4].markdown(_texto(registro.get("oficina") or "—", "color:var(--texto-2);"), unsafe_allow_html=True)
-            linha[5].markdown(_mono(formatar_moeda(registro["custo_total"])), unsafe_allow_html=True)
-            linha[6].markdown(
-                selo_situacao(_STATUS_ROTULO[registro["status"]], _STATUS_SELO[registro["status"]]),
-                unsafe_allow_html=True,
-            )
-            if registro["status"] == "aberta" and moto:
-                # Duas ações distintas: concluir e cancelar nunca dividem o mesmo botão
-                with linha[7].container(horizontal=True, horizontal_alignment="right"):
+        for registro_man in pagina_atual:
+            moto = frota.get(registro_man["moto_id"])
+            aberta = registro_man["status"] == "aberta" and moto
+            campos = [
+                campo("Data", _mono(formatar_data(registro_man["data_entrada"]))),
+                campo("Tipo", _texto(registro_man["tipo"].capitalize())),
+                campo("Oficina", _texto(escape(registro_man.get("oficina") or "—"), "color:var(--texto-2);")),
+                campo("Custo", _mono(formatar_moeda(registro_man["custo_total"]))),
+                campo("Descrição", _texto(escape(registro_man["descricao"])), largo=True),
+            ]
+            with registro(
+                "manutencao_historico",
+                registro_man["id"],
+                chip_placa(moto["placa"]) if moto else "—",
+                campos,
+                selo=selo_situacao(_STATUS_ROTULO[registro_man["status"]], _STATUS_SELO[registro_man["status"]]),
+                acoes=bool(aberta),
+            ) as acoes:
+                if aberta:
+                    # Duas ações distintas: concluir e cancelar nunca dividem o mesmo botão
                     if botao_acao(
-                        st,
+                        acoes,
                         "concluir",
-                        f"concluir_man_{registro['id']}",
+                        f"concluir_man_{registro_man['id']}",
                         ajuda=f"Concluir a manutenção da moto {formatar_placa(moto['placa'])}",
                     ):
-                        _dialog_concluir(registro, moto)
+                        _dialog_concluir(registro_man, moto)
                     if botao_acao(
-                        st,
+                        acoes,
                         "cancelar",
-                        f"cancelar_man_{registro['id']}",
+                        f"cancelar_man_{registro_man['id']}",
                         ajuda=f"Cancelar a manutenção da moto {formatar_placa(moto['placa'])}",
                     ):
-                        _dialog_cancelar(registro, moto)
+                        _dialog_cancelar(registro_man, moto)
     rodape_paginacao("manutencao_historico", pagina)
-
-
-def _interruptor(ativo):
-    if ativo:
-        return (
-            '<div style="width:34px;height:18px;border-radius:var(--raio-md);background:var(--sucesso);position:relative;">'
-            '<div style="width:14px;height:14px;border-radius:50%;background:var(--superficie);position:absolute;top:2px;right:2px;"></div></div>'
-        )
-    return (
-        '<div style="width:34px;height:18px;border-radius:var(--raio-md);border:1px solid var(--linha);position:relative;">'
-        '<div style="width:14px;height:14px;border-radius:50%;background:var(--neutro);position:absolute;top:1px;left:2px;"></div></div>'
-    )
 
 
 def _aba_catalogo(itens):
@@ -446,12 +463,7 @@ def _aba_catalogo(itens):
         if st.button("+ Novo item", key="man_novo_item", use_container_width=True):
             _dialog_item({})
     st.write("")
-    larguras = [3, 1.3, 1.3, 1, 0.8]
-    with st.container(key="manutencao_card_catalogo"):
-        _cabecalho_tabela(
-            st.columns(larguras, vertical_alignment="center"),
-            ["Item", "Intervalo km", "Intervalo dias", "Ativo", ""],
-        )
+    with lista_registros("manutencao_catalogo", acoes=1):
         if not itens:
             st.markdown(
                 vazio_lista("Nenhum item no catálogo.", "Ainda não há itens no catálogo.", False),
@@ -459,21 +471,25 @@ def _aba_catalogo(itens):
             )
         for item in itens:
             muted = "" if item["ativo"] else "color:var(--texto-2);"
-            linha = st.columns(larguras, vertical_alignment="center")
-            linha[0].markdown(_texto(item["nome"], muted), unsafe_allow_html=True)
-            linha[1].markdown(
-                _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "color:var(--texto-3);"),
-                unsafe_allow_html=True,
-            )
-            linha[2].markdown(
-                _mono(str(item["intervalo_dias"]), muted)
-                if item["intervalo_dias"]
-                else _texto("—", "color:var(--texto-3);"),
-                unsafe_allow_html=True,
-            )
-            linha[3].markdown(_interruptor(item["ativo"]), unsafe_allow_html=True)
-            if botao_acao(linha[4], "editar", f"editar_item_{item['id']}", ajuda=f"Editar o item {item['nome']}"):
-                _dialog_item(item)
+            campos = [
+                campo(
+                    "Intervalo km",
+                    _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "color:var(--texto-3);"),
+                ),
+                campo(
+                    "Intervalo dias",
+                    _mono(str(item["intervalo_dias"]), muted) if item["intervalo_dias"] else _texto("—", "color:var(--texto-3);"),
+                ),
+            ]
+            with registro(
+                "manutencao_catalogo",
+                item["id"],
+                _texto(escape(item["nome"]), muted),
+                campos,
+                selo=selo_situacao("Ativo" if item["ativo"] else "Inativo", "ativo" if item["ativo"] else "inativo"),
+            ) as acoes:
+                if botao_acao(acoes, "editar", f"editar_item_{item['id']}", ajuda=f"Editar o item {item['nome']}"):
+                    _dialog_item(item)
 
 
 # ---------------------------------------------------------------- página --

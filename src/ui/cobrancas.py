@@ -2,6 +2,7 @@
 pagamento em diálogo — segue Cobrancas.dc.html do mockup."""
 
 from datetime import date
+from html import escape
 
 import streamlit as st
 
@@ -15,6 +16,7 @@ from src.domain.valores import decimal_br, hoje_br
 from src.services import clientes, cobrancas, motos
 from src.ui.componentes import botao_acao, cabecalho, cabecalho_pagina, chip_placa, proteger
 from src.ui.listas import abas, aba_ativa
+from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda
 
 _FORMAS = ["pix", "dinheiro", "cartao", "transferencia", "outro"]
@@ -44,51 +46,53 @@ def _texto(valor, cor="", mono=False):
     return f'<span class="{"mono" if mono else ""}" style="{estilo}">{valor}</span>'
 
 
-def _cartao(chave, colunas, linhas, acoes=None):
-    """Tabela em cartão: `colunas` = [(rótulo, peso, função(c) -> html)]; `acoes`
-    desenha os botões da última coluna."""
-    pesos = [peso for _, peso, _ in colunas] + ([1.0] if acoes else [])
-    with st.container(key=f"cobrancas_card_{chave}"):
-        cab = st.columns(pesos, vertical_alignment="center")
-        for coluna, (rotulo, _, _) in zip(cab, colunas):
-            coluna.markdown(_texto(rotulo, "color:var(--texto-2);"), unsafe_allow_html=True)
+def _cartao(chave, colunas, linhas, acoes=None, subtitulo=None):
+    """Lista de cobranças em cartões: a primeira coluna de `colunas` é a identidade (cliente) e as
+    demais viram dados rotulados. `colunas` = [(rótulo, função(c) -> html)]; `subtitulo` é uma
+    função opcional (c -> html) para uma observação sob o nome; `acoes(c, grupo)` desenha os botões."""
+    (_, titulo), *dados = colunas
+    with lista_registros(f"cobrancas_{chave}", acoes=2 if acoes else 0):
         for c in linhas:
-            linha = st.columns(pesos, vertical_alignment="center")
-            for coluna, (_, _, desenhar) in zip(linha, colunas):
-                coluna.markdown(desenhar(c), unsafe_allow_html=True)
-            if acoes:
-                with linha[-1]:
-                    acoes(c)
+            campos = [campo(rotulo, desenhar(c)) for rotulo, desenhar in dados]
+            with registro(
+                f"cobrancas_{chave}",
+                c["id"],
+                titulo(c),
+                campos,
+                subtitulo=subtitulo(c) if subtitulo else None,
+                acoes=bool(acoes),
+            ) as grupo:
+                if acoes:
+                    acoes(c, grupo)
 
 
 def _acoes_abertas(chave):
-    def desenhar(c):
-        with st.container(horizontal=True, horizontal_alignment="right"):
-            with st.popover(
-                "Mensagem",
-                icon=":material/content_copy:",
-                help=f"Copiar a mensagem de cobrança de {c['cliente']}",
-                type="tertiary",
-                key=f"mensagem_{chave}_{c['id']}",
-            ):
-                st.code(
-                    mensagem_cobranca(
-                        c["cliente"],
-                        c["placa"],
-                        formatar_data(c["vencimento"]),
-                        formatar_moeda(c["saldo"]),
-                        c["encargos"]["dias_atraso"],
-                    ),
-                    language=None,
-                    wrap_lines=True,
-                )
-            if botao_acao(
-                st,
-                "pagar",
-                f"pagar_{chave}_{c['id']}",
-                ajuda=f"Registrar o pagamento de {c['cliente']}",
-            ):
-                _dialog_pagamento(c)
+    def desenhar(c, grupo):
+        with grupo.popover(
+            "Mensagem",
+            icon=":material/content_copy:",
+            help=f"Copiar a mensagem de cobrança de {c['cliente']}",
+            type="tertiary",
+            key=f"mensagem_{chave}_{c['id']}",
+        ):
+            st.code(
+                mensagem_cobranca(
+                    c["cliente"],
+                    c["placa"],
+                    formatar_data(c["vencimento"]),
+                    formatar_moeda(c["saldo"]),
+                    c["encargos"]["dias_atraso"],
+                ),
+                language=None,
+                wrap_lines=True,
+            )
+        if botao_acao(
+            grupo,
+            "pagar",
+            f"pagar_{chave}_{c['id']}",
+            ajuda=f"Registrar o pagamento de {c['cliente']}",
+        ):
+            _dialog_pagamento(c)
 
     return desenhar
 
@@ -96,7 +100,7 @@ def _acoes_abertas(chave):
 @st.dialog("Registrar pagamento")
 def _dialog_pagamento(c):
     st.markdown(
-        f'{chip_placa(c["placa"])} <span style="margin-left:8px;">{c["cliente"]}</span>'
+        f'{chip_placa(c["placa"])} <span style="margin-left:8px;">{escape(c["cliente"] or "")}</span>'
         f'<div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:4px;">'
         f'{c["tipo"].capitalize()} · vencimento {formatar_data(c["vencimento"])}</div>',
         unsafe_allow_html=True,
@@ -156,9 +160,9 @@ def _dialog_pagamento(c):
 
 def _colunas_base():
     return [
-        ("Cliente", 1.6, lambda c: _texto(c["cliente"] or "—")),
-        ("Moto", 1.1, lambda c: chip_placa(c["placa"]) if c["placa"] else "—"),
-        ("Vencimento", 1.1, lambda c: _texto(formatar_data(c["vencimento"]), mono=True)),
+        ("Cliente", lambda c: escape(c["cliente"] or "—")),
+        ("Moto", lambda c: chip_placa(c["placa"]) if c["placa"] else "—"),
+        ("Vencimento", lambda c: _texto(formatar_data(c["vencimento"]), mono=True)),
     ]
 
 
@@ -177,9 +181,9 @@ def _aba_pagas(linhas):
         "pagas",
         _colunas_base()
         + [
-            ("Pago em", 1.1, lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
-            ("Forma", 1.1, lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:var(--texto-2);")),
-            ("Valor", 1.1, _moeda("valor")),
+            ("Pago em", lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
+            ("Forma", lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:var(--texto-2);")),
+            ("Valor", _moeda("valor")),
         ],
         linhas[:_LIMITE_PAGAS],
     )
@@ -198,10 +202,10 @@ def _aba_atrasadas(linhas):
         "atrasadas",
         _colunas_base()
         + [
-            ("Atraso", 0.9, dias),
-            ("Original", 1.1, _moeda("saldo")),
-            ("Encargos", 1.1, encargos),
-            ("Total", 1.1, total),
+            ("Atraso", dias),
+            ("Original", _moeda("saldo")),
+            ("Encargos", encargos),
+            ("Total", total),
         ],
         linhas,
         _acoes_abertas("atrasadas"),
@@ -211,7 +215,7 @@ def _aba_atrasadas(linhas):
 def _aba_hoje(linhas):
     _cartao(
         "hoje",
-        _colunas_base() + [("Valor", 1.1, _moeda("saldo"))],
+        _colunas_base() + [("Valor", _moeda("saldo"))],
         linhas,
         _acoes_abertas("hoje"),
     )
@@ -223,8 +227,9 @@ def _aba_proximos(linhas):
     )
     _cartao(
         "proximos",
-        _colunas_base() + [("Valor", 1.1, _moeda("saldo")), ("", 1.1, primeira)],
+        _colunas_base() + [("Valor", _moeda("saldo"))],
         linhas,
+        subtitulo=primeira,
     )
 
 

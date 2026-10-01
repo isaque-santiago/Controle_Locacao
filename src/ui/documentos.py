@@ -19,6 +19,7 @@ from src.ui.componentes import (
     botao_acao,
 )
 from src.ui.listas import barra_filtros, paginar, rodape_paginacao
+from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
 
 _TIPOS = {
@@ -51,14 +52,6 @@ def _mono(texto, estilo=""):
 
 def _texto(texto, estilo=""):
     return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
-
-
-def _cabecalho_tabela(colunas, rotulos):
-    for coluna, rotulo in zip(colunas, rotulos):
-        coluna.markdown(
-            f'<span class="fs-secundario texto-2">{rotulo}</span>',
-            unsafe_allow_html=True,
-        )
 
 
 def _situacao(documento, hoje, alerta_dias):
@@ -234,12 +227,7 @@ def _dialog_comprovante(documento, moto):
 
 def _tabela(visiveis, frota, hoje, alerta_dias, total):
     pagina_atual, pagina = paginar("documentos", visiveis)
-    larguras = [1.2, 1.3, 1.4, 1.1, 1.1, 1.2, 0.55, 0.55, 0.55]
-    with st.container(key="documentos_card_lista"):
-        _cabecalho_tabela(
-            st.columns(larguras, vertical_alignment="center"),
-            ["Moto", "Tipo", "Referência", "Vencimento", "Valor", "Situação", "", "", ""],
-        )
+    with lista_registros("documentos", acoes=3):
         if not pagina_atual:
             st.markdown(
                 vazio_lista("Nenhum documento encontrado.", "Ainda não há documentos cadastrados.", total > 0, "Novo documento"),
@@ -250,38 +238,38 @@ def _tabela(visiveis, frota, hoje, alerta_dias, total):
             situacao = _situacao(doc, hoje, alerta_dias)
             rotulo_situacao = "Regularizado" if doc["regularizado"] else _SITUACAO_ROTULO[situacao]
             referencia = doc.get("descricao") or doc.get("ano_referencia") or "—"
-            linha = st.columns(larguras, vertical_alignment="center")
-            linha[0].markdown(chip_placa(moto["placa"]) if moto else "—", unsafe_allow_html=True)
-            linha[1].markdown(_texto(_TIPOS.get(doc["tipo"], doc["tipo"])), unsafe_allow_html=True)
-            linha[2].markdown(_texto(escape(str(referencia)), "color:var(--texto-2);"), unsafe_allow_html=True)
-            linha[3].markdown(_mono(formatar_data(doc["vencimento"])), unsafe_allow_html=True)
-            linha[4].markdown(
-                _mono(formatar_moeda(doc["valor"]) if doc.get("valor") is not None else "—"),
-                unsafe_allow_html=True,
-            )
-            linha[5].markdown(
-                selo_situacao(rotulo_situacao, "em_dia" if doc["regularizado"] else situacao),
-                unsafe_allow_html=True,
-            )
             tipo_doc = _TIPOS.get(doc["tipo"], doc["tipo"])
-            if botao_acao(
-                linha[6],
-                "comprovante",
-                f"comprovante_doc_{doc['id']}",
-                ajuda=f"Ver o comprovante do {tipo_doc}" if doc.get("arquivo_path") else "Sem comprovante anexado",
-                desabilitado=not doc.get("arquivo_path") or not moto,
-            ):
-                _dialog_comprovante(doc, moto)
-            if botao_acao(linha[7], "editar", f"editar_doc_{doc['id']}", ajuda=f"Editar o documento {tipo_doc}"):
-                _dialog_editar(doc)
-            if not doc["regularizado"] and moto:
+            campos = [
+                campo("Tipo", _texto(escape(tipo_doc))),
+                campo("Referência", _texto(escape(str(referencia)), "color:var(--texto-2);")),
+                campo("Vencimento", _mono(formatar_data(doc["vencimento"]))),
+                campo("Valor", _mono(formatar_moeda(doc["valor"]) if doc.get("valor") is not None else "—")),
+            ]
+            with registro(
+                "documentos",
+                doc["id"],
+                chip_placa(moto["placa"]) if moto else "—",
+                campos,
+                selo=selo_situacao(rotulo_situacao, "em_dia" if doc["regularizado"] else situacao),
+            ) as acoes:
                 if botao_acao(
-                    linha[8],
-                    "regularizar",
-                    f"regularizar_doc_{doc['id']}",
-                    ajuda=f"Marcar o documento {tipo_doc} como regularizado",
+                    acoes,
+                    "comprovante",
+                    f"comprovante_doc_{doc['id']}",
+                    ajuda=f"Ver o comprovante do {tipo_doc}" if doc.get("arquivo_path") else "Sem comprovante anexado",
+                    desabilitado=not doc.get("arquivo_path") or not moto,
                 ):
-                    _dialog_regularizar(doc, moto)
+                    _dialog_comprovante(doc, moto)
+                if botao_acao(acoes, "editar", f"editar_doc_{doc['id']}", ajuda=f"Editar o documento {tipo_doc}"):
+                    _dialog_editar(doc)
+                if not doc["regularizado"] and moto:
+                    if botao_acao(
+                        acoes,
+                        "regularizar",
+                        f"regularizar_doc_{doc['id']}",
+                        ajuda=f"Marcar o documento {tipo_doc} como regularizado",
+                    ):
+                        _dialog_regularizar(doc, moto)
     rodape_paginacao("documentos", pagina)
 
 
