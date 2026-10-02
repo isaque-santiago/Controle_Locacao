@@ -282,9 +282,23 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
 
 ## 10. Pendências da Etapa 8
 
-- Lighthouse (LCP, INP, CLS): o app exige login e o Lighthouse não está instalado neste ambiente; medir com a conta
-  de dev em `/`, Cobranças, Motos e uma ficha, e registrar os números aqui.
+- **Lighthouse medido** (v12, Chrome headless, dashboard com dados fictícios e login contornado por script temporário;
+  servidor local, então LCP absoluto não vale como número de produção; vale a comparação). `main` x esta branch:
+
+  | Perfil | Versão | Nota | FCP | LCP | TBT | CLS |
+  |---|---|---:|---:|---:|---:|---:|
+  | Desktop | main (2 execuções) | 46–47 | 2,5 s | 3,6 s | 40 ms | 0,40–0,41 |
+  | Desktop | esta branch (2 execuções) | 47–48 | 2,5 s | 3,6–3,7 s | 50 ms | 0,379 |
+  | Celular (4x CPU, 4G lenta) | main (2 execuções) | 23–50 | 13–15 s | 19,2–19,4 s | 230–350 ms | 0,054 e 0,971 |
+  | Celular | esta branch (3 execuções) | 19–31 | 13–15 s | 20,1–20,2 s | 40–470 ms | 0,95–0,97 |
+
+  Sem regressão: os números são equivalentes nas duas versões (a CLS de celular da `main` também chegou a 0,971 numa
+  das duas execuções). INP não existe na auditoria de navegação do Lighthouse; TBT é o indicador de laboratório
+  equivalente (baixo nos dois). **Problema herdado, não tratado**: CLS ≈ 0,4 no desktop e ≈ 0,95 no celular, causada pelo
+  render progressivo do Streamlit (contêiner principal, rodapé da barra lateral e blocos do dashboard mudam de altura
+  enquanto o script termina). Reservar altura mínima (`min-height`) nesses blocos é o próximo passo, a decidir.
+  Como reproduzir: `winget install OpenJS.NodeJS.LTS`, subir `streamlit run` com o login contornado e
+  `npx lighthouse http://localhost:<porta>/ --only-categories=performance`.
 - Validação de Chromium/Firefox/WebKit e capturas em CI (itens 9 e 10 do plano): dependem do pipeline e ficam para a
   Etapa 9.
-- Medição aproximada no preview (dados fictícios, dashboard, tema escuro): CLS 0,048 (< 0,1). LCP e INP não foram
-  obtidos sem Lighthouse; medir no app autenticado.
+- Medir também Cobranças, Motos e uma ficha (o Lighthouse só carregou a rota `/`; as demais exigem navegação).
