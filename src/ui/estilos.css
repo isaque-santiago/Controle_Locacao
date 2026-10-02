@@ -86,9 +86,9 @@
   --sombra-modal: 0 24px 60px rgba(21,24,28,.34);
 
   /* Tipografia */
-  --fonte-titulo: 'Barlow Semi Condensed', sans-serif;
-  --fonte-ui: 'IBM Plex Sans', sans-serif;
-  --fonte-mono: 'IBM Plex Mono', monospace;
+  --fonte-titulo: 'Barlow Semi Condensed', 'Arial Narrow', 'Roboto Condensed', system-ui, sans-serif;
+  --fonte-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --fonte-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
   --fs-display: clamp(28px, 2.6vw, 38px);
   --fs-pagina: 30px;
   --fs-secao: 18px;
@@ -539,7 +539,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .tabela-leitura th:last-child, .tabela-leitura td:last-child {padding-right: var(--e5);}
 .tabela-leitura tbody tr {transition: background-color var(--transicao);}
 .tabela-leitura tbody tr:hover {background: var(--superficie-hover);}
-[data-testid="stDataFrame"] {border-radius: var(--raio-md); overflow: hidden;}
 .chip-placa {background: var(--chip-fundo); color: var(--chip-texto); padding: 3px var(--e2); border-radius: var(--raio-sm); font-weight: 600; font-size: var(--fs-legenda); letter-spacing: .05em;}
 .chip-placa--grande {padding: var(--e2) 14px; font-size: 18px; border-radius: var(--raio-campo);}
 /* A seta (chevron) do popover é escondida; o ícone do rótulo permanece */
@@ -1013,3 +1012,28 @@ button[data-ocupado]::before {
   .tabela-leitura td.celula--cheia {grid-column: 1 / -1;}
   .tabela-leitura td.celula--cheia .badge {align-self: stretch; width: auto;}
 }
+
+/* ----- Etapa 8: utilitários e blocos que antes usavam `style=` inline -----
+   Só tokens; valores dinâmicos (largura de barra, cor de avatar) continuam inline. */
+.texto-forte {color: var(--texto);}
+.texto-negrito {font-weight: 600;}
+.peso-normal {font-weight: 400;}
+.fs-destaque {font-size: var(--fs-secao);}
+.margem-esq {margin-left: var(--e2);}
+.margem-topo {margin-top: var(--e3);}
+.identidade-linha {display: inline-flex; align-items: center; gap: 10px;}
+.avatar {display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 50%; background: var(--chip-fundo); color: var(--chip-texto); font-weight: 600;}
+.avatar--pequeno {width: 26px; height: 26px; font-size: var(--fs-legenda);}
+.avatar--medio {width: 30px; height: 30px; font-size: var(--fs-legenda);}
+.avatar--grande {width: 32px; height: 32px; font-size: var(--fs-secundario);}
+.resumo-contrato {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3); margin-bottom: var(--e4);}
+.resumo-contrato__texto {min-width: 0;}
+.resumo-contrato__titulo {font-size: var(--fs-corpo); font-weight: 500;}
+.pilha-dados {display: flex; flex-direction: column; gap: var(--e3);}
+.leitura-km {display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px var(--e3); padding: var(--e2) 0;}
+.leitura-km:not(:last-child) {border-bottom: 1px solid var(--linha);}
+.leitura-km--vazia {color: var(--texto-2); font-size: var(--fs-secundario);}
+.cartao__cabeca {display: flex; justify-content: space-between; align-items: center; gap: var(--e2); flex-wrap: wrap;}
+.config-titulo {margin: 0 0 var(--e1) 0; font-size: var(--fs-subtitulo); color: var(--texto);}
+.config-descricao {font-size: var(--fs-legenda); color: var(--texto-2); margin-bottom: var(--e3);}
+.config-exemplo {background: var(--fundo); border-radius: var(--raio-sm); padding: var(--e3) var(--e4); font-size: var(--fs-legenda); color: var(--texto-2);}

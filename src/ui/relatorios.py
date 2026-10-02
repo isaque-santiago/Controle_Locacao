@@ -37,14 +37,14 @@ _NOTA_CRITERIOS = (
 )
 
 
-def _mono(texto, estilo=""):
-    return f'<span class="mono" style="{estilo}">{texto}</span>'
+def _mono(texto, classe=""):
+    return f'<span class="mono {classe}">{texto}</span>'
 
 
 def _liquido(valor):
     """Resultado em destaque: verde no positivo, vermelho no negativo."""
-    cor = _VERDE if valor >= 0 else _VERMELHO
-    return _mono(formatar_moeda(valor), f"font-weight:600;color:{cor};")
+    tom = "texto-sucesso" if valor >= 0 else "texto-perigo"
+    return _mono(formatar_moeda(valor), f"texto-negrito {tom}")
 
 
 def _cor_barra(valor):
@@ -217,13 +217,13 @@ def _aba_custo(resultado):
     _exportacao(f"custo_manutencao_{visao}", exportacao)
 
 
-def _indicador(rotulo, valor, cor=None, ultimo=False):
+def _indicador(rotulo, valor, tom=None, ultimo=False):
     """Item da faixa de indicadores; `ultimo` é mantido só por compatibilidade (o CSS trata o último item)."""
-    estilo_cor = f' style="color:{cor};"' if cor else ""
+    classe_tom = f" texto-{tom}" if tom else ""
     return (
         '<div class="indicadores__item">'
         f'<span class="indicadores__rotulo rotulo">{rotulo}</span>'
-        f'<span class="indicadores__valor mono"{estilo_cor}>{valor}</span></div>'
+        f'<span class="indicadores__valor mono{classe_tom}">{valor}</span></div>'
     )
 
 
@@ -232,7 +232,7 @@ def _aba_inadimplencia(dados):
     percentual = dados["percentual_carteira"]
     st.markdown(
         '<div class="indicadores">'
-        + _indicador("total em atraso", formatar_moeda(dados["total_atraso"]), _VERMELHO if dados["total_atraso"] else None)
+        + _indicador("total em atraso", formatar_moeda(dados["total_atraso"]), "perigo" if dados["total_atraso"] else None)
         + _indicador(
             "% da carteira do mês",
             f"{percentual}%".replace(".", ",") if percentual is not None else "—",
@@ -249,7 +249,7 @@ def _aba_inadimplencia(dados):
                 escape(l["cliente"]),
                 chip_placa(l["placa"]) if l["placa"] else "—",
                 _mono(formatar_data(l["vencimento"])),
-                f'<span style="color:{_VERMELHO};">{l["dias_atraso"]} dia(s)</span>',
+                f'<span class="texto-perigo">{l["dias_atraso"]} dia(s)</span>',
                 _mono(formatar_moeda(l["total_com_encargos"])),
             ]
             for l in linhas
@@ -288,7 +288,7 @@ def _aba_fluxo(fluxo, hoje):
             [
                 escape(formatar_mes(m["mes"]))
                 + (
-                    ' <span style="color:var(--texto-3);font-weight:400;">(parcial)</span>'
+                    ' <span class="texto-3 peso-normal">(parcial)</span>'
                     if m["mes"] == mes_atual
                     else ""
                 ),

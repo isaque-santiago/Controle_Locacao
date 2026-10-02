@@ -41,9 +41,8 @@ _VAZIO = {
 }
 
 
-def _texto(valor, cor="", mono=False):
-    estilo = f"font-size:var(--fs-secundario);{cor}"
-    return f'<span class="{"mono" if mono else ""}" style="{estilo}">{valor}</span>'
+def _texto(valor, classe="", mono=False):
+    return f'<span class="fs-secundario {"mono" if mono else ""} {classe}">{valor}</span>'
 
 
 def _cartao(chave, colunas, linhas, acoes=None, subtitulo=None):
@@ -194,7 +193,7 @@ def _aba_pagas(linhas):
         _colunas_base()
         + [
             ("Pago em", lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
-            ("Forma", lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:var(--texto-2);")),
+            ("Forma", lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "texto-2")),
             ("Valor", _moeda("valor")),
         ],
         linhas[:_LIMITE_PAGAS],
@@ -204,7 +203,7 @@ def _aba_pagas(linhas):
 
 
 def _aba_atrasadas(linhas):
-    dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "color:var(--perigo-texto);")
+    dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "texto-perigo")
     encargos = lambda c: _texto(
         formatar_moeda(c["encargos"]["multa"] + c["encargos"]["juros"]),
         mono=True,
@@ -235,7 +234,7 @@ def _aba_hoje(linhas):
 
 def _aba_proximos(linhas):
     primeira = lambda c: (
-        _texto("1ª parcela", "color:var(--texto-2);") if c.get("numero") == 1 else ""
+        _texto("1ª parcela", "texto-2") if c.get("numero") == 1 else ""
     )
     _cartao(
         "proximos",

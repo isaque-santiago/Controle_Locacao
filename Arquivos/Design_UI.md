@@ -247,3 +247,42 @@ tudo centralizado em tokens (`src/ui/estilos.css`; modo escuro em `src/ui/estilo
   ≥ 4,5:1) e fundo suave. Selo = bolinha + texto (nunca só cor).
 - **Botão primário**: grafite no claro, amarelo no escuro (o amarelo continua fora dos botões no tema claro).
 - **Foco**: contorno de 2px na cor `--foco` (visível nos dois temas).
+
+## 9. Robustez visual (Etapa 8)
+
+- **Sem `nth-child`**: o CSS não depende da posição de campos; a ordem das colunas pode mudar sem quebrar o layout
+  (`tests/test_robustez_ui.py`).
+- **Sem inversão no modo escuro**: a regra `filter: invert()` do `st.dataframe` foi removida (o app só usa tabelas HTML
+  do design system, `tabela_html`/`registro`, que seguem os tokens nos dois temas).
+- **Sem `style=` estático**: tamanhos, cores e espaçamentos viram classes (`fs-secundario`, `fs-legenda`, `texto-2`,
+  `texto-3`, `texto-perigo`, `texto-sucesso`, `texto-forte`, `texto-negrito`, `avatar--{pequeno,medio,grande}`,
+  `identidade-linha`, `resumo-contrato`, `pilha-dados`, `leitura-km`, `cartao__cabeca`, `config-*`). Só valores
+  calculados em tempo de execução ficam inline: largura/flex de barras e a cor de fundo do avatar. O teste
+  `test_paginas_sem_estilo_inline_estatico` barra novos `style=`.
+- **Fontes**: o Google Fonts é carregado com `display=swap`; as pilhas `--fonte-*` têm fallback do sistema
+  (`system-ui`/`Arial Narrow`/`ui-monospace`), então a falha do carregamento não quebra o layout. Empacotar as fontes
+  localmente (WOFF2 em `src/ui/assets/`) exige baixá-las; fica como decisão pendente.
+- **Mídia**: miniaturas de vistoria ficam numa moldura 4:3 de tamanho fixo (sem deslocamento de layout), com
+  `loading="lazy"` e `decoding="async"`.
+
+### `data-testid` que permanecem (inevitáveis)
+
+O Streamlit não expõe classes estáveis para os widgets nativos; os seletores abaixo estilizam elementos que o app
+não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key-<chave>` ou classes próprias.
+
+| Grupo | `data-testid` | Motivo |
+|---|---|---|
+| Estrutura | `stApp`, `stMain`, `stHeader`, `stSidebar*`, `stAppViewContainer`, `stElementContainer`, `stLayoutWrapper`, `stColumn`, `stHorizontalBlock`, `stVerticalBlockBorderWrapper` | casca do Streamlit, sem classe pública |
+| Campos | `stTextInput*`, `stTextAreaRootElement`, `stNumberInput*`, `stSelectbox*`, `stMultiSelect`, `stDateInputField`, `stRadio`, `stCheckbox`, `stToggle`, `stFileUploaderDropzone`, `stWidgetLabel` | aparência dos widgets nativos |
+| Ações | `stButton`, `stFormSubmitButton`, `stDownloadButton`, `stLinkButton`, `stPopover*`, `stButtonGroup` | alvo de toque e variantes |
+| Feedback | `stAlert*`, `stToast*`, `stDialog`, `stTooltip*` | alertas, toasts e diálogos |
+| Conteúdo | `stMarkdownContainer`, `stCaptionContainer`, `stMetric*`, `stCode`, `stTable`, `stPlotlyChart`, `stExpander`, `stTabs`, `stTab*` | tipografia e tema escuro |
+| Navegação | `stSidebarNav`, `stExpandSidebarButton`, `collapsedControl`, `stMainMenu` | menu lateral responsivo |
+
+## 10. Pendências da Etapa 8
+
+- Lighthouse (LCP, INP, CLS): o app exige login e o Lighthouse não está instalado neste ambiente; medir com a conta
+  de dev em `/`, Cobranças, Motos e uma ficha, e registrar os números aqui.
+- Validação de Chromium/Firefox/WebKit e capturas em CI (itens 9 e 10 do plano): dependem do pipeline e ficam para a
+  Etapa 9.
+- Empacotar as fontes localmente (item 6): decidir se baixamos os WOFF2.
