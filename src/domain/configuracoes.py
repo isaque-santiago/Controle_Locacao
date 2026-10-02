@@ -30,6 +30,18 @@ def _inteiro(valor, rotulo):
     return int(texto)
 
 
+def campos_alterados(antes: dict, depois: dict) -> list[str]:
+    """Rótulos dos parâmetros cujo valor mudou (comparação numérica: `2` e `2.00` são o mesmo valor).
+    Campos ausentes em qualquer um dos lados são ignorados."""
+    rotulos = {**CAMPOS_PERCENTUAIS, **CAMPOS_INTEIROS, **CAMPOS_MONETARIOS}
+    alterados = []
+    for campo, rotulo in rotulos.items():
+        if campo in antes and campo in depois and antes[campo] is not None and depois[campo] is not None:
+            if Decimal(str(antes[campo])) != Decimal(str(depois[campo])):
+                alterados.append(rotulo)
+    return alterados
+
+
 def validar_configuracao(entrada: dict) -> dict:
     """Converte o que foi digitado (texto pt-BR) nos tipos do banco.
 

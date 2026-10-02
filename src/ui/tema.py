@@ -10,6 +10,7 @@ from pathlib import Path
 import streamlit as st
 
 from src.db import ler_tema_escuro_cookie
+from src.ui.feedback import instalar_estado_ocupado
 
 _PASTA = Path(__file__).parent
 _CACHE_CSS: dict[str, tuple[float, str]] = {}
@@ -51,3 +52,4 @@ def aplicar():
     st.markdown(f"<style>{_FONTES}\n{_ler_css('estilos.css')}</style>", unsafe_allow_html=True)
     if tema_escuro_ativo():
         st.markdown(f"<style>{_ler_css('estilos_escuro.css')}</style>", unsafe_allow_html=True)
+    instalar_estado_ocupado()

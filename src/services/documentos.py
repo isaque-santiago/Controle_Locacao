@@ -25,8 +25,8 @@ def obter(documento_id: str):
     return documentos_moto.obter(documento_id)
 
 
-def criar(dados: dict) -> dict:
-    return documentos_moto.criar(dados)
+def criar(dados: dict, chave_operacao=None) -> dict:
+    return documentos_moto.criar(dados, chave_operacao)
 
 
 def atualizar(documento_id: str, dados: dict) -> dict:

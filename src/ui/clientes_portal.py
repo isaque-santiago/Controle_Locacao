@@ -2,8 +2,10 @@
 
 import streamlit as st
 
+from src.domain import mensagens
 from src.services import portal_locatario
-from src.ui.componentes import proteger, selo_situacao, sucesso, tabela_html
+from src.ui import feedback
+from src.ui.componentes import proteger, selo_situacao, tabela_html
 from src.ui.formatadores import formatar_data
 
 _CHAVE_CREDENCIAIS = "portal_credenciais_geradas"
@@ -45,22 +47,22 @@ def _acesso(cliente):
             "Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma "
             "senha individual gerada aqui."
         )
-        if st.button("Criar acesso", type="primary", key="criar_acesso_portal"):
+        if st.button("Criar acesso", type="primary", key="ocupa_criar_acesso_portal"):
             with proteger():
                 _guardar(cliente, portal_locatario.criar_acesso(cliente["id"]))
         return
 
     st.success("Acesso ativo ao portal do locatário.")
-    col_nova, col_remover = st.columns(2)
-    if col_nova.button("Gerar nova senha", key="nova_senha_portal", use_container_width=True):
-        with proteger():
-            _guardar(cliente, portal_locatario.redefinir_senha(cliente["id"]))
-    with col_remover.popover("Remover acesso", use_container_width=True):
-        st.write("O login do locatário será excluído e ele deixará de entrar no portal.")
-        if st.button("Confirmar remoção", key="remover_acesso_portal", type="primary"):
+    with st.container(key="portal_acoes"):
+        if st.button("Gerar nova senha", key="ocupa_nova_senha_portal"):
             with proteger():
-                portal_locatario.remover_acesso(cliente["id"])
-                sucesso()
+                _guardar(cliente, portal_locatario.redefinir_senha(cliente["id"]))
+        with st.popover("Remover acesso"):
+            st.write("O login do locatário será excluído e ele deixará de entrar no portal.")
+            if st.button("Confirmar remoção", key="ocupa_remover_acesso_portal", type="primary"):
+                with proteger():
+                    portal_locatario.remover_acesso(cliente["id"])
+                    feedback.concluir(mensagens.acesso_portal_removido(cliente["nome"]))
 
 
 def _trocas(cliente):
@@ -70,7 +72,7 @@ def _trocas(cliente):
         reverse=True,
     )
     st.markdown(
-        '<h3 class="rotulo" style="font-size:14px;">Trocas de óleo reportadas</h3>',
+        '<h3 class="rotulo secao-titulo">Trocas de óleo reportadas</h3>',
         unsafe_allow_html=True,
     )
     tabela_html(

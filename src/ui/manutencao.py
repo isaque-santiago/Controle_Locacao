@@ -7,6 +7,7 @@ from html import escape
 import streamlit as st
 
 from src.services import manutencao, motos, alertas
+from src.domain import mensagens
 from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
 from src.domain.valores import hoje_br
 from src.domain.manutencao_regras import preparar_itens_adicionais
@@ -21,6 +22,7 @@ from src.ui.componentes import (
     tabela_html,
     botao_acao,
 )
+from src.ui import feedback
 from src.ui.formularios import (
     campo_inteiro,
     campo_moeda,
@@ -41,11 +43,6 @@ _STATUS_ROTULO = {"aberta": "Aberta", "concluida": "Concluída", "cancelada": "C
 _STATUS_SELO = {"aberta": "aberta", "concluida": "ok", "cancelada": "cancelada"}
 _PREFIXO_REGISTRO = "manreg_"
 _CHAVE_EXTRAS = _PREFIXO_REGISTRO + "extras_ids"
-
-
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
 
 
 def _km(valor):
@@ -247,6 +244,11 @@ def _dialog_registrar():
                 for item, qtd, valor, _ in linhas_plano
             ]
             lista.extend(preparar_itens_adicionais(registros_adicionais))
+            custo_mao_obra = decimal_campo(mao_obra, "Custo de mão de obra")
+            chave = feedback.chave_operacao(
+                "manreg",
+                [moto["id"], tipo, entrada, km, descricao, concluida, saida, oficina, custo_mao_obra, cobrar, lista],
+            )
             manutencao.registrar_manutencao(
                 moto["id"],
                 tipo,
@@ -256,12 +258,18 @@ def _dialog_registrar():
                 status="concluida" if concluida else "aberta",
                 data_saida=saida if concluida else None,
                 oficina=oficina,
-                custo_mao_obra=decimal_campo(mao_obra, "Custo de mão de obra"),
+                custo_mao_obra=custo_mao_obra,
                 cobrar_do_cliente=cobrar,
                 itens=lista,
+                chave_operacao=chave,
+            )
+            custo_total = custo_mao_obra + sum(
+                (item["quantidade"] * item["valor_unitario"] for item in lista), Decimal("0")
             )
             _limpar_registro()
-            _salvo("Manutenção registrada.")
+            feedback.concluir(
+                mensagens.manutencao_registrada(formatar_placa(moto["placa"]), concluida, custo_total), "manreg"
+            )
 
 
 _IMPACTO_FINALIZAR = {
@@ -324,7 +332,7 @@ def _finalizar_manutencao(registro, moto, acao):
     if resultado.confirmou:
         with proteger():
             manutencao.finalizar(registro["id"], acao, data_saida, km)
-            _salvo("Manutenção concluída." if concluir else "Manutenção cancelada.")
+            feedback.concluir(mensagens.manutencao_finalizada(formatar_placa(moto["placa"]), concluir))
 
 
 @st.dialog("Concluir manutenção")
@@ -373,7 +381,7 @@ def _dialog_item(item):
                     manutencao.atualizar_item_catalogo(item["id"], dados)
                 else:
                     manutencao.criar_item_catalogo(dados)
-                _salvo("Item salvo.")
+                feedback.concluir(mensagens.item_catalogo_salvo(nome.strip(), novo=not item))
 
 
 # ------------------------------------------------------------------ abas --
@@ -548,7 +556,7 @@ def _aba_catalogo(itens):
 
 def exibir():
     cabecalho("Manutenção", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         frota = {m["id"]: m for m in motos.listar()}
         pendentes = [a for a in alertas.listar_manutencao() if a["situacao"] in _SITUACAO_ROTULO]
         vencidas = sum(a["situacao"] == "vencida" for a in pendentes)

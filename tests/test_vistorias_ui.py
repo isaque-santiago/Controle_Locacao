@@ -160,7 +160,9 @@ def test_salvar_registra_com_dados_do_formulario():
     assert kwargs["checklist"]["farol_dianteiro"] == "ok"
     assert kwargs["data"].tzinfo is not None
     assert kwargs["data"].astimezone(ZoneInfo("America/Sao_Paulo")).date() == hoje_br()
-    assert app.session_state["mensagem_sucesso"] == "Vistoria registrada."
+    assert app.session_state["feedback_pendentes"] == [
+        ("Vistoria de devolução da moto ABC-1D23 registrada.", "toast", False)
+    ]
 
 
 def test_itens_adicionais_entram_no_checklist():
@@ -195,7 +197,8 @@ def test_salvar_recusa_data_anterior_ao_inicio_do_contrato():
 
 
 def test_falha_no_envio_de_foto_nao_desfaz_a_vistoria():
-    from src.ui.vistorias import _enviar_fotos, _mensagem_fotos
+    from src.domain.mensagens import vistoria_registrada
+    from src.ui.vistorias import _enviar_fotos
 
     foto = MagicMock()
     foto.name, foto.type = "a.jpg", "image/jpeg"
@@ -203,5 +206,6 @@ def test_falha_no_envio_de_foto_nao_desfaz_a_vistoria():
     with patch("src.services.vistorias.anexar_foto", side_effect=RuntimeError("storage fora")):
         falhas = _enviar_fotos({"vistoria_id": "novo"}, [foto, foto])
     assert falhas == 2
-    assert "2 foto(s) não foram enviadas" in _mensagem_fotos("Vistoria registrada.", falhas)
-    assert _mensagem_fotos("Vistoria registrada.", 0) == "Vistoria registrada."
+    aviso = vistoria_registrada("devolução", "ABC-1D23", falhas)
+    assert "2 fotos não foram enviadas" in aviso.texto and aviso.atencao
+    assert vistoria_registrada("devolução", "ABC-1D23", 0).tom == "toast"

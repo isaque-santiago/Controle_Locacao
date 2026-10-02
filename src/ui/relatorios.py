@@ -330,7 +330,7 @@ def _periodo():
 
 def exibir():
     cabecalho("Relatórios", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         hoje = hoje_br()
         inicio = st.session_state.get("relatorios_de", hoje.replace(day=1))
         fim = st.session_state.get("relatorios_ate", hoje)

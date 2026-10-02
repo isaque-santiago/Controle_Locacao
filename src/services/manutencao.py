@@ -116,6 +116,7 @@ def registrar_manutencao(
     cobrar_do_cliente: bool = False,
     observacoes: Optional[str] = None,
     itens: Optional[list] = None,
+    chave_operacao: Optional[str] = None,
 ) -> dict:
     """Registra manutenção (preventiva/corretiva) com seus itens, via RPC
     (grava manutencao + itens + zera contador do plano + histórico de km +
@@ -136,6 +137,7 @@ def registrar_manutencao(
         "custo_mao_obra": str(custo_mao_obra),
         "cobrar_do_cliente": cobrar_do_cliente,
         "observacoes": observacoes,
+        "chave_operacao": chave_operacao,
         "itens": [
             {
                 "item_id": item.get("item_id"),

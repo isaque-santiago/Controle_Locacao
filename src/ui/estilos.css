@@ -841,6 +841,50 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .impacto p {margin: var(--e2) 0 0; color: var(--texto-2);}
 .impacto__lista {margin-top: var(--e1);}
 .dialogo-identidade {margin-left: var(--e2);}
+.dialogo-sub {color: var(--texto-2); font-size: var(--fs-secundario); margin-top: var(--e1);}
+.vazio-aba {color: var(--texto-2); font-size: var(--fs-secundario); padding: var(--e2) 0;}
+
+/* Feedback de operações (Etapa 7) --------------------------------------------------------------
+   Estado ocupado: o script de feedback.py marca com data-ocupado o botão clicado (rodapés e chaves ocupa_*)
+   até a execução terminar. O rótulo original fica invisível (a largura do botão não muda) e `Salvando…`
+   aparece por cima; o botão não recebe outro clique. */
+button[data-ocupado] {position: relative; pointer-events: none; cursor: progress; opacity: .85;}
+button[data-ocupado] > * {visibility: hidden;}
+button[data-ocupado]::after {
+  content: "Salvando…"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  padding-left: var(--e5); font-weight: 600; white-space: nowrap; visibility: visible;
+}
+[class*="st-key-perigo_"] button[data-ocupado]::after {content: "Processando…";}
+button[data-ocupado]::before {
+  content: ""; position: absolute; top: 50%; left: var(--e4); width: 14px; height: 14px; margin-top: -7px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; visibility: visible; opacity: .8;
+}
+@media (prefers-reduced-motion: no-preference) {
+  button[data-ocupado]::before {animation: girar .8s linear infinite;}
+}
+@keyframes girar {to {transform: rotate(360deg);}}
+
+/* Toast (confirmação simples): fica embaixo e centralizado, sempre dentro da largura da tela, e deixa passar
+   o clique para o que estiver atrás (só o botão de fechar recebe clique). No padrão do Streamlit ele ocupa o
+   canto superior direito e cobre a ação primária do cabeçalho. */
+[data-testid="stToastContainer"] {
+  top: auto !important; left: var(--e4) !important; right: var(--e4) !important; margin-inline: auto !important;
+  bottom: calc(var(--e4) + env(safe-area-inset-bottom, 0px)) !important;
+  width: auto !important; max-width: min(30rem, calc(100vw - 2 * var(--e4)));
+  pointer-events: none;
+}
+[data-testid="stToast"] {width: 100% !important; max-width: 100%; box-sizing: border-box; pointer-events: none;}
+/* A mensagem aparece inteira (o padrão corta em 3 linhas e esconde o resto atrás de "view more") */
+[data-testid="stToastText"] {display: block !important; overflow: visible !important; -webkit-line-clamp: unset !important; overflow-wrap: anywhere;}
+[data-testid="stToastViewButton"] {display: none !important;}
+[data-testid="stToast"] button {pointer-events: auto; min-width: var(--alvo-min); min-height: var(--alvo-min);}
+
+/* Alertas persistentes e ações de falha */
+.st-key-feedback_alertas {margin-bottom: var(--e3);}
+.st-key-portal_acoes {display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--e2); align-items: flex-start;}
+.st-key-portal_acoes > [data-testid="stElementContainer"], .st-key-portal_acoes > [data-testid="stLayoutWrapper"] {width: auto !important; flex: 1 1 12rem; min-width: 0;}
+.st-key-portal_acoes [data-testid="stPopover"], .st-key-portal_acoes [data-testid="stPopover"] > div {width: 100%;}
+.st-key-portal_acoes button {width: 100%; white-space: nowrap;}
 
 /* Resumo de valores do pagamento */
 .resumo-linhas {background: var(--fundo); border-radius: var(--raio-sm); padding: var(--e3) var(--e4); font-size: var(--fs-secundario);}

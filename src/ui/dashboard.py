@@ -228,7 +228,7 @@ def _cartao_alertas(dados_config, alertas_manutencao, alertas_documentos, alerta
 
 def exibir():
     cabecalho("Dashboard", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         cobrancas.gerar_cobrancas_pendentes()
         dados = dashboard.resumo()
         frota = dados["frota"]

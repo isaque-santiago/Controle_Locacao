@@ -126,7 +126,7 @@ def require_login() -> None:
         and time() - st.session_state.get("ultima_atividade", 0) > 1800
     ):
         logout()
-        st.info("A sessão expirou por inatividade. Entre novamente.")
+        st.warning("A sessão expirou por inatividade. Entre novamente.")
     if not esta_autenticado():
         _exibir_formulario_login()
         st.stop()

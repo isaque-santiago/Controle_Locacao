@@ -9,8 +9,9 @@ from datetime import date
 from html import escape
 
 import streamlit as st
-from postgrest.exceptions import APIError
 
+from src.domain.erros import classificar_erro
+from src.ui.feedback import exibir_falha, exibir_pendentes
 from src.ui.formatadores import formatar_placa
 
 # Situação -> cor semântica. A cor de status é a única que "grita"; estados
@@ -64,29 +65,14 @@ def _tom_situacao(situacao):
 
 
 @contextmanager
-def proteger():
+def proteger(nova_tentativa=False):
+    """Converte falhas em mensagens que dizem o que houve e o que fazer (`src.domain.erros` classifica,
+    `feedback.exibir_falha` desenha). `nova_tentativa=True` nas páginas e consultas: indisponibilidade do
+    serviço ganha o botão `Tentar novamente`. Em formulários (padrão) o botão de envio é a nova tentativa."""
     try:
         yield
-    except ValueError as erro:
-        st.error(str(erro))
-    except APIError as erro:
-        mensagens = {
-            "23505": "Este registro já existe. Atualize a lista antes de tentar novamente.",
-            "23514": "Confira datas, valores e situação do cadastro.",
-            "23503": "Há registros vinculados ou uma referência deixou de existir. Atualize a página.",
-            "42501": "Sua sessão não tem permissão para esta operação. Entre novamente.",
-            "PGRST202": "Aplique as migrations mais recentes no banco. Consulte o guia de instalação.",
-        }
-        st.error(
-            mensagens.get(
-                erro.code,
-                "Não foi possível concluir a operação. Confira os dados e atualize a página.",
-            )
-        )
-    except Exception:
-        st.error(
-            "Não foi possível acessar o serviço. Verifique a conexão e a configuração do Supabase e tente novamente."
-        )
+    except Exception as erro:
+        exibir_falha(classificar_erro(erro), nova_tentativa=nova_tentativa)
 
 
 # ---------------------------------------------------------------- estrutura --
@@ -556,11 +542,6 @@ def campo_data(titulo, valor=None, **kwargs):
     )
 
 
-def sucesso():
-    st.session_state["mensagem_sucesso"] = "Alterações salvas."
-    st.rerun()
-
-
 def cabecalho(titulo, exibir_titulo=True):
     from src.auth import require_login
     from src.ui.tema import aplicar
@@ -571,5 +552,4 @@ def cabecalho(titulo, exibir_titulo=True):
         require_login()
     if exibir_titulo:
         st.title(titulo)
-    if mensagem := st.session_state.pop("mensagem_sucesso", None):
-        st.success(mensagem)
+    exibir_pendentes()

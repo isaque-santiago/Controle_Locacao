@@ -163,6 +163,20 @@ itens com "·" decorativo fora de listas realmente compactas.
   Entrega/Devolução lado a lado só com largura útil, itens alterados com o texto “alterado” (não só o fundo
   amarelo), galeria `.galeria` com a foto inteira (`object-fit: contain`, moldura 4:3, retrato e paisagem) e link
   para a original. Protegido por `tests/test_fichas_ui.py`.
+- **Feedback e recuperação** (Etapa 7): `src/domain/mensagens.py` monta o texto que diz o que mudou e o tom
+  (`TOAST` para confirmação simples, `ALERTA` para o que pede atenção ou próximo passo; `atencao=True` vira aviso
+  amarelo); `feedback.concluir(aviso)` guarda e reexecuta, `cabecalho()` exibe (`exibir_pendentes`). O Markdown do
+  Streamlit trata dois `R$` como fórmula, então todo texto passa por `_md` (escapa `$`). Toast (`stToastContainer`):
+  embaixo, centralizado, `max-width` de 30 rem e nunca maior que a janela, mensagem inteira (sem corte em 3 linhas
+  nem “view more”), `pointer-events: none` no corpo e 44 px no botão de fechar. Falhas: `classificar_erro` →
+  validação (erro com ícone de edição), sessão expirada (aviso + `Entrar novamente`), sem permissão, indisponibilidade
+  (`Tentar novamente` em consultas, `proteger(nova_tentativa=True)` nas páginas; em formulários, texto de reenvio, pois
+  `st.button` não existe dentro de `st.form`). Estado ocupado: `button[data-ocupado]` (rótulo `Salvando…`, ou
+  `Processando…` nos `perigo_*`, anel que gira só sem `prefers-reduced-motion`, sem clique) é ligado por script a
+  `rodape_*` primário e a chaves `ocupa_*`, e desligado quando `data-test-script-state` deixa de ser `running`.
+  Chave de operação (`feedback.chave_operacao`, `src/domain/operacoes.py`): mesmo conteúdo, mesma chave; cancelar o
+  rodapé (`rodape_formulario(chave=…)`) a descarta. Prefixos de chave reservados: `ocupa_`, `operacao_`,
+  `feedback_`, `portal_acoes`. Spinner só em espera perceptível (uploads, backup).
 - **Assistente de contrato** (Etapa 5): `indicador_etapas` é `<nav><ol>` com `.etapa--concluida|atual|futura`,
   `aria-current="step"` e “(concluída)” para leitor de tela; ≤ 640 px só a etapa atual mostra o rótulo e a linha
   “Etapa N de 4: …” cobre o resto. `.wizard-resumo` mostra cliente e moto escolhidos com `Alterar`, e as condições

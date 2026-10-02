@@ -7,6 +7,7 @@ from html import escape
 
 import streamlit as st
 
+from src.domain import mensagens
 from src.domain.painel_cobrancas import (
     ABAS,
     mensagem_cobranca,
@@ -17,6 +18,7 @@ from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, motos
 from src.ui.componentes import botao_acao, cabecalho, cabecalho_pagina, chip_placa, proteger
+from src.ui import feedback
 from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario
 from src.ui.listas import abas, aba_ativa
 from src.ui.registros import campo, lista_registros, registro
@@ -37,11 +39,6 @@ _VAZIO = {
     "Próximos 7 dias": "Nenhuma cobrança vence nos próximos 7 dias.",
     "Pagas": "Nenhuma cobrança paga.",
 }
-
-
-def _salvo(mensagem="Pagamento registrado."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
 
 
 def _texto(valor, cor="", mono=False):
@@ -103,9 +100,8 @@ def _acoes_abertas(chave):
 @st.dialog("Registrar pagamento")
 def _dialog_pagamento(c):
     st.markdown(
-        f'{chip_placa(c["placa"])} <span style="margin-left:8px;">{escape(c["cliente"] or "")}</span>'
-        f'<div style="color:var(--texto-2);font-size:var(--fs-secundario);margin-top:4px;">'
-        f'{c["tipo"].capitalize()} · vencimento {formatar_data(c["vencimento"])}</div>',
+        f'{chip_placa(c["placa"])} <span class="dialogo-identidade">{escape(c["cliente"] or "")}</span>'
+        f'<div class="dialogo-sub">{c["tipo"].capitalize()} · vencimento {formatar_data(c["vencimento"])}</div>',
         unsafe_allow_html=True,
     )
     data = st.date_input(
@@ -160,15 +156,18 @@ def _dialog_pagamento(c):
         st.rerun()
     if acao.confirmou:
         with proteger():
-            cobrancas.registrar_pagamento(
-                c["id"],
-                data,
-                decimal_campo(principal, "Principal recebido", positivo=True),
-                decimal_campo(extras, "Multa e juros recebidos"),
-                forma,
-                observacoes or None,
+            valor_principal = decimal_campo(principal, "Principal recebido", positivo=True)
+            valor_extras = decimal_campo(extras, "Multa e juros recebidos")
+            chave = feedback.chave_operacao(
+                "pagamento", [c["id"], data, valor_principal, valor_extras, forma, observacoes or None]
             )
-            _salvo()
+            cobrancas.registrar_pagamento(
+                c["id"], data, valor_principal, valor_extras, forma, observacoes or None, chave_operacao=chave
+            )
+            feedback.concluir(
+                mensagens.pagamento_registrado(valor_principal, valor_extras, quitada=valor_principal >= saldo),
+                "pagamento",
+            )
 
 
 def _colunas_base():
@@ -256,7 +255,7 @@ _DESENHO_ABA = {
 
 def exibir():
     cabecalho("Cobranças", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         hoje = hoje_br()
         placas = {m["id"]: m["placa"] for m in motos.listar()}
         nomes = {cl["id"]: cl["nome"] for cl in clientes.listar()}
@@ -307,6 +306,6 @@ def exibir():
                     _DESENHO_ABA[aba](por_aba[aba])
                 else:
                     st.markdown(
-                        f'<div style="color:var(--texto-2);font-size:var(--fs-secundario);padding:8px 0;">{_VAZIO[aba]}</div>',
+                        f'<div class="vazio-aba">{_VAZIO[aba]}</div>',
                         unsafe_allow_html=True,
                     )

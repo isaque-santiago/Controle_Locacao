@@ -59,7 +59,11 @@ def atualizar(moto_id: str, dados: dict) -> dict:
 
 
 def atualizar_km(
-    moto_id: str, km: int, origem: str = "manual", confirmar_km_menor: bool = False
+    moto_id: str,
+    km: int,
+    origem: str = "manual",
+    confirmar_km_menor: bool = False,
+    chave_operacao: str | None = None,
 ) -> dict:
     """Registra novo km no histórico. O trigger do banco só sobe motos.km_atual;
     km menor que o atual exige confirmação explícita (serve para lançar dado antigo)."""
@@ -73,7 +77,7 @@ def atualizar_km(
             "Confirme se deseja registrar mesmo assim."
         )
 
-    return historico_km.criar({"moto_id": moto_id, "km": km, "origem": origem})
+    return historico_km.criar({"moto_id": moto_id, "km": km, "origem": origem}, chave_operacao)
 
 
 def historico(moto_id):

@@ -10,9 +10,11 @@ from html import escape
 
 import streamlit as st
 
+from src.domain import mensagens
 from src.domain.manutencao_regras import calcular_proxima_manutencao, calcular_situacao
 from src.domain.valores import hoje_br
 from src.services import portal_locatario
+from src.ui import feedback
 from src.ui.componentes import cabecalho, cabecalho_pagina, chip_placa, proteger, selo_situacao
 from src.ui.formatadores import formatar_data, formatar_moeda
 
@@ -108,7 +110,7 @@ def _formulario(dados, contrato, previsto):
         )
         nota = st.file_uploader("Foto da nota fiscal do óleo", type=["jpg", "jpeg", "png"])
         enviar = st.form_submit_button(
-            "Enviar troca de óleo", type="primary", use_container_width=True
+            "Enviar troca de óleo", type="primary", use_container_width=True, key=f"ocupa_{chave}_enviar"
         )
 
     if not enviar:
@@ -126,18 +128,7 @@ def _formulario(dados, contrato, previsto):
             (nota.name, nota.getvalue()),
             multa,
         )
-    if resultado.get("excedeu"):
-        valor = resultado.get("multa_valor")
-        aviso = (
-            f" Foi gerada uma cobrança de multa de {formatar_moeda(valor)}."
-            if valor
-            else " O proprietário foi avisado do atraso."
-        )
-        st.session_state["mensagem_sucesso"] = (
-            "Troca registrada, mas passou do intervalo previsto." + aviso
-        )
-    else:
-        st.session_state["mensagem_sucesso"] = "Troca de óleo registrada. Obrigado!"
+    feedback.avisar(mensagens.troca_oleo_registrada(resultado.get("excedeu"), resultado.get("multa_valor")))
     st.session_state[chave + "_tentativa"] = tentativa + 1
     st.rerun()
 
@@ -152,17 +143,18 @@ def _alterar_senha():
                 "Repita a nova senha", type="password", autocomplete="new-password"
             )
             st.caption("Mínimo de 8 caracteres, misturando letras e números; não use o seu CPF.")
-            enviar = st.form_submit_button("Salvar nova senha", use_container_width=True)
+            enviar = st.form_submit_button(
+                "Salvar nova senha", use_container_width=True, key="ocupa_trocar_senha"
+            )
         if enviar:
             portal_locatario.trocar_senha(nova, confirmacao)
             st.session_state["trocar_senha_tentativa"] = tentativa + 1
-            st.session_state["mensagem_sucesso"] = "Senha alterada. Use a nova senha no próximo acesso."
-            st.rerun()
+            feedback.concluir(mensagens.senha_alterada())
 
 
 def exibir():
     cabecalho("Portal do locatário", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         dados = portal_locatario.dados_portal()
         cabecalho_pagina(
             f"Olá, {dados['nome'].split()[0]}",
