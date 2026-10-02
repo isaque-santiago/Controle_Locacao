@@ -1,7 +1,14 @@
 """Tela de acesso: única tela testável sem credenciais."""
 
 from e2e.ajudas import abrir_login, tem_formulario_login
-from e2e.verificacoes import capturar, verificar_layout, verificar_saude
+from e2e.verificacoes import (
+    achados_bloqueantes,
+    capturar,
+    verificar_acessibilidade,
+    verificar_layout,
+    verificar_saude,
+    verificar_teclado,
+)
 
 
 def test_login_sem_overflow_e_alcancavel(pagina_anonima, cenario, registrar, coletor, request):
@@ -13,13 +20,11 @@ def test_login_sem_overflow_e_alcancavel(pagina_anonima, cenario, registrar, col
 
     verificar_layout(page, cenario, reg, "Login")
     verificar_saude(page, reg, "Login")
+    verificar_acessibilidade(page, reg, "Login")
+    verificar_teclado(page, reg, "Login")
     if request.config.getoption("--capturas"):
         capturar(page, cenario, "login")
 
     if request.config.getoption("--e2e-estrito"):
-        p0 = [
-            a
-            for a in coletor.da_severidade("P0")
-            if a.pagina == "Login" and a.largura == cenario.largura and a.perfil == cenario.perfil
-        ]
-        assert not p0, [a.descricao for a in p0]
+        bloqueantes = achados_bloqueantes(coletor, cenario, pagina="Login")
+        assert not bloqueantes, [a.descricao for a in bloqueantes]

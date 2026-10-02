@@ -57,6 +57,17 @@ def pytest_addoption(parser):
     grupo.addoption("--capturas", action="store_true", help="Salva capturas de tela em e2e/capturas/.")
     grupo.addoption("--e2e-estrito", action="store_true", help="Reprova o teste quando houver achado P0.")
     grupo.addoption("--visivel", action="store_true", help="Abre o navegador com janela.")
+    grupo.addoption(
+        "--atualizar-referencia",
+        action="store_true",
+        help="Grava as capturas atuais como referência da regressão visual (e2e/referencia/).",
+    )
+    grupo.addoption(
+        "--tolerancia-visual",
+        type=float,
+        default=0.3,
+        help="Percentual de pixels que pode diferir da referência (padrão 0,3).",
+    )
 
 
 def pytest_configure(config):

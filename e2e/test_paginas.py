@@ -4,7 +4,14 @@ import pytest
 
 from e2e.ajudas import ir_para, tem_formulario_login
 from e2e.config import PAGINAS
-from e2e.verificacoes import capturar, verificar_layout, verificar_saude
+from e2e.verificacoes import (
+    achados_bloqueantes,
+    capturar,
+    verificar_acessibilidade,
+    verificar_layout,
+    verificar_saude,
+    verificar_teclado,
+)
 
 pytestmark = pytest.mark.autenticado
 
@@ -32,13 +39,11 @@ def test_todas_as_paginas(pagina_logada, cenario, registrar, coletor, request):
             continue
         verificar_layout(page, cenario, reg, pagina.titulo)
         verificar_saude(page, reg, pagina.titulo)
+        verificar_acessibilidade(page, reg, pagina.titulo)
+        verificar_teclado(page, reg, pagina.titulo)
         if capturas:
             capturar(page, cenario, pagina.titulo)
 
     if request.config.getoption("--e2e-estrito"):
-        p0 = [
-            a
-            for a in coletor.da_severidade("P0")
-            if a.largura == cenario.largura and a.perfil == cenario.perfil and a.fluxo == "01-entrar-e-navegar"
-        ]
-        assert not p0, [f"{a.pagina}: {a.descricao}" for a in p0]
+        bloqueantes = achados_bloqueantes(coletor, cenario, fluxo="01-entrar-e-navegar")
+        assert not bloqueantes, [f"{a.pagina}: {a.descricao}" for a in bloqueantes]

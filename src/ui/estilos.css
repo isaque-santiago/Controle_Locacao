@@ -32,11 +32,11 @@
   /* Texto (o terciário escurece para ≥ 4,5:1 sobre a superfície) */
   --texto: #1E2227;
   --texto-2: #585F66;
-  --texto-3: #6B7278;
+  --texto-3: #646B72;
   --texto-invertido: #FAFAF9;
 
   /* Estados: cor cheia (pontos, bordas) e cor de texto com contraste */
-  --sucesso: #2F9E6E;   --sucesso-texto: #1F7A54;  --sucesso-fundo: rgba(47,158,110,.12);
+  --sucesso: #2F9E6E;   --sucesso-texto: #1B6F4D;  --sucesso-fundo: rgba(47,158,110,.12);
   --alerta: #F2B705;    --alerta-texto: #7A5A00;   --alerta-fundo: rgba(242,183,5,.18);
   --perigo: #D64545;    --perigo-texto: #B83232;   --perigo-fundo: rgba(214,69,69,.10);
   --info: #3F6E9C;      --info-texto: #2F5F8A;     --info-fundo: rgba(63,110,156,.12);
@@ -438,6 +438,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 [data-testid="stFileUploaderDropzone"]:focus-within {outline: 2px solid var(--foco); outline-offset: 2px;}
 [data-testid="stSidebar"] :is(a, button, summary):focus-visible {outline-color: var(--marca) !important;}
+/* A região principal rola por dentro: o navegador a deixa focável para rolar com as setas, então o foco precisa aparecer. */
+[data-testid="stMain"]:focus-visible {outline: 2px solid var(--foco); outline-offset: -2px;}
+/* O Streamlit deixa a legenda a 60% de opacidade; com o texto secundário isso reprova o contraste de 4,5:1. */
+[data-testid="stCaptionContainer"] {opacity: 1;}
 /* Barra de filtros das listas (barra_filtros): pílulas nativas que quebram de linha, busca ao lado no desktop
    e em linha própria no celular; o filtro escolhido leva um "check", então não depende só da cor */
 [class*="_barra_filtros"] {flex-wrap: wrap; gap: var(--e3) var(--e4); align-items: center; margin-bottom: var(--e2);}
@@ -1034,6 +1038,7 @@ button[data-ocupado]::before {
 .leitura-km:not(:last-child) {border-bottom: 1px solid var(--linha);}
 .leitura-km--vazia {color: var(--texto-2); font-size: var(--fs-secundario);}
 .cartao__cabeca {display: flex; justify-content: space-between; align-items: center; gap: var(--e2); flex-wrap: wrap;}
-.config-titulo {margin: 0 0 var(--e1) 0; font-size: var(--fs-subtitulo); color: var(--texto);}
+/* h2 (ordem de títulos) com a aparência que o h3 tinha: o h3 saía com 18px e 20px/16px de respiro; o h2 vem maior e com outro respiro. */
+[data-testid="stMarkdownContainer"] h2.config-titulo {margin: 0 0 var(--e1) 0; padding: 20px 0 16px; font-size: var(--fs-secao); line-height: 1.2; color: var(--texto);}
 .config-descricao {font-size: var(--fs-legenda); color: var(--texto-2); margin-bottom: var(--e3);}
 .config-exemplo {background: var(--fundo); border-radius: var(--raio-sm); padding: var(--e3) var(--e4); font-size: var(--fs-legenda); color: var(--texto-2);}

@@ -126,7 +126,8 @@ const emRolagemHorizontal = (el) => {
 // Barra lateral recolhida fica fora da tela por transformação: não é problema de layout.
 const emBarraRecolhida = (el) => {
   const sb = el.closest('[data-testid="stSidebar"]');
-  return !!sb && sb.getAttribute('aria-expanded') === 'false';
+  // O app remove aria-expanded da barra (atributo inválido no <section>) e guarda o estado em data-expandida.
+  return !!sb && (sb.getAttribute('data-expandida') || sb.getAttribute('aria-expanded')) === 'false';
 };
 """
 
@@ -239,8 +240,116 @@ _JS_DIALOGO = (
 )
 
 
+_JS_FOCO = (
+    "(modo) => {"
+    + _JS_COMUM
+    + r"""
+  if (modo === 'iniciar') {
+    window.__contadorFoco = 0;
+    window.__yFoco = null;
+    window.__regiaoFoco = null;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    const principal = document.querySelector('[data-testid="stMain"]');
+    if (principal) principal.scrollTo(0, 0);
+    window.scrollTo(0, 0);
+    document.body.setAttribute('tabindex', '-1');
+    document.body.focus();
+    document.body.removeAttribute('tabindex');
+    return null;
+  }
+  const el = document.activeElement;
+  if (!el || el === document.body || el === document.documentElement) {
+    return { fim_do_documento: true, chave: 'fim', el: 'body', rotulo: '', indicador: true, dentro: true, regressao: 0 };
+  }
+  if (!el.__idFoco) el.__idFoco = ++window.__contadorFoco;
+  const rotuloAcessivel = () => {
+    const direto = el.getAttribute('aria-label') || el.getAttribute('title') || '';
+    if (direto.trim()) return direto.trim();
+    const por = el.getAttribute('aria-labelledby');
+    if (por) {
+      const t = por.split(/\s+/).map(i => (document.getElementById(i) || {}).innerText || '').join(' ').trim();
+      if (t) return t;
+    }
+    if (el.labels && el.labels.length) {
+      const t = Array.from(el.labels).map(l => l.innerText).join(' ').trim();
+      if (t) return t;
+    }
+    return (el.innerText || el.value || el.getAttribute('placeholder') || el.getAttribute('alt') || '').replace(/\s+/g, ' ').trim();
+  };
+  const r = el.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
+  const dentro = r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= vw + 1 && r.top >= -1 && r.bottom <= vh + 1;
+  // Indicador: contorno ou sombra no próprio elemento ou em até 3 ancestrais (o Streamlit
+  // desenha o foco no contêiner do campo, não no <input> interno).
+  let indicador = false;
+  for (let p = el, i = 0; p && i < 4 && !indicador; p = p.parentElement, i++) {
+    const cs = getComputedStyle(p);
+    const contorno = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && !/rgba\(\s*0,\s*0,\s*0,\s*0\s*\)|transparent/.test(cs.outlineColor);
+    if (contorno || cs.boxShadow !== 'none') indicador = true;
+  }
+  // Campo de data (react-aria): o segmento focado ganha fundo escuro e a borda do campo muda para âmbar
+  // (conferido nas capturas); a medição por contorno/sombra não enxerga isso.
+  if (el.closest('[data-testid="stDateInputField"]')) indicador = true;
+  const principal = document.querySelector('[data-testid="stMain"]');
+  const regiao = el.closest('[data-testid="stSidebar"]') ? 'barra' : (el.closest('[role="dialog"]') ? 'dialogo' : 'principal');
+  const y = r.top + (regiao === 'principal' && principal ? principal.scrollTop : 0);
+  let regressao = 0;
+  if (window.__regiaoFoco === regiao && window.__yFoco !== null && y < window.__yFoco - 200) {
+    regressao = Math.round(window.__yFoco - y);
+  }
+  window.__regiaoFoco = regiao;
+  window.__yFoco = y;
+  return {
+    fim_do_documento: false,
+    chave: String(el.__idFoco),
+    el: descrever(el),
+    rotulo: rotuloAcessivel().slice(0, 50),
+    indicador, dentro, regressao,
+  };
+}"""
+)
+
+_JS_TEXTO_CORTADO = (
+    "() => {"
+    + _JS_COMUM
+    + r"""
+  const ignorar = '[data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stMainBlockContainer"]';
+  const achados = [];
+  for (const el of document.querySelectorAll('body *')) {
+    if (el.matches(ignorar) || !visivel(el) || emBarraRecolhida(el)) continue;
+    const cs = getComputedStyle(el);
+    const corta = (v) => v === 'hidden' || v === 'clip';
+    if (!corta(cs.overflowX) && !corta(cs.overflowY)) continue;
+    if (cs.textOverflow === 'ellipsis') continue;
+    const texto = (el.innerText || '').replace(/\s+/g, ' ').trim();
+    if (!texto) continue;
+    const largo = corta(cs.overflowX) && el.scrollWidth > el.clientWidth + 2;
+    const alto = corta(cs.overflowY) && el.scrollHeight > el.clientHeight + 2;
+    if (!largo && !alto) continue;
+    // Texto só para leitor de tela (clip de 1 px, classe so-leitor): cortar é o objetivo.
+    if ((largo ? el.clientWidth : el.clientHeight) <= 2) continue;
+    achados.push({
+      el: descrever(el), texto: texto.slice(0, 40),
+      conteudo: largo ? el.scrollWidth : el.scrollHeight, caixa: largo ? el.clientWidth : el.clientHeight,
+    });
+  }
+  return achados;
+}"""
+)
+
+
 def medir_overflow(page: Page) -> dict:
     return page.evaluate(_JS_OVERFLOW)
+
+
+def medir_foco_por_teclado(page: Page, modo: str) -> dict | None:
+    """`iniciar` põe o início de tabulação no topo; `ler` descreve o elemento focado agora."""
+    return page.evaluate(_JS_FOCO, modo)
+
+
+def medir_texto_cortado(page: Page) -> list[dict]:
+    return page.evaluate(_JS_TEXTO_CORTADO)
 
 
 def medir_interativos(page: Page) -> dict:

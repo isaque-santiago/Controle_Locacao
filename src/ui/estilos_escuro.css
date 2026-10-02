@@ -17,7 +17,7 @@
 
   --sucesso-texto: #4CC994; --sucesso-fundo: rgba(76,201,148,.14);
   --alerta-texto: #F2B705;  --alerta-fundo: rgba(242,183,5,.16);
-  --perigo: #FF6B6B; --perigo-texto: #FF8080; --perigo-fundo: rgba(255,128,128,.14);
+  --perigo: #FF6B6B; --perigo-texto: #FF8A8A; --perigo-fundo: rgba(255,128,128,.14);
   --info: #6CB4EE; --info-texto: #6CB4EE; --info-fundo: rgba(108,180,238,.14);
   --neutro-texto: #B4BBC3; --neutro-fundo: rgba(238,240,240,.08);
 
@@ -119,3 +119,5 @@ body [data-testid="stDownloadButton"] button * {color: inherit !important;}
 [data-testid="stApp"] [data-testid="stMain"] button[kind="tertiary"] {color: var(--texto-2) !important;}
 [data-testid="stApp"] [data-testid="stMain"] [class*="st-key-pagar_"] button[kind="tertiary"] {color: var(--btn-primario-texto) !important;}
 [data-testid="stApp"] [data-testid="stMain"] [class*="st-key-cancelar_man_"] button[kind="tertiary"] {color: var(--perigo-texto) !important;}
+/* O rótulo fica dentro de um stMarkdownContainer, que recebe --texto acima: sem isto o "Pagar" saía claro sobre amarelo (1,56:1). */
+[data-testid="stApp"] [data-testid="stMain"] button[kind="tertiary"] * {color: inherit !important;}
