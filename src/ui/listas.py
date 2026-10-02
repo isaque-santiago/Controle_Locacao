@@ -14,6 +14,7 @@ Toda aparência vem de estilos.css (classes `.st-key-<prefixo>_...`); aqui só s
 estrutura. A aritmética de página fica em src/domain/paginacao.py.
 """
 
+import re
 from dataclasses import dataclass
 from html import escape
 from typing import Any
@@ -176,6 +177,34 @@ def rodape_paginacao(prefixo, pagina: Pagina):
             args=(prefixo,),
             label_visibility="collapsed",
         )
+
+
+# ------------------------------------------------------- volta à lista --
+
+_IDENTIFICADOR = re.compile(r"[A-Za-z0-9_-]+")
+
+
+def lembrar_registro(prefixo, identificador):
+    """Guarda o registro de onde se saiu para a ficha, para a lista trazê-lo de volta à vista."""
+    st.session_state[f"{prefixo}_retorno"] = str(identificador)
+
+
+def restaurar_posicao(prefixo):
+    """Chame depois de desenhar a lista. Na volta de uma ficha, rola até o registro de onde o usuário saiu
+    e leva o foco ao primeiro botão dele (a página, o filtro e a busca já voltam pelo estado da sessão).
+    Se o registro não está na página atual (filtro ou página mudaram), nada acontece. Só vale uma vez."""
+    identificador = st.session_state.pop(f"{prefixo}_retorno", None)
+    if not identificador or not _IDENTIFICADOR.fullmatch(identificador):
+        return
+    seletor = f'[class*="st-key-reg_{prefixo}_{identificador}"]'
+    st.html(
+        "<script>(function(){var n=0,t=setInterval(function(){"
+        f"var el=document.querySelector('{seletor}');"
+        "if(el){clearInterval(t);el.scrollIntoView({block:'center'});"
+        "setTimeout(function(){var b=el.querySelector('button');if(b){b.focus({preventScroll:true});}},400);}"
+        "else if(++n>30){clearInterval(t);}},100);})();</script>",
+        unsafe_allow_javascript=True,
+    )
 
 
 # --------------------------------------------------------------------- abas --

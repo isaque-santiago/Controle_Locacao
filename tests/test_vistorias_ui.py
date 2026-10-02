@@ -79,12 +79,12 @@ def test_seta_abre_a_comparacao_do_contrato(servicos):
     next(b for b in app.button if b.key == "ver_vist_v1").click().run()
     assert not app.exception and not app.error
     texto = _texto(app)
-    assert "Pessoa teste → Honda CG" in texto
+    assert "Pessoa teste" in texto and "Honda CG" in texto
     assert "2.520 km" in texto  # km rodados
     assert "1 registrada(s)" in texto
     assert "Retrovisor direito trincado" in texto
     assert "Retrovisores" in texto and "Avaria" in texto
-    assert any("fundo amarelo mudaram" in c.value for c in app.caption)
+    assert any("alterado" in c.value and "mudaram" in c.value for c in app.caption)
     assert any(b.key == "voltar_vistorias" and b.label == "Voltar para vistorias" for b in app.button)
 
 

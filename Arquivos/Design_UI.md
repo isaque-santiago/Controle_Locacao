@@ -147,6 +147,22 @@ itens com "·" decorativo fora de listas realmente compactas.
   (`.rodape-form__motivo`, faixa âmbar). Destrutivo: `perigo=True` + quadro `.impacto` (borda e título de perigo) com o
   que será alterado + caixa de confirmação; o botão neutro diz o que acontece (“Manter manutenção”). Valores
   calculados (subtotal, custo total) usam `.leitura`, com o mesmo rótulo e altura dos campos.
+- **Fichas, dashboard e relatórios** (Etapa 6): `cabecalho_ficha(identidade, acoes)` + `ficha_identidade(...)` é o
+  cabeçalho único de Moto, Cliente, Contrato e comparação de vistorias (marca, título, selo; ações secundárias à direita
+  que descem em largura total por container query de 34 rem, nenhuma se perde). `faixa_dados([...])` é a faixa de
+  dados do topo: células `flex-wrap` (mín. 9 rem) com o valor em `cqi`, então números grandes encolhem e quebram em vez
+  de estourar; sem `nth-child`. `cartao_ficha(chave, titulo, acao)` coloca a ação ao lado do título do cartão (desce
+  quando o cartão é estreito) e `cartao_dados` / `dado` / `grade_dados` montam os cartões somente leitura.
+  `paineis(chave, iguais=False)` substitui `st.columns` nas fichas, no Dashboard (Hoje/Alertas) e nas vistorias:
+  painéis `flex-wrap` que empilham quando o contêiner perde largura útil (reservados `paineis_*`, `painelA_*`,
+  `painelB_*`, `cartaoficha_*`, `cartaocab_*`, `ficha_cabecalho`, `ficha_acoes`, `exportacao_*`). KPIs (`.kpi`) são
+  container de largura: `R$ 99.999.999` cabe de 320 px a 1600 px. Voltar para a lista: página, filtro e busca vêm do
+  estado da sessão; `lembrar_registro` + `restaurar_posicao` rolam até o registro de origem e levam o foco ao
+  primeiro botão dele (uma vez). Relatórios: cada aba traz um resumo em texto (`destaques` em `domain/relatorios.py`:
+  total, maior e menor) como alternativa às barras, e a exportação quebra de linha sem truncar. Vistorias: cartões
+  Entrega/Devolução lado a lado só com largura útil, itens alterados com o texto “alterado” (não só o fundo
+  amarelo), galeria `.galeria` com a foto inteira (`object-fit: contain`, moldura 4:3, retrato e paisagem) e link
+  para a original. Protegido por `tests/test_fichas_ui.py`.
 - **Assistente de contrato** (Etapa 5): `indicador_etapas` é `<nav><ol>` com `.etapa--concluida|atual|futura`,
   `aria-current="step"` e “(concluída)” para leitor de tela; ≤ 640 px só a etapa atual mostra o rótulo e a linha
   “Etapa N de 4: …” cobre o resto. `.wizard-resumo` mostra cliente e moto escolhidos com `Alterar`, e as condições

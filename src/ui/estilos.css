@@ -121,7 +121,7 @@ hr {border-color: var(--linha);}
 .vazio__titulo, .vazio__texto {overflow-wrap: anywhere;}
 .mono {overflow-wrap: normal;}
 /* Contêineres flex/grid compartilhados podem encolher abaixo do conteúdo (senão estouram a largura) */
-.painel-cabecalho > *, .cartao__cab > *, .cartao--faixa > div, .kpi-grade > *, .alerta-item > div, .grade-dados > *,
+.painel-cabecalho > *, .cartao__cab > *, .kpi-grade > *, .alerta-item > div, .grade-dados > *,
 .selos-linha > * {min-width: 0;}
 
 /* ========================================
@@ -245,12 +245,11 @@ h3 {font-size: var(--fs-subtitulo);}
 /* ========================================
    CARDS
 ======================================== */
-.cartao, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) {
+.cartao, [class*="st-key-cartaoficha_"] {
   background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);
   box-shadow: var(--sombra-1); padding: var(--e4) var(--e5);
 }
 .cartao--sem-espaco {padding: 0; overflow: hidden;}
-.cartao--faixa {display: flex; padding: 0; overflow: hidden;}
 .cartao__cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
 .cartao__cab--fora {padding: 0 0 var(--e3); margin-bottom: var(--e3);}
 .cartao__titulo, .secao-titulo {margin: 0 !important; padding: 0 !important; font-family: var(--fonte-titulo) !important; font-size: var(--fs-subtitulo) !important; font-weight: 600 !important; letter-spacing: .01em; line-height: 1.3;}
@@ -258,38 +257,97 @@ h3 {font-size: var(--fs-subtitulo);}
 .cartao__corpo {padding: var(--e4) var(--e5);}
 /* Fichas: rótulo discreto em cima (Primeiras Letras Maiúsculas) e valor grande embaixo */
 .campo {gap: 3px;}
-.campo > span:first-child, .cartao--faixa > div > span:first-child {
+.campo > span:first-child {
   font-size: var(--fs-secundario) !important; letter-spacing: .02em; text-transform: capitalize;
 }
 .campo > span:not(:first-child) {font-size: var(--fs-corpo) !important; font-weight: 500; line-height: 1.35;}
 /* Título dos cartões de ficha: o Streamlit soma 12px/16px de padding ao h3, abrindo um vazio acima e abaixo dele */
-.cartao > [data-testid="stHeadingWithActionElements"] h3, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) h3 {padding: 0 !important;}
+.cartao > [data-testid="stHeadingWithActionElements"] h3 {padding: 0 !important;}
 /* Dados das fichas em cartões: 22px; textos longos (e-mail, endereço) quebram em vez de vazar */
-.cartao .campo > span:not(:first-child), .cartao--faixa .campo > span:not(:first-child),
-:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo > span:not(:first-child) {
+.cartao .campo > span:not(:first-child), [class*="st-key-cartaoficha_"] .campo > span:not(:first-child) {
   font-size: var(--fs-dado) !important; line-height: 1.25; overflow-wrap: anywhere;
 }
-.cartao .campo .mono, .cartao--faixa .campo .mono, :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) .campo .mono {white-space: normal;}
+.cartao .campo .mono, [class*="st-key-cartaoficha_"] .campo .mono {white-space: normal;}
 /* Dados de ficha em grade: 3 colunas (2 e 1 nos breakpoints do bloco RESPONSIVE) */
 .grade-dados {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e4) var(--e5);}
 .grade-dados--compacta {gap: 16px 14px;}
-/* Ficha do cliente > Contrato ativo: cartão com a ação (Ver contrato) no cabeçalho, à direita do título */
-:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) {gap: var(--e3);}
-/* Acompanha a altura do cartão vizinho (Situação financeira) na mesma linha */
-[data-testid="stLayoutWrapper"]:has(> :is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo)) {flex: 1 1 auto;}
-/* A coluna do botão tem a largura do rótulo (proporcional, ele era truncado em telas estreitas) */
-:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) [data-testid="stColumn"]:has([class*="st-key-ver_contrato_"]) {flex: 0 0 auto; width: auto; min-width: 0;}
-:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) [data-testid="stColumn"]:not(:has([class*="st-key-ver_contrato_"])) {flex: 1 1 0; min-width: 0;}
-:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) button[kind="secondary"] {min-height: var(--alvo-min); padding: 2px var(--e3);}
-:is(.st-key-cliente_contrato_ativo, .st-key-moto_contrato_ativo) button[kind="secondary"] p {font-size: var(--fs-secundario);}
-/* Ficha da moto: botão "Atualizar km" dentro da célula Km atual (canto superior direito da 1ª célula da faixa) */
-.st-key-moto_faixa_km {position: relative;}
-.st-key-moto_faixa_km .st-key-km_ficha {position: absolute; top: 12px; right: calc(75% + 14px); width: auto; z-index: 1;}
-.st-key-moto_faixa_km .st-key-km_ficha button {padding: 2px var(--e3);}
-.st-key-moto_faixa_km .st-key-km_ficha button p {font-size: var(--fs-legenda);}
-@media (max-width: 900px) {
-  .st-key-moto_faixa_km .st-key-km_ficha {position: static;}
+/* Cartão de ficha com ação (cartao_ficha): o título e o botão ficam na mesma linha e o botão desce
+   quando falta largura (container query do próprio cartão), em vez de ser cortado */
+[class*="st-key-cartaoficha_"] {gap: var(--e3); container-type: inline-size;}
+[class*="st-key-cartaocab_"] {display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e2) var(--e3);}
+[class*="st-key-cartaocab_"] > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+[class*="st-key-cartaocab_"] > [data-testid="stElementContainer"]:has(.cartao__titulo) {flex: 1 1 8rem;}
+[class*="st-key-cartaocab_"] > [data-testid="stElementContainer"]:has(button) {flex: 0 0 auto;}
+[class*="st-key-cartaocab_"] button {white-space: nowrap;}
+@container (max-width: 18rem) {
+  [class*="st-key-cartaocab_"] > [data-testid="stElementContainer"]:has(button) {flex: 1 1 100%;}
+  [class*="st-key-cartaocab_"] [data-testid="stButton"], [class*="st-key-cartaocab_"] button {width: 100%;}
 }
+[class*="st-key-cartaoficha_"] button[kind="secondary"] {min-height: var(--alvo-min); padding: 2px var(--e3);}
+[class*="st-key-cartaoficha_"] button[kind="secondary"] p {font-size: var(--fs-secundario);}
+
+/* Cabeçalho das fichas (cabecalho_ficha): identidade à esquerda, ações à direita; as ações descem em largura
+   total quando o cabeçalho fica estreito (container query do próprio cabeçalho, vale em janela dividida) */
+.st-key-ficha_cabecalho {
+  display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: var(--e3) var(--e4); margin-bottom: var(--e4); container-type: inline-size;
+}
+.st-key-ficha_cabecalho > [data-testid="stElementContainer"], .st-key-ficha_cabecalho > [data-testid="stLayoutWrapper"] {width: auto !important; min-width: 0;}
+.st-key-ficha_cabecalho > [data-testid="stElementContainer"]:has(.ficha-id) {flex: 1 1 22rem;}
+.st-key-ficha_cabecalho > [data-testid="stLayoutWrapper"]:has(.st-key-ficha_acoes) {flex: 0 1 auto;}
+.st-key-ficha_acoes {display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--e2); justify-content: flex-end;}
+.st-key-ficha_acoes > [data-testid="stElementContainer"] {width: auto !important;}
+.st-key-ficha_acoes button {white-space: nowrap;}
+@container (max-width: 34rem) {
+  .st-key-ficha_cabecalho > [data-testid="stLayoutWrapper"]:has(.st-key-ficha_acoes) {flex: 1 1 100%;}
+  .st-key-ficha_acoes {justify-content: flex-start;}
+  .st-key-ficha_acoes > [data-testid="stElementContainer"] {flex: 1 1 9rem;}
+  .st-key-ficha_acoes [data-testid="stButton"], .st-key-ficha_acoes button {width: 100%;}
+}
+.ficha-id {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3) var(--e4); min-width: 0;}
+.ficha-id__marca {flex: none; display: flex;}
+.ficha-id__texto {flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--e1);}
+.ficha-id__titulo {margin: 0 !important; padding: 0 !important; font-size: clamp(20px, 5.5vw, 26px) !important; line-height: 1.15; overflow-wrap: anywhere;}
+.ficha-id__sub {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); font-size: var(--fs-corpo); color: var(--texto-2); overflow-wrap: anywhere;}
+.ficha-id__selo {font-size: var(--fs-secundario); margin-top: 2px; max-width: 100%;}
+.ficha-id__selo .badge {white-space: normal;}
+.avatar-ficha {width: 48px; height: 48px; border-radius: 50%; background: var(--chip-fundo); color: var(--chip-texto); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; flex: none;}
+.avatar-ficha--inativo {background: var(--avatar-inativo);}
+
+/* Faixa de dados das fichas (faixa_dados): as células crescem e quebram de linha por largura, sem posição fixa.
+   Cada célula é um container de largura: o valor encolhe junto com ela (nunca estoura) */
+.faixa-dados {display: flex; flex-wrap: wrap; padding: 0; overflow: hidden; margin-bottom: var(--e5);}
+.faixa-dados__item {
+  flex: 1 1 9rem; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: var(--e1);
+  padding: var(--e3) var(--e4); border-right: 1px solid var(--linha); border-bottom: 1px solid var(--linha); margin: 0 -1px -1px 0;
+  container-type: inline-size;
+}
+.faixa-dados__rotulo {font-size: var(--fs-secundario); letter-spacing: .02em; color: var(--texto-2); text-transform: capitalize;}
+.faixa-dados__valor {font-size: clamp(14px, 8.5cqi, var(--fs-dado)); font-weight: 500; line-height: 1.25; overflow-wrap: anywhere; min-width: 0;}
+.faixa-dados__valor .mono {white-space: normal;}
+.faixa-dados__valor .badge {white-space: normal; text-align: left;}
+.faixa-dados__valor--perigo {color: var(--perigo-texto);}
+.faixa-dados__valor--sucesso {color: var(--sucesso-texto);}
+.faixa-dados__valor--texto-3 {color: var(--texto-3);}
+.faixa-dados--destaque .faixa-dados__item {padding: var(--e4) var(--e5);}
+.faixa-dados--destaque .faixa-dados__valor {font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; font-size: clamp(16px, 9.5cqi, 26px); font-weight: 600;}
+
+/* Dados rotulados de cartões de ficha (dado/grade_dados): colunas por largura disponível, sem número fixo */
+.grade-auto {display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--e3) var(--e4);}
+.dado {display: flex; flex-direction: column; gap: 2px; min-width: 0;}
+.dado__rotulo {font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3);}
+.dado__valor {font-size: var(--fs-corpo); overflow-wrap: anywhere;}
+.dado__valor .mono {white-space: normal;}
+.cartao--tracejado {border-style: dashed; box-shadow: none; display: flex; flex-direction: column; gap: var(--e2); height: 100%;}
+
+/* Painéis lado a lado (paineis): cada um mantém ~18 rem e o lateral desce quando o contêiner perde largura útil */
+[class*="st-key-paineis_"] {gap: var(--e4); align-items: stretch !important;}
+[class*="st-key-paineis_"] > [data-testid="stLayoutWrapper"] {min-width: 0; width: auto !important;}
+[class*="st-key-paineis_"] > [data-testid="stLayoutWrapper"]:has([class*="st-key-painelA_"]) {flex: 1.5 1 24rem;}
+[class*="st-key-paineis_"] > [data-testid="stLayoutWrapper"]:has([class*="st-key-painelB_"]) {flex: 1 1 18rem;}
+[class*="st-key-paineis_"][class*="__iguais"] > [data-testid="stLayoutWrapper"] {flex: 1 1 22rem;}
+[class*="st-key-painelA_"], [class*="st-key-painelB_"] {height: 100%;}
+
 /* Configurações: cartões de formulário em largura total */
 .st-key-config_pagina {gap: var(--e5);}
 .st-key-config_pagina [data-testid="stForm"] {padding: 0; gap: var(--e5); background: transparent !important; border: 0; border-radius: 0;}
@@ -304,7 +362,7 @@ h3 {font-size: var(--fs-subtitulo);}
 ======================================== */
 .kpi-grade {display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: var(--e4);}
 .kpi {
-  display: flex; flex-direction: column; gap: 10px; min-width: 0;
+  display: flex; flex-direction: column; gap: 10px; min-width: 0; container-type: inline-size;
   position: relative;
   background: var(--superficie); border: 1px solid var(--linha);
   border-radius: var(--raio-lg); box-shadow: var(--sombra-1); padding: var(--e5);
@@ -316,9 +374,10 @@ h3 {font-size: var(--fs-subtitulo);}
 }
 .kpi:hover {box-shadow: var(--sombra-2);}
 .kpi__rotulo {font-family: var(--fonte-titulo); font-size: var(--fs-legenda); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-2);}
-.kpi__valor {font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; font-size: var(--fs-display); font-weight: 600; line-height: 1; letter-spacing: -.04em; white-space: nowrap;}
+/* O valor encolhe com a largura do próprio cartão (~11 caracteres por largura): R$ 99.999.999 cabe sem sobrepor o vizinho */
+.kpi__valor {font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; font-size: clamp(20px, 9cqi, 38px); font-weight: 600; line-height: 1; letter-spacing: -.04em; white-space: nowrap; max-width: 100%;}
 .kpi__valor--perigo {color: var(--perigo-texto);}
-.kpi__linha {display: flex; align-items: baseline; gap: var(--e2); flex-wrap: wrap;}
+.kpi__linha {display: flex; align-items: baseline; gap: var(--e2); flex-wrap: wrap; min-width: 0;}
 .kpi__contexto {font-size: var(--fs-secundario); color: var(--texto-2);}
 .kpi__legenda {display: flex; gap: var(--e3); flex-wrap: wrap;}
 .kpi__legenda-item {display: flex; align-items: center; gap: 5px; font-size: var(--fs-legenda); color: var(--texto-2);}
@@ -327,7 +386,8 @@ h3 {font-size: var(--fs-subtitulo);}
 .indicadores {display: flex; flex-wrap: wrap; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-sm); margin-bottom: var(--e5); overflow: hidden;}
 .indicadores__item {flex: 1 1 11rem; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: var(--e4) var(--e5); border-right: 1px solid var(--linha); border-bottom: 1px solid var(--linha); margin: 0 -1px -1px 0;}
 .indicadores__rotulo {font-size: var(--fs-legenda); color: var(--texto-2);}
-.indicadores__valor {font-size: clamp(18px, 5vw, 24px); font-weight: 600;}
+.indicadores__item {container-type: inline-size;}
+.indicadores__valor {font-size: clamp(16px, 11cqi, 24px); font-weight: 600; overflow-wrap: anywhere;}
 /* st.metric nativo (relatórios) */
 [data-testid="stMetric"] {position: relative; background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); box-shadow: var(--sombra-1); padding: var(--e4) var(--e5);}
 [data-testid="stMetricLabel"] {color: var(--texto-2);}
@@ -335,7 +395,7 @@ h3 {font-size: var(--fs-subtitulo);}
 /* Barras de medição (ocupação, recebido, proporção) */
 .barra {display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--linha);}
 .barra > i {display: block; height: 100%; background: var(--seg, var(--sucesso));}
-.barra--fina {height: 6px; width: 100px;}
+.barra--fina {height: 6px; width: min(100%, 7.5rem);}
 .seg-alugada {--seg: var(--seg-alugada-cor);}
 .seg-disponivel {--seg: var(--sucesso);}
 .seg-manutencao {--seg: var(--alerta);}
@@ -655,7 +715,8 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 }
 [data-testid="stMain"] button[kind="tertiary"] [data-testid="stIconMaterial"] {font-size: 20px; margin: 0;}
 /* Voltar contextual das fichas: sem contorno, alinhado à esquerda */
-[data-testid="stMain"] [class*="st-key-voltar_"] button[kind="tertiary"] {border-color: transparent !important; padding-left: var(--e2) !important; margin-left: calc(-1 * var(--e2));}
+[data-testid="stMain"] [class*="st-key-voltar_"] button[kind="tertiary"] {border-color: transparent !important; padding-left: var(--e2) !important; margin-left: calc(-1 * var(--e2)); white-space: nowrap;}
+[data-testid="stMain"] [class*="st-key-voltar_"] button p {white-space: nowrap;}
 /* Pagar: a ação positiva e frequente é sólida em toda parte (Hoje do dashboard e Cobranças) */
 [data-testid="stApp"] [data-testid="stMain"] [class*="st-key-pagar_"] button[kind="tertiary"] {
   background: var(--btn-primario) !important; border-color: var(--btn-primario) !important; color: var(--btn-primario-texto) !important;
@@ -822,12 +883,46 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
 .wizard-secao {margin: 0 0 var(--e3); font-size: var(--fs-subtitulo);}
 
 /* ========================================
+   VISTORIAS — comparação entrega x devolução e galeria de fotos
+   Cartões lado a lado só quando cada um tem largura útil (paineis); a galeria usa o quanto couber.
+======================================== */
+.vist-cartao {display: flex; flex-direction: column; gap: var(--e4);}
+.vist-secao {margin: 0 0 var(--e2); font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3);}
+.vist-checklist {list-style: none; margin: 0; padding: 0; border: 1px solid var(--linha); border-radius: var(--raio-sm); overflow: hidden;}
+.vist-item {display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px var(--e3); padding: 7px var(--e3); border-bottom: 1px solid var(--linha); font-size: var(--fs-secundario);}
+.vist-item:last-child {border-bottom: 0;}
+.vist-checklist > li, .galeria > li {margin: 0 !important; list-style: none;}
+.vist-item--mudou {background: var(--alerta-fundo);}
+.vist-item__nome {min-width: 0; overflow-wrap: anywhere;}
+.vist-item__estado {font-weight: 600; white-space: nowrap;}
+.vist-item__estado--ok {color: var(--sucesso-texto);}
+.vist-item__estado--ruim {color: var(--perigo-texto);}
+.vist-item__estado--na {color: var(--texto-3);}
+.vist-item__mudou {font-size: var(--fs-legenda); font-weight: 600; color: var(--alerta-texto); margin-left: var(--e2);}
+/* Fotos em retrato ou paisagem: a foto inteira aparece (contain) numa moldura fixa 4:3, e o clique abre a original */
+.galeria {list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(clamp(5.5rem, 28cqi, 9rem), 1fr)); gap: var(--e2);}
+.galeria__foto {display: block; aspect-ratio: 4 / 3; width: 100%; border-radius: var(--raio-sm); overflow: hidden; background: var(--linha-sutil); border: 1px solid var(--linha);}
+.galeria__foto img {display: block; width: 100%; height: 100%; object-fit: contain;}
+.galeria__foto:focus-visible {outline: 2px solid var(--foco); outline-offset: 2px;}
+.galeria__vazia {display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--e2); font-size: var(--fs-legenda); color: var(--texto-3);}
+[class*="st-key-painelA_vist"], [class*="st-key-painelB_vist"] {container-type: inline-size;}
+
+/* Relatórios: período e exportação em linhas que quebram, sem truncar o rótulo dos botões */
+[class*="st-key-exportacao_"] {display: flex; flex-direction: row; flex-wrap: wrap; justify-content: flex-end; gap: var(--e2) var(--e3); margin-top: var(--e3);}
+[class*="st-key-exportacao_"] > [data-testid="stElementContainer"] {width: auto !important; min-width: 0;}
+[class*="st-key-exportacao_"] button {white-space: nowrap;}
+@media (max-width: 480px) {
+  [class*="st-key-exportacao_"] {flex-direction: column;}
+  [class*="st-key-exportacao_"] > [data-testid="stElementContainer"], [class*="st-key-exportacao_"] [data-testid="stDownloadButton"], [class*="st-key-exportacao_"] button {width: 100% !important;}
+}
+.resumo-relatorio {margin: 0 0 var(--e3); font-size: var(--fs-secundario); color: var(--texto-2); line-height: 1.5;}
+.resumo-relatorio strong {color: var(--texto); font-weight: 600;}
+
+/* ========================================
    RESPONSIVE
 ======================================== */
 @media (max-width: 1100px) {
   .grade-dados {grid-template-columns: repeat(2, minmax(0, 1fr));}
-  [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-dashboard_card_hoje) {flex-wrap: wrap;}
-  [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] .st-key-dashboard_card_hoje) > [data-testid="stColumn"] {flex: 1 1 100% !important; width: 100% !important; min-width: 100% !important;}
 }
 @media (max-width: 1150px) {
   .kpi-grade {grid-template-columns: repeat(2, minmax(0, 1fr));}
@@ -842,40 +937,18 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   [data-testid="stMetricValue"] {font-size: 1.5rem;}
   [data-testid="stHorizontalBlock"] {flex-wrap: wrap;}
   .cartao__cab {padding: var(--e3) var(--e4);}
-  /* Faixas de dados das fichas (km atual, cliente, contrato...): 2 por linha em vez de 4 espremidas */
-  .cartao--faixa {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));}
-  .cartao--faixa > div {min-width: 0; border-right: 0 !important; border-bottom: 1px solid var(--linha); padding: var(--e3) var(--e4) !important;}
-  .cartao--faixa > div:nth-child(odd) {border-right: 1px solid var(--linha) !important;}
-  .cartao--faixa > div:nth-last-child(-n+2) {border-bottom: 0;}
-  /* Ficha da moto: "Atualizar km" de volta dentro da célula Km atual (a faixa tem 2 células por linha) */
-  .st-key-moto_faixa_km .st-key-km_ficha {position: absolute; top: 10px; right: calc(50% + 10px);}
-  /* A célula tem metade da largura: o botão vira só o ícone (44 × 44 px); o texto segue como nome acessível */
-  .st-key-moto_faixa_km .st-key-km_ficha button {width: var(--alvo-min); min-width: var(--alvo-min); padding: 0 !important;}
-  .st-key-moto_faixa_km .st-key-km_ficha button [data-testid="stMarkdownContainer"] {
-    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
-  }
-  /* Ficha da moto: placa e nome empilhados e alinhados à esquerda, em vez de lado a lado com alturas diferentes */
-  .moto-cab {flex-direction: column; align-items: flex-start !important; gap: var(--e2) !important;}
-  .moto-cab h1 {font-size: 24px !important; line-height: 1.15;}
-  /* Selo de situação logo acima do nome/modelo */
-  .moto-cab > div {display: flex; flex-direction: column; gap: var(--e2);}
-  .moto-cab > div > div:last-child {order: -1; margin-top: 0 !important;}
+  .cartao__cab.cartao__cab--fora {padding: 0 0 var(--e3);}
   /* Dados pessoais: campos curtos em 2 colunas (valores menores); e-mail e endereço em linha inteira */
-  .grade-dados--duas {grid-template-columns: repeat(2, minmax(0, 1fr)); --fs-dado: 18px;}
+  .grade-dados--duas {grid-template-columns: repeat(2, minmax(0, 1fr)); --fs-dado: clamp(14px, 4.6vw, 18px);}
   .grade-dados--duas .campo--largo {grid-column: 1 / -1;}
   /* Contrato ativo e Situação financeira: rótulo à esquerda e valor à direita na mesma linha, em vez de uma coluna estreita com o lado direito vazio */
   .campos-linha {display: flex !important; flex-direction: column; gap: 0 !important;}
-  .campos-linha .campo {flex-direction: row; justify-content: space-between; align-items: baseline; gap: var(--e3); padding: 10px 0; border-bottom: 1px solid var(--linha-sutil);}
+  .campos-linha .campo {flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--e1) var(--e3); padding: 10px 0; border-bottom: 1px solid var(--linha-sutil);}
+  .campos-linha .campo > span:first-child {white-space: nowrap;}
   .campos-linha .campo:last-child {border-bottom: 0; padding-bottom: 0;}
-  .campos-linha .campo > span:not(:first-child) {text-align: right; white-space: nowrap;}
-  /* Ficha do cliente: espaço abaixo da barra superior fixa (o botão ‹ Clientes ficava cortado por ela) */
+  .campos-linha .campo > span:not(:first-child) {text-align: right; white-space: nowrap; font-size: 18px !important; margin-left: auto;}
+  /* Espaço abaixo da barra superior fixa: o botão Voltar das fichas não fica cortado por ela */
   .block-container {padding-top: 48px !important;}
-  /* Faixa de dados da ficha do cliente: CPF e WhatsApp lado a lado; CNH e e-mail em linha inteira, valores menores */
-  .cartao--faixa-cliente {--fs-dado: 18px;}
-  .cartao--faixa-cliente > div:nth-child(3) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 1px solid var(--linha);}
-  /* O selo da CNH tem a largura do texto, não da linha inteira */
-  .cartao--faixa-cliente .badge {align-self: flex-start;}
-  .cartao--faixa-cliente > div:nth-child(4) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
   /* Tabelas somente leitura (fichas, relatórios): cada linha vira um cartão com os campos em 2 colunas, rótulo acima do valor */
   .tabela-leitura {background: none; border: 0; box-shadow: none; overflow: visible;}
   .tabela-leitura table, .tabela-leitura tbody {display: block; width: 100%;}
@@ -893,16 +966,6 @@ input:disabled, textarea:disabled {opacity: .6; cursor: not-allowed;}
   .tabela-leitura td[data-label]::before {content: attr(data-label); font-size: var(--fs-legenda); font-weight: 600; color: var(--texto-3);}
   .tabela-leitura td[colspan] {grid-column: 1 / -1;}
   /* Nº ímpar de campos: o último (ex.: Situação) ocupa a linha inteira, e o selo se estica até as bordas do cartão */
-  .tabela-leitura td:last-child:nth-child(odd) {grid-column: 1 / -1;}
-  .tabela-leitura td:last-child:nth-child(odd) .badge {align-self: stretch; width: auto;}
-  /* Ficha do contrato: cliente e moto empilhados (selo de situação acima), em vez de um título longo quebrando no meio */
-  .contrato-cab {display: flex; flex-direction: column; gap: var(--e2);}
-  .contrato-cab > div {order: -1; margin-top: 0 !important; align-self: flex-start;}
-  .contrato-cab h1 {font-size: 24px !important; line-height: 1.15; padding: 0 !important; display: flex; flex-direction: column; align-items: flex-start; gap: var(--e2);}
-  .contrato-cab .contrato-cab__seta {display: none;}
-  .contrato-cab .contrato-cab__moto {display: flex; align-items: center; gap: var(--e2); flex-wrap: wrap; font-size: 18px; color: var(--texto-2);}
-  /* Faixa de dados do contrato: 5 células em 2 colunas; a última (próxima cobrança) ocupa a linha inteira; valores menores */
-  .cartao--faixa-contrato {--fs-dado: 18px;}
-  .cartao--faixa-contrato > div:nth-child(4) {border-bottom: 1px solid var(--linha);}
-  .cartao--faixa-contrato > div:nth-child(5) {grid-column: 1 / -1; border-right: 0 !important; border-bottom: 0;}
+  .tabela-leitura td.celula--cheia {grid-column: 1 / -1;}
+  .tabela-leitura td.celula--cheia .badge {align-self: stretch; width: auto;}
 }

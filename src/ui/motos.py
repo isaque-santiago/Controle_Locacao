@@ -28,6 +28,12 @@ from src.ui.componentes import (
     abrir_ficha_contrato,
     botao_acao,
     botao_voltar,
+    cabecalho_ficha,
+    cartao_dados,
+    cartao_ficha,
+    faixa_dados,
+    ficha_identidade,
+    paineis,
 )
 from src.ui.formularios import (
     campo_inteiro,
@@ -38,7 +44,16 @@ from src.ui.formularios import (
     rodape_formulario,
     rotulo_obrigatorio,
 )
-from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
+from src.ui.listas import (
+    abas,
+    aba_ativa,
+    barra_filtros,
+    lembrar_registro,
+    paginar,
+    reiniciar_abas,
+    restaurar_posicao,
+    rodape_paginacao,
+)
 from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import (
     formatar_data,
@@ -63,6 +78,7 @@ def _salvo(mensagem="Alterações salvas."):
 
 def _ir_para_ficha(moto_id):
     reiniciar_abas("motos_ficha_abas")
+    lembrar_registro("motos", moto_id)
     st.session_state["motos_visao"] = "ficha"
     st.session_state["motos_id_selecionado"] = moto_id
     st.rerun()
@@ -243,6 +259,7 @@ def _exibir_lista():
                     _ir_para_ficha(moto["id"])
 
     rodape_paginacao("motos", pagina)
+    restaurar_posicao("motos")
 
 
 # ------------------------------------------------------------------ ficha --
@@ -251,12 +268,7 @@ def _card_contrato_ativo(moto_id):
     contrato = next((c for c in contratos.listar() if c["moto_id"] == moto_id and c["status"] == "ativo"), None)
     if not contrato:
         st.markdown(
-            """
-            <div class="cartao">
-              <h3 class="rotulo" style="margin:0 0 6px;font-size:14px;">Contrato ativo</h3>
-              <div class="fs-secundario texto-2">Nenhum contrato ativo para esta moto.</div>
-            </div>
-            """,
+            cartao_dados("Contrato ativo", '<div class="fs-secundario texto-2">Nenhum contrato ativo para esta moto.</div>'),
             unsafe_allow_html=True,
         )
         return
@@ -269,24 +281,18 @@ def _card_contrato_ativo(moto_id):
     parcelas.sort(key=lambda c: c["vencimento"])
     proxima = formatar_data(parcelas[0]["vencimento"]) if parcelas else "—"
 
-    # O botão vai no cabeçalho do cartão, à direita do título (não solto abaixo dele)
-    with st.container(key="moto_contrato_ativo"):
-        titulo, acao = st.columns([3, 1], vertical_alignment="center")
-        titulo.markdown(
-            '<h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>',
-            unsafe_allow_html=True,
-        )
-        with acao:
-            if st.button("Ver contrato", key="ver_contrato_moto", icon=":material/arrow_forward:"):
-                abrir_ficha_contrato(contrato["id"])
+    acao = {"rotulo": "Ver contrato", "chave": "ver_contrato_moto", "ajuda": f"Abrir o contrato de {nome}"}
+    with cartao_ficha("moto_contrato", "Contrato ativo", acao) as ver_contrato:
+        if ver_contrato:
+            abrir_ficha_contrato(contrato["id"])
         st.markdown(
             f"""
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-              <div style="width:32px;height:32px;border-radius:50%;background:var(--chip-fundo);color:var(--chip-texto);
-                          display:flex;align-items:center;justify-content:center;font-size:var(--fs-secundario);font-weight:600;">{_iniciais(nome)}</div>
-              <div>
-                <div style="font-size:14px;font-weight:500;">{nome}</div>
-                <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--chip-fundo);color:var(--chip-texto);flex:none;
+                          display:flex;align-items:center;justify-content:center;font-size:var(--fs-secundario);font-weight:600;">{escape(_iniciais(nome))}</div>
+              <div style="min-width:0;">
+                <div style="font-size:14px;font-weight:500;">{escape(nome)}</div>
+                <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {formatar_data(contrato['data_inicio'])} · {escape(str(contrato['periodicidade']))}</div>
               </div>
             </div>
             <div class="grade-dados grade-dados--compacta">
@@ -300,56 +306,42 @@ def _card_contrato_ativo(moto_id):
 
 
 def _card_dados_moto(moto):
-    st.markdown(
-        f"""
-        <div class="cartao">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados da moto</h3>
-          <div class="grade-dados grade-dados--compacta">
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">renavam</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('renavam') or '—'}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">chassi</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('chassi') or '—'}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">placa</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_placa(moto['placa'])}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor de aquisição</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_aquisicao'))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">data de aquisição</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(moto.get('data_aquisicao'))}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">status</span><span style="font-size:var(--fs-secundario);">{_STATUS_ROTULO[moto['status']]}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    corpo = f"""
+      <div class="grade-dados grade-dados--compacta">
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">renavam</span><span class="mono" style="font-size:var(--fs-secundario);">{escape(str(moto.get('renavam') or '—'))}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">chassi</span><span class="mono" style="font-size:var(--fs-secundario);">{escape(str(moto.get('chassi') or '—'))}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">placa</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_placa(moto['placa'])}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor de aquisição</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_aquisicao'))}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">data de aquisição</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(moto.get('data_aquisicao'))}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">status</span><span style="font-size:var(--fs-secundario);">{_STATUS_ROTULO[moto['status']]}</span></div>
+      </div>
+    """
+    st.markdown(cartao_dados("Dados da moto", corpo), unsafe_allow_html=True)
 
 
 def _card_quilometragem(moto_id):
     historico = sorted(motos.historico(moto_id), key=lambda h: h["data"], reverse=True)[:8]
     linhas = "".join(
         f"""
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 12px;padding:8px 0;
                     {"border-bottom:1px solid var(--linha);" if i < len(historico) - 1 else ""}">
           <span class="mono" style="font-size:var(--fs-secundario);">{f"{h['km']:,}".replace(",", ".")} km</span>
-          <span style="font-size:var(--fs-legenda);color:var(--texto-2);">{formatar_data(h['data'])} · {h['origem']}</span>
+          <span style="font-size:var(--fs-legenda);color:var(--texto-2);">{formatar_data(h['data'])} · {escape(str(h['origem']))}</span>
         </div>
         """
         for i, h in enumerate(historico)
     )
     if not historico:
         linhas = '<div style="padding:8px 0;color:var(--texto-2);font-size:var(--fs-secundario);">Nenhuma leitura registrada.</div>'
-    st.markdown(
-        f"""
-        <div class="cartao" style="height:100%;">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Quilometragem</h3>
-          {linhas}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(cartao_dados("Quilometragem", linhas), unsafe_allow_html=True)
 
 
 def _aba_resumo(moto):
-    esquerda, direita = st.columns([1.5, 1], gap="medium")
-    with esquerda:
-        _card_contrato_ativo(moto["id"])
-    with direita:
-        _card_quilometragem(moto["id"])
-    st.write("")
+    with paineis("moto_resumo") as (principal, lateral):
+        with principal:
+            _card_contrato_ativo(moto["id"])
+        with lateral:
+            _card_quilometragem(moto["id"])
     _card_dados_moto(moto)
 
 
@@ -469,30 +461,22 @@ def _aba_financeiro(moto):
     if not dados:
         st.info("Sem dados financeiros para esta moto ainda.")
         return
+    faixa_dados(
+        [
+            ("Receita recebida", f'<span class="mono">{formatar_moeda_compacta(dados["receita_recebida"])}</span>', "sucesso"),
+            ("Custo de manutenção", f'<span class="mono">{formatar_moeda_compacta(dados["custo_manutencao"])}</span>'),
+            ("Custo de documentos", f'<span class="mono">{formatar_moeda_compacta(dados["custo_documentos"])}</span>'),
+            (
+                "Resultado",
+                f'<span class="mono">{formatar_moeda_compacta(dados["resultado"])}</span>',
+                "sucesso" if dados["resultado"] >= 0 else "perigo",
+            ),
+        ],
+        destaque=True,
+    )
+    custo_km = formatar_moeda(dados["custo_por_km"]) if dados["custo_por_km"] is not None else "—"
     st.markdown(
-        f"""
-        <div class="cartao cartao--faixa">
-          <div style="flex:1;padding:18px 24px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">receita recebida</span>
-            <span class="mono" style="font-size:26px;font-weight:600;color:var(--sucesso-texto);">{formatar_moeda_compacta(dados['receita_recebida'])}</span>
-          </div>
-          <div style="flex:1;padding:18px 24px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">custo de manutenção</span>
-            <span class="mono" style="font-size:26px;font-weight:600;">{formatar_moeda_compacta(dados['custo_manutencao'])}</span>
-          </div>
-          <div style="flex:1;padding:18px 24px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">custo de documentos</span>
-            <span class="mono" style="font-size:26px;font-weight:600;">{formatar_moeda_compacta(dados['custo_documentos'])}</span>
-          </div>
-          <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">resultado</span>
-            <span class="mono" style="font-size:26px;font-weight:600;color:{'var(--sucesso-texto)' if dados['resultado'] >= 0 else 'var(--perigo-texto)'};">{formatar_moeda_compacta(dados['resultado'])}</span>
-          </div>
-        </div>
-        <div style="font-size:var(--fs-secundario);color:var(--texto-2);margin-top:16px;">Custo por km rodado desde a aquisição:
-          <span class="mono" style="color:var(--texto);font-weight:600;">{formatar_moeda(dados['custo_por_km']) if dados['custo_por_km'] is not None else '—'}</span>
-        </div>
-        """,
+        f'<div class="pagina-sub">Custo por km rodado desde a aquisição: <span class="mono" style="color:var(--texto);font-weight:600;">{custo_km}</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -514,62 +498,51 @@ def _exibir_ficha(moto_id):
     else:
         linha_status = _STATUS_ROTULO[moto["status"]]
 
-    col_cab, col_acoes = st.columns([3, 1], vertical_alignment="center")
-    with col_cab:
-        st.markdown(
-            f"""
-            <div class="moto-cab" style="display:flex;align-items:center;gap:16px;">
-              {chip_placa(moto['placa'], "grande")}
-              <div>
-                <h1 class="rotulo" style="margin:0;font-size:24px;">{moto['marca']} {moto['modelo']}</h1>
-                <div style="font-size:var(--fs-secundario);margin-top:3px;">
-                  {selo_situacao(
-                      "Alugada · " + linha_status if moto["status"] == "alugada" else linha_status,
-                      moto["status"],
-                  )}
-                </div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    acoes = [
+        {"rotulo": "Editar", "chave": "editar_moto_ficha", "ajuda": "Editar os dados da moto"},
+        {"rotulo": "Atualizar km", "chave": "km_ficha", "icone": ":material/speed:", "ajuda": "Atualizar a quilometragem da moto"},
+    ]
+    if moto["status"] in ("disponivel", "inativa"):
+        reativar = moto["status"] == "inativa"
+        acoes.append(
+            {
+                "rotulo": "Reativar" if reativar else "Inativar",
+                "chave": "alternar_moto_ficha",
+                "icone": ":material/replay:" if reativar else ":material/block:",
+                "ajuda": "Voltar a oferecer a moto para locação" if reativar else "Tirar a moto da frota de locação",
+            }
         )
-    with col_acoes:
-        sub1, sub2 = st.columns(2)
-        if sub1.button("Editar", use_container_width=True):
-            _dialog_editar_moto(moto)
-        if moto["status"] in ("disponivel", "inativa"):
-            rotulo_toggle = "Reativar" if moto["status"] == "inativa" else "Inativar"
-            if sub2.button(rotulo_toggle, use_container_width=True):
-                motos.atualizar(
-                    moto["id"],
-                    {"status": "disponivel" if moto["status"] == "inativa" else "inativa"},
-                )
-                _salvo()
+    cliques = cabecalho_ficha(
+        ficha_identidade(
+            escape(f"{moto['marca']} {moto['modelo']}"),
+            selo=selo_situacao(
+                "Alugada · " + linha_status if moto["status"] == "alugada" and contrato else linha_status,
+                moto["status"],
+            ),
+            marca=chip_placa(moto["placa"], "grande"),
+        ),
+        acoes,
+    )
+    if cliques["editar_moto_ficha"]:
+        _dialog_editar_moto(moto)
+    if cliques["km_ficha"]:
+        _dialog_km(moto)
+    if cliques.get("alternar_moto_ficha"):
+        motos.atualizar(
+            moto["id"],
+            {"status": "disponivel" if moto["status"] == "inativa" else "inativa"},
+        )
+        _salvo()
 
-    st.write("")
-    with st.container(key="moto_faixa_km"):
-        st.markdown(
-            f"""
-            <div class="cartao cartao--faixa" style="margin-bottom:20px;">
-              <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;">
-                <span class="rotulo" style="font-size:var(--fs-legenda);color:var(--texto-2);">km atual</span>
-                <span class="mono" style="font-size:20px;font-weight:600;">{f"{moto['km_atual']:,}".replace(",", ".")} km</span>
-              </div>
-              <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-                <span style="font-size:var(--fs-legenda);color:var(--texto-2);">ano fab. / modelo</span><span class="mono" style="font-size:var(--fs-secundario);">{moto.get('ano_fabricacao') or '—'} / {moto.get('ano_modelo') or '—'}</span>
-              </div>
-              <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-                <span style="font-size:var(--fs-legenda);color:var(--texto-2);">cor</span><span style="font-size:var(--fs-secundario);">{moto.get('cor') or '—'}</span>
-              </div>
-              <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-                <span style="font-size:var(--fs-legenda);color:var(--texto-2);">locação sugerida</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(moto.get('valor_locacao_sugerido'))} / mês</span>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if st.button("Atualizar km", key="km_ficha", icon=":material/speed:", help="Atualizar a quilometragem da moto"):
-            _dialog_km(moto)
+    km_atual = f"{moto['km_atual']:,}".replace(",", ".")
+    faixa_dados(
+        [
+            ("Km atual", f'<span class="mono">{km_atual} km</span>'),
+            ("Ano fab. / modelo", f'<span class="mono">{moto.get("ano_fabricacao") or "—"} / {moto.get("ano_modelo") or "—"}</span>'),
+            ("Cor", escape(str(moto.get("cor") or "—"))),
+            ("Locação sugerida", f'<span class="mono">{formatar_moeda(moto.get("valor_locacao_sugerido"))} / mês</span>'),
+        ]
+    )
 
     guias = abas(
         "motos_ficha_abas",

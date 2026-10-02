@@ -399,6 +399,8 @@ Linhas de campos usam `with linha_campos([1, 1], "chave") as (a, b):` (cada camp
 
 Todas as páginas montam o cabeçalho com `cabecalho_pagina(titulo, sub=..., acao={"rotulo": "Nova moto", "chave": "motos_nova"})`: a ação primária (no máximo uma, botão do Streamlit com ícone) fica à direita do título no desktop e, quando o cabeçalho estreita, vai para depois da descrição em largura total; a função devolve `True` quando o botão é clicado (`"formulario": True` dentro de `st.form`). Listas vazias usam `vazio_lista(...)`, que informa o motivo (filtro/busca ou ainda sem cadastros) e o próximo passo.
 
+Fichas e painéis (Etapa 6 do plano de UI/UX): Moto, Cliente, Contrato e a comparação de vistorias usam `cabecalho_ficha(ficha_identidade(...), acoes)` e `faixa_dados([...])` (`src/ui/componentes.py`); painéis lado a lado são `with paineis("chave") as (principal, lateral):` e empilham quando o contêiner perde largura (também o par Hoje/Alertas do Dashboard). KPIs encolhem o valor com a largura do cartão. Ao voltar de uma ficha, a lista mantém página, filtro e busca e traz o registro de origem à vista (`lembrar_registro`/`restaurar_posicao` em `src/ui/listas.py`). Cada aba de Relatórios tem um resumo em texto (`destaques`, `src/domain/relatorios.py`) além das barras. Protegido por `tests/test_fichas_ui.py`.
+
 ## Testes de navegador (UI/UX)
 
 `e2e/` contém a suíte Playwright do `Arquivos/Plano_Melhorias_UI_UX.md` (Etapa 0), separada

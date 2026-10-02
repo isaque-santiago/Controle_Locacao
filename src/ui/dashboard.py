@@ -18,6 +18,7 @@ from src.ui.componentes import (
     kpi_grade,
     botao_acao,
     legenda_ocupacao,
+    paineis,
     proteger,
     selo_situacao,
 )
@@ -131,8 +132,7 @@ def _iso_data(valor):
 
 
 def _cartao_hoje(cobrancas_hoje, placas, nomes):
-    # O container externo existe só para o CSS de página (colunas Hoje/Alertas empilham em telas estreitas)
-    with st.container(key="dashboard_card_hoje"), lista_registros("dashboard_hoje", acoes=1):
+    with lista_registros("dashboard_hoje", acoes=1):
         st.markdown(
             """
             <div class="cartao__cab">
@@ -256,13 +256,14 @@ def exibir():
         _cabecalho_pagina()
         _faixa_instrumentos(dados, contagem, len(dados["devedores"]), ordens_concluidas)
         st.write("")
-        col_hoje, col_alertas = st.columns([1.6, 1], gap="medium")
-        with col_hoje:
-            _cartao_hoje(cobrancas_hoje, placas, nomes)
-        with col_alertas:
-            _cartao_alertas(
-                configuracoes.obter(),
-                alertas.listar_manutencao(),
-                alertas.listar_documentos(),
-                alertas.listar_cnh(),
-            )
+        # Hoje e Alertas lado a lado só enquanto cada um tem largura útil; senão Alertas vai para baixo de Hoje
+        with paineis("dashboard") as (painel_hoje, painel_alertas):
+            with painel_hoje:
+                _cartao_hoje(cobrancas_hoje, placas, nomes)
+            with painel_alertas:
+                _cartao_alertas(
+                    configuracoes.obter(),
+                    alertas.listar_manutencao(),
+                    alertas.listar_documentos(),
+                    alertas.listar_cnh(),
+                )
