@@ -6,6 +6,7 @@ from html import escape
 import streamlit as st
 
 from src.services import documentos, motos, configuracoes
+from src.domain import mensagens
 from src.domain.documentos import situacao_documento, sugerir_proximo_documento
 from src.domain.entradas import decimal_campo
 from src.domain.valores import hoje_br
@@ -19,6 +20,7 @@ from src.ui.componentes import (
     selo_situacao,
     botao_acao,
 )
+from src.ui import feedback
 from src.ui.formularios import (
     campo_inteiro,
     campo_moeda,
@@ -50,11 +52,6 @@ _EXTENSOES = ["pdf", "png", "jpg", "jpeg"]
 _CHAVE_SUGESTAO = "documentos_sugestao"
 
 
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
-
-
 def _mono(texto, estilo=""):
     return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
 
@@ -76,9 +73,10 @@ def _data(valor):
 # ---------------------------------------------------------------- diálogos --
 
 def _anexar(documento_id, moto_id, arquivo):
-    documentos.anexar_comprovante(
-        documento_id, moto_id, arquivo.name, arquivo.getvalue(), arquivo.type
-    )
+    with st.spinner("Enviando o comprovante…"):
+        documentos.anexar_comprovante(
+            documento_id, moto_id, arquivo.name, arquivo.getvalue(), arquivo.type
+        )
 
 
 def _dialogo_documento(documento):
@@ -153,10 +151,15 @@ def _dialogo_documento(documento):
                 if editando:
                     salvo = documentos.atualizar(documento["id"], dados)
                 else:
-                    salvo = documentos.criar(dados)
+                    chave = feedback.chave_operacao("documento", dados)
+                    salvo = documentos.criar(dados, chave)
                 if arquivo:
                     _anexar(salvo["id"], moto_id, arquivo)
-                _salvo("Documento salvo.")
+                placa = next(formatar_placa(m["placa"]) for m in frota if m["id"] == moto_id)
+                feedback.concluir(
+                    mensagens.documento_salvo(f"{_TIPOS[tipo]} {int(ano)} da moto {placa}", novo=not editando),
+                    "documento",
+                )
 
 
 @st.dialog("Novo documento", width="large")
@@ -200,12 +203,14 @@ def _dialog_regularizar(documento, moto):
                 if arquivo:
                     _anexar(documento["id"], documento["moto_id"], arquivo)
                 resultado = documentos.regularizar(documento["id"], data or hoje_br())
-                if criar_proximo and resultado["sugestao_proximo"]:
+                abrir_proximo = bool(criar_proximo and resultado["sugestao_proximo"])
+                if abrir_proximo:
                     st.session_state[_CHAVE_SUGESTAO] = {
                         **resultado["sugestao_proximo"],
                         "moto_id": documento["moto_id"],
                     }
-                _salvo("Documento regularizado.")
+                descricao = f"{rotulo} {referencia} da moto {formatar_placa(moto['placa'])}".replace("  ", " ")
+                feedback.concluir(mensagens.documento_regularizado(descricao, abrir_proximo))
 
 
 @st.dialog("Comprovante")
@@ -277,7 +282,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias, total):
 
 def exibir():
     cabecalho("Documentos", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         frota = {m["id"]: m for m in motos.listar()}
         alerta_dias = int(configuracoes.obter()["alerta_documento_dias"])
         hoje = hoje_br()

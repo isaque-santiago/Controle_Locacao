@@ -6,6 +6,7 @@ from html import escape
 import streamlit as st
 
 from src.services import clientes, contratos, cobrancas, motos, configuracoes
+from src.domain import mensagens
 from src.domain.entradas import formatar_telefone
 from src.domain.valores import hoje_br
 from src.domain.cnh_regras import situacao_cnh
@@ -29,6 +30,7 @@ from src.ui.componentes import (
     ficha_identidade,
     paineis,
 )
+from src.ui import feedback
 from src.ui.clientes_portal import aba_portal
 from src.ui.formularios import (
     campo_cpf,
@@ -62,11 +64,6 @@ def _html(valor, padrao="—"):
         valor = padrao
     # "*" vira entidade: o CPF mascarado (***.123.***-**) virava negrito/itálico no markdown
     return escape(str(valor)).replace("*", "&#42;")
-
-
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
 
 
 def _ir_para_ficha(cliente_id):
@@ -158,7 +155,7 @@ def _formulario_cliente(cliente):
                     clientes.atualizar(cliente["id"], dados)
                 else:
                     clientes.criar(dados)
-                _salvo()
+                feedback.concluir(mensagens.cliente_salvo(dados["nome"].strip(), novo=not cliente))
 
 
 # ------------------------------------------------------------------ lista --
@@ -499,7 +496,7 @@ def formatar_placa_simples(moto):
 
 def exibir():
     cabecalho("Clientes", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         visao = st.session_state.get("clientes_visao", "lista")
         if visao == "ficha" and st.session_state.get("clientes_id_selecionado"):
             _exibir_ficha(st.session_state["clientes_id_selecionado"])

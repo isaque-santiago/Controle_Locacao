@@ -52,6 +52,22 @@ begin
     raise exception using errcode = 'ZX003', message = 'Pagamento excedente aceito';
   exception when raise_exception then null;
   end;
-  raise notice 'Contratos, pagamentos, vistorias, manutenção e relatórios verificados.';
+  -- Idempotência (Etapa 7): reenviar a mesma chave de operação não grava de novo
+  declare
+    chave uuid := gen_random_uuid();
+    pedido jsonb;
+    primeiro jsonb;
+    repetido jsonb;
+  begin
+    pedido := jsonb_build_object('moto_id', moto, 'tipo', 'corretiva', 'status', 'concluida', 'data_entrada', hoje_br(),
+      'km', 170, 'descricao', 'Teste idempotência', 'custo_mao_obra', 10, 'chave_operacao', chave);
+    primeiro := rpc_registrar_manutencao(pedido);
+    repetido := rpc_registrar_manutencao(pedido);
+    assert primeiro->>'manutencao_id' = repetido->>'manutencao_id', 'Reenvio criou outra manutenção';
+    assert (repetido->>'repetido')::boolean, 'Reenvio não foi reconhecido';
+    assert (select count(*) from manutencoes where chave_operacao = chave) = 1, 'Manutenção duplicada';
+  end;
+
+  raise notice 'Contratos, pagamentos, vistorias, manutenção, idempotência e relatórios verificados.';
 end $$;
 rollback;

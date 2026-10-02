@@ -7,6 +7,7 @@ from html import escape
 import streamlit as st
 
 from src.services import contratos, motos, clientes, cobrancas, vistorias, manutencao
+from src.domain import mensagens
 from src.domain.encerramento import cobrancas_a_cancelar
 from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
 from src.domain.valores import hoje_br, decimal_br
@@ -31,6 +32,7 @@ from src.ui.componentes import (
     indicador_etapas,
     paineis,
 )
+from src.ui import feedback
 from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario, rotulo_obrigatorio
 from src.ui.listas import (
     abas,
@@ -43,7 +45,7 @@ from src.ui.listas import (
     rodape_paginacao,
 )
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
+from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
 
 _STATUS_ROTULO = {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}
@@ -52,11 +54,6 @@ _PERIODOS = ["diario", "semanal", "quinzenal", "mensal"]
 _PERIODOS_ROTULO = {"diario": "Diário", "semanal": "Semanal", "quinzenal": "Quinzenal", "mensal": "Mensal"}
 _ETAPAS_WIZARD = ["Cliente", "Moto", "Condições", "Confirmar"]
 _LIMITE_IMPACTO = 8  # cobranças listadas no diálogo de encerramento; as demais viram "e mais N"
-
-
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
 
 
 _CHAVES_WIZARD = (
@@ -487,7 +484,7 @@ def _wizard_etapa4():
             )
             for chave in _CHAVES_WIZARD:
                 st.session_state.pop(chave, None)
-            _salvo("Contrato criado. Anexe as fotos da vistoria na página Vistorias.")
+            feedback.concluir(mensagens.contrato_criado(cliente["nome"], formatar_placa(moto["placa"])))
 
 
 def _exibir_wizard():
@@ -583,7 +580,7 @@ def _dialog_encerrar(contrato, moto, cliente):
     if acao.confirmou:
         with proteger():
             contratos.encerrar_com_vistoria(contrato["id"], data, preparar_vistoria(vistoria), devolvida)
-            _salvo("Contrato encerrado.")
+            feedback.concluir(mensagens.contrato_encerrado(cliente["nome"], formatar_placa(moto["placa"])))
 
 
 def _cabecalho_ficha(contrato, moto, cliente):
@@ -737,7 +734,7 @@ def _exibir_ficha(contrato_id):
 
 def exibir():
     cabecalho("Contratos", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         visao = st.session_state.get("contratos_visao", "lista")
         if visao == "wizard":
             _exibir_wizard()

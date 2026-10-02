@@ -2,12 +2,14 @@
 VistoriaComparacao.dc.html do mockup. Também guarda o formulário compartilhado
 com o assistente/encerramento de contratos (campos/preparar)."""
 
+from contextlib import nullcontext
 from datetime import date, datetime
 from html import escape
 from zoneinfo import ZoneInfo
 
 import streamlit as st
 
+from src.domain import mensagens
 from src.domain.valores import hoje_br
 from src.domain.vistorias import (
     ESTADOS_ITEM,
@@ -40,7 +42,8 @@ from src.ui.componentes import (
     proteger,
     vazio_lista,
 )
-from src.ui.formatadores import formatar_data
+from src.ui import feedback
+from src.ui.formatadores import formatar_data, formatar_placa
 from src.ui.formularios import campo_inteiro, linha_campos, rodape_formulario
 from src.ui.listas import barra_filtros, lembrar_registro, paginar, restaurar_posicao, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
@@ -117,11 +120,6 @@ _PREFIXO_REGISTRO = "vistreg_"
 _FUSO = ZoneInfo("America/Sao_Paulo")
 
 
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
-
-
 def _km(valor):
     return f"{int(valor):,} km".replace(",", ".") if valor is not None else "—"
 
@@ -151,20 +149,15 @@ def _enviar_fotos(resultado, fotos):
     a vistoria já está salva, então falha de foto não pode desfazê-la."""
     vistoria_id = (resultado or {}).get("vistoria_id")
     falhas = 0
-    for foto in fotos or []:
-        try:
-            if not vistoria_id:
-                raise ValueError("Vistoria sem identificador.")
-            vistorias.anexar_foto(vistoria_id, foto.name, foto.getvalue(), foto.type)
-        except Exception:
-            falhas += 1
+    with st.spinner("Enviando as fotos…") if fotos else nullcontext():
+        for foto in fotos or []:
+            try:
+                if not vistoria_id:
+                    raise ValueError("Vistoria sem identificador.")
+                vistorias.anexar_foto(vistoria_id, foto.name, foto.getvalue(), foto.type)
+            except Exception:
+                falhas += 1
     return falhas
-
-
-def _mensagem_fotos(base, falhas):
-    if not falhas:
-        return base
-    return f"{base} {falhas} foto(s) não foram enviadas; anexe-as novamente pela comparação."
 
 
 @st.dialog("Registrar vistoria", width="large")
@@ -285,7 +278,9 @@ def _dialog_registrar(pendentes, frota, pessoas):
             )
             falhas = _enviar_fotos(resultado, fotos)
             _limpar_registro()
-            _salvo(_mensagem_fotos("Vistoria registrada.", falhas))
+            feedback.concluir(
+                mensagens.vistoria_registrada(_TIPO_ROTULO[tipo].lower(), formatar_placa(moto["placa"]), falhas)
+            )
 
 
 @st.dialog("Adicionar fotos")
@@ -302,13 +297,13 @@ def _dialog_fotos(vistoria):
         type="primary",
         use_container_width=True,
         disabled=not fotos,
-        key="vistfotos_salvar_" + vistoria["id"],
+        key="ocupa_vistfotos_salvar_" + vistoria["id"],
     ):
         with proteger():
             falhas = _enviar_fotos({"vistoria_id": vistoria["id"]}, fotos)
             if falhas == len(fotos):
                 raise ValueError("Não foi possível enviar as fotos. Confira os arquivos e tente novamente.")
-            _salvo(_mensagem_fotos("Fotos anexadas.", falhas))
+            feedback.concluir(mensagens.fotos_anexadas(len(fotos) - falhas, falhas))
 
 
 # ------------------------------------------------------------------- lista --
@@ -553,7 +548,7 @@ def _exibir_comparacao(contratos_por_id, frota, pessoas):
 
 def exibir():
     cabecalho("Vistorias", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         frota = {m["id"]: m for m in motos.listar()}
         pessoas = {c["id"]: c["nome"] for c in clientes.listar()}
         contratos_por_id = {c["id"]: c for c in contratos.listar()}

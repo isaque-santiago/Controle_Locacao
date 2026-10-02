@@ -51,7 +51,10 @@ def registrar_pagamento(
     multa_juros: Decimal = Decimal("0"),
     forma: str = "pix",
     observacoes: Optional[str] = None,
+    chave_operacao: Optional[str] = None,
 ) -> dict:
+    """Registra o pagamento. `chave_operacao` torna o reenvio idempotente: repetir o mesmo envio
+    devolve o pagamento já gravado em vez de lançar outro."""
     if valor <= 0 or multa_juros < 0:
         raise ValueError(
             "O principal deve ser positivo e os encargos não podem ser negativos."
@@ -64,7 +67,7 @@ def registrar_pagamento(
         "forma": forma,
         "observacoes": observacoes,
     }
-    return pagamentos.criar(dados)
+    return pagamentos.criar(dados, chave_operacao)
 
 
 def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:

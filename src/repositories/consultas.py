@@ -8,8 +8,10 @@ decorador `invalida_cache`, para o app nunca exibir dados que ele mesmo acabou d
 from functools import wraps
 
 import streamlit as st
+from postgrest.exceptions import APIError
 
 from src.db import get_client
+from src.domain.erros import eh_repeticao_de_envio
 from src.domain.valores import hoje_br
 
 # Rede de segurança para alterações feitas fora deste app (outro aparelho, painel do Supabase).
@@ -57,6 +59,32 @@ def todos(tabela, ordem="id", selecao="*", filtros=None, usar_cache=True):
         selecao,
         filtros_ordenados,
     )
+
+
+def _por_chave(tabela, chave_operacao):
+    achados = get_client().table(tabela).select("*").eq("chave_operacao", chave_operacao).limit(1).execute().data
+    return achados[0] if achados else None
+
+
+def inserir_idempotente(tabela, dados, chave_operacao=None):
+    """Insere uma linha; com `chave_operacao`, repetir o envio devolve a linha já gravada.
+
+    Consulta a chave antes (gatilhos do banco, como a validação de saldo do pagamento, rodam antes
+    do índice único e recusariam o reenvio com outra mensagem) e trata o 23505 do índice
+    `uq_*_chave_operacao` para o caso de dois envios simultâneos."""
+    tabela_api = get_client().table(tabela)
+    if not chave_operacao:
+        return tabela_api.insert(dados).execute().data[0]
+    existente = _por_chave(tabela, chave_operacao)
+    if existente:
+        return existente
+    try:
+        return tabela_api.insert({**dados, "chave_operacao": chave_operacao}).execute().data[0]
+    except APIError as erro:
+        existente = _por_chave(tabela, chave_operacao) if eh_repeticao_de_envio(erro) else None
+        if existente:
+            return existente
+        raise
 
 
 def limpar_cache() -> None:

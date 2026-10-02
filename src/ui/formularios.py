@@ -27,6 +27,7 @@ from src.domain.entradas import (
     texto_percentual,
     texto_placa,
 )
+from src.ui.feedback import encerrar_operacao
 
 # Sufixo exibido ao lado do campo: o texto vem do CSS (`sfx_<tipo>_`), pela chave do container.
 SUFIXOS = ("km", "dias", "pct")
@@ -191,6 +192,8 @@ def rodape_formulario(
       o motivo vem da validação do envio, não daqui.
     - `perigo=True`: ação destrutiva (borda e texto de perigo).
     - `cancelar=None` omite o botão de cancelar.
+    - Ao confirmar, o botão vira `Salvando…` e não aceita outro clique (script em `feedback.py`); ao cancelar,
+      a chave de operação de mesmo nome (`feedback.chave_operacao(chave, ...)`) é descartada.
     Devolve `Acao(confirmou, cancelou)`; quem chama decide o que limpar e se reexecuta."""
     botao = st.form_submit_button if formulario else st.button
     with st.container(key=f"rodape_{chave}"):
@@ -207,4 +210,6 @@ def rodape_formulario(
             icon=icone,
             disabled=desabilitado,
         )
+    if cancelou:
+        encerrar_operacao(chave)
     return Acao(confirmou, cancelou)

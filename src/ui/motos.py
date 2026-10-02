@@ -14,8 +14,10 @@ from src.services import (
     clientes,
     cobrancas,
 )
+from src.domain import mensagens
 from src.domain.entradas import decimal_campo
 from src.domain.valores import hoje_br
+from src.ui import feedback
 from src.ui.componentes import (
     cabecalho,
     cabecalho_pagina,
@@ -69,11 +71,6 @@ _STATUS_ROTULO = {
     "inativa": "Inativa",
 }
 _OPCOES_FILTRO = [("Todas", "Todas")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("disponivel", "alugada", "manutencao", "inativa")]
-
-
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
 
 
 def _ir_para_ficha(moto_id):
@@ -159,7 +156,7 @@ def _formulario_moto(moto):
                     motos.atualizar(moto["id"], dados)
                 else:
                     motos.criar(dados)
-                _salvo()
+                feedback.concluir(mensagens.moto_salva(formatar_placa(dados["placa"]), nova=not moto))
 
 
 @st.dialog("Atualizar quilometragem")
@@ -176,8 +173,9 @@ def _dialog_km(moto):
             st.rerun()
         if acao.confirmou:
             with proteger():
-                motos.atualizar_km(moto["id"], km, confirmar_km_menor=confirmar)
-                _salvo("Quilometragem atualizada.")
+                chave = feedback.chave_operacao("kmmoto", [moto["id"], km, confirmar])
+                motos.atualizar_km(moto["id"], km, confirmar_km_menor=confirmar, chave_operacao=chave)
+                feedback.concluir(mensagens.km_atualizado(formatar_placa(moto["placa"]), km), "kmmoto")
 
 
 @st.dialog("Regularizar documento")
@@ -191,7 +189,8 @@ def _dialog_regularizar(documento):
         if acao.confirmou:
             with proteger():
                 documentos.regularizar(documento["id"], data or hoje_br())
-                _salvo("Documento regularizado.")
+                descricao = f"{documento['tipo'].upper()} {documento.get('ano_referencia') or ''}".strip()
+                feedback.concluir(mensagens.documento_regularizado(descricao))
 
 
 # ------------------------------------------------------------------ lista --
@@ -528,11 +527,10 @@ def _exibir_ficha(moto_id):
     if cliques["km_ficha"]:
         _dialog_km(moto)
     if cliques.get("alternar_moto_ficha"):
-        motos.atualizar(
-            moto["id"],
-            {"status": "disponivel" if moto["status"] == "inativa" else "inativa"},
-        )
-        _salvo()
+        inativando = moto["status"] != "inativa"
+        with proteger():
+            motos.atualizar(moto["id"], {"status": "inativa" if inativando else "disponivel"})
+            feedback.concluir(mensagens.moto_status_alterado(formatar_placa(moto["placa"]), inativando))
 
     km_atual = f"{moto['km_atual']:,}".replace(",", ".")
     faixa_dados(
@@ -558,7 +556,7 @@ def _exibir_ficha(moto_id):
 
 def exibir():
     cabecalho("Motos", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         visao = st.session_state.get("motos_visao", "lista")
         if visao == "ficha" and st.session_state.get("motos_id_selecionado"):
             _exibir_ficha(st.session_state["motos_id_selecionado"])

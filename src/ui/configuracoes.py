@@ -5,10 +5,12 @@ from html import escape
 
 import streamlit as st
 
-from src.domain.configuracoes import LIMITE_INTEIRO as _LIMITE, exemplo_encargos
+from src.domain import mensagens
+from src.domain.configuracoes import LIMITE_INTEIRO as _LIMITE, campos_alterados, exemplo_encargos
 from src.domain.valores import hoje_br
 from src.services import configuracoes
-from src.ui.componentes import cabecalho, cabecalho_pagina, proteger, sucesso
+from src.ui import feedback
+from src.ui.componentes import cabecalho, cabecalho_pagina, proteger
 from src.ui.formatadores import formatar_moeda
 from src.ui.formularios import campo_inteiro, campo_moeda, campo_percentual, linha_campos
 
@@ -49,7 +51,7 @@ def _formulario(config):
             sub="Parâmetros do sistema",
             acao={
                 "rotulo": "Salvar alterações",
-                "chave": "configuracoes_salvar",
+                "chave": "ocupa_configuracoes_salvar",
                 "icone": ":material/save:",
                 "formulario": True,
             },
@@ -162,10 +164,11 @@ def _backup():
 
 def exibir():
     cabecalho("Configurações", exibir_titulo=False)
-    with proteger(), st.container(key="config_pagina"):
+    with proteger(nova_tentativa=True), st.container(key="config_pagina"):
         config = configuracoes.obter()
         salvar, entrada = _formulario(config)
         if salvar:
-            configuracoes.atualizar(entrada)
-            sucesso()
+            with proteger():
+                novos = configuracoes.atualizar(entrada)
+                feedback.concluir(mensagens.configuracoes_salvas(campos_alterados(config, novos)))
         _backup()
