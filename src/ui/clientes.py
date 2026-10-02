@@ -92,11 +92,9 @@ def _identidade_cliente(cliente):
     """Avatar com a inicial + nome, como identidade do cartão da lista."""
     cor_avatar = "var(--chip-fundo)" if cliente["status"] == "ativo" else "var(--avatar-inativo)"
     return (
-        '<span style="display:inline-flex;align-items:center;gap:10px;">'
-        f'<span style="width:26px;height:26px;border-radius:50%;background:{cor_avatar};color:var(--chip-texto);'
-        "display:inline-flex;align-items:center;justify-content:center;font-size:var(--fs-legenda);"
-        f'font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente["nome"]))}</span>'
-        f'<span style="font-size:var(--fs-secundario);">{_html(cliente["nome"])}</span></span>'
+        '<span class="identidade-linha">'
+        f'<span class="avatar avatar--pequeno" style="background:{cor_avatar};">{_html(_iniciais(cliente["nome"]))}</span>'
+        f'<span class="fs-secundario">{_html(cliente["nome"])}</span></span>'
     )
 
 
@@ -209,17 +207,17 @@ def _exibir_lista():
                 _data_iso(cliente.get("cnh_validade")), hoje, config["alerta_cnh_dias"]
             )
             if situacao_cnh_cliente == "sem_cnh":
-                cnh = '<span style="font-size:var(--fs-secundario);color:var(--texto-3);">—</span>'
+                cnh = '<span class="fs-secundario texto-3">—</span>'
             else:
                 cnh = selo_situacao(formatar_data(cliente["cnh_validade"]), situacao_cnh_cliente)
             moto_id = contratos_ativos.get(cliente["id"])
             campos = [
                 campo("CPF", f'<span class="mono fs-secundario texto-2">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>'),
-                campo("WhatsApp", f'<span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>'),
+                campo("WhatsApp", f'<span class="mono fs-secundario">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>'),
                 campo("CNH", cnh),
                 campo(
                     "Moto atual",
-                    chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span style="color:var(--texto-3);">—</span>',
+                    chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span class="texto-3">—</span>',
                 ),
             ]
             with registro(
@@ -268,17 +266,17 @@ def _card_contrato_ativo(cliente_id):
             abrir_ficha_contrato(contrato["id"])
         st.markdown(
             f"""
-            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;">
+            <div class="resumo-contrato">
               {chip_placa(moto['placa'], 'grande') if moto else ''}
-              <div style="min-width:0;">
-                <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
-                <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
+              <div class="resumo-contrato__texto">
+                <div class="resumo-contrato__titulo">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
+                <div class="fs-legenda texto-2">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
               </div>
             </div>
             <div class="grade-dados grade-dados--compacta campos-linha">
-              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span></div>
-              <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">valor / período</span><span class="mono fs-secundario">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">próxima cobrança</span><span class="mono fs-secundario">{proxima}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">caução</span><span class="mono fs-secundario">{formatar_moeda(contrato['caucao_valor'])}</span></div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -318,12 +316,12 @@ def _card_situacao_financeira(parcelas, historicos):
     atrasado = sum(
         (Decimal(str(c["saldo"])) for c in parcelas if c["situacao"] == "atrasada"), Decimal(0)
     )
-    cor_atrasado = "var(--perigo-texto)" if atrasado else "var(--texto)"
+    cor_atrasado = "texto-perigo" if atrasado else ""
     corpo = f"""
-      <div class="campos-linha" style="display:flex;flex-direction:column;gap:14px;">
-        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">pago no histórico</span><span class="mono" style="font-size:18px;color:var(--sucesso-texto);">{formatar_moeda(pago)}</span></div>
-        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
-        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">atrasado</span><span class="mono" style="font-size:18px;color:{cor_atrasado};">{formatar_moeda(atrasado)}</span></div>
+      <div class="campos-linha pilha-dados">
+        <div class="campo"><span class="fs-legenda texto-2">pago no histórico</span><span class="mono fs-destaque texto-sucesso">{formatar_moeda(pago)}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">em aberto</span><span class="mono fs-destaque">{formatar_moeda(em_aberto)}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">atrasado</span><span class="mono fs-destaque {cor_atrasado}">{formatar_moeda(atrasado)}</span></div>
       </div>
     """
     st.markdown(cartao_dados("Situação financeira", corpo), unsafe_allow_html=True)
@@ -351,19 +349,19 @@ def _aba_contratos(cliente):
         for c in registros:
             moto = frota.get(c["moto_id"])
             titulo = (
-                f'{chip_placa(moto["placa"])} <span style="font-size:var(--fs-secundario);">{_html(moto["marca"])} {_html(moto["modelo"])}</span>'
+                f'{chip_placa(moto["placa"])} <span class="fs-secundario">{_html(moto["marca"])} {_html(moto["modelo"])}</span>'
                 if moto
                 else "—"
             )
             campos = [
-                campo("Início", f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(c["data_inicio"])}</span>'),
+                campo("Início", f'<span class="mono fs-secundario">{formatar_data(c["data_inicio"])}</span>'),
                 campo(
                     "Fim",
-                    f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(c["data_encerramento"])}</span>'
+                    f'<span class="mono fs-secundario">{formatar_data(c["data_encerramento"])}</span>'
                     if c["data_encerramento"]
-                    else '<span style="color:var(--texto-3);">—</span>',
+                    else '<span class="texto-3">—</span>',
                 ),
-                campo("Valor / período", f'<span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(c["valor_periodo"])}</span>'),
+                campo("Valor / período", f'<span class="mono fs-secundario">{formatar_moeda(c["valor_periodo"])}</span>'),
             ]
             with registro(
                 "clientes_contratos",
@@ -409,9 +407,9 @@ def _aba_pagamentos(parcelas, historicos):
             [
                 f'<span class="mono">{formatar_data(c["vencimento"])}</span>',
                 _html(c["tipo"].capitalize()),
-                f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span style="color:var(--texto-3);">—</span>',
-                _html(ultimo["forma"].capitalize()) if ultimo else '<span style="color:var(--texto-3);">—</span>',
-                f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span style="color:var(--texto-3);">—</span>',
+                f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span class="texto-3">—</span>',
+                _html(ultimo["forma"].capitalize()) if ultimo else '<span class="texto-3">—</span>',
+                f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span class="texto-3">—</span>',
                 f'<span class="mono">{formatar_moeda(c["valor"])}</span>',
                 situacao_html,
             ]

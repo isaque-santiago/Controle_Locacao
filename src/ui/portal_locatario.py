@@ -59,12 +59,12 @@ def _resumo(contrato, dados):
     st.markdown(
         f"""
         <div class="cartao">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div class="cartao__cabeca">
             <div>{chip_placa(contrato["placa"], "grande")}
-              <span class="texto-2" style="margin-left:8px;">{escape(contrato["modelo"])}</span></div>
+              <span class="texto-2 margem-esq">{escape(contrato["modelo"])}</span></div>
             {selo_situacao(_ROTULO_SITUACAO[situacao], situacao)}
           </div>
-          <div class="grade-dados grade-dados--duas" style="margin-top:14px;">
+          <div class="grade-dados grade-dados--duas margem-topo">
             <div class="campo"><span class="texto-2">Hodômetro registrado</span><span class="mono">{_km(contrato["km_atual"])}</span></div>
             <div class="campo"><span class="texto-2">Última troca de óleo</span><span class="mono">{_km(contrato.get("ultima_km"))}</span></div>
             <div class="campo"><span class="texto-2">Próxima troca em</span><span class="mono">{_km(proxima_km)}</span></div>

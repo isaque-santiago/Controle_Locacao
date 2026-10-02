@@ -47,8 +47,6 @@
 [data-testid="stVerticalBlockBorderWrapper"] {border-color: var(--linha) !important;}
 [data-testid="stExpander"], [data-testid="stExpander"] details {background: var(--superficie) !important; border-color: var(--linha) !important;}
 [data-testid="stTable"], [data-testid="stTable"] th, [data-testid="stTable"] td {background: var(--superficie) !important; color: var(--texto) !important;}
-/* O grid é um canvas com o tema claro: inverte luminosidade preservando o matiz */
-[data-testid="stDataFrame"] {filter: invert(1) hue-rotate(180deg);}
 
 /* ========================================
    DARK MODE — CAMPOS

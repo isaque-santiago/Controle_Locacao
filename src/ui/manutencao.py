@@ -49,12 +49,12 @@ def _km(valor):
     return f"{int(valor):,} km".replace(",", ".") if valor is not None else "—"
 
 
-def _mono(texto, estilo=""):
-    return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
+def _mono(texto, classe=""):
+    return f'<span class="mono fs-secundario {classe}">{texto}</span>'
 
 
-def _texto(texto, estilo=""):
-    return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
+def _texto(texto, classe=""):
+    return f'<span class="fs-secundario {classe}">{texto}</span>'
 
 
 def _valor_tolerante(texto, positivo=False):
@@ -395,8 +395,8 @@ def _restante(alerta):
     if alerta.get("dias_restantes") is not None:
         partes.append(f"{alerta['dias_restantes']} dias")
         negativo = negativo or alerta["dias_restantes"] < 0
-    cor = "color:var(--perigo-texto);" if negativo else ""
-    return f'<span class="mono" style="{cor}">{" / ".join(partes) or "—"}</span>'
+    cor = "texto-perigo" if negativo else ""
+    return f'<span class="mono {cor}">{" / ".join(partes) or "—"}</span>'
 
 
 def _aba_alertas(pendentes):
@@ -486,7 +486,7 @@ def _aba_historico(frota):
             campos = [
                 campo("Data", _mono(formatar_data(registro_man["data_entrada"]))),
                 campo("Tipo", _texto(registro_man["tipo"].capitalize())),
-                campo("Oficina", _texto(escape(registro_man.get("oficina") or "—"), "color:var(--texto-2);")),
+                campo("Oficina", _texto(escape(registro_man.get("oficina") or "—"), "texto-2")),
                 campo("Custo", _mono(formatar_moeda(registro_man["custo_total"]))),
                 campo("Descrição", _texto(escape(registro_man["descricao"])), largo=True),
             ]
@@ -530,15 +530,15 @@ def _aba_catalogo(itens):
                 unsafe_allow_html=True,
             )
         for item in itens:
-            muted = "" if item["ativo"] else "color:var(--texto-2);"
+            muted = "" if item["ativo"] else "texto-2"
             campos = [
                 campo(
                     "Intervalo km",
-                    _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "color:var(--texto-3);"),
+                    _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "texto-3"),
                 ),
                 campo(
                     "Intervalo dias",
-                    _mono(str(item["intervalo_dias"]), muted) if item["intervalo_dias"] else _texto("—", "color:var(--texto-3);"),
+                    _mono(str(item["intervalo_dias"]), muted) if item["intervalo_dias"] else _texto("—", "texto-3"),
                 ),
             ]
             with registro(

@@ -247,3 +247,60 @@ tudo centralizado em tokens (`src/ui/estilos.css`; modo escuro em `src/ui/estilo
   ≥ 4,5:1) e fundo suave. Selo = bolinha + texto (nunca só cor).
 - **Botão primário**: grafite no claro, amarelo no escuro (o amarelo continua fora dos botões no tema claro).
 - **Foco**: contorno de 2px na cor `--foco` (visível nos dois temas).
+
+## 9. Robustez visual (Etapa 8)
+
+- **Sem `nth-child`**: o CSS não depende da posição de campos; a ordem das colunas pode mudar sem quebrar o layout
+  (`tests/test_robustez_ui.py`).
+- **Sem inversão no modo escuro**: a regra `filter: invert()` do `st.dataframe` foi removida (o app só usa tabelas HTML
+  do design system, `tabela_html`/`registro`, que seguem os tokens nos dois temas).
+- **Sem `style=` estático**: tamanhos, cores e espaçamentos viram classes (`fs-secundario`, `fs-legenda`, `texto-2`,
+  `texto-3`, `texto-perigo`, `texto-sucesso`, `texto-forte`, `texto-negrito`, `avatar--{pequeno,medio,grande}`,
+  `identidade-linha`, `resumo-contrato`, `pilha-dados`, `leitura-km`, `cartao__cabeca`, `config-*`). Só valores
+  calculados em tempo de execução ficam inline: largura/flex de barras e a cor de fundo do avatar. O teste
+  `test_paginas_sem_estilo_inline_estatico` barra novos `style=`.
+- **Fontes**: empacotadas localmente (WOFF2, subconjunto latino, que cobre pt-BR) em `static/fontes/`, declaradas em
+  `src/ui/fontes.css` com `font-display: swap` e servidas por `enableStaticServing = true` em `.streamlit/config.toml`
+  (URL `/app/static/fontes/...`). Não há mais chamada ao Google Fonts. As pilhas `--fonte-*` mantêm fallback do
+  sistema (`system-ui`/`Arial Narrow`/`ui-monospace`). Para trocar a fonte, baixe os WOFF2 e atualize `fontes.css`.
+- **Mídia**: miniaturas de vistoria ficam numa moldura 4:3 de tamanho fixo (sem deslocamento de layout), com
+  `loading="lazy"` e `decoding="async"`.
+
+### `data-testid` que permanecem (inevitáveis)
+
+O Streamlit não expõe classes estáveis para os widgets nativos; os seletores abaixo estilizam elementos que o app
+não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key-<chave>` ou classes próprias.
+
+| Grupo | `data-testid` | Motivo |
+|---|---|---|
+| Estrutura | `stApp`, `stMain`, `stHeader`, `stSidebar*`, `stAppViewContainer`, `stElementContainer`, `stLayoutWrapper`, `stColumn`, `stHorizontalBlock`, `stVerticalBlockBorderWrapper` | casca do Streamlit, sem classe pública |
+| Campos | `stTextInput*`, `stTextAreaRootElement`, `stNumberInput*`, `stSelectbox*`, `stMultiSelect`, `stDateInputField`, `stRadio`, `stCheckbox`, `stToggle`, `stFileUploaderDropzone`, `stWidgetLabel` | aparência dos widgets nativos |
+| Ações | `stButton`, `stFormSubmitButton`, `stDownloadButton`, `stLinkButton`, `stPopover*`, `stButtonGroup` | alvo de toque e variantes |
+| Feedback | `stAlert*`, `stToast*`, `stDialog`, `stTooltip*` | alertas, toasts e diálogos |
+| Conteúdo | `stMarkdownContainer`, `stCaptionContainer`, `stMetric*`, `stCode`, `stTable`, `stPlotlyChart`, `stExpander`, `stTabs`, `stTab*` | tipografia e tema escuro |
+| Navegação | `stSidebarNav`, `stExpandSidebarButton`, `collapsedControl`, `stMainMenu` | menu lateral responsivo |
+
+## 10. Pendências da Etapa 8
+
+- **Lighthouse medido** (v12, Chrome headless, dashboard com dados fictícios e login contornado por script temporário;
+  servidor local, então LCP absoluto não vale como número de produção; vale a comparação). `main` x esta branch:
+
+  | Perfil | Versão | Nota | FCP | LCP | TBT | CLS |
+  |---|---|---:|---:|---:|---:|---:|
+  | Desktop | main (2 execuções) | 46–47 | 2,5 s | 3,6 s | 40 ms | 0,40–0,41 |
+  | Desktop | esta branch (2 execuções) | 47–48 | 2,5 s | 3,6–3,7 s | 50 ms | 0,379 |
+  | Celular (4x CPU, 4G lenta) | main (2 execuções) | 23–50 | 13–15 s | 19,2–19,4 s | 230–350 ms | 0,054 e 0,971 |
+  | Celular | esta branch (3 execuções) | 19–31 | 13–15 s | 20,1–20,2 s | 40–470 ms | 0,95–0,97 |
+
+  Sem regressão: os números são equivalentes nas duas versões (a CLS de celular da `main` também chegou a 0,971 numa
+  das duas execuções). INP não existe na auditoria de navegação do Lighthouse; TBT é o indicador de laboratório
+  equivalente (baixo nos dois). **Problema herdado, não tratado**: CLS ≈ 0,4 no desktop e ≈ 0,95 no celular, causada pelo
+  render progressivo do Streamlit (contêiner principal, rodapé da barra lateral e blocos do dashboard mudam de altura
+  enquanto o script termina). Reservar altura mínima (`min-height`) nesses blocos é o próximo passo, a decidir.
+  Como reproduzir: `winget install OpenJS.NodeJS.LTS`, subir `streamlit run` com o login contornado e
+  `npx lighthouse http://localhost:<porta>/ --only-categories=performance`.
+- Validação de Chromium/Firefox/WebKit e capturas em CI (itens 9 e 10 do plano): dependem do pipeline e ficam para a
+  Etapa 9.
+- **Pendência (decidida em 02/10/2026): CLS alta** (≈ 0,4 no desktop e ≈ 0,95 no celular, herdada da `main`). Tratar em
+  etapa futura reservando altura mínima nos blocos que crescem durante o render; não bloqueia a Etapa 8.
+- Medir também Cobranças, Motos e uma ficha (o Lighthouse só carregou a rota `/`; as demais exigem navegação).

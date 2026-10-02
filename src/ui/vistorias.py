@@ -128,12 +128,12 @@ def _combustivel(valor):
     return str(valor).capitalize() if valor else "—"
 
 
-def _mono(texto, estilo=""):
-    return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
+def _mono(texto, classe=""):
+    return f'<span class="mono fs-secundario {classe}">{texto}</span>'
 
 
-def _texto(texto, estilo=""):
-    return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
+def _texto(texto, classe=""):
+    return f'<span class="fs-secundario {classe}">{texto}</span>'
 
 
 # ---------------------------------------------------------------- diálogos --
@@ -384,7 +384,7 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
                 campo("Combustível", _texto(_combustivel(v.get("nivel_combustivel")))),
                 campo(
                     "Avarias",
-                    _texto(escape(avarias), "color:var(--perigo-texto);") if avarias else _texto("Nenhuma", "color:var(--texto-2);"),
+                    _texto(escape(avarias), "texto-perigo") if avarias else _texto("Nenhuma", "texto-2"),
                     largo=True,
                 ),
             ]
@@ -410,7 +410,7 @@ def _foto(url, legenda):
     texto = escape(legenda or "Foto da vistoria", quote=True)
     return (
         f'<li><a class="galeria__foto" href="{escape(url, quote=True)}" target="_blank" rel="noopener noreferrer" '
-        f'aria-label="{texto} (abre em nova aba)"><img src="{escape(url, quote=True)}" alt="{texto}" loading="lazy"></a></li>'
+        f'aria-label="{texto} (abre em nova aba)"><img src="{escape(url, quote=True)}" alt="{texto}" loading="lazy" decoding="async"></a></li>'
     )
 
 

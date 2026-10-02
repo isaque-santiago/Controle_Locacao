@@ -52,12 +52,12 @@ _EXTENSOES = ["pdf", "png", "jpg", "jpeg"]
 _CHAVE_SUGESTAO = "documentos_sugestao"
 
 
-def _mono(texto, estilo=""):
-    return f'<span class="mono" style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
+def _mono(texto, classe=""):
+    return f'<span class="mono fs-secundario {classe}">{texto}</span>'
 
 
-def _texto(texto, estilo=""):
-    return f'<span style="font-size:var(--fs-secundario);{estilo}">{texto}</span>'
+def _texto(texto, classe=""):
+    return f'<span class="fs-secundario {classe}">{texto}</span>'
 
 
 def _situacao(documento, hoje, alerta_dias):
@@ -180,7 +180,7 @@ def _dialog_regularizar(documento, moto):
         chip_placa(moto["placa"])
         + _texto(
             f" {escape(rotulo)} {escape(str(referencia))} · vence {formatar_data(documento['vencimento'])}",
-            "color:var(--texto-2);",
+            "texto-2",
         ),
         unsafe_allow_html=True,
     )
@@ -216,7 +216,7 @@ def _dialog_regularizar(documento, moto):
 @st.dialog("Comprovante")
 def _dialog_comprovante(documento, moto):
     st.markdown(
-        chip_placa(moto["placa"]) + _texto(f" {escape(_TIPOS[documento['tipo']])}", "color:var(--texto-2);"),
+        chip_placa(moto["placa"]) + _texto(f" {escape(_TIPOS[documento['tipo']])}", "texto-2"),
         unsafe_allow_html=True,
     )
     with proteger():
@@ -246,7 +246,7 @@ def _tabela(visiveis, frota, hoje, alerta_dias, total):
             tipo_doc = _TIPOS.get(doc["tipo"], doc["tipo"])
             campos = [
                 campo("Tipo", _texto(escape(tipo_doc))),
-                campo("Referência", _texto(escape(str(referencia)), "color:var(--texto-2);")),
+                campo("Referência", _texto(escape(str(referencia)), "texto-2")),
                 campo("Vencimento", _mono(formatar_data(doc["vencimento"]))),
                 campo("Valor", _mono(formatar_moeda(doc["valor"]) if doc.get("valor") is not None else "—")),
             ]

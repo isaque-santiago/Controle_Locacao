@@ -27,12 +27,6 @@ def _ler_css(nome: str) -> str:
     return em_cache[1]
 
 
-_FONTES = (
-    "@import url('https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700"
-    "&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');"
-)
-
-
 def tema_escuro_ativo() -> bool:
     """Modo escuro efetivo: escolha manual, ou o tema do sistema quando automático."""
     preferencia = st.session_state.get("tema_escuro")
@@ -49,7 +43,7 @@ def aplicar():
     # (None = automático, acompanha o tema do sistema).
     if "tema_escuro" not in st.session_state:
         st.session_state["tema_escuro"] = ler_tema_escuro_cookie()
-    st.markdown(f"<style>{_FONTES}\n{_ler_css('estilos.css')}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{_ler_css('fontes.css')}\n{_ler_css('estilos.css')}</style>", unsafe_allow_html=True)
     if tema_escuro_ativo():
         st.markdown(f"<style>{_ler_css('estilos_escuro.css')}</style>", unsafe_allow_html=True)
     instalar_estado_ocupado()

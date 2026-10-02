@@ -145,19 +145,19 @@ def _exibir_lista():
             )
         for contrato in pagina_atual:
             moto = frota.get(contrato["moto_id"])
-            muted = "color:var(--texto-3);" if contrato["status"] != "ativo" else ""
+            muted = "texto-3" if contrato["status"] != "ativo" else ""
             nome = nomes.get(contrato["cliente_id"], "—")
             periodo = _PERIODOS_ROTULO.get(contrato["periodicidade"], contrato["periodicidade"])
             campos = [
                 campo("Moto", chip_placa(moto["placa"]) if moto else "—"),
-                campo("Início", f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_data(contrato["data_inicio"])}</span>'),
-                campo("Periodicidade", f'<span style="font-size:var(--fs-secundario);{muted or "color:var(--texto-2);"}">{escape(periodo)}</span>'),
-                campo("Valor / período", f'<span class="mono" style="font-size:var(--fs-secundario);{muted}">{formatar_moeda(contrato["valor_periodo"])}</span>'),
+                campo("Início", f'<span class="mono fs-secundario {muted}">{formatar_data(contrato["data_inicio"])}</span>'),
+                campo("Periodicidade", f'<span class="fs-secundario {muted or "texto-2"}">{escape(periodo)}</span>'),
+                campo("Valor / período", f'<span class="mono fs-secundario {muted}">{formatar_moeda(contrato["valor_periodo"])}</span>'),
             ]
             with registro(
                 "contratos",
                 contrato["id"],
-                f'<span style="{muted}">{escape(nome)}</span>',
+                f'<span class="{muted}">{escape(nome)}</span>',
                 campos,
                 selo=selo_situacao(_STATUS_ROTULO[contrato["status"]], contrato["status"]),
             ) as acoes:
@@ -177,9 +177,7 @@ def _exibir_lista():
 
 def _avatar_circulo(texto, cor="var(--chip-fundo)"):
     return (
-        f'<div style="width:30px;height:30px;border-radius:50%;background:{cor};color:var(--chip-texto);'
-        f'display:flex;align-items:center;justify-content:center;font-size:var(--fs-legenda);font-weight:600;'
-        f'flex-shrink:0;">{texto}</div>'
+        f'<div class="avatar avatar--medio" style="background:{cor};">{texto}</div>'
     )
 
 
@@ -187,7 +185,7 @@ def _cartao_selecionavel(chave, icone_html, titulo, subtitulo, badge_html, selec
     """Opção de escolha do assistente: identidade + situação e um botão `Selecionar`. A opção
     escolhida muda o texto do botão para `Selecionado` (não depende só da cor da borda)."""
     estado = "selecionado" if selecionado else (None if elegivel else "indisponivel")
-    identidade = f'<span style="display:inline-flex;align-items:center;gap:12px;">{icone_html}<span>{escape(titulo)}</span></span>'
+    identidade = f'<span class="identidade-linha">{icone_html}<span>{escape(titulo)}</span></span>'
     with registro(
         "contrato_selecao",
         chave,
@@ -229,9 +227,9 @@ def _wizard_etapa1():
             elegivel = cliente["status"] == "ativo"
             moto_atual = contratos_ativos.get(cliente["id"])
             if not elegivel:
-                badge = f'<span style="font-size:var(--fs-legenda);color:var(--perigo-texto);">{"bloqueado" if cliente["status"] == "bloqueado" else "inativo"} · não pode alugar</span>'
+                badge = f'<span class="fs-legenda texto-perigo">{"bloqueado" if cliente["status"] == "bloqueado" else "inativo"} · não pode alugar</span>'
             elif moto_atual:
-                badge = f'<span style="font-size:var(--fs-legenda);color:var(--texto-2);">já aluga {escape(placas.get(moto_atual, "—"))}</span>'
+                badge = f'<span class="fs-legenda texto-2">já aluga {escape(placas.get(moto_atual, "—"))}</span>'
             else:
                 badge = ""
             avatar_cor = "var(--chip-fundo)" if elegivel else "var(--avatar-inativo)"
@@ -643,7 +641,7 @@ def _aba_cobrancas(contrato):
             [
                 c["tipo"].capitalize(),
                 f'<span class="mono">{formatar_data(c["vencimento"])}</span>',
-                f'<span class="mono">{pago_em}</span>' if pago_em else '<span style="color:var(--texto-3);">—</span>',
+                f'<span class="mono">{pago_em}</span>' if pago_em else '<span class="texto-3">—</span>',
                 f'<span class="mono">{formatar_moeda(c["valor"])}</span>',
                 situacao_html,
             ]
@@ -695,7 +693,7 @@ def _aba_manutencoes(contrato):
             m["tipo"].capitalize(),
             m["descricao"],
             f'<span class="mono">{f"{m["km"]:,}".replace(",", ".")} km</span>',
-            "Sim" if m.get("cobrar_do_cliente") else '<span style="color:var(--texto-2);">Não</span>',
+            "Sim" if m.get("cobrar_do_cliente") else '<span class="texto-2">Não</span>',
             f'<span class="mono">{formatar_moeda(m["custo_total"])}</span>',
         ]
         for m in registros
