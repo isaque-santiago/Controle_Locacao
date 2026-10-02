@@ -301,4 +301,6 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
   `npx lighthouse http://localhost:<porta>/ --only-categories=performance`.
 - Validação de Chromium/Firefox/WebKit e capturas em CI (itens 9 e 10 do plano): dependem do pipeline e ficam para a
   Etapa 9.
+- **Pendência (decidida em 02/10/2026): CLS alta** (≈ 0,4 no desktop e ≈ 0,95 no celular, herdada da `main`). Tratar em
+  etapa futura reservando altura mínima nos blocos que crescem durante o render; não bloqueia a Etapa 8.
 - Medir também Cobranças, Motos e uma ficha (o Lighthouse só carregou a rota `/`; as demais exigem navegação).
