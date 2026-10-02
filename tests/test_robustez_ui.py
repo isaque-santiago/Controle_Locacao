@@ -20,6 +20,17 @@ def test_modo_escuro_sem_filtro_de_inversao():
     assert "stDataFrame" not in CLARO + ESCURO
 
 
+def test_fontes_empacotadas_localmente():
+    css = (UI / "fontes.css").read_text(encoding="utf-8")
+    assert "googleapis" not in css and "gstatic" not in css
+    arquivos = re.findall(r"url\('/app/static/fontes/([^']+)'\)", css)
+    assert len(arquivos) == 7
+    for nome in arquivos:
+        assert (RAIZ / "static" / "fontes" / nome).stat().st_size > 5000, nome
+    assert "enableStaticServing = true" in (RAIZ / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    assert "googleapis" not in (UI / "tema.py").read_text(encoding="utf-8")
+
+
 def test_fontes_tem_fallback_do_sistema():
     for token in ("--fonte-titulo", "--fonte-ui", "--fonte-mono"):
         linha = next(l for l in CLARO.splitlines() if l.strip().startswith(token + ":"))

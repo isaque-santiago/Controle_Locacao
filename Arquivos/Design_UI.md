@@ -259,9 +259,10 @@ tudo centralizado em tokens (`src/ui/estilos.css`; modo escuro em `src/ui/estilo
   `identidade-linha`, `resumo-contrato`, `pilha-dados`, `leitura-km`, `cartao__cabeca`, `config-*`). Só valores
   calculados em tempo de execução ficam inline: largura/flex de barras e a cor de fundo do avatar. O teste
   `test_paginas_sem_estilo_inline_estatico` barra novos `style=`.
-- **Fontes**: o Google Fonts é carregado com `display=swap`; as pilhas `--fonte-*` têm fallback do sistema
-  (`system-ui`/`Arial Narrow`/`ui-monospace`), então a falha do carregamento não quebra o layout. Empacotar as fontes
-  localmente (WOFF2 em `src/ui/assets/`) exige baixá-las; fica como decisão pendente.
+- **Fontes**: empacotadas localmente (WOFF2, subconjunto latino, que cobre pt-BR) em `static/fontes/`, declaradas em
+  `src/ui/fontes.css` com `font-display: swap` e servidas por `enableStaticServing = true` em `.streamlit/config.toml`
+  (URL `/app/static/fontes/...`). Não há mais chamada ao Google Fonts. As pilhas `--fonte-*` mantêm fallback do
+  sistema (`system-ui`/`Arial Narrow`/`ui-monospace`). Para trocar a fonte, baixe os WOFF2 e atualize `fontes.css`.
 - **Mídia**: miniaturas de vistoria ficam numa moldura 4:3 de tamanho fixo (sem deslocamento de layout), com
   `loading="lazy"` e `decoding="async"`.
 
@@ -285,4 +286,5 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
   de dev em `/`, Cobranças, Motos e uma ficha, e registrar os números aqui.
 - Validação de Chromium/Firefox/WebKit e capturas em CI (itens 9 e 10 do plano): dependem do pipeline e ficam para a
   Etapa 9.
-- Empacotar as fontes localmente (item 6): decidir se baixamos os WOFF2.
+- Medição aproximada no preview (dados fictícios, dashboard, tema escuro): CLS 0,048 (< 0,1). LCP e INP não foram
+  obtidos sem Lighthouse; medir no app autenticado.
