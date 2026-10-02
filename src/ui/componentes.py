@@ -125,6 +125,109 @@ def cabecalho_pagina(titulo, sub=None, sobretitulo=None, lateral=None, acao=None
         )
 
 
+def ficha_identidade(titulo, selo=None, marca=None, subtitulo=None):
+    """HTML da identidade de uma ficha: marca (chip de placa ou avatar, já em HTML), título (h1), subtítulo
+    e selo de situação. A marca vai ao lado do texto e desce para cima dele quando falta largura."""
+    texto = f'<h1 class="rotulo ficha-id__titulo">{titulo}</h1>'
+    if subtitulo:
+        texto += f'<div class="ficha-id__sub">{subtitulo}</div>'
+    if selo:
+        texto += f'<div class="ficha-id__selo">{selo}</div>'
+    marca_html = f'<div class="ficha-id__marca">{marca}</div>' if marca else ""
+    return f'<div class="ficha-id">{marca_html}<div class="ficha-id__texto">{texto}</div></div>'
+
+
+def cabecalho_ficha(identidade, acoes=()):
+    """Cabeçalho padrão das fichas (Moto, Cliente, Contrato, comparação de vistorias): identidade à
+    esquerda (`ficha_identidade`) e ações da ficha à direita, nenhuma delas primária. Quando o cabeçalho
+    fica estreito (consulta ao próprio contêiner, vale também em janela dividida) as ações descem para
+    depois da identidade em largura total, sem perder nenhuma.
+
+    `acoes`: lista de `{"rotulo", "chave", "icone"?, "ajuda"?}`. Devolve `{chave: clicado}`."""
+    cliques = {}
+    with st.container(key="ficha_cabecalho"):
+        st.markdown(identidade, unsafe_allow_html=True)
+        if acoes:
+            with st.container(key="ficha_acoes"):
+                for acao in acoes:
+                    cliques[acao["chave"]] = st.button(
+                        acao["rotulo"],
+                        key=acao["chave"],
+                        icon=acao.get("icone", ACOES["editar"][1]),
+                        help=acao.get("ajuda"),
+                    )
+    return cliques
+
+
+@contextmanager
+def cartao_ficha(chave, titulo, acao=None):
+    """Cartão de ficha com título e, opcionalmente, uma ação à direita do título (`{"rotulo", "chave",
+    "icone"?, "ajuda"?}`). Cabe sempre inteiro: o botão desce para baixo do título quando falta largura,
+    em vez de ser cortado. Devolve se a ação foi clicada; desenhe o corpo dentro do `with`."""
+    with st.container(key=f"cartaoficha_{chave}"):
+        with st.container(key=f"cartaocab_{chave}"):
+            st.markdown(f'<h3 class="cartao__titulo">{escape(titulo)}</h3>', unsafe_allow_html=True)
+            clicou = False
+            if acao:
+                clicou = st.button(
+                    acao["rotulo"],
+                    key=acao["chave"],
+                    icon=acao.get("icone", ACOES["abrir"][1]),
+                    help=acao.get("ajuda"),
+                )
+        yield clicou
+
+
+def cartao_dados(titulo, corpo):
+    """Cartão de ficha somente leitura: título e corpo (HTML). Mesmo cabeçalho de `cartao_ficha`."""
+    return (
+        '<div class="cartao"><div class="cartao__cab cartao__cab--fora">'
+        f'<h3 class="cartao__titulo">{escape(titulo)}</h3></div>{corpo}</div>'
+    )
+
+
+def faixa_dados(itens, destaque=False):
+    """Faixa de dados no topo das fichas: células rotuladas que ocupam a largura e quebram de linha
+    quando falta espaço, sem depender da posição de cada célula (nada de `nth-child`). Cada célula
+    é `(rotulo, valor_html)` ou `(rotulo, valor_html, tom)`, com `tom` em `perigo`, `sucesso` ou
+    `texto-3`. O valor reduz de tamanho conforme a largura da célula, então números grandes (R$ 9.999.999)
+    nunca estouram. `destaque=True` usa valores maiores (resumo financeiro)."""
+    celulas = ""
+    for item in itens:
+        rotulo, valor = item[0], item[1]
+        tom = f" faixa-dados__valor--{item[2]}" if len(item) > 2 and item[2] else ""
+        celulas += (
+            f'<div class="faixa-dados__item"><span class="faixa-dados__rotulo">{escape(rotulo)}</span>'
+            f'<span class="faixa-dados__valor{tom}">{valor}</span></div>'
+        )
+    variante = " faixa-dados--destaque" if destaque else ""
+    st.markdown(f'<div class="cartao faixa-dados{variante}">{celulas}</div>', unsafe_allow_html=True)
+
+
+def dado(rotulo, valor_html):
+    """Dado rotulado de um cartão de ficha (rótulo discreto em cima, valor embaixo), em HTML."""
+    return (
+        f'<div class="dado"><span class="dado__rotulo">{escape(rotulo)}</span>'
+        f'<span class="dado__valor">{valor_html}</span></div>'
+    )
+
+
+def grade_dados(itens_html):
+    """Grade de `dado(...)` que usa quantas colunas couberem (mín. ~8,5 rem cada) e quebra de linha por largura."""
+    return f'<div class="grade-auto">{"".join(itens_html)}</div>'
+
+
+@contextmanager
+def paineis(chave, iguais=False):
+    """Dois painéis lado a lado (principal e lateral) que empilham quando o contêiner perde largura útil:
+    cada painel mantém pelo menos ~18 rem; abaixo disso o lateral vai para baixo do principal (a ordem de
+    leitura e de tabulação é a mesma nas duas disposições). `iguais=True` dá a mesma largura aos dois
+    (Entrega/Devolução). Uso: `with paineis("moto_resumo") as (principal, lateral): with principal: ...`"""
+    sufixo = "__iguais" if iguais else ""
+    with st.container(key=f"paineis_{chave}{sufixo}", horizontal=True, vertical_alignment="top"):
+        yield st.container(key=f"painelA_{chave}"), st.container(key=f"painelB_{chave}")
+
+
 def cartao_html(titulo, corpo, meta=None):
     """Cartão com cabeçalho (título + meta opcional) e corpo já em HTML."""
     cab = f'<h2 class="cartao__titulo">{escape(titulo)}</h2>'
@@ -206,9 +309,11 @@ def tabela_html(cabecalhos, linhas, vazio=None, legenda=None):
     ("") marca uma coluna decorativa (ex.: barra de proporção), ignorada por leitores de tela.
     Interativos (com botões) usam `registro`, não esta função."""
 
-    def celula(conteudo, tag, rotulo=None, decorativa=False):
+    def celula(conteudo, tag, rotulo=None, decorativa=False, cheia=False):
         # data-label: no celular o cabeçalho some e cada célula mostra o próprio rótulo (ver estilos.css)
         atributos = f' data-label="{escape(str(rotulo), quote=True)}"' if rotulo and tag == "td" else ""
+        if cheia:
+            atributos += ' class="celula--cheia"'
         papel = "columnheader" if tag == "th" else "cell"
         if decorativa:
             return f'<{tag} role="{papel}" aria-hidden="true"{atributos}>{conteudo}</{tag}>'
@@ -216,6 +321,8 @@ def tabela_html(cabecalhos, linhas, vazio=None, legenda=None):
         return f'<{tag} role="{papel}"{escopo}{atributos}>{conteudo}</{tag}>'
 
     ths = "".join(celula(c, "th", decorativa=not c) for c in cabecalhos)
+    # Nº ímpar de colunas: no celular (2 por linha) a última ocupa a linha inteira, marcada aqui e não por posição no CSS
+    impar = len(cabecalhos) % 2 == 1
     if not linhas:
         corpo = (
             f'<tr role="row"><td role="cell" colspan="{len(cabecalhos)}">'
@@ -224,7 +331,10 @@ def tabela_html(cabecalhos, linhas, vazio=None, legenda=None):
     else:
         corpo = "".join(
             '<tr role="row">'
-            + "".join(celula(valor, "td", rotulo, decorativa=not rotulo) for rotulo, valor in zip(cabecalhos, linha))
+            + "".join(
+                celula(valor, "td", rotulo, decorativa=not rotulo, cheia=impar and indice == len(cabecalhos) - 1)
+                for indice, (rotulo, valor) in enumerate(zip(cabecalhos, linha))
+            )
             + "</tr>"
             for linha in linhas
         )
@@ -299,7 +409,8 @@ def barra_segmentada(segmentos):
         for largura, s in segmentos
         if largura > 0
     )
-    return f'<div class="barra">{itens}</div>'
+    # Decorativa: o mesmo dado vem escrito na legenda e no contexto do indicador
+    return f'<div class="barra" aria-hidden="true">{itens}</div>'
 
 
 def legenda_ocupacao(itens):
@@ -324,7 +435,7 @@ def barra_ocupacao(segmentos):
     )
     legenda = legenda_ocupacao([(f"{rotulo} ({q})", s) for rotulo, q, s in partes])
     st.markdown(
-        f'<div class="barra" style="margin:.6rem 0 .5rem;">{barra}</div>{legenda}',
+        f'<div class="barra" style="margin:.6rem 0 .5rem;" aria-hidden="true">{barra}</div>{legenda}',
         unsafe_allow_html=True,
     )
 

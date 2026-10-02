@@ -22,10 +22,26 @@ from src.ui.componentes import (
     abrir_ficha_cliente,
     botao_acao,
     botao_voltar,
+    cabecalho_ficha,
+    cartao_dados,
+    dado,
+    faixa_dados,
+    ficha_identidade,
+    grade_dados,
     indicador_etapas,
+    paineis,
 )
 from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario, rotulo_obrigatorio
-from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
+from src.ui.listas import (
+    abas,
+    aba_ativa,
+    barra_filtros,
+    lembrar_registro,
+    paginar,
+    reiniciar_abas,
+    restaurar_posicao,
+    rodape_paginacao,
+)
 from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
@@ -67,6 +83,7 @@ def _ir_para_lista():
 
 def _ir_para_ficha(contrato_id):
     reiniciar_abas("contratos_ficha_abas")
+    lembrar_registro("contratos", contrato_id)
     st.session_state["contratos_visao"] = "ficha"
     st.session_state["contratos_id_selecionado"] = contrato_id
     st.rerun()
@@ -156,6 +173,7 @@ def _exibir_lista():
                     _ir_para_ficha(contrato["id"])
 
     rodape_paginacao("contratos", pagina)
+    restaurar_posicao("contratos")
 
 
 # ----------------------------------------------------------------- wizard --
@@ -573,26 +591,21 @@ def _cabecalho_ficha(contrato, moto, cliente):
         linha = f"Ativo · desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}"
     else:
         linha = f"{_STATUS_ROTULO[contrato['status']]} · desde {formatar_data(contrato['data_inicio'])}"
-    col_titulo, col_acao = st.columns([3, 1], vertical_alignment="center")
-    with col_titulo:
-        st.markdown(
-            f"""
-            <div class="contrato-cab">
-              <h1 class="rotulo" style="margin:0;font-size:22px;"><span>{cliente['nome']}</span>
-                <span class="contrato-cab__seta">→</span>
-                <span class="contrato-cab__moto">{moto['marca']} {moto['modelo']} {chip_placa(moto['placa'])}</span>
-              </h1>
-              <div style="font-size:var(--fs-secundario);margin-top:6px;">{selo_situacao(linha, contrato["status"])}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col_acao:
-        if st.button("Ver cliente", key="ver_cliente_contrato", icon=":material/arrow_forward:", use_container_width=True):
-            abrir_ficha_cliente(cliente["id"])
-        if contrato["status"] == "ativo":
-            if st.button("Encerrar contrato", key="abrir_encerrar", use_container_width=True):
-                _dialog_encerrar(contrato, moto, cliente)
+    acoes = [{"rotulo": "Ver cliente", "chave": "ver_cliente_contrato", "icone": ":material/arrow_forward:", "ajuda": "Abrir a ficha do cliente"}]
+    if contrato["status"] == "ativo":
+        acoes.append({"rotulo": "Encerrar contrato", "chave": "abrir_encerrar", "icone": ":material/stop_circle:", "ajuda": "Encerrar este contrato"})
+    cliques = cabecalho_ficha(
+        ficha_identidade(
+            escape(cliente["nome"]),
+            selo=selo_situacao(linha, contrato["status"]),
+            subtitulo=f'<span>{escape(moto["marca"])} {escape(moto["modelo"])}</span>{chip_placa(moto["placa"])}',
+        ),
+        acoes,
+    )
+    if cliques["ver_cliente_contrato"]:
+        abrir_ficha_cliente(cliente["id"])
+    if cliques.get("abrir_encerrar"):
+        _dialog_encerrar(contrato, moto, cliente)
 
 
 def _faixa_dados_contrato(contrato):
@@ -604,27 +617,14 @@ def _faixa_dados_contrato(contrato):
     proxima = formatar_data(proximas[0]["vencimento"]) if proximas else "—"
     prazo = "Indeterminado" if not contrato.get("data_fim_prevista") else formatar_data(contrato["data_fim_prevista"])
     km_inicial = f"{contrato['km_inicial']:,}".replace(",", ".")
-    st.markdown(
-        f"""
-        <div class="cartao cartao--faixa cartao--faixa-contrato" style="margin-bottom:24px;">
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">valor / período</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['valor_periodo'])}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">caução</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_moeda(contrato['caucao_valor'])}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">km inicial</span><span class="mono" style="font-size:var(--fs-secundario);">{km_inicial} km</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">prazo</span><span style="font-size:var(--fs-secundario);">{prazo}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">próxima cobrança</span><span class="mono" style="font-size:var(--fs-secundario);">{proxima}</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    faixa_dados(
+        [
+            ("Valor / período", f'<span class="mono">{formatar_moeda(contrato["valor_periodo"])}</span>'),
+            ("Caução", f'<span class="mono">{formatar_moeda(contrato["caucao_valor"])}</span>'),
+            ("Km inicial", f'<span class="mono">{km_inicial} km</span>'),
+            ("Prazo", prazo),
+            ("Próxima cobrança", f'<span class="mono">{proxima}</span>'),
+        ]
     )
 
 
@@ -656,40 +656,33 @@ def _aba_cobrancas(contrato):
 
 def _aba_vistorias(contrato):
     registros = {v["tipo"]: v for v in vistorias.listar_por_contrato(contrato["id"])}
-    col_entrega, col_devolucao = st.columns(2, gap="medium")
-    for coluna, tipo, titulo in [(col_entrega, "entrega", "Entrega"), (col_devolucao, "devolucao", "Devolução")]:
-        vistoria = registros.get(tipo)
-        with coluna:
-            if not vistoria:
-                st.markdown(
-                    f"""
-                    <div style="background:var(--superficie);border:1px dashed var(--linha);border-radius:var(--raio-sm);padding:18px 22px;
-                                display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;height:100%;">
-                      <h3 class="rotulo" style="margin:0;font-size:14px;color:var(--texto-2);">{titulo}</h3>
-                      <div class="fs-secundario texto-2">Ainda não realizada{" — será registrada no encerramento do contrato." if tipo == "devolucao" else "."}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
+    with paineis("contrato_vistorias", iguais=True) as (entrega, devolucao):
+        for painel, tipo, titulo in [(entrega, "entrega", "Entrega"), (devolucao, "devolucao", "Devolução")]:
+            vistoria = registros.get(tipo)
+            with painel:
+                if not vistoria:
+                    complemento = " — será registrada no encerramento do contrato." if tipo == "devolucao" else "."
+                    st.markdown(
+                        f'<div class="cartao cartao--tracejado"><h3 class="cartao__titulo texto-2">{titulo}</h3>'
+                        f'<div class="fs-secundario texto-2">Ainda não realizada{complemento}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                    continue
+                checklist = vistoria.get("checklist") or {}
+                avarias = ", ".join(
+                    nome.replace("_", " ") for nome, estado in checklist.items() if estado == "avaria"
+                ) or "Nenhuma"
+                combustivel = (vistoria.get("nivel_combustivel") or "—").capitalize()
+                km = f"{vistoria['km']:,}".replace(",", ".")
+                corpo = grade_dados(
+                    [
+                        dado("Data", f'<span class="mono">{formatar_data(vistoria["data"])}</span>'),
+                        dado("Km", f'<span class="mono">{km} km</span>'),
+                        dado("Combustível", escape(combustivel)),
+                        dado("Avarias", escape(avarias)),
+                    ]
                 )
-                continue
-            checklist = vistoria.get("checklist") or {}
-            avarias = ", ".join(
-                nome.replace("_", " ") for nome, estado in checklist.items() if estado == "avaria"
-            ) or "Nenhuma"
-            st.markdown(
-                f"""
-                <div class="cartao">
-                  <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">{titulo}</h3>
-                  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;">
-                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">data</span><span class="mono" style="font-size:var(--fs-secundario);">{formatar_data(vistoria['data'])}</span></div>
-                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">km</span><span class="mono" style="font-size:var(--fs-secundario);">{f"{vistoria['km']:,}".replace(",", ".")} km</span></div>
-                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">combustível</span><span style="font-size:var(--fs-secundario);">{(vistoria.get('nivel_combustivel') or '—').capitalize()}</span></div>
-                    <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">avarias</span><span style="font-size:var(--fs-secundario);">{avarias}</span></div>
-                  </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                st.markdown(cartao_dados(titulo, corpo), unsafe_allow_html=True)
 
 
 def _aba_manutencoes(contrato):

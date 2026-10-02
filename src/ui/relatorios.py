@@ -6,7 +6,7 @@ from html import escape
 
 import streamlit as st
 
-from src.domain.relatorios import agrupar_por_modelo, proporcoes
+from src.domain.relatorios import agrupar_por_modelo, destaques, proporcoes
 from src.domain.valores import hoje_br
 from src.services import relatorios
 from src.ui.componentes import (
@@ -18,6 +18,7 @@ from src.ui.componentes import (
     proteger,
     tabela_html,
 )
+from src.ui.formularios import linha_campos
 from src.ui.listas import abas, aba_ativa, barra_filtros
 from src.ui.formatadores import (
     formatar_data,
@@ -61,26 +62,46 @@ def _periodo_texto(inicio, fim):
 
 
 def _exportacao(chave, linhas):
-    """Botões de exportação da aba, alinhados à direita, com os mesmos dados da tabela."""
+    """Botões de exportação da aba, alinhados à direita (quebram de linha em largura estreita, sem
+    truncar o rótulo), com os mesmos dados da tabela."""
     if not linhas:
         return
-    _, csv, excel = st.columns([4, 1, 1])
-    csv.download_button(
-        "Exportar CSV",
-        relatorios.exportar_csv(linhas),
-        f"relatorio_{chave}.csv",
-        "text/csv",
-        key=f"exportar_csv_{chave}",
-        use_container_width=True,
+    with st.container(key=f"exportacao_{chave}"):
+        st.download_button(
+            "Exportar CSV",
+            relatorios.exportar_csv(linhas),
+            f"relatorio_{chave}.csv",
+            "text/csv",
+            key=f"exportar_csv_{chave}",
+            icon=":material/download:",
+        )
+        st.download_button(
+            "Exportar Excel",
+            relatorios.exportar_excel(linhas),
+            f"relatorio_{chave}.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key=f"exportar_xlsx_{chave}",
+            icon=":material/download:",
+        )
+
+
+def _resumo(itens, total_rotulo, unidade, valor_maior="Maior", valor_menor="Menor"):
+    """Alternativa em texto às barras da tabela: total e extremos da série. `itens`: `(rótulo, valor)`
+    na ordem exibida. Um único item não repete maior e menor."""
+    resumo = destaques(itens)
+    if resumo is None:
+        return
+    frase = (
+        f"{escape(total_rotulo)}: <strong>{formatar_moeda(resumo['total'])}</strong> "
+        f"em {resumo['quantidade']} {unidade[0] if resumo['quantidade'] == 1 else unidade[1]}."
     )
-    excel.download_button(
-        "Exportar Excel",
-        relatorios.exportar_excel(linhas),
-        f"relatorio_{chave}.xlsx",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        key=f"exportar_xlsx_{chave}",
-        use_container_width=True,
-    )
+    if resumo["quantidade"] > 1:
+        maior, menor = resumo["maior"], resumo["menor"]
+        frase += (
+            f" {valor_maior}: <strong>{escape(maior[0])}</strong> ({formatar_moeda(maior[1])})."
+            f" {valor_menor}: <strong>{escape(menor[0])}</strong> ({formatar_moeda(menor[1])})."
+        )
+    st.markdown(f'<p class="resumo-relatorio" role="note">{frase}</p>', unsafe_allow_html=True)
 
 
 # ------------------------------------------------------------------- abas --
@@ -89,6 +110,13 @@ def _exportacao(chave, linhas):
 def _aba_resultado(resultado):
     linhas = sorted(resultado, key=lambda r: (-r["resultado"], r["placa"]))
     larguras = proporcoes([r["resultado"] for r in linhas])
+    _resumo(
+        [(formatar_placa(r["placa"]), r["resultado"]) for r in linhas],
+        "Resultado total",
+        ("moto", "motos"),
+        "Melhor",
+        "Pior",
+    )
     tabela_html(
         ["Moto", "Receita recebida", "Manutenção", "Documentos", "Resultado", ""],
         [
@@ -127,6 +155,7 @@ def _aba_custo(resultado):
     if visao == "modelo":
         linhas = agrupar_por_modelo(resultado)
         larguras = proporcoes([g["custo_total"] for g in linhas])
+        _resumo([(g["modelo"], g["custo_total"]) for g in linhas], "Custo total", ("modelo", "modelos"), "Maior custo", "Menor custo")
         tabela_html(
             ["Modelo", "Motos", "Custo total", "Custo médio / moto", ""],
             [
@@ -153,6 +182,13 @@ def _aba_custo(resultado):
     else:
         linhas = sorted(resultado, key=lambda r: (-r["custo_manutencao"], r["placa"]))
         larguras = proporcoes([r["custo_manutencao"] for r in linhas])
+        _resumo(
+            [(formatar_placa(r["placa"]), r["custo_manutencao"]) for r in linhas],
+            "Custo total",
+            ("moto", "motos"),
+            "Maior custo",
+            "Menor custo",
+        )
         tabela_html(
             ["Moto", "Modelo", "Custo de manutenção", "Km rodados", "Custo / km", ""],
             [
@@ -239,6 +275,13 @@ def _aba_inadimplencia(dados):
 def _aba_fluxo(fluxo, hoje):
     larguras = proporcoes([m["resultado"] for m in fluxo])
     mes_atual = hoje.isoformat()[:7]
+    _resumo(
+        [(formatar_mes(m["mes"]), m["resultado"]) for m in fluxo],
+        "Líquido do período",
+        ("mês", "meses"),
+        "Melhor mês",
+        "Pior mês",
+    )
     tabela_html(
         ["Mês", "Recebido", "Manutenção", "Documentos", "Líquido", ""],
         [
@@ -279,9 +322,9 @@ def _aba_fluxo(fluxo, hoje):
 
 def _periodo():
     hoje = hoje_br()
-    col_de, col_ate, _ = st.columns([1.2, 1.2, 4], vertical_alignment="bottom")
-    inicio = col_de.date_input("De", hoje.replace(day=1), format="DD/MM/YYYY", key="relatorios_de")
-    fim = col_ate.date_input("Até", hoje, format="DD/MM/YYYY", key="relatorios_ate")
+    with linha_campos([1, 1, 2], "relatorios_periodo", vertical_alignment="bottom") as (col_de, col_ate, _):
+        inicio = col_de.date_input("De", hoje.replace(day=1), format="DD/MM/YYYY", key="relatorios_de")
+        fim = col_ate.date_input("Até", hoje, format="DD/MM/YYYY", key="relatorios_ate")
     return hoje, inicio, fim
 
 

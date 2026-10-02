@@ -28,14 +28,21 @@ from src.ui.componentes import (
     botao_acao,
     botao_voltar,
     cabecalho,
+    cabecalho_ficha,
     cabecalho_pagina,
+    cartao_dados,
     chip_placa,
+    dado,
+    faixa_dados,
+    ficha_identidade,
+    grade_dados,
+    paineis,
     proteger,
     vazio_lista,
 )
 from src.ui.formatadores import formatar_data
 from src.ui.formularios import campo_inteiro, linha_campos, rodape_formulario
-from src.ui.listas import barra_filtros, paginar, rodape_paginacao
+from src.ui.listas import barra_filtros, lembrar_registro, paginar, restaurar_posicao, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
 
 # ------------------------------------------------- formulário compartilhado --
@@ -98,14 +105,14 @@ def preparar(dados):
 
 _FILTROS_TIPO = [("todas", "Todas"), ("entrega", "Entrega"), ("devolucao", "Devolução")]
 _TIPO_ROTULO = {"entrega": "Entrega", "devolucao": "Devolução"}
-# Estado do item do checklist: OK verde; avaria/ausente vermelho; N/A neutro.
+# Estado do item do checklist: rótulo e tom (OK verde; avaria/ausente vermelho; N/A neutro). O estado
+# é sempre escrito, nunca só colorido.
 _ESTADO_ITEM = {
-    "ok": ("OK", "var(--sucesso-texto)"),
-    "avaria": ("Avaria", "var(--perigo-texto)"),
-    "ausente": ("Ausente", "var(--perigo-texto)"),
-    "nao_aplicavel": ("N/A", "var(--texto-3)"),
+    "ok": ("OK", "ok"),
+    "avaria": ("Avaria", "ruim"),
+    "ausente": ("Ausente", "ruim"),
+    "nao_aplicavel": ("N/A", "na"),
 }
-_LINHA = "var(--linha)"
 _PREFIXO_REGISTRO = "vistreg_"
 _FUSO = ZoneInfo("America/Sao_Paulo")
 
@@ -307,7 +314,8 @@ def _dialog_fotos(vistoria):
 # ------------------------------------------------------------------- lista --
 
 
-def _abrir_comparacao(contrato_id):
+def _abrir_comparacao(contrato_id, vistoria_id):
+    lembrar_registro("vistorias", vistoria_id)
     st.session_state["vistorias_visao"] = "comparacao"
     st.session_state["vistorias_contrato"] = contrato_id
     st.rerun()
@@ -392,27 +400,22 @@ def _exibir_lista(todas, contratos_por_id, frota, pessoas):
                     f"ver_vist_{v['id']}",
                     ajuda=f"Comparar as vistorias do contrato (vistoria de {formatar_data(v['data'])})",
                 ):
-                    _abrir_comparacao(contrato["id"])
+                    _abrir_comparacao(contrato["id"], v["id"])
     rodape_paginacao("vistorias", pagina)
+    restaurar_posicao("vistorias")
 
 
 # -------------------------------------------------------------- comparação --
 
 
-def _campo(rotulo, valor_html):
-    return (
-        f'<div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">{rotulo}</span>'
-        f'<span style="font-size:var(--fs-secundario);">{valor_html}</span></div>'
-    )
-
-
-def _miniatura(url, legenda):
-    estilo = "width:90px;height:66px;border-radius:var(--raio-sm);"
+def _foto(url, legenda):
+    """Miniatura da galeria: a foto inteira (retrato ou paisagem) numa moldura 4:3; o clique abre a original."""
     if not url:
-        return f'<div style="{estilo}background:{_LINHA};"></div>'
+        return '<li><div class="galeria__foto galeria__vazia">Foto indisponível</div></li>'
+    texto = escape(legenda or "Foto da vistoria", quote=True)
     return (
-        f'<img src="{escape(url, quote=True)}" alt="{escape(legenda or "Foto da vistoria", quote=True)}" '
-        f'style="{estilo}object-fit:cover;">'
+        f'<li><a class="galeria__foto" href="{escape(url, quote=True)}" target="_blank" rel="noopener noreferrer" '
+        f'aria-label="{texto} (abre em nova aba)"><img src="{escape(url, quote=True)}" alt="{texto}" loading="lazy"></a></li>'
     )
 
 
@@ -427,49 +430,51 @@ def _html_cartao(titulo, vistoria, diferentes):
     itens = itens_ordenados(vistoria.get("checklist"))
     avarias = resumo_avarias(vistoria)
     linhas = ""
-    for indice, (chave, estado) in enumerate(itens):
-        rotulo, cor = _ESTADO_ITEM.get(estado, (str(estado), "var(--texto-3)"))
-        fundo = "background:var(--alerta-fundo);" if chave in diferentes else ""
-        borda = "" if indice == len(itens) - 1 else f"border-bottom:1px solid {_LINHA};"
+    for chave, estado in itens:
+        rotulo, tom = _ESTADO_ITEM.get(estado, (str(estado), "na"))
+        mudou = chave in diferentes
+        aviso = '<span class="vist-item__mudou">alterado</span>' if mudou else ""
         linhas += (
-            f'<div style="display:flex;align-items:center;justify-content:space-between;'
-            f'padding:7px 10px;{borda}{fundo}font-size:var(--fs-legenda);">'
-            f'<span>{escape(rotulo_item(chave))}</span>'
-            f'<span style="color:{cor};font-weight:600;">{escape(rotulo)}</span></div>'
+            f'<li class="vist-item{" vist-item--mudou" if mudou else ""}">'
+            f'<span class="vist-item__nome">{escape(rotulo_item(chave))}</span>'
+            f'<span><span class="vist-item__estado vist-item__estado--{tom}">{escape(rotulo)}</span>{aviso}</span></li>'
         )
     checklist = (
-        f'<div style="font-size:var(--fs-legenda);color:var(--texto-2);margin-bottom:6px;">checklist</div>{linhas}'
+        f'<div><div class="vist-secao">Checklist</div><ul class="vist-checklist">{linhas}</ul></div>'
         if linhas
-        else '<div style="font-size:var(--fs-legenda);color:var(--texto-2);">Checklist não preenchido.</div>'
+        else '<div class="fs-legenda texto-2">Checklist não preenchido.</div>'
     )
-    fotos = "".join(_miniatura(_url_foto(f), f.get("legenda")) for f in vistoria.get("fotos", []))
-    fotos = fotos or '<span style="font-size:var(--fs-legenda);color:var(--texto-2);">Nenhuma foto anexada.</span>'
-    return f"""
-    <div style="background:var(--superficie);border:1px solid {_LINHA};border-radius:var(--raio-lg);padding:20px 22px;">
-      <h3 class="rotulo" style="margin:0 0 14px;font-size:15px;">{titulo}</h3>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px;">
-        {_campo("data", _mono(formatar_data(vistoria["data"])))}
-        {_campo("km", _mono(_km(vistoria["km"])))}
-        {_campo("combustível", escape(_combustivel(vistoria.get("nivel_combustivel"))))}
-        {_campo("avarias", f'<span style="color:var(--perigo-texto);">{escape(avarias)}</span>' if avarias else "Nenhuma")}
-      </div>
-      <div style="margin-bottom:16px;">{checklist}</div>
-      <div style="font-size:var(--fs-legenda);color:var(--texto-2);margin-bottom:6px;">fotos</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">{fotos}</div>
-    </div>
-    """
+    fotos = "".join(_foto(_url_foto(f), f.get("legenda")) for f in vistoria.get("fotos", []))
+    galeria = (
+        f'<ul class="galeria">{fotos}</ul>' if fotos else '<div class="fs-legenda texto-2">Nenhuma foto anexada.</div>'
+    )
+    corpo = (
+        '<div class="vist-cartao">'
+        + grade_dados(
+            [
+                dado("Data", f'<span class="mono">{formatar_data(vistoria["data"])}</span>'),
+                dado("Km", f'<span class="mono">{_km(vistoria["km"])}</span>'),
+                dado("Combustível", escape(_combustivel(vistoria.get("nivel_combustivel")))),
+                dado(
+                    "Avarias",
+                    f'<span class="texto-perigo">{escape(avarias)}</span>' if avarias else "Nenhuma",
+                ),
+            ]
+        )
+        + checklist
+        + f'<div><div class="vist-secao">Fotos</div>{galeria}</div></div>'
+    )
+    return cartao_dados(titulo, corpo)
 
 
 def _html_cartao_vazio(titulo, tipo):
     complemento = (
         " — será registrada no encerramento do contrato." if tipo == "devolucao" else "."
     )
-    return f"""
-    <div style="background:var(--superficie);border:1px dashed {_LINHA};border-radius:var(--raio-sm);padding:20px 22px;">
-      <h3 class="rotulo" style="margin:0 0 8px;font-size:15px;color:var(--texto-2);">{titulo}</h3>
-      <div class="fs-secundario texto-2">Ainda não realizada{complemento}</div>
-    </div>
-    """
+    return (
+        f'<div class="cartao cartao--tracejado"><h3 class="cartao__titulo texto-2">{titulo}</h3>'
+        f'<div class="fs-secundario texto-2">Ainda não realizada{complemento}</div></div>'
+    )
 
 
 def _faixa_resumo(contrato, entrega, devolucao):
@@ -478,26 +483,16 @@ def _faixa_resumo(contrato, entrega, devolucao):
     )
     rodados = km_rodados(entrega, devolucao)
     if devolucao is None:
-        avarias = '<span style="color:var(--texto-2);">—</span>'
+        avarias, tom = "—", "texto-3"
     else:
         total = contar_avarias(devolucao)
-        avarias = f'<span style="color:var(--perigo-texto);">{total} registrada(s)</span>' if total else "Nenhuma"
-    celulas = [
-        ("contrato", _mono(periodo)),
-        ("km rodados", _mono(_km(rodados))),
-        ("avarias na devolução", avarias),
-    ]
-    blocos = "".join(
-        f'<div class="campo" style="flex:1;padding:14px 22px;justify-content:center;'
-        f'{"border-right:1px solid " + _LINHA + ";" if i < len(celulas) - 1 else ""}">'
-        f'<span style="font-size:var(--fs-legenda);color:var(--texto-2);">{rotulo}</span>'
-        f'<span style="font-size:var(--fs-secundario);">{valor}</span></div>'
-        for i, (rotulo, valor) in enumerate(celulas)
-    )
-    st.markdown(
-        f'<div style="display:flex;background:var(--superficie);border:1px solid {_LINHA};'
-        f'border-radius:var(--raio-sm);margin-bottom:20px;">{blocos}</div>',
-        unsafe_allow_html=True,
+        avarias, tom = (f"{total} registrada(s)", "perigo") if total else ("Nenhuma", None)
+    faixa_dados(
+        [
+            ("Contrato", f'<span class="mono">{periodo}</span>'),
+            ("Km rodados", f'<span class="mono">{_km(rodados)}</span>'),
+            ("Avarias na devolução", avarias, tom),
+        ]
     )
 
 
@@ -512,12 +507,12 @@ def _exibir_comparacao(contratos_por_id, frota, pessoas):
     if botao_voltar("vistorias", "voltar_vistorias"):
         _voltar_lista()
 
-    st.markdown(
-        f'<div style="display:flex;align-items:center;gap:14px;margin:6px 0 20px;">'
-        f'<h1 class="rotulo" style="margin:0;font-size:22px;color:var(--texto);">'
-        f'{escape(pessoas.get(contrato["cliente_id"], "—"))} → {escape(moto["marca"])} {escape(moto["modelo"])}</h1>'
-        f'{chip_placa(moto["placa"], "grande")}</div>',
-        unsafe_allow_html=True,
+    cabecalho_ficha(
+        ficha_identidade(
+            escape(pessoas.get(contrato["cliente_id"], "—")),
+            subtitulo=f'<span>{escape(moto["marca"])} {escape(moto["modelo"])}</span>',
+            marca=chip_placa(moto["placa"], "grande"),
+        )
     )
 
     comparacao = vistorias.comparar_entrega_devolucao(contrato["id"])
@@ -531,21 +526,26 @@ def _exibir_comparacao(contratos_por_id, frota, pessoas):
         if entrega and devolucao
         else ()
     )
-    col_entrega, col_devolucao = st.columns(2, gap="medium")
-    for coluna, tipo, vistoria in [
-        (col_entrega, "entrega", entrega),
-        (col_devolucao, "devolucao", devolucao),
-    ]:
-        titulo = _TIPO_ROTULO[tipo]
-        with coluna:
-            if not vistoria:
-                st.markdown(_html_cartao_vazio(titulo, tipo), unsafe_allow_html=True)
-                continue
-            st.markdown(_html_cartao(titulo, vistoria, diferentes), unsafe_allow_html=True)
-            if st.button("Adicionar fotos", key=f"add_fotos_{vistoria['id']}"):
-                _dialog_fotos(vistoria)
+    with paineis("vistorias_comparacao", iguais=True) as (painel_entrega, painel_devolucao):
+        for painel, tipo, vistoria in [
+            (painel_entrega, "entrega", entrega),
+            (painel_devolucao, "devolucao", devolucao),
+        ]:
+            titulo = _TIPO_ROTULO[tipo]
+            with painel:
+                if not vistoria:
+                    st.markdown(_html_cartao_vazio(titulo, tipo), unsafe_allow_html=True)
+                    continue
+                st.markdown(_html_cartao(titulo, vistoria, diferentes), unsafe_allow_html=True)
+                if st.button(
+                    "Adicionar fotos",
+                    key=f"add_fotos_{vistoria['id']}",
+                    icon=":material/add_a_photo:",
+                    help=f"Anexar fotos à vistoria de {titulo.lower()}",
+                ):
+                    _dialog_fotos(vistoria)
     if diferentes:
-        st.caption("Itens com fundo amarelo mudaram entre a entrega e a devolução.")
+        st.caption("Itens marcados como “alterado” (fundo amarelo) mudaram entre a entrega e a devolução.")
 
 
 # ---------------------------------------------------------------- página --

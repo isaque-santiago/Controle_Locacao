@@ -22,6 +22,12 @@ from src.ui.componentes import (
     abrir_ficha_contrato,
     botao_acao,
     botao_voltar,
+    cabecalho_ficha,
+    cartao_dados,
+    cartao_ficha,
+    faixa_dados,
+    ficha_identidade,
+    paineis,
 )
 from src.ui.clientes_portal import aba_portal
 from src.ui.formularios import (
@@ -34,7 +40,16 @@ from src.ui.formularios import (
     rotulo_obrigatorio,
 )
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, reiniciar_abas, rodape_paginacao
+from src.ui.listas import (
+    abas,
+    aba_ativa,
+    barra_filtros,
+    lembrar_registro,
+    paginar,
+    reiniciar_abas,
+    restaurar_posicao,
+    rodape_paginacao,
+)
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 
 _STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
@@ -56,6 +71,7 @@ def _salvo(mensagem="Alterações salvas."):
 
 def _ir_para_ficha(cliente_id):
     reiniciar_abas("clientes_ficha_abas")
+    lembrar_registro("clientes", cliente_id)
     st.session_state["clientes_visao"] = "ficha"
     st.session_state["clientes_id_selecionado"] = cliente_id
     st.rerun()
@@ -220,6 +236,7 @@ def _exibir_lista():
                     _ir_para_ficha(cliente["id"])
 
     rodape_paginacao("clientes", pagina)
+    restaurar_posicao("clientes")
 
 
 def _data_iso(valor):
@@ -236,12 +253,7 @@ def _card_contrato_ativo(cliente_id):
     contrato = _contrato_ativo_de(cliente_id)
     if not contrato:
         st.markdown(
-            """
-            <div class="cartao">
-              <h3 class="rotulo" style="margin:0 0 6px;font-size:14px;">Contrato ativo</h3>
-              <div class="fs-secundario texto-2">Nenhum contrato ativo para este cliente.</div>
-            </div>
-            """,
+            cartao_dados("Contrato ativo", '<div class="fs-secundario texto-2">Nenhum contrato ativo para este cliente.</div>'),
             unsafe_allow_html=True,
         )
         return
@@ -253,21 +265,15 @@ def _card_contrato_ativo(cliente_id):
     parcelas.sort(key=lambda c: c["vencimento"])
     proxima = formatar_data(parcelas[0]["vencimento"]) if parcelas else "—"
 
-    # O botão vai no cabeçalho do cartão, à direita do título (não solto abaixo dele)
-    with st.container(key="cliente_contrato_ativo"):
-        titulo, acao = st.columns([3, 1], vertical_alignment="center")
-        titulo.markdown(
-            '<h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>',
-            unsafe_allow_html=True,
-        )
-        with acao:
-            if st.button("Ver contrato", key="ver_contrato_cliente", icon=":material/arrow_forward:"):
-                abrir_ficha_contrato(contrato["id"])
+    acao = {"rotulo": "Ver contrato", "chave": "ver_contrato_cliente", "ajuda": "Abrir o contrato ativo deste cliente"}
+    with cartao_ficha("cliente_contrato", "Contrato ativo", acao) as ver_contrato:
+        if ver_contrato:
+            abrir_ficha_contrato(contrato["id"])
         st.markdown(
             f"""
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px;">
               {chip_placa(moto['placa'], 'grande') if moto else ''}
-              <div>
+              <div style="min-width:0;">
                 <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
                 <div style="font-size:var(--fs-legenda);color:var(--texto-2);">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
               </div>
@@ -287,22 +293,17 @@ def _card_dados_pessoais(cliente):
     # A categoria vai no rótulo: o número da CNH sozinho cabe em meia largura no celular
     categoria = cliente.get("cnh_categoria")
     rotulo_categoria = f" · cat. {_html(categoria)}" if categoria else ""
-    st.markdown(
-        f"""
-        <div class="cartao">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
-          <div class="grade-dados grade-dados--duas">
-            <div class="campo"><span class="texto-2">CPF</span><span class="mono">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span class="texto-2">CNH{rotulo_categoria}</span><span class="mono">{_html(cliente.get('cnh_numero'))}</span></div>
-            <div class="campo"><span class="texto-2">Validade CNH</span><span class="mono">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
-            <div class="campo"><span class="texto-2">telefone</span><span class="mono">{_html(cliente.get('telefone'))}</span></div>
-            <div class="campo campo--largo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
-            <div class="campo campo--largo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    corpo = f"""
+      <div class="grade-dados grade-dados--duas">
+        <div class="campo"><span class="texto-2">CPF</span><span class="mono">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
+        <div class="campo"><span class="texto-2">CNH{rotulo_categoria}</span><span class="mono">{_html(cliente.get('cnh_numero'))}</span></div>
+        <div class="campo"><span class="texto-2">Validade CNH</span><span class="mono">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
+        <div class="campo"><span class="texto-2">telefone</span><span class="mono">{_html(cliente.get('telefone'))}</span></div>
+        <div class="campo campo--largo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
+        <div class="campo campo--largo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
+      </div>
+    """
+    st.markdown(cartao_dados("Dados pessoais", corpo), unsafe_allow_html=True)
 
 
 def _card_situacao_financeira(parcelas, historicos):
@@ -320,28 +321,23 @@ def _card_situacao_financeira(parcelas, historicos):
     atrasado = sum(
         (Decimal(str(c["saldo"])) for c in parcelas if c["situacao"] == "atrasada"), Decimal(0)
     )
-    st.markdown(
-        f"""
-        <div class="cartao" style="height:100%;">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Situação financeira</h3>
-          <div class="campos-linha" style="display:flex;flex-direction:column;gap:14px;">
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">pago no histórico</span><span class="mono" style="font-size:18px;color:var(--sucesso-texto);">{formatar_moeda(pago)}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
-            <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">atrasado</span><span class="mono" style="font-size:18px;color:{'var(--perigo-texto)' if atrasado else 'var(--texto)'};">{formatar_moeda(atrasado)}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    cor_atrasado = "var(--perigo-texto)" if atrasado else "var(--texto)"
+    corpo = f"""
+      <div class="campos-linha" style="display:flex;flex-direction:column;gap:14px;">
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">pago no histórico</span><span class="mono" style="font-size:18px;color:var(--sucesso-texto);">{formatar_moeda(pago)}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
+        <div class="campo"><span style="font-size:var(--fs-legenda);color:var(--texto-2);">atrasado</span><span class="mono" style="font-size:18px;color:{cor_atrasado};">{formatar_moeda(atrasado)}</span></div>
+      </div>
+    """
+    st.markdown(cartao_dados("Situação financeira", corpo), unsafe_allow_html=True)
 
 
 def _aba_resumo(cliente, parcelas, historicos):
-    esquerda, direita = st.columns([1.5, 1], gap="medium")
-    with esquerda:
-        _card_contrato_ativo(cliente["id"])
-    with direita:
-        _card_situacao_financeira(parcelas, historicos)
-    st.write("")
+    with paineis("cliente_resumo") as (principal, lateral):
+        with principal:
+            _card_contrato_ativo(cliente["id"])
+        with lateral:
+            _card_situacao_financeira(parcelas, historicos)
     _card_dados_pessoais(cliente)
 
 
@@ -447,58 +443,36 @@ def _exibir_ficha(cliente_id):
     else:
         linha_status = _STATUS_ROTULO[cliente["status"]]
 
-    col_cab, col_acoes = st.columns([3, 1], vertical_alignment="center")
-    with col_cab:
-        cor_avatar = "var(--chip-fundo)" if cliente["status"] == "ativo" else "var(--avatar-inativo)"
-        st.markdown(
-            f"""
-            <div style="display:flex;align-items:center;gap:16px;">
-              <div style="width:48px;height:48px;border-radius:50%;background:{cor_avatar};color:var(--chip-texto);
-                          display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
-              <div>
-                <h1 class="rotulo" style="margin:0;font-size:24px;">{_html(cliente['nome'])}</h1>
-                <div style="font-size:var(--fs-secundario);margin-top:3px;">
-                  {selo_situacao(linha_status, _situacao_selo_cliente(cliente["status"]))}
-                </div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col_acoes:
-        if st.button("Editar", use_container_width=True):
-            _dialog_editar_cliente(cliente)
+    avatar = f'<div class="avatar-ficha{"" if cliente["status"] == "ativo" else " avatar-ficha--inativo"}">{_html(_iniciais(cliente["nome"]))}</div>'
+    cliques = cabecalho_ficha(
+        ficha_identidade(
+            _html(cliente["nome"]),
+            selo=selo_situacao(linha_status, _situacao_selo_cliente(cliente["status"])),
+            marca=avatar,
+        ),
+        [{"rotulo": "Editar", "chave": "editar_cliente_ficha", "ajuda": "Editar os dados do cliente"}],
+    )
+    if cliques["editar_cliente_ficha"]:
+        _dialog_editar_cliente(cliente)
 
-    st.write("")
     config = configuracoes.obter()
     situacao_cnh_cliente = situacao_cnh(_data_iso(cliente.get("cnh_validade")), hoje_br(), config["alerta_cnh_dias"])
-    cnh_html = (
-        f'<span style="font-size:var(--fs-secundario);color:var(--texto-3);">Sem CNH cadastrada</span>'
-        if situacao_cnh_cliente == "sem_cnh"
-        else selo_situacao(
+    if situacao_cnh_cliente == "sem_cnh":
+        cnh_html = "Sem CNH cadastrada"
+        cnh_tom = "texto-3"
+    else:
+        cnh_html = selo_situacao(
             f"categoria {cliente.get('cnh_categoria') or '—'} · válida até {formatar_data(cliente['cnh_validade'])}",
             situacao_cnh_cliente,
         )
-    )
-    st.markdown(
-        f"""
-        <div class="cartao cartao--faixa cartao--faixa-cliente" style="margin-bottom:20px;">
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CPF</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">whatsapp</span><span class="mono" style="font-size:var(--fs-secundario);">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
-          </div>
-          <div style="flex:1;padding:14px 22px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:4px;justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">CNH</span>
-            {cnh_html}
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:var(--fs-legenda);color:var(--texto-2);">e-mail</span><span style="font-size:var(--fs-secundario);">{_html(cliente.get('email'))}</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        cnh_tom = None
+    faixa_dados(
+        [
+            ("CPF", f'<span class="mono">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>'),
+            ("WhatsApp", f'<span class="mono">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>'),
+            ("CNH", cnh_html, cnh_tom),
+            ("E-mail", _html(cliente.get("email"))),
+        ]
     )
 
     parcelas = [c for c in cobrancas.listar() if c["cliente_id"] == cliente_id]
