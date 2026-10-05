@@ -32,7 +32,7 @@ Portal do cliente, integração com WhatsApp, gestão de multas de trânsito, em
 
 | Camada | Escolha | Observação |
 |---|---|---|
-| Interface | **Python 3.11+ e Streamlit** (multipage) | Mesmo padrão do LeilãoCE |
+| Interface | **Python 3.11+ e Streamlit** (multipage) | **Será substituída** por FastAPI + Jinja2 + HTMX + Tailwind (seção 15) |
 | Banco | **Supabase (PostgreSQL)** | Views para alertas, RPCs para operações atômicas |
 | Autenticação | **Supabase Auth** (e-mail e senha) | Cadastro público **desativado**; só o dono existe |
 | Arquivos | **Supabase Storage** (buckets privados) | Fotos de vistoria e comprovantes de documentos |
@@ -922,3 +922,19 @@ Impacto: conferir se o fluxo de criação de contrato e a prévia da agenda func
 Os intervalos foram dados sem distinção de modelo; portanto o plano padrão com sobrescrita por moto continua suficiente, sem "planos por modelo" por ora.
 
 **Decisão de modelagem (delegada ao desenvolvimento):** a faixa de 3.000 a 5.000 km é tratada como **mínimo = início do alerta** e **máximo = km previsto/limite** (o item fica "vencido" ao ultrapassar o máximo desde a última troca). Para isso, `itens_manutencao` e `moto_plano_manutencao` ganham a coluna opcional `intervalo_minimo_km` (null = usa a antecedência global `alerta_manutencao_km`); `intervalo_km` continua sendo o máximo, e `proxima_km = ultima_km + intervalo_km`. A view `vw_alertas_manutencao` e `manutencao_regras.py` passam a considerar `intervalo_minimo_km` quando preenchido. A troca de óleo segue só com `intervalo_km = 1000`.
+
+---
+
+## 15. Migração da camada de interface (aprovada em 05/10/2026)
+
+A interface em Streamlit será **substituída por inteiro** por **FastAPI + Jinja2 + HTMX + Tailwind**, em Python.
+Motivo: limites de layout, navegação e responsividade do Streamlit. Detalhes, arquitetura-alvo, plano por fases,
+decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md). Protótipo aprovado do layout: pasta `prototipo/`.
+
+- **Mantidos sem alteração de regra:** `src/domain`, `src/repositories`, `src/services` (salvo os ajustes de
+  acoplamento listados na seção 4 do documento de migração), `supabase/` (migrations, RPCs, seeds) e a RLS.
+- **Substituídos:** `src/ui`, `pages/`, `app.py`, `src/auth.py` e `src/db.py` (sessão passa a ser cookie `httpOnly` no
+  servidor), `.streamlit/` e as dependências do Streamlit.
+- O Portal do Locatário (Fase 7) fica **no mesmo app**, com login por CPF e papel separado.
+- As regras de trabalho do `CLAUDE.md` continuam valendo (fase por fase, `pytest`, README, commit por fase).
+- A hospedagem do app novo é uma decisão em aberto (ver a seção 10 do documento de migração).

@@ -1,12 +1,13 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
-> **Status: proposta para discussão (05/10/2026). Nada deste documento foi implementado.**
-> Nenhum código foi alterado. Este arquivo registra a análise do sistema, a recomendação e o plano
-> proposto, para que a decisão seja tomada com o plano de trabalho à vista.
+> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Implementação: ainda não
+> iniciada. Fase atual: 0 (decisão e desenho).**
+> O layout do protótipo (`prototipo/`) foi aprovado. A mudança de escopo foi registrada no
+> `Plano_Melhorias_UI_UX.md` (seção 10) e no `Projeto_Locação.md` (seção 15).
+> **Pendente antes da Fase 1:** hospedagem (decisão 3, seção 10).
 >
-> **Atenção:** a proposta contradiz dois itens da seção 10 ("Fora do escopo") do
-> `Plano_Melhorias_UI_UX.md` (ver seção 8 abaixo). Por isso, ela só deve avançar depois de uma decisão
-> explícita do proprietário e do registro da mudança no plano.
+> **Ao iniciar uma sessão nova:** leia este arquivo e o `CLAUDE.md`, confira o `git log` para saber o que já
+> foi feito e atualize a linha "Fase atual" acima ao concluir cada fase.
 
 ## 1. Contexto e motivação
 
@@ -157,7 +158,7 @@ O Streamlit continua funcionando em paralelo, no mesmo banco, até a última pá
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de
-homologação e os aparelhos reais. Só então remover o Streamlit, `tema.py`, `acessibilidade.py`, o CSS
+homologação e os aparelhos reais. **Esta fase absorve a Etapa 9 do plano de UI/UX** (decisão 2, opção b). Só então remover o Streamlit, `tema.py`, `acessibilidade.py`, o CSS
 dependente do DOM do Streamlit e as dependências.
 
 ## 8. Reaproveitamento, descarte e impacto nos documentos
@@ -179,8 +180,8 @@ dependente do DOM do Streamlit e as dependências.
 - "Mudança da arquitetura página → serviço → repositório": mantida em essência, mas "página" deixa de ser um
   script Streamlit e vira rota + template. Convém registrar isso explicitamente.
 
-Além disso, a Etapa 9 do plano de UI/UX ainda tem pendências abertas (seção 2). É preciso decidir se ela é
-encerrada no Streamlit, ou se é absorvida pela Fase 4 da migração.
+Resolução: os dois itens foram marcados como substituídos no `Plano_Melhorias_UI_UX.md` (decisão 1). A Etapa 9
+foi absorvida pela Fase 4 da migração (decisão 2).
 
 ## 9. Riscos e mitigações
 
@@ -193,15 +194,21 @@ encerrada no Streamlit, ou se é absorvida pela Fase 4 da migração.
 | Esforço maior que o estimado | O piloto da Fase 2 serve de ponto de decisão: se o padrão não funcionar, parar com custo baixo |
 | Trabalho do plano de UI/UX perdido | Tokens, fontes, Design_UI e testes de domínio são reaproveitados; só o que dependia do DOM do Streamlit é descartado |
 
-## 10. Decisões em aberto (necessárias antes da Fase 0)
+## 10. Decisões (respondidas pelo proprietário em 05/10/2026)
 
-1. **Aprovar ou não a mudança de escopo** (seção 8): aceitar substituir o Streamlit, ou migrar só as telas
-   mais problemáticas e manter o resto?
-2. **Etapa 9 do plano de UI/UX**: encerrar no Streamlit antes de migrar, ou absorver na Fase 4?
-3. **Hospedagem**: onde o app roda hoje (o código indica Streamlit Cloud) e para onde iria?
-4. **Perfil de uso**: desktop ou celular predominante? Define a prioridade do layout (a proposta cobre ambos).
-5. **Portal do Locatário**: manter no mesmo app, com login por CPF, ou separar?
-6. **Tailwind ou CSS próprio** sobre os tokens existentes?
+| # | Decisão | Resposta |
+|---|---|---|
+| 1 | Mudança de escopo | **Substituir o Streamlit por inteiro.** Nenhuma tela fica no Streamlit ao final. |
+| 2 | Etapa 9 do plano de UI/UX | **Opção (b):** não terminar a Etapa 9 no Streamlit. A homologação (10 fluxos, aparelhos reais, rodada autenticada) é refeita no app novo, na Fase 4, reaproveitando `Roteiro_Homologacao_Manual.md`, os fluxos e a matriz de larguras. |
+| 3 | Hospedagem | **EM ABERTO.** O proprietário informou que o app roda localmente hoje. Falta definir onde o novo app roda e como os locatários acessam o Portal do Locatário (precisa ser alcançável por eles). Decidir na Fase 0, antes da Fase 1. |
+| 4 | Perfil de uso | **Desktop e celular, ambos.** Mantém as três faixas do protótipo. |
+| 5 | Portal do Locatário | **No mesmo app**, com login por CPF e papel separado. |
+| 6 | Estilo | **Tailwind**, sobre os tokens existentes (`Design_UI.md`). Ver nota abaixo. |
+
+Nota sobre o Tailwind: o protótipo foi escrito em CSS próprio, com tokens como variáveis CSS. Na
+implementação, os tokens (cores, espaçamento, raio, fontes, modo escuro) viram a configuração do Tailwind,
+sem mudar a identidade visual. A forma de gerar o CSS (CLI independente do Tailwind, sem Node, ou build com Node)
+é uma decisão da Fase 0/1; preferir o CLI independente para manter a stack em Python.
 
 ## 11. Protótipo do layout (Fase 0, item 2): produzido
 
@@ -226,5 +233,4 @@ testadas. **Não foi** testado em aparelhos reais nem com leitor de tela.
 
 ## 12. Próximo passo sugerido
 
-O proprietário avalia o protótipo. Se o layout resolver o incômodo, seguir para as decisões da seção 10 e, só
-depois, para a Fase 1.
+Layout aprovado. Falta decidir a hospedagem (seção 10, decisão 3) para fechar a Fase 0; depois, Fase 1.

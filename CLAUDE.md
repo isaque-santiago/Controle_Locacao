@@ -41,3 +41,11 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    e `preview_logs` (nível erro). Dados criados ou alterados nesse ambiente são fictícios.
 6. **Ao encerrar:** não troque o `.streamlit/secrets.toml` de volta para produção por conta
    própria; apenas avise ao usuário qual ambiente ficou configurado.
+
+# Migração do frontend (em andamento)
+
+O Streamlit será substituído por FastAPI + Jinja2 + HTMX + Tailwind. Antes de mexer em qualquer coisa de
+interface, leia `Arquivos/Analise_Migracao_Frontend.md` (plano aprovado, fases, decisões) e use
+`prototipo/` como referência visual do layout. Siga as fases na ordem; a fase atual está no topo desse
+documento. Atualize a linha "Fase atual" ao concluir cada fase. Até a Fase 4, o Streamlit continua
+funcionando em paralelo, no mesmo banco. Não faça novos ajustes de CSS no Streamlit.

@@ -1,5 +1,11 @@
 # Plano de Melhorias de UI/UX e Responsividade
 
+> **Atualização (05/10/2026): a camada de interface será substituída** (Streamlit → FastAPI + Jinja2 + HTMX +
+> Tailwind), conforme `Analise_Migracao_Frontend.md`. As etapas 0 a 8 abaixo foram concluídas no Streamlit e
+> seus princípios, tokens e critérios continuam valendo como requisitos do app novo. A **Etapa 9 não será
+> encerrada no Streamlit**: foi absorvida pela Fase 4 da migração. Dois itens da seção 10 ("Fora do escopo")
+> ficam substituídos por essa decisão.
+
 > Plano único e incremental para evolução do frontend do Controle de Locação:
 > usabilidade, acessibilidade, consistência e responsividade entre 320 e 1920 CSS px.
 > Complementa `Design_UI.md` e `Projeto_Locação.md`; não substitui as decisões
@@ -545,7 +551,7 @@ zoom e teclado.
 
 **Prioridade:** necessária para encerrar o plano
 
-**Situação (05/10/2026): parte automatizada concluída; fechamento depende do usuário.** Resultado e pendências na seção 11 de
+**Situação (05/10/2026): absorvida pela Fase 4 da migração de frontend (`Analise_Migracao_Frontend.md`); não será encerrada no Streamlit.** Estado anterior: parte automatizada concluída; fechamento dependia do usuário. Resultado e pendências na seção 11 de
 `Design_UI.md`. Falta: gravar os 10 fluxos no banco de dev, aparelhos reais (Android e, se houver, iPhone/iPad) e a rodada
 autenticada, conforme `Arquivos/Roteiro_Homologacao_Manual.md`. O plano só se dá por encerrado depois disso.
 
@@ -713,10 +719,10 @@ duas implementações concorrentes do mesmo padrão sem prazo de remoção.
 
 - Alteração das regras de negócio.
 - Mudança da identidade visual ou da paleta principal.
-- Reescrita do sistema em outro framework frontend.
+- ~~Reescrita do sistema em outro framework frontend.~~ **Substituído em 05/10/2026**: a reescrita foi aprovada (`Analise_Migracao_Frontend.md`).
 - Criação de aplicativo móvel nativo.
 - Inclusão de funcionalidades comerciais não previstas no projeto.
-- Mudança da arquitetura página → serviço → repositório.
+- Mudança da arquitetura página → serviço → repositório. **Esclarecido em 05/10/2026**: a arquitetura em camadas é mantida; apenas a "página" deixa de ser um script Streamlit e vira rota + template.
 - Otimização de consultas ou banco sem relação comprovada com a experiência.
 - Suporte a navegadores obsoletos fora da matriz definida.
 
