@@ -251,8 +251,16 @@ Internet ──HTTPS──▶ Traefik (proxy do Coolify, certificado automático
 
 **Risco: memória da VPS compartilhada.** No plano de 4 GB rodam juntos o Coolify/Traefik, o Postgres e o Django do cell-pag,
 a Evolution API (que pode trazer Redis/Postgres próprios) e o FastAPI do Locação. É viável com 1 a 2 workers por aplicativo,
-mas fica apertado. **Antes de contratar ou de subir o segundo app**, medir o consumo real na VPS (`free -h`, `docker stats`);
-se passar de cerca de 70% de uso de RAM, usar o plano de 8 GB (R$ 63,90/mês).
+mas fica apertado em tese.
+
+**Medição real na VPS (05/10/2026, `free -h` e `docker stats`):** dos 3,8 GiB, 1,4 GiB em uso e **2,4 GiB disponíveis**
+(cerca de 37% de uso; swap de 1 GiB quase intocado, 79 MiB). Os contêineres somam cerca de 850 MiB: Coolify 388 MiB,
+restante da infraestrutura do Coolify pouco mais de 130 MiB, Evolution API 139 MiB, e dois contêineres que parecem ser o
+app e o Postgres do cell-pag (147 MiB e 36 MiB; identificação por inferência, a confirmar). Estimativa do FastAPI do
+Locação com 1 a 2 workers: 100 a 150 MiB. **Conclusão: o plano de 4 GB basta; o plano de 8 GB só se justifica se o uso
+passar de cerca de 70%.** Cuidados: (1) o Coolify constrói a imagem na própria VPS e o `pip install` consome memória;
+acompanhar o primeiro build com `free -h` (cabe nos 2,4 GiB livres e no swap); (2) o contêiner `coolify` apareceu com
+104% de CPU em um servidor de 2 vCPU; provavelmente pico passageiro, mas conferir com `docker stats --no-stream` em repouso.
 
 **Segurança por exposição pública** (virão como requisitos da Fase 1):
 
@@ -279,8 +287,9 @@ se passar de cerca de 70% de uso de RAM, usar o plano de 8 GB (R$ 63,90/mês).
    é o VPS 8GB por R$ 63,90/mês. O site cita cobrança anual e bienal parceláveis em até 12x, sem detalhar se o preço
    anunciado vale para o mensal; **conferir no ato da contratação**, assim como o sistema operacional disponível
    (o plano pressupõe Ubuntu LTS). O plano de 4 GB basta para este app sozinho, mas **com a VPS dividida com o cell-pag e a
-   Evolution API a memória é o ponto de atenção** (ver o risco acima); se a VPS já estiver contratada para o cell-pag,
-   o custo adicional do Locação é zero, a menos que seja preciso subir para o plano de 8 GB. Custo do domínio: zero.
+   Evolution API a memória é o ponto de atenção** (ver a medição acima, que mostrou folga de 2,4 GiB); como a VPS já
+   está contratada para o cell-pag, o custo adicional do Locação é zero, a menos que o uso passe de 70% e seja preciso
+   subir para o plano de 8 GB. Custo do domínio: zero.
 6. **Quando contratar:** o proprietário decidiu deixar a contratação para depois ("é só uma decisão"). Como a Fase 1 e
    a maior parte da migração rodam localmente, a VPS só é necessária para o primeiro deploy e para homologar o portal
    dos locatários no celular real (Fase 4). Contratar até o fim da Fase 3.
