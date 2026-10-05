@@ -14,7 +14,7 @@
 begin;
 do $$
 declare
-  cliente uuid; moto1 uuid; moto2 uuid; moto3 uuid; moto4 uuid; item uuid;
+  cliente uuid; moto1 uuid; moto2 uuid; moto3 uuid; moto4 uuid; item_faixa uuid;
   c1 jsonb; c2 jsonb; c3 jsonb;
   caucao uuid; r jsonb; n int;
 begin
@@ -120,25 +120,25 @@ begin
   -- 14.5: faixa de km (item com mínimo 3.000 e máximo 5.000; última troca em 10.000 km)
   insert into motos(placa, marca, modelo, km_atual) values ('TST5Z55', 'Teste', 'Teste', 10000) returning id into moto4;
   insert into itens_manutencao(nome, intervalo_km, intervalo_minimo_km)
-    values ('Teste faixa de km', 5000, 3000) returning id into item;
+    values ('Teste faixa de km', 5000, 3000) returning id into item_faixa;
   begin
     insert into itens_manutencao(nome, intervalo_km, intervalo_minimo_km) values ('Teste faixa invalida', 5000, 5000);
     raise exception using errcode = 'ZX201', message = 'Faixa com mínimo igual ao máximo foi aceita';
   exception when check_violation then null;
   end;
-  insert into moto_plano_manutencao(moto_id, item_id, ultima_km, ultima_data) values (moto4, item, 10000, hoje_br())
+  insert into moto_plano_manutencao(moto_id, item_id, ultima_km, ultima_data) values (moto4, item_faixa, 10000, hoje_br())
     on conflict (moto_id, item_id) do update set ultima_km = 10000;
   update motos set km_atual = 12999 where id = moto4;
-  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'em_dia',
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item_faixa) = 'em_dia',
     'Antes do mínimo da faixa deveria estar em dia';
   update motos set km_atual = 13000 where id = moto4;
-  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'proxima',
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item_faixa) = 'proxima',
     'No mínimo da faixa o alerta deveria começar';
   update motos set km_atual = 14500 where id = moto4;
-  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'proxima',
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item_faixa) = 'proxima',
     'Dentro da faixa deveria continuar próxima';
   update motos set km_atual = 15000 where id = moto4;
-  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'vencida',
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item_faixa) = 'vencida',
     'No máximo da faixa deveria vencer';
 
   raise notice 'Encargos fixos, contrato indeterminado, caução e danos e faixa de manutenção verificados.';
