@@ -7,6 +7,12 @@
       "runtimeArgs": ["run", "app.py", "--server.headless", "true"],
       "port": 8501,
       "autoPort": true
+    },
+    {
+      "name": "prototipo-layout",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8600", "--bind", "127.0.0.1"],
+      "port": 8600
     }
   ]
 }
