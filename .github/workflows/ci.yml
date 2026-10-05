@@ -1,0 +1,118 @@
+name: CI
+
+# Testes Python em todo push e pull request; testes de navegador (responsivo, acessibilidade e
+# capturas) da tela de acesso em Chromium, Firefox e WebKit. As páginas autenticadas exigem o
+# projeto Supabase de DESENVOLVIMENTO e rodam sob demanda (workflow_dispatch), com segredos do
+# repositório. Nunca aponte esses segredos para o projeto de produção.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      autenticado:
+        description: "Rodar também as páginas autenticadas (exige os segredos do projeto de desenvolvimento)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  testes-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+
+  navegador-login:
+    # Sem credenciais: valores fictícios bastam para a tela de acesso renderizar.
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        perfil: [chromium-desktop, chromium-movel, firefox, webkit]
+    env:
+      SUPABASE_URL: https://ci-exemplo.supabase.co
+      SUPABASE_ANON_KEY: ci-chave-anonima-ficticia
+      E2E_BASE_URL: http://localhost:8501
+      E2E_DADOS: normal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements.txt -r e2e/requirements-e2e.txt
+      - name: Instalar o navegador
+        run: python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }}
+      - name: Subir o app
+        run: |
+          nohup streamlit run app.py --server.headless true --server.port 8501 > streamlit.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8501/_stcore/health && exit 0
+            sleep 1
+          done
+          cat streamlit.log
+          exit 1
+      - name: Tela de acesso (5 larguras, 2 temas, axe-core, capturas)
+        run: python -m pytest e2e/test_login.py -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito
+      - name: Capturas e achados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-login-${{ matrix.perfil }}
+          path: |
+            e2e/capturas/
+            e2e/resultados/
+          if-no-files-found: ignore
+
+  navegador-autenticado:
+    if: github.event_name == 'workflow_dispatch' && inputs.autenticado
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        perfil: [chromium-desktop, chromium-movel, firefox, webkit]
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_DEV_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_DEV_ANON_KEY }}
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_SENHA: ${{ secrets.E2E_SENHA }}
+      E2E_BASE_URL: http://localhost:8501
+      E2E_DADOS: normal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements.txt -r e2e/requirements-e2e.txt
+      - name: Instalar o navegador
+        run: python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }}
+      - name: Subir o app
+        run: |
+          nohup streamlit run app.py --server.headless true --server.port 8501 > streamlit.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8501/_stcore/health && exit 0
+            sleep 1
+          done
+          cat streamlit.log
+          exit 1
+      - name: Páginas, fluxos e condições extras (axe-core, teclado, zoom, reflow)
+        run: python -m pytest e2e -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito -k "not visual"
+      - name: Capturas e achados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-autenticado-${{ matrix.perfil }}
+          path: |
+            e2e/capturas/
+            e2e/resultados/
+          if-no-files-found: ignore

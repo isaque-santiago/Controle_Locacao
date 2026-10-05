@@ -18,7 +18,7 @@ from src.ui.formularios import campo_inteiro, campo_moeda, campo_percentual, lin
 def _titulo_cartao(titulo, descricao):
     st.markdown(
         f"""
-        <h3 class="rotulo config-titulo">{escape(titulo)}</h3>
+        <h2 class="rotulo config-titulo">{escape(titulo)}</h2>
         <div class="config-descricao">{escape(descricao)}</div>
         """,
         unsafe_allow_html=True,

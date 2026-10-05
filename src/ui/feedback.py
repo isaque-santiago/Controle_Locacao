@@ -7,7 +7,7 @@
   próprias: validação (corrigir), sessão expirada (entrar de novo), sem permissão, indisponibilidade
   (tentar novamente).
 - **Envio**: o estado `Salvando…` e o bloqueio do segundo clique vêm de um pequeno script no navegador
-  (`instalar_estado_ocupado`), que age no instante do clique, sem esperar a ida e volta ao servidor.
+  (`SCRIPT_OCUPADO`, injetado por `tema.aplicar`), que age no instante do clique, sem esperar a ida e volta ao servidor.
   A proteção de verdade é a chave de operação (`chave_operacao`): o banco recusa a segunda gravação.
 """
 
@@ -138,7 +138,7 @@ def exibir_falha(falha, nova_tentativa=False):
 # e o bloqueio vêm de estilos.css, pelo atributo `data-ocupado`). O estado termina quando a execução do
 # script acaba (sucesso, erro ou fechamento do diálogo) ou, se o clique nem chegou a iniciar uma execução
 # (campo inválido no navegador), depois de 1,5 s.
-_SCRIPT_OCUPADO = """
+SCRIPT_OCUPADO = """
 (function () {
   if (window.__locacaoOcupado) return;
   window.__locacaoOcupado = true;
@@ -173,8 +173,3 @@ _SCRIPT_OCUPADO = """
   }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['data-test-script-state'] });
 })();
 """
-
-
-def instalar_estado_ocupado():
-    """Injeta o script do estado ocupado (uma vez por página aberta; o próprio script se protege)."""
-    st.html(f"<script>{_SCRIPT_OCUPADO}</script>", unsafe_allow_javascript=True)

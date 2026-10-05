@@ -14,7 +14,14 @@ import pytest
 
 from e2e.ajudas import aguardar_app, esperar_dialogo, fechar_dialogo, ir_para
 from e2e.config import PAGINAS
-from e2e.verificacoes import capturar, verificar_dialogo, verificar_layout, verificar_saude
+from e2e.verificacoes import (
+    achados_bloqueantes,
+    capturar,
+    verificar_acessibilidade,
+    verificar_dialogo,
+    verificar_layout,
+    verificar_saude,
+)
 
 pytestmark = pytest.mark.autenticado
 
@@ -43,6 +50,7 @@ class Contexto:
     def medir(self, onde: str, foto: str | None = None) -> None:
         verificar_layout(self.page, self.cenario, self.reg, onde)
         verificar_saude(self.page, self.reg, onde)
+        verificar_acessibilidade(self.page, self.reg, onde)
         if self.capturas and foto:
             capturar(self.page, self.cenario, foto)
 
@@ -168,9 +176,5 @@ def test_fluxo(nome_fluxo, pagina_logada, cenario, registrar, coletor, request):
         fechar_dialogo(pagina_logada)
 
     if request.config.getoption("--e2e-estrito"):
-        p0 = [
-            a
-            for a in coletor.da_severidade("P0")
-            if a.fluxo == nome_fluxo and a.largura == cenario.largura and a.perfil == cenario.perfil
-        ]
-        assert not p0, [f"{a.pagina}: {a.descricao}" for a in p0]
+        bloqueantes = achados_bloqueantes(coletor, cenario, fluxo=nome_fluxo)
+        assert not bloqueantes, [f"{a.pagina}: {a.descricao}" for a in bloqueantes]

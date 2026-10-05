@@ -304,3 +304,67 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
 - **Pendência (decidida em 02/10/2026): CLS alta** (≈ 0,4 no desktop e ≈ 0,95 no celular, herdada da `main`). Tratar em
   etapa futura reservando altura mínima nos blocos que crescem durante o render; não bloqueia a Etapa 8.
 - Medir também Cobranças, Motos e uma ficha (o Lighthouse só carregou a rota `/`; as demais exigem navegação).
+
+## 11. Homologação (Etapa 9)
+
+Evidência produzida em 05/10/2026. **Limite honesto**: a automação rodou no preview com serviços simulados (sem login,
+dados fictícios fixos), em Chromium, Firefox e WebKit; a rodada autenticada contra o banco de desenvolvimento, a gravação
+real dos 10 fluxos e os aparelhos físicos ficam com o usuário (`Arquivos/Roteiro_Homologacao_Manual.md`).
+
+### O que a suíte mede (`e2e/`)
+
+| Verificação | Onde |
+|---|---|
+| Overflow do documento, controles fora da janela, alvos < 44 px, diálogos | `verificar_layout`, `verificar_dialogo` |
+| axe-core (WCAG 2.1 A/AA + boas práticas): crítica = P0, grave = P1 (as duas reprovam em `--e2e-estrito`) | `verificar_acessibilidade` |
+| Teclado: Tab pela página, foco visível, dentro da janela, nome acessível, armadilha, ordem | `verificar_teclado` |
+| Zoom 200% (720×450), reflow a 320 CSS px (400%), paisagem, texto a 200%, espaçamento WCAG 1.4.12 | `e2e/test_homologacao.py` |
+| Rede (~1,6 Mbps, 150 ms) e CPU 4× mais lentas (Chromium) | `test_rede_e_cpu_reduzidas` |
+| Regressão visual (login e páginas) contra a referência aprovada | `e2e/test_regressao_visual.py`, `e2e/visual.py` |
+| Contraste 4,5:1 dos tokens nos dois temas | `tests/test_contraste_tokens.py` |
+
+### Resultado
+
+- **pytest**: 546 testes passando (523 antes da etapa).
+- **axe-core**: sem violações críticas ou graves nas 10 páginas (Chromium, 5 larguras × 2 temas) e nos diálogos e no
+  assistente abertos pelos fluxos (390 e 1440 px), também em Chromium móvel, Firefox e WebKit (390 e 1440 px). Restam só achados
+  moderados/leves do próprio Streamlit (ver abaixo).
+- **Login**: estrito (P0 e axe crítico/grave) aprovado em Chromium desktop e móvel, Firefox e WebKit, 5 larguras × 2 temas.
+- **Teclado**: sem armadilhas; foco visível em todos os controles medidos.
+- **Regressão visual** (referência = `main`, mesmo preview): login sem diferença; Relatórios e Configurações com
+  diferenças pequenas e intencionais (legenda sem opacidade reduzida; texto terciário mais escuro). Configurações a 320 px
+  ficou ~3% mais curta (o título de cartão agora é `h2` com o respiro do antigo `h3`).
+- **Capturas**: geradas com `--capturas` em `e2e/capturas/<dados>/<perfil>/<tema>/<largura>/` (ignoradas pelo git).
+
+### Correções feitas na homologação
+
+| Achado | Correção |
+|---|---|
+| `aria-expanded` inválido na barra lateral e no campo de data (crítico) | `src/ui/acessibilidade.py` |
+| Lista de navegação sem semântica válida (grave) | idem |
+| Barra lateral recolhida continuava na tabulação, fora da tela | idem (`inert`) |
+| iframe invisível dos cookies como parada de Tab | idem (`tabindex=-1`, `aria-hidden`) |
+| Sem marcos de página | idem (`main`, `complementary`) |
+| Selo de sucesso 4,46:1; texto terciário 4,2:1 sobre o fundo; selo de perigo no escuro 4,31:1 | tokens `--sucesso-texto`, `--texto-3`, `--perigo-texto` |
+| Legenda a 60% de opacidade (2,5:1) | `[data-testid="stCaptionContainer"] {opacity: 1}` |
+| "Pagar" claro sobre amarelo no escuro (1,56:1) | `estilos_escuro.css` |
+| Região principal focável sem indicador | `[data-testid="stMain"]:focus-visible` |
+| Ordem de títulos em Configurações (h1 → h3) | `h2` |
+| Altura da página +16 px (um `st.html` a mais) | os dois scripts agora num único `st.html` (`tema.aplicar`) |
+
+### Pendências e exceções documentadas
+
+- **Framework (sem correção no app)**: `region` (conteúdo fora de marcos) foi resolvido pelo script; resta o 404 no
+  console ao abrir uma URL profunda (`/<página>/_stcore/health`), comportamento do Streamlit com caminhos relativos
+  (A-006); `presentation-role-conflict` (leve) nos diálogos.
+- **WebKit**: o campo focado por Tab pode ficar rente à borda inferior (achado P2 `foco-fora-da-janela` parcial);
+  confirmar em iPhone/iPad real.
+- **CLS alta** (≈ 0,4 desktop, ≈ 0,95 celular, herdada da `main`): **não tratada** nesta etapa. Reservar `min-height` nos
+  blocos que crescem no render exige medir cada um e arrisca deslocar o layout homologado; fica como melhoria futura.
+- **Lighthouse** de Cobranças, Motos e uma ficha: não medido (exige navegação autenticada).
+- **Manual (usuário)**: os 10 fluxos gravando no banco de dev, Android (obrigatório) e iPhone/iPad (se houver), leitor de
+  tela, zoom real do navegador, janela dividida e teclado virtual. Marcar em `Arquivos/Roteiro_Homologacao_Manual.md`.
+- **CI**: `.github/workflows/ci.yml` roda pytest e o e2e do login em 4 perfis a cada push/PR, enviando capturas e achados
+  como artefatos; as páginas autenticadas rodam sob demanda (`workflow_dispatch`) com segredos do projeto de **dev**
+  (`SUPABASE_DEV_URL`, `SUPABASE_DEV_ANON_KEY`, `E2E_EMAIL`, `E2E_SENHA`). A comparação de pixels fica local (as
+  referências dependem do sistema operacional).
