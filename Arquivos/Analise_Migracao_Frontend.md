@@ -4,8 +4,8 @@
 > iniciada. Fase atual: 0 (decisão e desenho).**
 > O layout do protótipo (`prototipo/`) foi aprovado. A mudança de escopo foi registrada no
 > `Plano_Melhorias_UI_UX.md` (seção 10) e no `Projeto_Locação.md` (seção 15).
-> **Hospedagem decidida** (VPS KingHost, domínio gratuito DuckDNS, deploy automático; seção 10.1). A contratação da VPS
-> fica para mais perto do primeiro deploy e não bloqueia a Fase 1.
+> **Hospedagem decidida** (VPS KingHost **compartilhada com o projeto cell-pag**, gerenciada pelo Coolify; domínio gratuito
+> DuckDNS; deploy automático; seção 10.1). A contratação da VPS fica para mais perto do primeiro deploy e não bloqueia a Fase 1.
 >
 > **Ao iniciar uma sessão nova:** leia este arquivo e o `CLAUDE.md`, confira o `git log` para saber o que já
 > foi feito e atualize a linha "Fase atual" acima ao concluir cada fase.
@@ -216,29 +216,50 @@ sem mudar a identidade visual. A forma de gerar o CSS (CLI independente do Tailw
 **Decidido:** o app roda em uma VPS acessível pela internet, com HTTPS, para o painel do dono e para o portal
 dos locatários (celular). O Supabase continua sendo o banco, a autenticação e o armazenamento.
 
-**Proposta de arquitetura** (recomendação, ainda não confirmada):
+**Atualização (05/10/2026): VPS compartilhada com o cell-pag.** O projeto cell-pag (Django, `C:\cell-pag`) já tem guia de
+hospedagem na VPS da KingHost (`docs/deploy/DEPLOY-VPS.md` daquele repositório): **Coolify** gerenciando os contêineres, na
+mesma máquina da Evolution API, com Postgres próprio na VPS. O Controle_Locacao entra na **mesma VPS e no mesmo Coolify**
+como um segundo aplicativo. Consequência: o **Caddy deixa de fazer parte do plano**, porque o Coolify já ocupa as portas
+80/443 com o proxy dele (Traefik), que também emite e renova o HTTPS (Let's Encrypt) automaticamente.
+
+**Arquitetura (recomendação, ainda não confirmada na prática):**
 
 ```
-Internet ──HTTPS──▶ Caddy (proxy reverso, certificado automático Let's Encrypt)
-                       └──▶ uvicorn/FastAPI (Docker ou serviço systemd), usuário sem privilégios
-                                └──▶ Supabase (nuvem)
+Internet ──HTTPS──▶ Traefik (proxy do Coolify, certificado automático Let's Encrypt)
+                       ├──▶ cell-pag (Django/gunicorn)  ──▶ Postgres na VPS
+                       ├──▶ Evolution API
+                       └──▶ Controle_Locacao (uvicorn/FastAPI, contêiner) ──▶ Supabase (nuvem)
 ```
 
 - **Sistema:** Ubuntu LTS, firewall liberando só 22 (SSH com chave, sem senha), 80 e 443.
-- **Caddy** como proxy: HTTPS e renovação de certificado automáticos, sem configuração manual de certificado.
-- **App em contêiner Docker** (ou serviço `systemd` com ambiente virtual), reiniciando sozinho em caso de falha.
-- **Segredos** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, chave de assinatura da sessão) em variáveis de ambiente do servidor,
-  nunca no repositório. A `service_role` continua proibida no app.
-- **Deploy:** `git pull` e reinício do serviço, ou GitHub Actions que faz isso a cada merge na `main` após o `pytest`.
-- **Backups:** os dados ficam no Supabase; na VPS não há dados a perder além da configuração. Manter o backup do
-  Supabase conforme a Fase 6 do plano.
+- **Proxy e HTTPS:** do Coolify (Traefik). O subdomínio DuckDNS é apontado para o IP da VPS e cadastrado em **Domains**
+  no aplicativo do Coolify.
+- **App em contêiner Docker** (`Dockerfile` do Controle_Locacao, feito na fase de deploy, no mesmo molde do cell-pag:
+  imagem `python:3.12-slim`, usuário sem privilégios, reinício automático, rota `/saude` como healthcheck).
+- **Segredos** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, chave de assinatura da sessão) em variáveis de ambiente do Coolify,
+  marcadas como *Runtime only*, nunca no repositório nem na imagem. A `service_role` continua proibida no app.
+- **Deploy:** o Coolify faz o deploy a cada push na `main` (webhook do GitHub). O `pytest` roda no GitHub Actions; o deploy
+  só deve sair com a CI verde (configurar o Coolify para aguardar o check ou disparar o deploy pelo workflow após o `pytest`).
+  Isso substitui o pipeline de SSH da versão anterior deste documento.
+- **Isolamento entre os projetos:** um aplicativo por projeto, cada um com suas variáveis; não compartilhar segredos nem
+  banco. O Controle_Locacao não usa o Postgres da VPS (usa o Supabase).
+- **Backups:** os dados do Locação ficam no Supabase; manter o backup do Supabase conforme a Fase 6 do plano. A VPS passa a
+  ser ponto único de falha dos dois projetos: o backup do Postgres do cell-pag deve ter destino fora da VPS (o próprio guia
+  dele já alerta sobre isso).
 - **Monitoramento mínimo:** rota `/saude`, reinício automático e aviso se o site cair.
+- **Fuso:** o servidor está em UTC. Tarefas agendadas do Locação (se houver) devem converter de America/Sao_Paulo.
+
+**Risco: memória da VPS compartilhada.** No plano de 4 GB rodam juntos o Coolify/Traefik, o Postgres e o Django do cell-pag,
+a Evolution API (que pode trazer Redis/Postgres próprios) e o FastAPI do Locação. É viável com 1 a 2 workers por aplicativo,
+mas fica apertado. **Antes de contratar ou de subir o segundo app**, medir o consumo real na VPS (`free -h`, `docker stats`);
+se passar de cerca de 70% de uso de RAM, usar o plano de 8 GB (R$ 63,90/mês).
 
 **Segurança por exposição pública** (virão como requisitos da Fase 1):
 
 - limite de tentativas de login por IP/usuário, e mensagens de erro que não revelam se o e-mail/CPF existe;
 - cookies `httpOnly`, `Secure`, `SameSite=Lax`, e CSRF em todo formulário;
-- cabeçalhos de segurança (HSTS, CSP, `X-Frame-Options`) definidos no Caddy/aplicação;
+- cabeçalhos de segurança (HSTS, CSP, `X-Frame-Options`) definidos na aplicação (middleware do FastAPI), de forma que
+  não dependam do proxy;
 - o painel do dono e o portal do locatário continuam separados por papel; a RLS segue como proteção final dos dados;
 - atualizações automáticas de segurança do sistema operacional.
 
@@ -247,7 +268,7 @@ Internet ──HTTPS──▶ Caddy (proxy reverso, certificado automático Let'
 1. **Provedor:** KingHost (empresa brasileira), VPS pequena e barata. Região Brasil.
 2. **Domínio:** gratuito, "da duck.com". **Atenção:** o `duck.com` é um serviço de e-mail do DuckDuckGo e não oferece
    domínios. O serviço gratuito com esse nome é o **DuckDNS** (subdomínios `nome.duckdns.org`), que apontam para o IP
-   da VPS e funcionam com o certificado HTTPS automático do Caddy (o `duckdns.org` consta na lista pública de sufixos,
+   da VPS e funcionam com o certificado HTTPS automático do Traefik/Coolify (o `duckdns.org` consta na lista pública de sufixos,
    então não sofre limite compartilhado do Let's Encrypt). **Confirmado pelo proprietário (05/10/2026): será o DuckDNS.**
    Limitação: o endereço fica no formato `nome.duckdns.org`; para um endereço próprio (`.com.br`) seria preciso
    registrar um domínio pago, o que pode ser feito depois sem alterar o app.
@@ -257,18 +278,22 @@ Internet ──HTTPS──▶ Caddy (proxy reverso, certificado automático Let'
    **VPS 4GB, R$ 32,90/mês** (2 vCPU, 4 GB de RAM, 70 GB de SSD, acesso root, IP dedicado, tráfego ilimitado); o seguinte
    é o VPS 8GB por R$ 63,90/mês. O site cita cobrança anual e bienal parceláveis em até 12x, sem detalhar se o preço
    anunciado vale para o mensal; **conferir no ato da contratação**, assim como o sistema operacional disponível
-   (o plano pressupõe Ubuntu LTS). O plano de 4 GB é mais que suficiente para este app. Custo do domínio: zero.
+   (o plano pressupõe Ubuntu LTS). O plano de 4 GB basta para este app sozinho, mas **com a VPS dividida com o cell-pag e a
+   Evolution API a memória é o ponto de atenção** (ver o risco acima); se a VPS já estiver contratada para o cell-pag,
+   o custo adicional do Locação é zero, a menos que seja preciso subir para o plano de 8 GB. Custo do domínio: zero.
 6. **Quando contratar:** o proprietário decidiu deixar a contratação para depois ("é só uma decisão"). Como a Fase 1 e
    a maior parte da migração rodam localmente, a VPS só é necessária para o primeiro deploy e para homologar o portal
    dos locatários no celular real (Fase 4). Contratar até o fim da Fase 3.
 
 **Requisitos decorrentes para a Fase 1 em diante:**
 
-- Pipeline de deploy no GitHub Actions: `pytest` → conexão SSH na VPS com chave dedicada (guardada nos segredos do
-  repositório, nunca no código) → atualização do código e reinício do serviço → teste de `/saude`. Reversão simples
-  para a versão anterior em caso de falha.
-- Chave SSH de deploy com permissão restrita (usuário sem privilégio de administrador no servidor).
-- Compatibilidade com Ubuntu LTS e com os recursos pequenos da VPS (preferir um único processo, sem serviços pesados).
+- `Dockerfile` e `.dockerignore` do Controle_Locacao (no molde do cell-pag), com usuário sem privilégios e `/saude` como
+  healthcheck; app cadastrado no Coolify como aplicativo separado, com o subdomínio DuckDNS em **Domains**.
+- Deploy a cada push na `main` com a CI (`pytest`) aprovada; reversão simples para a imagem anterior em caso de falha
+  (o Coolify permite *rollback*). Se for usado o disparo por workflow, o token de API do Coolify fica nos segredos do
+  repositório, nunca no código.
+- Compatibilidade com os recursos compartilhados da VPS (preferir 1 a 2 workers uvicorn, sem serviços pesados) e
+  medição de memória antes do primeiro deploy.
 
 ## 11. Protótipo do layout (Fase 0, item 2): produzido
 
