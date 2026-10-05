@@ -519,3 +519,12 @@ def test_encerrar_sem_caucao_recebida_nao_mostra_devolucao(servicos):
     app = _roteiro(_roteiro_encerrar)
     assert "devolver ao cliente" not in _texto(app)
 
+
+def test_encerrar_mostra_as_avarias_da_vistoria_como_base_dos_danos(servicos):
+    servicos["cobrancas.listar_por_contrato"].return_value = _com_caucao(1000)
+    app = _roteiro(_roteiro_encerrar)
+    assert not any("Avarias registradas na vistoria" in c.value for c in app.caption)
+    app.text_area(key="devolucao_avarias").set_value("Retrovisor quebrado").run()
+    legendas = [c.value for c in app.caption if "Avarias registradas na vistoria" in c.value]
+    assert legendas and "Retrovisor quebrado" in legendas[0]
+

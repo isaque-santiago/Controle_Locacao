@@ -10,6 +10,7 @@ from src.services import contratos, motos, clientes, cobrancas, vistorias, manut
 from src.domain import mensagens
 from src.domain.caucao import calcular_devolucao_caucao, caucao_paga
 from src.domain.encerramento import cobrancas_a_cancelar
+from src.domain.vistorias import resumo_avarias
 from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
 from src.domain.valores import hoje_br, decimal_br
 from src.ui.componentes import (
@@ -561,6 +562,14 @@ def _dialog_encerrar(contrato, moto, cliente):
     cobrancas_contrato = cobrancas.listar_por_contrato(contrato["id"])
     recebida = caucao_paga(cobrancas_contrato)
     st.markdown('<h3 class="rotulo wizard-secao">Caução e danos</h3>', unsafe_allow_html=True)
+    avarias_vistoria = resumo_avarias(
+        {"checklist": vistoria["checklist"], "avarias": vistoria["avarias"]}
+    )
+    if avarias_vistoria:
+        st.caption(
+            f"Avarias registradas na vistoria de devolução: {avarias_vistoria}. "
+            "Use-as de base para o valor dos danos."
+        )
     danos_texto = campo_moeda(
         "Danos a descontar da caução",
         0,

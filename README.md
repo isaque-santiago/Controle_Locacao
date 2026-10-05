@@ -142,7 +142,7 @@ combinada. Sem data final a prévia mostra só os 30 primeiros dias e as cobran�
 seguintes são geradas por `rpc_gerar_cobrancas_pendentes` enquanto o contrato estiver ativo.
 No encerramento o dono informa os **danos**, que são descontados da caução recebida
 (`src/domain/caucao.py`, espelhado na RPC): caução R$ 1.000 − dano R$ 300 = devolver
-R$ 700; dano acima da caução zera a devolução e gera uma cobrança de dano com o excedente.
+R$ 700; dano acima da caução zera a devolução e gera uma cobrança de dano com o excedente. O diálogo mostra as avarias anotadas na vistoria de devolução como base para o valor dos danos.
 
 Reconstrução de Cobranças (23/09/2026), conferida contra `Cobrancas.dc.html`:
 subtítulo com total em atraso e nº de clientes; abas Hoje, Atrasadas, Próximos 7
