@@ -31,7 +31,8 @@ _ABAS = ("Resultado por moto", "Custo de manutenção", "Inadimplência", "Fluxo
 _VISOES_CUSTO = [("moto", "Por moto"), ("modelo", "Por modelo")]
 _VERDE, _VERMELHO, _GRAFITE = CORES_BORDA["verde"], CORES_BORDA["vermelho"], "#1E2227"
 _NOTA_CRITERIOS = (
-    "Cauções não compõem receita. Manutenções são contabilizadas pela entrada, "
+    "Cauções não compõem receita, exceto a parte retida para cobrir danos, contada no "
+    "encerramento do contrato. Manutenções são contabilizadas pela entrada, "
     "documentos pela regularização. Custo/km usa as leituras disponíveis no período; "
     "sem distância registrada, fica em branco."
 )

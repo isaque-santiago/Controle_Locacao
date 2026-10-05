@@ -54,6 +54,14 @@ def consolidar(
         total = valor(p["valor"]) + valor(p["multa_juros"])
         resultado[moto]["receita_recebida"] += total
         fluxo[p["data_pagamento"][:7]]["receita_recebida"] += total
+    # Parte da caução retida para cobrir danos (seção 14.3): vira receita da moto na data de
+    # encerramento do contrato, como a cobrança de dano paga pelo cliente.
+    for ct in contratos:
+        retido = valor(ct.get("caucao_desconto_danos"))
+        data = ct.get("data_encerramento")
+        if retido > 0 and ct.get("moto_id") in resultado and dentro(data):
+            resultado[ct["moto_id"]]["receita_recebida"] += retido
+            fluxo[str(data)[:7]]["receita_recebida"] += retido
     for registros, campo, data_campo, aceita in [
         (
             manutencoes,

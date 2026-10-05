@@ -7,6 +7,7 @@
 --   14.2 caução + primeira semana vencendo na data de início;
 --   14.3 danos descontados da caução, com cobrança do excedente;
 --   14.4 contrato por prazo indeterminado e janela móvel de cobranças.
+--   14.3 receita da caução retida (migration 20261005160000_receita_caucao_retida.sql);
 --   14.5 faixa de km da manutenção (migration 20261005150000_manutencao_faixa_km.sql):
 --        alerta a partir do mínimo, vencida no máximo.
 -- Todas as alterações deste roteiro são desfeitas ao final (ROLLBACK).
@@ -106,6 +107,12 @@ begin
   assert (r->>'caucao_paga')::numeric = 0, 'Caução não paga foi considerada';
   assert (r->>'caucao_valor_devolvido')::numeric = 0, 'Devolveu caução que não foi recebida';
   assert (r->>'dano_excedente')::numeric = 200, 'Excedente deveria ser o dano inteiro';
+
+  -- 14.3: caução retida para danos conta como receita da moto (moto1: 300 retidos, 0 de pagamentos de locação)
+  assert (select receita_recebida from vw_resultado_moto where moto_id = moto1) = 300,
+    'Caução retida não entrou na receita da moto';
+  assert (select receita_recebida from vw_resultado_moto where moto_id = moto2) = 1000,
+    'Caução retida (1.000) deveria ser a receita da moto 2';
 
   -- Encerramento sem informar danos continua funcionando (caução toda devolvida)
   -- (coberto por verificar_fluxos.sql, que chama a RPC com 3 argumentos)
