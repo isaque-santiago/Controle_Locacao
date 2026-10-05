@@ -64,6 +64,22 @@ def calcular_proxima_manutencao(
     return {"proxima_km": proxima_km, "proxima_data": proxima_data}
 
 
+def calcular_inicio_alerta_km(
+    ultima_km: Optional[int],
+    intervalo_minimo_km: Optional[int],
+    intervalo_km: Optional[int],
+) -> Optional[int]:
+    """Km em que o alerta começa para itens com faixa (ex.: kit de tração, de 3.000 a 5.000 km).
+
+    `intervalo_minimo_km` é o mínimo da faixa (alerta a partir dele) e `intervalo_km` o máximo
+    (vencida ao ultrapassá-lo). Sem mínimo, vale a antecedência global `alerta_manutencao_km`."""
+    if intervalo_minimo_km is None or intervalo_km is None:
+        return None
+    if intervalo_minimo_km >= intervalo_km:
+        raise ValueError("O mínimo da faixa deve ser menor que o intervalo máximo em km.")
+    return (ultima_km or 0) + intervalo_minimo_km
+
+
 def calcular_situacao(
     km_atual: int,
     proxima_km: Optional[int],
@@ -71,17 +87,20 @@ def calcular_situacao(
     proxima_data: Optional[date],
     alerta_km: int,
     alerta_dias: int,
+    alerta_inicio_km: Optional[int] = None,
 ) -> str:
     """Situação do alerta: 'vencida' (passou), 'proxima' (dentro do limite
-    de alerta) ou 'em_dia'."""
+    de alerta, ou já na faixa de `alerta_inicio_km`) ou 'em_dia'."""
     vencida = (proxima_km is not None and km_atual >= proxima_km) or (
         proxima_data is not None and hoje >= proxima_data
     )
     if vencida:
         return "vencida"
 
-    proxima = (proxima_km is not None and proxima_km - km_atual <= alerta_km) or (
-        proxima_data is not None and (proxima_data - hoje).days <= alerta_dias
+    proxima = (
+        (proxima_km is not None and proxima_km - km_atual <= alerta_km)
+        or (alerta_inicio_km is not None and km_atual >= alerta_inicio_km)
+        or (proxima_data is not None and (proxima_data - hoje).days <= alerta_dias)
     )
     if proxima:
         return "proxima"

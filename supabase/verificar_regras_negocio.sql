@@ -7,11 +7,13 @@
 --   14.2 caução + primeira semana vencendo na data de início;
 --   14.3 danos descontados da caução, com cobrança do excedente;
 --   14.4 contrato por prazo indeterminado e janela móvel de cobranças.
+--   14.5 faixa de km da manutenção (migration 20261005150000_manutencao_faixa_km.sql):
+--        alerta a partir do mínimo, vencida no máximo.
 -- Todas as alterações deste roteiro são desfeitas ao final (ROLLBACK).
 begin;
 do $$
 declare
-  cliente uuid; moto1 uuid; moto2 uuid; moto3 uuid;
+  cliente uuid; moto1 uuid; moto2 uuid; moto3 uuid; moto4 uuid; item uuid;
   c1 jsonb; c2 jsonb; c3 jsonb;
   caucao uuid; r jsonb; n int;
 begin
@@ -108,6 +110,30 @@ begin
   -- Encerramento sem informar danos continua funcionando (caução toda devolvida)
   -- (coberto por verificar_fluxos.sql, que chama a RPC com 3 argumentos)
 
-  raise notice 'Encargos fixos, contrato indeterminado, caução e danos verificados.';
+  -- 14.5: faixa de km (item com mínimo 3.000 e máximo 5.000; última troca em 10.000 km)
+  insert into motos(placa, marca, modelo, km_atual) values ('TST5Z55', 'Teste', 'Teste', 10000) returning id into moto4;
+  insert into itens_manutencao(nome, intervalo_km, intervalo_minimo_km)
+    values ('Teste faixa de km', 5000, 3000) returning id into item;
+  begin
+    insert into itens_manutencao(nome, intervalo_km, intervalo_minimo_km) values ('Teste faixa invalida', 5000, 5000);
+    raise exception using errcode = 'ZX201', message = 'Faixa com mínimo igual ao máximo foi aceita';
+  exception when check_violation then null;
+  end;
+  insert into moto_plano_manutencao(moto_id, item_id, ultima_km, ultima_data) values (moto4, item, 10000, hoje_br())
+    on conflict (moto_id, item_id) do update set ultima_km = 10000;
+  update motos set km_atual = 12999 where id = moto4;
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'em_dia',
+    'Antes do mínimo da faixa deveria estar em dia';
+  update motos set km_atual = 13000 where id = moto4;
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'proxima',
+    'No mínimo da faixa o alerta deveria começar';
+  update motos set km_atual = 14500 where id = moto4;
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'proxima',
+    'Dentro da faixa deveria continuar próxima';
+  update motos set km_atual = 15000 where id = moto4;
+  assert (select situacao from vw_alertas_manutencao where moto_id = moto4 and item_id = item) = 'vencida',
+    'No máximo da faixa deveria vencer';
+
+  raise notice 'Encargos fixos, contrato indeterminado, caução e danos e faixa de manutenção verificados.';
 end $$;
 rollback;

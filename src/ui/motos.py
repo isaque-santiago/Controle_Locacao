@@ -351,7 +351,16 @@ def _aba_plano(moto):
             filter(
                 None,
                 [
-                    f"{item['intervalo_km_efetivo']:,} km".replace(",", ".") if item["intervalo_km_efetivo"] else None,
+                    (
+                        (
+                            f"{item['intervalo_minimo_km_efetivo']:,} a ".replace(",", ".")
+                            if item.get("intervalo_minimo_km_efetivo")
+                            else ""
+                        )
+                        + f"{item['intervalo_km_efetivo']:,} km".replace(",", ".")
+                    )
+                    if item["intervalo_km_efetivo"]
+                    else None,
                     f"{item['intervalo_dias_efetivo']} dias" if item["intervalo_dias_efetivo"] else None,
                 ],
             )

@@ -360,6 +360,12 @@ def _dialog_item(item):
                     "Intervalo em dias", item.get("intervalo_dias") or 0, "item_dias", sufixo="dias",
                     ajuda="Use 0 quando o item não tiver limite em dias.",
                 )
+        minimo = campo_inteiro(
+            "Alerta a partir de", item.get("intervalo_minimo_km") or 0, "item_km_minimo", sufixo="km",
+            ajuda="Para itens com faixa (ex.: kit de tração, de 3.000 a 5.000 km): o intervalo em km é o "
+            "máximo e este é o mínimo, quando o alerta começa. Use 0 para avisar só pela antecedência "
+            "das Configurações.",
+        )
         ativo = st.checkbox("Ativo", item.get("ativo", True))
         legenda_obrigatorios()
         acao = rodape_formulario("Salvar item", "item", formulario=True)
@@ -374,6 +380,7 @@ def _dialog_item(item):
                 dados = {
                     "nome": nome,
                     "intervalo_km": km or None,
+                    "intervalo_minimo_km": minimo or None,
                     "intervalo_dias": dias or None,
                     "ativo": ativo,
                 }
@@ -535,6 +542,12 @@ def _aba_catalogo(itens):
                 campo(
                     "Intervalo km",
                     _mono(_km(item["intervalo_km"]), muted) if item["intervalo_km"] else _texto("—", "texto-3"),
+                ),
+                campo(
+                    "Alerta a partir de",
+                    _mono(_km(item["intervalo_minimo_km"]), muted)
+                    if item.get("intervalo_minimo_km")
+                    else _texto("—", "texto-3"),
                 ),
                 campo(
                     "Intervalo dias",

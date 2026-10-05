@@ -4,7 +4,11 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
-from src.domain.manutencao_regras import calcular_proxima_manutencao, calcular_situacao
+from src.domain.manutencao_regras import (
+    calcular_inicio_alerta_km,
+    calcular_proxima_manutencao,
+    calcular_situacao,
+)
 from src.domain.valores import hoje_br
 from src.repositories import (
     configuracoes,
@@ -18,13 +22,27 @@ def listar_catalogo(somente_ativos: bool = False):
     return itens_manutencao.listar(somente_ativos)
 
 
+def _validar_faixa(dados: dict) -> None:
+    """O mínimo da faixa (início do alerta) só existe com intervalo em km e é menor que ele."""
+    minimo = dados.get("intervalo_minimo_km")
+    if minimo is None:
+        return
+    maximo = dados.get("intervalo_km")
+    if maximo is None:
+        raise ValueError("Alerta a partir de (km): informe também o intervalo em km.")
+    if minimo >= maximo:
+        raise ValueError("Alerta a partir de (km): deve ser menor que o intervalo em km.")
+
+
 def criar_item_catalogo(dados: dict) -> dict:
     if dados.get("intervalo_km") is None and dados.get("intervalo_dias") is None:
         raise ValueError("Informe intervalo_km e/ou intervalo_dias.")
+    _validar_faixa(dados)
     return itens_manutencao.criar(dados)
 
 
 def atualizar_item_catalogo(item_id: str, dados: dict) -> dict:
+    _validar_faixa(dados)
     return itens_manutencao.atualizar(item_id, dados)
 
 
@@ -41,6 +59,11 @@ def listar_plano_moto(moto_id: str) -> list:
         item = linha["item"]
         intervalo_km = linha["intervalo_km"] or item["intervalo_km"]
         intervalo_dias = linha["intervalo_dias"] or item["intervalo_dias"]
+        intervalo_minimo_km = linha.get("intervalo_minimo_km") or item.get("intervalo_minimo_km")
+        if intervalo_minimo_km is not None and (
+            intervalo_km is None or intervalo_minimo_km >= intervalo_km
+        ):
+            intervalo_minimo_km = None  # sobrescrita por moto tornou a faixa incoerente: vale o alerta global
         ultima_data = (
             date.fromisoformat(linha["ultima_data"]) if linha["ultima_data"] else None
         )
@@ -59,6 +82,10 @@ def listar_plano_moto(moto_id: str) -> list:
                 **linha,
                 "intervalo_km_efetivo": intervalo_km,
                 "intervalo_dias_efetivo": intervalo_dias,
+                "intervalo_minimo_km_efetivo": intervalo_minimo_km,
+                "alerta_inicio_km": calcular_inicio_alerta_km(
+                    linha["ultima_km"], intervalo_minimo_km, intervalo_km
+                ),
                 "proxima_km": proxima["proxima_km"],
                 "proxima_data": proxima["proxima_data"],
                 "_alerta_km": alerta_km,
@@ -79,6 +106,7 @@ def situacao_item_plano(linha_plano: dict, km_atual: int) -> str:
         proxima_data=linha_plano["proxima_data"],
         alerta_km=linha_plano["_alerta_km"],
         alerta_dias=linha_plano["_alerta_dias"],
+        alerta_inicio_km=linha_plano.get("alerta_inicio_km"),
     )
 
 
