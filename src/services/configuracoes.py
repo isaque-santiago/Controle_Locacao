@@ -23,6 +23,7 @@ TABELAS = (
     "documentos_moto",
     "vistorias",
     "vistoria_fotos",
+    "trocas_oleo",
 )
 
 

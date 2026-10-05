@@ -50,15 +50,25 @@ def test_cabecalho_e_alertas_ordenados(servicos):
 
 def test_historico_permite_concluir_so_manutencao_aberta(servicos):
     servicos["manutencao.listar_manutencoes"].return_value = HISTORICO
-    app = abrir("6_Manutencao.py")
+    app = abrir("6_Manutencao.py", manutencao_abas_indice=1)
     botoes = [b.key for b in app.button if b.key and b.key.startswith("concluir_man_")]
     assert botoes == ["concluir_man_h1"]
+    # Concluir e cancelar são ações distintas, cada uma com o próprio botão
+    cancelar = [b.key for b in app.button if b.key and b.key.startswith("cancelar_man_")]
+    assert cancelar == ["cancelar_man_h1"]
+
+
+def test_botoes_de_acao_tem_texto_e_nao_apenas_simbolo(servicos):
+    servicos["manutencao.listar_manutencoes"].return_value = HISTORICO
+    app = abrir("6_Manutencao.py", manutencao_abas_indice=1)
+    rotulos = {b.key: b.label for b in app.button if b.key and b.key.startswith(("concluir_man_", "cancelar_man_"))}
+    assert rotulos == {"concluir_man_h1": "Concluir", "cancelar_man_h1": "Cancelar"}
 
 
 def test_dialogo_registrar_abre_com_previa_de_custo(servicos):
     app = abrir("6_Manutencao.py")
-    next(b for b in app.button if b.label == "+ Registrar manutenção").click().run()
+    next(b for b in app.button if b.label == "Registrar manutenção").click().run()
     assert not app.exception and not app.error
     assert any(b.label == "Salvar manutenção" for b in app.button)
     texto = " ".join(m.value for m in app.markdown)
-    assert "custo total" in texto
+    assert "Custo total" in texto

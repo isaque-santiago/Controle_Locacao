@@ -33,14 +33,13 @@ def test_cabecalho_contagens_e_situacoes(servicos):
     assert "1 vencido(s) · 0 a vencer" in texto
     assert "Regularizado" in texto and "Vencido" in texto and "Em dia" in texto
     assert "apólice 445871" in texto
-    rotulos = [b.label for b in app.button]
-    assert {"Todos · 3", "Vencido · 1", "A vencer · 0", "Em dia · 2"} <= set(rotulos)
+    assert app.pills[0].options == ["Todos · 3", "Vencido · 1", "A vencer · 0", "Em dia · 2"]
 
 
 def test_filtro_vencido_mostra_so_vencidos(servicos):
     servicos["documentos.listar_todos"].return_value = [EM_DIA, VENCIDO]
     app = abrir("7_Documentos.py")
-    next(b for b in app.button if b.label.startswith("Vencido")).click().run()
+    app.pills[0].set_value("vencido").run()
     texto = _texto(app)
     assert "31/01/2020" in texto
     assert "01/01/2999" not in texto
@@ -84,17 +83,17 @@ def _roteiro_regularizar():
 
 def test_botao_novo_documento_abre_dialogo(servicos):
     app = abrir("7_Documentos.py")
-    next(b for b in app.button if b.label == "+ Novo documento").click().run()
+    next(b for b in app.button if b.label == "Novo documento").click().run()
     assert not app.error
     assert any(b.label == "Salvar documento" for b in app.button)
-    assert any(e.label == "Valor (R$)" for e in app.text_input)
+    assert any(e.key == "documento_valor" for e in app.text_input)
 
 
 def test_salvar_novo_documento_envia_dados(servicos):
     with patch("src.services.documentos.criar", return_value={"id": "novo"}) as criar:
         app = _abrir_dialogo(_roteiro_novo)
-        next(e for e in app.text_input if e.label == "Valor (R$)").set_value("420,00")
-        next(d for d in app.date_input if d.label == "Vencimento").set_value(date(2027, 1, 31))
+        app.text_input(key="documento_valor").set_value("420,00")
+        next(d for d in app.date_input if d.label == "Vencimento *").set_value(date(2027, 1, 31))
         next(b for b in app.button if b.label == "Salvar documento").click().run()
     assert not app.error, [e.value for e in app.error]
     dados = criar.call_args.args[0]
@@ -117,7 +116,7 @@ def test_regularizar_guarda_sugestao_do_ano_seguinte(servicos):
     ) as regularizar:
         app = _abrir_dialogo(_roteiro_regularizar)
         assert any("2027" in c.label for c in app.checkbox)
-        next(b for b in app.button if b.label == "Confirmar").click().run()
+        next(b for b in app.button if b.label == "Confirmar regularização").click().run()
     regularizar.assert_called_once()
     assert app.session_state["documentos_sugestao"] == {**sugestao, "moto_id": "m"}
 
@@ -129,7 +128,7 @@ def test_regularizar_sem_marcar_proximo_nao_guarda_sugestao(servicos):
     ):
         app = _abrir_dialogo(_roteiro_regularizar)
         next(c for c in app.checkbox if "2027" in c.label).uncheck()
-        next(b for b in app.button if b.label == "Confirmar").click().run()
+        next(b for b in app.button if b.label == "Confirmar regularização").click().run()
     assert "documentos_sugestao" not in app.session_state
 
 

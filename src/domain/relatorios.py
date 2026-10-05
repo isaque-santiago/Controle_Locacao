@@ -120,6 +120,21 @@ def proporcoes(valores):
     ]
 
 
+def destaques(itens):
+    """Resumo textual de uma série de barras: `itens` é uma lista de `(rótulo, valor)` na ordem exibida.
+    Devolve `None` se vazia; senão `{"quantidade", "total", "maior", "menor"}`, com `maior`/`menor` como
+    `(rótulo, valor)`. Em empate vale o primeiro da lista. Serve de alternativa em texto às barras."""
+    itens = [(rotulo, valor(numero)) for rotulo, numero in itens]
+    if not itens:
+        return None
+    return {
+        "quantidade": len(itens),
+        "total": sum((v for _, v in itens), Decimal(0)),
+        "maior": max(itens, key=lambda item: item[1]),
+        "menor": min(itens, key=lambda item: item[1]),
+    }
+
+
 def agrupar_por_modelo(resultado):
     """Custo de manutenção por modelo: total e média por moto, do maior para o menor."""
     grupos = {}

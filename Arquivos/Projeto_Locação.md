@@ -18,7 +18,7 @@ Sistema web para o dono de uma frota de motos de aluguel controlar, em um só lu
 ### Perfil de uso (definido)
 
 - Frota **média** (20 a 100 motos).
-- **Um único usuário: o dono.** Só ele registra locações, pagamentos e manutenções. Não há perfis de mecânico ou financeiro na v1.
+- **Um único usuário: o dono, até a fase 7** Só ele registra locações, pagamentos e manutenções. Não há perfis de mecânico ou financeiro na v1. (ver Fase 8 para o acesso do locatário)
 - Alertas aparecem **dentro do sistema** (dashboard). Envio por WhatsApp/e-mail fica para a v2.
 - A quilometragem é **informada manualmente** pelo dono (vistoria, manutenção ou atualização avulsa). Não há rastreador/GPS na v1.
 
@@ -703,7 +703,77 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 - `vw_resultado_moto` e custo por km rodado.
 - **Aceite:** números do Dashboard conferem com consultas manuais no banco (teste com dados de exemplo); exportação abre corretamente no Excel com acentos.
 
-### Fase 7: Acabamento e publicação
+### Fase 7: Portal do locatário e controle de troca de óleo
+
+> ⚠️ Esta fase quebra a premissa da seção 1 ("Um único usuário: o dono"): passa a
+> existir um segundo papel, o **locatário**, com login próprio.
+
+- Reaproveita cadastro de Motos e Clientes (Fase 1) e o plano preventivo já
+  existente (Fase 3 — troca de óleo já configurada em 1.000 km / 90 dias).
+- **Controle de acesso: login completo por CPF + senha** (Supabase Auth). O app
+  converte o CPF no e-mail interno `<cpf>@portal.example.com` (domínio reservado,
+  nunca recebe e-mail); o dono continua com e-mail. Não existe senha padrão geral:
+  cada cliente recebe uma **senha aleatória e individual**, mostrada uma vez ao
+  dono. A troca de senha pelo locatário é **opcional**.
+- **Criação do acesso automatizada por Edge Function** (`criar-locatario`, em
+  `supabase/functions`): o dono clica em "Criar acesso" na aba "Portal" da ficha e a
+  função cria/redefine/exclui o usuário no Auth e o vincula ao cliente
+  (`clientes.auth_user_id`). A `service_role` existe só dentro do Supabase (segredo
+  injetado na função); o app nunca a usa nem a guarda. A função só atende o dono
+  (`rpc_meu_papel() = 'dono'` com o JWT de quem chamou). Publicada com
+  `supabase functions deploy` em cada projeto (dev e produção).
+  O papel vem de `rpc_meu_papel()` (`dono`, `locatario` ou nenhum) e define o menu:
+  o locatário só vê a tela "Troca de óleo".
+- **RLS:** as tabelas continuam só com a política do dono (`is_dono()`); o
+  locatário não tem acesso direto a nenhuma tabela. Lê e grava apenas por RPCs
+  `SECURITY DEFINER` que o identificam por `auth.uid()` e só alcançam o contrato
+  **ativo** dele: `rpc_portal_locatario` (dados mínimos: placa, modelo, km,
+  plano de óleo, últimas trocas) e `rpc_registrar_troca_oleo_locatario`.
+- Tela simplificada (mobile-first) para o locatário: informa o hodômetro e anexa
+  a **foto do painel** e a **foto da nota fiscal do óleo** (cláusula 4.13 do
+  contrato: "será exigido foto do painel do veículo e nota fiscal da compra do
+  óleo").
+- `rpc_registrar_troca_oleo_locatario` (transação única):
+  - valida hodômetro informado >= último registrado (km nunca regride, regra
+    já usada na Fase 1) e recusa o mesmo hodômetro duas vezes no contrato;
+  - exige as duas imagens já enviadas ao Storage, dentro da pasta do próprio
+    cliente;
+  - grava a manutenção preventiva concluída (custo zero) e a troca em
+    `trocas_oleo`, vinculada ao cliente que reportou, reinicia o item de troca
+    de óleo do plano da moto e lança o km em `historico_km`;
+  - a situação/próxima troca seguem a lógica de `manutencao_regras`
+    (`calcular_proxima_manutencao` / `calcular_situacao`), replicada no domínio
+    `src/domain/troca_oleo.py` para a prévia na tela e os testes;
+  - se o km reportado ultrapassar `última km + intervalo` do plano (trocar
+    exatamente na km prevista não multa), gera a cobrança de **multa fixa**
+    (tabela `cobrancas`, novo tipo `multa_manutencao` — é `cobrancas` que guarda
+    o tipo, não `pagamentos`), **cobrada direto**, sem conferência prévia do dono.
+- **Multa: valor fixo único**, definido em Configurações
+  (`configuracoes.multa_troca_oleo_valor`). O valor em reais ainda será informado
+  pelo dono; enquanto for 0,00 (padrão) o excesso é registrado, mas nada é cobrado.
+  Como o hodômetro é informado pelo próprio locatário, a foto é a evidência.
+- Bucket de fotos privado `trocas_oleo` (só imagem, até 10 MB), acesso do dono
+  por URL assinada — mesmo padrão da Fase 5. O locatário só insere na própria
+  pasta `<cliente_id>/`; não lista, não lê e não sobrescreve.
+- Backup manual passa a incluir `trocas_oleo` (15 tabelas).
+
+**Aceite:**
+- `pytest` passa (`tests/test_troca_oleo.py`, `tests/test_portal_locatario.py`);
+- `supabase/verificar_portal_locatario.sql` roda sem erro em homologação:
+  locatário não lê nenhuma tabela, km regredido/arquivo de outro cliente/arquivo
+  inexistente/troca duplicada são recusados, troca dentro do intervalo não gera
+  multa e troca acima gera exatamente uma `multa_manutencao` com o valor fixo;
+- função `criar-locatario` publicada no projeto de dev; teste manual em dev: dono
+  clica em "Criar acesso"; o locatário loga com o CPF e a senha mostrada, vê só a
+  tela "Troca de óleo" e envia troca com as duas fotos; "Gerar nova senha" e
+  "Remover acesso" funcionam; o dono vê troca,
+  fotos e multa na ficha do cliente.
+
+**Fora do escopo desta fase:** tela para cancelar cobrança (hoje só direto no
+banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
+(enviadas ao Storage quando o registro da troca falha).
+
+### Fase 8: Acabamento e publicação
 - Backup manual (ZIP com CSV de todas as tabelas), tratamento de erros amigável, estados vazios, paginação das listas grandes, revisão de responsividade no celular.
 - Deploy no Streamlit Community Cloud com segredos em `st.secrets`; README com passo a passo.
 - Script de dados de exemplo (`seed_demo.sql`) para demonstração.
@@ -753,10 +823,10 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 1. Envio automático de cobrança por WhatsApp (API oficial ou provedor) e resumo diário de vencimentos.
 2. Gestão de multas de trânsito com identificação do condutor e repasse ao locatário.
 3. Contrato em PDF gerado a partir de modelo (revisar o modelo com advogado).
-4. Portal do cliente para ver contrato, cobranças e enviar comprovante Pix.
+4. Portal do cliente para ver contrato, cobranças e enviar comprovante Pix. *(acesso básico do locatário — foto/hodômetro de troca de óleo — antecipado na Fase 7)*
 5. Conciliação de Pix (extrato) e geração de cobrança Pix.
 6. Integração com rastreador para km automático.
-7. Perfis de usuário (mecânico, financeiro) e trilha de auditoria.
+7. Perfis de usuário (mecânico, financeiro) e trilha de auditoria. *(papel de locatário antecipado na Fase 7; mecânico/financeiro seguem em backlog)*
 8. Previsão de custo de manutenção e recomendação de venda da moto (custo acumulado x valor de mercado, cruzando com tabela FIPE).
 
 ---

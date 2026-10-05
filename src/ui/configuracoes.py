@@ -1,43 +1,39 @@
 """Configurações: encargos, alertas e backup manual — segue Configuracoes.dc.html
-do mockup (cartões de 780px, exemplo de cálculo, backup em ZIP)."""
+do mockup (cartões em largura total, exemplo de cálculo, backup em ZIP)."""
 
-from decimal import Decimal
 from html import escape
 
 import streamlit as st
 
-from src.domain.configuracoes import exemplo_encargos
+from src.domain import mensagens
+from src.domain.configuracoes import LIMITE_INTEIRO as _LIMITE, campos_alterados, exemplo_encargos
 from src.domain.valores import hoje_br
 from src.services import configuracoes
-from src.ui.componentes import cabecalho, proteger, sucesso
+from src.ui import feedback
+from src.ui.componentes import cabecalho, cabecalho_pagina, proteger
 from src.ui.formatadores import formatar_moeda
-
-
-def _percentual(valor):
-    return f"{Decimal(str(valor)):.2f}".replace(".", ",")
+from src.ui.formularios import campo_inteiro, campo_moeda, campo_percentual, linha_campos
 
 
 def _titulo_cartao(titulo, descricao):
     st.markdown(
         f"""
-        <h3 class="rotulo" style="margin:0 0 4px 0;font-size:15px;color:#1E2227;">{escape(titulo)}</h3>
-        <div style="font-size:12px;color:#585F66;margin-bottom:14px;">{escape(descricao)}</div>
+        <h3 class="rotulo config-titulo">{escape(titulo)}</h3>
+        <div class="config-descricao">{escape(descricao)}</div>
         """,
         unsafe_allow_html=True,
     )
 
 
 def _mono(texto, forte=False):
-    peso = "font-weight:600;" if forte else ""
-    return f'<span class="mono" style="color:#1E2227;{peso}">{escape(texto)}</span>'
+    return f'<span class="mono texto-forte{" texto-negrito" if forte else ""}">{escape(texto)}</span>'
 
 
 def _exemplo(multa, juros, carencia):
     """Cálculo com os valores hoje salvos (o formulário só grava ao salvar)."""
     e = exemplo_encargos(multa, juros, carencia)
     st.markdown(
-        '<div style="background:#EEF0F0;border-radius:6px;padding:12px 16px;'
-        'font-size:12px;color:#585F66;">Exemplo: cobrança de '
+        '<div class="config-exemplo">Exemplo: cobrança de '
         f'{_mono(formatar_moeda(e["saldo"]))}, vencida há {_mono(str(e["dias_vencida"]) + " dias")} → '
         f'multa {_mono(formatar_moeda(e["multa"]))} + juros {_mono(formatar_moeda(e["juros"]))} = '
         f'total {_mono(formatar_moeda(e["total"]), True)}</div>',
@@ -48,16 +44,15 @@ def _exemplo(multa, juros, carencia):
 def _formulario(config):
     entrada = {}
     with st.form("configuracoes", border=False):
-        titulo, acao = st.columns([4, 1], vertical_alignment="top")
-        titulo.markdown(
-            """
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Configurações</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">Parâmetros do sistema</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        salvar = acao.form_submit_button(
-            "Salvar alterações", type="primary", use_container_width=True
+        salvar = cabecalho_pagina(
+            "Configurações",
+            sub="Parâmetros do sistema",
+            acao={
+                "rotulo": "Salvar alterações",
+                "chave": "ocupa_configuracoes_salvar",
+                "icone": ":material/save:",
+                "formulario": True,
+            },
         )
 
         with st.container(key="config_card_encargos"):
@@ -65,16 +60,19 @@ def _formulario(config):
                 "Encargos por atraso",
                 "Aplicados sobre o saldo em aberto após a carência.",
             )
-            c1, c2, c3, _ = st.columns([1, 1, 1, 1.5])
-            entrada["multa_atraso_percentual"] = c1.text_input(
-                "Multa por atraso (%)", _percentual(config["multa_atraso_percentual"])
-            )
-            entrada["juros_mensal_percentual"] = c2.text_input(
-                "Juros mensal (%)", _percentual(config["juros_mensal_percentual"])
-            )
-            entrada["carencia_dias"] = c3.text_input(
-                "Carência (dias)", str(config["carencia_dias"])
-            )
+            with linha_campos([1, 1, 1], "cfg_encargos") as (c1, c2, c3):
+                with c1:
+                    entrada["multa_atraso_percentual"] = campo_percentual(
+                        "Multa por atraso", config["multa_atraso_percentual"], "cfg_multa"
+                    )
+                with c2:
+                    entrada["juros_mensal_percentual"] = campo_percentual(
+                        "Juros mensal", config["juros_mensal_percentual"], "cfg_juros"
+                    )
+                with c3:
+                    entrada["carencia_dias"] = campo_inteiro(
+                        "Carência", config["carencia_dias"], "cfg_carencia", sufixo="dias", maximo=_LIMITE
+                    )
             _exemplo(
                 config["multa_atraso_percentual"],
                 config["juros_mensal_percentual"],
@@ -86,12 +84,21 @@ def _formulario(config):
                 "Alertas de manutenção",
                 'Quando um item entra em situação "próxima" antes de vencer.',
             )
-            c1, c2, _ = st.columns([1, 1, 2.5])
-            entrada["alerta_manutencao_km"] = c1.text_input(
-                "Avisar (km antes)", str(config["alerta_manutencao_km"])
-            )
-            entrada["alerta_manutencao_dias"] = c2.text_input(
-                "Avisar (dias antes)", str(config["alerta_manutencao_dias"])
+            with linha_campos([1, 1], "cfg_manutencao") as (c1, c2):
+                with c1:
+                    entrada["alerta_manutencao_km"] = campo_inteiro(
+                        "Avisar antes", config["alerta_manutencao_km"], "cfg_alerta_km", sufixo="km", maximo=_LIMITE
+                    )
+                with c2:
+                    entrada["alerta_manutencao_dias"] = campo_inteiro(
+                        "Avisar antes", config["alerta_manutencao_dias"], "cfg_alerta_dias", sufixo="dias", maximo=_LIMITE
+                    )
+            entrada["multa_troca_oleo_valor"] = campo_moeda(
+                "Multa por troca de óleo fora do intervalo",
+                config.get("multa_troca_oleo_valor") or 0,
+                "cfg_multa_oleo",
+                ajuda="Valor fixo cobrado do locatário quando ele reporta a troca de óleo "
+                "depois do intervalo do plano. Deixe 0,00 para não cobrar multa.",
             )
 
         with st.container(key="config_card_documentos"):
@@ -99,13 +106,15 @@ def _formulario(config):
                 "Alertas de documentos e CNH",
                 'Dias antes do vencimento para marcar como "a vencer".',
             )
-            c1, c2, _ = st.columns([1.3, 1.3, 2.2])
-            entrada["alerta_documento_dias"] = c1.text_input(
-                "Documentos da moto (dias)", str(config["alerta_documento_dias"])
-            )
-            entrada["alerta_cnh_dias"] = c2.text_input(
-                "CNH do cliente (dias)", str(config["alerta_cnh_dias"])
-            )
+            with linha_campos([1, 1], "cfg_documentos") as (c1, c2):
+                with c1:
+                    entrada["alerta_documento_dias"] = campo_inteiro(
+                        "Documentos da moto", config["alerta_documento_dias"], "cfg_alerta_doc", sufixo="dias", maximo=_LIMITE
+                    )
+                with c2:
+                    entrada["alerta_cnh_dias"] = campo_inteiro(
+                        "CNH do cliente", config["alerta_cnh_dias"], "cfg_alerta_cnh", sufixo="dias", maximo=_LIMITE
+                    )
     return salvar, entrada
 
 
@@ -113,7 +122,7 @@ def _backup():
     with st.container(key="config_card_backup"):
         _titulo_cartao(
             "Backup manual",
-            "Gera um ZIP com um CSV de cada uma das 14 tabelas. Contém dados pessoais; "
+            "Gera um ZIP com um CSV de cada uma das 15 tabelas. Contém dados pessoais; "
             "guarde em local privado. Fotos e comprovantes devem ser copiados "
             "separadamente do Storage. Evite outras alterações durante a geração. "
             "Recomendado semanalmente.",
@@ -122,7 +131,7 @@ def _backup():
         gerado = st.session_state.get("config_backup")
         if gerado:
             texto.markdown(
-                '<div style="font-size:12px;color:#585F66;">Backup desta sessão: '
+                '<div class="fs-legenda texto-2">Backup desta sessão: '
                 f'{_mono(gerado["quando"])}</div>',
                 unsafe_allow_html=True,
             )
@@ -136,7 +145,7 @@ def _backup():
             )
         else:
             texto.markdown(
-                '<div style="font-size:12px;color:#585F66;">Nenhum backup gerado nesta sessão.</div>',
+                '<div class="fs-legenda texto-2">Nenhum backup gerado nesta sessão.</div>',
                 unsafe_allow_html=True,
             )
             if acao.button("Gerar backup", use_container_width=True):
@@ -153,10 +162,11 @@ def _backup():
 
 def exibir():
     cabecalho("Configurações", exibir_titulo=False)
-    with proteger(), st.container(key="config_pagina"):
+    with proteger(nova_tentativa=True), st.container(key="config_pagina"):
         config = configuracoes.obter()
         salvar, entrada = _formulario(config)
         if salvar:
-            configuracoes.atualizar(entrada)
-            sucesso()
+            with proteger():
+                novos = configuracoes.atualizar(entrada)
+                feedback.concluir(mensagens.configuracoes_salvas(campos_alterados(config, novos)))
         _backup()

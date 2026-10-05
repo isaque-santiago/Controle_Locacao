@@ -17,20 +17,36 @@ CAMPOS_INTEIROS = {
     "alerta_documento_dias": "Documentos da moto",
     "alerta_cnh_dias": "CNH do cliente",
 }
-_LIMITE_INTEIRO = 100_000
+CAMPOS_MONETARIOS = {
+    "multa_troca_oleo_valor": "Multa por troca de óleo fora do intervalo",
+}
+LIMITE_INTEIRO = 100_000
 
 
 def _inteiro(valor, rotulo):
     texto = str(valor).strip()
-    if not texto.isdigit() or int(texto) > _LIMITE_INTEIRO:
-        raise ValueError(f"{rotulo}: informe um número inteiro entre 0 e {_LIMITE_INTEIRO}.")
+    if not texto.isdigit() or int(texto) > LIMITE_INTEIRO:
+        raise ValueError(f"{rotulo}: informe um número inteiro entre 0 e {LIMITE_INTEIRO}.")
     return int(texto)
+
+
+def campos_alterados(antes: dict, depois: dict) -> list[str]:
+    """Rótulos dos parâmetros cujo valor mudou (comparação numérica: `2` e `2.00` são o mesmo valor).
+    Campos ausentes em qualquer um dos lados são ignorados."""
+    rotulos = {**CAMPOS_PERCENTUAIS, **CAMPOS_INTEIROS, **CAMPOS_MONETARIOS}
+    alterados = []
+    for campo, rotulo in rotulos.items():
+        if campo in antes and campo in depois and antes[campo] is not None and depois[campo] is not None:
+            if Decimal(str(antes[campo])) != Decimal(str(depois[campo])):
+                alterados.append(rotulo)
+    return alterados
 
 
 def validar_configuracao(entrada: dict) -> dict:
     """Converte o que foi digitado (texto pt-BR) nos tipos do banco.
 
     Percentuais: Decimal com 2 casas entre 0 e 100, enviados como texto.
+    Valores em reais (multa fixa): Decimal com 2 casas, não negativo, enviado como texto.
     Demais campos: inteiros não negativos.
     """
     dados = {}
@@ -44,6 +60,13 @@ def validar_configuracao(entrada: dict) -> dict:
         if valor > 100:
             raise ValueError(f"{rotulo}: o percentual não pode passar de 100%.")
         dados[campo] = str(valor)
+    for campo, rotulo in CAMPOS_MONETARIOS.items():
+        try:
+            dados[campo] = str(decimal_br(entrada[campo]))
+        except ValueError:
+            raise ValueError(
+                f"{rotulo}: informe um valor em reais válido, com até duas casas decimais."
+            ) from None
     for campo, rotulo in CAMPOS_INTEIROS.items():
         dados[campo] = _inteiro(entrada[campo], rotulo)
     return dados

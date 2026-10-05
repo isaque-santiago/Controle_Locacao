@@ -1,6 +1,7 @@
 """Motos: lista e ficha — segue Motos.dc.html e MotoFicha.dc.html do mockup."""
 
 from datetime import date
+from html import escape
 
 import streamlit as st
 
@@ -13,16 +14,49 @@ from src.services import (
     clientes,
     cobrancas,
 )
-from src.domain.valores import hoje_br, decimal_br
+from src.domain import mensagens
+from src.domain.entradas import decimal_campo
+from src.domain.valores import hoje_br
+from src.ui import feedback
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    vazio_lista,
     proteger,
     campo_data,
     chip_placa,
     selo_situacao,
     tabela_html,
     abrir_ficha_contrato,
+    botao_acao,
+    botao_voltar,
+    cabecalho_ficha,
+    cartao_dados,
+    cartao_ficha,
+    faixa_dados,
+    ficha_identidade,
+    paineis,
 )
+from src.ui.formularios import (
+    campo_inteiro,
+    campo_moeda,
+    campo_placa,
+    legenda_obrigatorios,
+    linha_campos,
+    rodape_formulario,
+    rotulo_obrigatorio,
+)
+from src.ui.listas import (
+    abas,
+    aba_ativa,
+    barra_filtros,
+    lembrar_registro,
+    paginar,
+    reiniciar_abas,
+    restaurar_posicao,
+    rodape_paginacao,
+)
+from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import (
     formatar_data,
     formatar_moeda,
@@ -36,15 +70,12 @@ _STATUS_ROTULO = {
     "manutencao": "Manutenção",
     "inativa": "Inativa",
 }
-_FILTROS = ["Todas", "disponivel", "alugada", "manutencao", "inativa"]
-
-
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
+_OPCOES_FILTRO = [("Todas", "Todas")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("disponivel", "alugada", "manutencao", "inativa")]
 
 
 def _ir_para_ficha(moto_id):
+    reiniciar_abas("motos_ficha_abas")
+    lembrar_registro("motos", moto_id)
     st.session_state["motos_visao"] = "ficha"
     st.session_state["motos_id_selecionado"] = moto_id
     st.rerun()
@@ -74,65 +105,77 @@ def _dialog_editar_moto(moto):
 
 def _formulario_moto(moto):
     moto = moto or {}
+    ano_atual = hoje_br().year
     with st.form("form_moto_" + moto.get("id", "novo")):
         dados = {}
-        for campo, titulo in [
-            ("placa", "Placa"),
-            ("marca", "Marca"),
-            ("modelo", "Modelo"),
-            ("renavam", "Renavam"),
-            ("chassi", "Chassi"),
-            ("cor", "Cor"),
-        ]:
-            dados[campo] = st.text_input(titulo, value=moto.get(campo) or "")
-        col1, col2 = st.columns(2)
-        dados["ano_fabricacao"] = col1.number_input(
-            "Ano fabricação", min_value=1900, max_value=2100,
-            value=moto.get("ano_fabricacao") or 2026,
-        )
-        dados["ano_modelo"] = col2.number_input(
-            "Ano modelo", min_value=1900, max_value=2100,
-            value=moto.get("ano_modelo") or 2026,
-        )
+        dados["placa"] = campo_placa("Placa", moto.get("placa"), "moto_placa", obrigatorio=True)
+        with linha_campos([1, 1], "moto_marca_modelo") as (col_marca, col_modelo):
+            dados["marca"] = col_marca.text_input(rotulo_obrigatorio("Marca"), value=moto.get("marca") or "")
+            dados["modelo"] = col_modelo.text_input(rotulo_obrigatorio("Modelo"), value=moto.get("modelo") or "")
+        with linha_campos([1, 1], "moto_renavam_chassi") as (col_renavam, col_chassi):
+            dados["renavam"] = col_renavam.text_input("Renavam", value=moto.get("renavam") or "")
+            dados["chassi"] = col_chassi.text_input("Chassi", value=moto.get("chassi") or "")
+        dados["cor"] = st.text_input("Cor", value=moto.get("cor") or "")
+        with linha_campos([1, 1], "moto_anos") as (col_fabricacao, col_modelo_ano):
+            with col_fabricacao:
+                dados["ano_fabricacao"] = campo_inteiro(
+                    "Ano de fabricação", moto.get("ano_fabricacao") or ano_atual, "moto_ano_fabricacao",
+                    minimo=1900, maximo=2100,
+                )
+            with col_modelo_ano:
+                dados["ano_modelo"] = campo_inteiro(
+                    "Ano do modelo", moto.get("ano_modelo") or ano_atual, "moto_ano_modelo",
+                    minimo=1900, maximo=2100,
+                )
         if not moto:
-            dados["km_atual"] = st.number_input(
-                "Quilometragem inicial", min_value=0, step=1
-            )
-        aquisicao = st.text_input(
-            "Valor de aquisição (R$)", str(moto.get("valor_aquisicao") or "0")
-        )
-        locacao = st.text_input(
-            "Locação sugerida (R$)", str(moto.get("valor_locacao_sugerido") or "0")
-        )
+            dados["km_atual"] = campo_inteiro("Quilometragem inicial", 0, "moto_km", sufixo="km")
+        with linha_campos([1, 1], "moto_valores") as (col_aquisicao, col_locacao):
+            with col_aquisicao:
+                aquisicao = campo_moeda("Valor de aquisição", moto.get("valor_aquisicao"), "moto_aquisicao")
+            with col_locacao:
+                locacao = campo_moeda(
+                    "Locação sugerida",
+                    moto.get("valor_locacao_sugerido"),
+                    "moto_locacao",
+                    ajuda="Valor mensal sugerido ao criar contratos; cada contrato pode usar outro valor.",
+                )
         data = campo_data("Data de aquisição", moto.get("data_aquisicao"))
         dados["data_aquisicao"] = data.isoformat() if data else None
         dados["observacoes"] = st.text_area("Observações", moto.get("observacoes") or "")
-        if st.form_submit_button("Salvar moto", type="primary", use_container_width=True):
-            dados.update(
-                valor_aquisicao=str(decimal_br(aquisicao)),
-                valor_locacao_sugerido=str(decimal_br(locacao)),
-            )
-            if moto:
-                motos.atualizar(moto["id"], dados)
-            else:
-                motos.criar(dados)
-            _salvo()
+        legenda_obrigatorios()
+        acao = rodape_formulario("Salvar moto", "moto", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                dados.update(
+                    valor_aquisicao=str(decimal_campo(aquisicao, "Valor de aquisição")),
+                    valor_locacao_sugerido=str(decimal_campo(locacao, "Locação sugerida")),
+                )
+                if moto:
+                    motos.atualizar(moto["id"], dados)
+                else:
+                    motos.criar(dados)
+                feedback.concluir(mensagens.moto_salva(formatar_placa(dados["placa"]), nova=not moto))
 
 
 @st.dialog("Atualizar quilometragem")
 def _dialog_km(moto):
     st.markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
     with st.form("form_km_" + moto["id"]):
-        km = st.number_input(
-            "Nova leitura", min_value=0, value=moto["km_atual"], step=1
-        )
+        km = campo_inteiro("Nova leitura", moto["km_atual"], "moto_nova_leitura", sufixo="km")
         confirmar = st.checkbox(
             "Confirmo o lançamento de uma leitura histórica menor "
             "(o km atual será mantido)"
         )
-        if st.form_submit_button("Registrar leitura", type="primary", use_container_width=True):
-            motos.atualizar_km(moto["id"], km, confirmar_km_menor=confirmar)
-            _salvo("Quilometragem atualizada.")
+        acao = rodape_formulario("Registrar leitura", "kmmoto", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                chave = feedback.chave_operacao("kmmoto", [moto["id"], km, confirmar])
+                motos.atualizar_km(moto["id"], km, confirmar_km_menor=confirmar, chave_operacao=chave)
+                feedback.concluir(mensagens.km_atualizado(formatar_placa(moto["placa"]), km), "kmmoto")
 
 
 @st.dialog("Regularizar documento")
@@ -140,9 +183,14 @@ def _dialog_regularizar(documento):
     st.write(f"**{documento['tipo'].upper()}** · vencimento {formatar_data(documento['vencimento'])}")
     with st.form("form_regularizar_" + documento["id"]):
         data = campo_data("Data de regularização", hoje_br().isoformat())
-        if st.form_submit_button("Confirmar", type="primary", use_container_width=True):
-            documentos.regularizar(documento["id"], data or hoje_br())
-            _salvo("Documento regularizado.")
+        acao = rodape_formulario("Confirmar regularização", "regmoto", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                documentos.regularizar(documento["id"], data or hoje_br())
+                descricao = f"{documento['tipo'].upper()} {documento.get('ano_referencia') or ''}".strip()
+                feedback.concluir(mensagens.documento_regularizado(descricao))
 
 
 # ------------------------------------------------------------------ lista --
@@ -156,103 +204,61 @@ def _exibir_lista():
     contratos_ativos = {c["moto_id"]: c["cliente_id"] for c in contratos.listar() if c["status"] == "ativo"}
     nomes_cliente = {c["id"]: c["nome"] for c in clientes.listar()}
 
-    col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
-    col_titulo.markdown(
-        f"""
-        <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Motos</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">{len(registros)} moto(s) cadastrada(s)</div>
-        """,
-        unsafe_allow_html=True,
+    if cabecalho_pagina(
+        "Motos",
+        sub=f"{len(registros)} moto(s) cadastrada(s)",
+        acao={"rotulo": "Nova moto", "chave": "motos_nova"},
+    ):
+        _dialog_nova_moto()
+
+    filtros = barra_filtros(
+        "motos",
+        _OPCOES_FILTRO,
+        padrao="Todas",
+        contagens={"Todas": len(registros), **contagem},
+        busca="Buscar por placa ou modelo",
     )
-    with col_botao:
-        if st.button("+ Nova moto", type="primary", use_container_width=True):
-            _dialog_nova_moto()
-
-    st.write("")
-    filtro_atual = st.session_state.get("motos_filtro", "Todas")
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        with st.container(key="motos_filtros"):
-            pills = st.columns(len(_FILTROS))
-            rotulos_pill = ["Todas"] + [_STATUS_ROTULO[f] for f in _FILTROS[1:]]
-            for coluna, valor, rotulo in zip(pills, _FILTROS, rotulos_pill):
-                total_pill = len(registros) if valor == "Todas" else contagem.get(valor, 0)
-                if coluna.button(
-                    f"{rotulo} · {total_pill}",
-                    key=f"pill_{valor}",
-                    type="primary" if filtro_atual == valor else "secondary",
-                    use_container_width=True,
-                ):
-                    st.session_state["motos_filtro"] = valor
-                    st.rerun()
-    with col_busca:
-        busca = st.text_input(
-            "Buscar", placeholder="Buscar por placa ou modelo", label_visibility="collapsed"
-        )
-
     filtradas = [
         m
         for m in registros
-        if (filtro_atual == "Todas" or m["status"] == filtro_atual)
-        and busca.casefold() in f"{m['placa']} {m['marca']} {m['modelo']}".casefold()
+        if (filtros.valor == "Todas" or m["status"] == filtros.valor)
+        and filtros.busca.casefold() in f"{m['placa']} {m['marca']} {m['modelo']}".casefold()
     ]
+    filtros.resumo(len(filtradas), ("moto", "motos"))
+    pagina_atual, pagina = paginar("motos", filtradas)
 
-    st.write("")
-    pagina_chave = "motos_pagina"
-    por_pagina = 7
-    total_paginas = max(1, -(-len(filtradas) // por_pagina))
-    pagina = min(st.session_state.get(pagina_chave, 1), total_paginas)
-    inicio = (pagina - 1) * por_pagina
-    pagina_atual = filtradas[inicio : inicio + por_pagina]
-
-    with st.container(key="motos_card_lista"):
-        cab = st.columns([1.3, 1.8, 1.5, 1.4, 1.5, 0.5], vertical_alignment="center")
-        for coluna, rotulo in zip(cab, ["Placa", "Modelo", "Km atual", "Status", "Contrato atual", ""]):
-            coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
-                unsafe_allow_html=True,
-            )
+    with lista_registros("motos", acoes=2):
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhuma moto encontrada.</div>',
+                vazio_lista("Nenhuma moto encontrada.", "Ainda não há motos cadastradas.", bool(registros), "Nova moto"),
                 unsafe_allow_html=True,
             )
         for moto in pagina_atual:
-            linha = st.columns([1.3, 1.8, 1.5, 1.4, 1.5, 0.5], vertical_alignment="center")
-            linha[0].markdown(chip_placa(moto["placa"]), unsafe_allow_html=True)
-            linha[1].markdown(
-                f'<span style="font-size:13px;">{moto["marca"]} {moto["modelo"]}</span>',
-                unsafe_allow_html=True,
-            )
-            sub_km, sub_botao = linha[2].columns([3, 1], vertical_alignment="center")
-            sub_km.markdown(
-                f'<span class="mono" style="font-size:13px;">{moto["km_atual"]:,} km</span>'.replace(",", "."),
-                unsafe_allow_html=True,
-            )
-            if sub_botao.button("✎", key=f"km_{moto['id']}", help="Atualizar km"):
-                _dialog_km(moto)
-            linha[3].markdown(
-                selo_situacao(_STATUS_ROTULO[moto["status"]], moto["status"]),
-                unsafe_allow_html=True,
-            )
             cliente_id = contratos_ativos.get(moto["id"])
-            linha[4].markdown(
-                f'<span style="font-size:13px;{"color:#9AA0A6;" if not cliente_id else ""}">'
-                f'{nomes_cliente.get(cliente_id, "—") if cliente_id else "—"}</span>',
-                unsafe_allow_html=True,
-            )
-            if linha[5].button("→", key=f"ficha_{moto['id']}", help="Ver ficha"):
-                _ir_para_ficha(moto["id"])
+            sem_contrato = "texto-3" if not cliente_id else ""
+            modelo = f"{moto['marca']} {moto['modelo']}"
+            campos = [
+                campo("Modelo", f'<span class="fs-secundario">{escape(modelo)}</span>'),
+                campo("Km atual", f'<span class="mono fs-secundario">{moto["km_atual"]:,} km</span>'.replace(",", ".")),
+                campo(
+                    "Contrato atual",
+                    f'<span class="fs-secundario {sem_contrato}">{escape(nomes_cliente.get(cliente_id, "—")) if cliente_id else "—"}</span>',
+                ),
+            ]
+            with registro(
+                "motos",
+                moto["id"],
+                chip_placa(moto["placa"]),
+                campos,
+                selo=selo_situacao(_STATUS_ROTULO[moto["status"]], moto["status"]),
+            ) as acoes:
+                if botao_acao(acoes, "km", f"km_{moto['id']}", ajuda=f"Atualizar o km da moto {formatar_placa(moto['placa'])}"):
+                    _dialog_km(moto)
+                if botao_acao(acoes, "abrir", f"ficha_{moto['id']}", ajuda=f"Abrir a ficha da moto {formatar_placa(moto['placa'])}"):
+                    _ir_para_ficha(moto["id"])
 
-    if total_paginas > 1:
-        st.caption(f"Mostrando {len(pagina_atual)} de {len(filtradas)} · página {pagina} de {total_paginas}")
-        col_ant, col_prox = st.columns(2)
-        if col_ant.button("‹ Anterior", disabled=pagina <= 1):
-            st.session_state[pagina_chave] = pagina - 1
-            st.rerun()
-        if col_prox.button("Próxima ›", disabled=pagina >= total_paginas):
-            st.session_state[pagina_chave] = pagina + 1
-            st.rerun()
+    rodape_paginacao("motos", pagina)
+    restaurar_posicao("motos")
 
 
 # ------------------------------------------------------------------ ficha --
@@ -261,12 +267,7 @@ def _card_contrato_ativo(moto_id):
     contrato = next((c for c in contratos.listar() if c["moto_id"] == moto_id and c["status"] == "ativo"), None)
     if not contrato:
         st.markdown(
-            """
-            <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
-              <h3 class="rotulo" style="margin:0 0 6px;font-size:14px;">Contrato ativo</h3>
-              <div style="font-size:13px;color:#585F66;">Nenhum contrato ativo para esta moto.</div>
-            </div>
-            """,
+            cartao_dados("Contrato ativo", '<div class="fs-secundario texto-2">Nenhum contrato ativo para esta moto.</div>'),
             unsafe_allow_html=True,
         )
         return
@@ -279,85 +280,66 @@ def _card_contrato_ativo(moto_id):
     parcelas.sort(key=lambda c: c["vencimento"])
     proxima = formatar_data(parcelas[0]["vencimento"]) if parcelas else "—"
 
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <div style="width:32px;height:32px;border-radius:50%;background:#1E2227;color:#FAFAF9;
-                        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;">{_iniciais(nome)}</div>
-            <div>
-              <div style="font-size:14px;font-weight:500;">{nome}</div>
-              <div style="font-size:12px;color:#585F66;">desde {formatar_data(contrato['data_inicio'])} · {contrato['periodicidade']}</div>
+    acao = {"rotulo": "Ver contrato", "chave": "ver_contrato_moto", "ajuda": f"Abrir o contrato de {nome}"}
+    with cartao_ficha("moto_contrato", "Contrato ativo", acao) as ver_contrato:
+        if ver_contrato:
+            abrir_ficha_contrato(contrato["id"])
+        st.markdown(
+            f"""
+            <div class="resumo-contrato">
+              <div class="avatar avatar--grande">{escape(_iniciais(nome))}</div>
+              <div class="resumo-contrato__texto">
+                <div class="resumo-contrato__titulo">{escape(nome)}</div>
+                <div class="fs-legenda texto-2">desde {formatar_data(contrato['data_inicio'])} · {escape(str(contrato['periodicidade']))}</div>
+              </div>
             </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">valor / período</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">próxima cobrança</span><span class="mono" style="font-size:13px;">{proxima}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">caução</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['caucao_valor'])}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Ver contratos →", key="ver_contrato"):
-        abrir_ficha_contrato(contrato["id"])
+            <div class="grade-dados grade-dados--compacta">
+              <div class="campo"><span class="fs-legenda texto-2">valor / período</span><span class="mono fs-secundario">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">próxima cobrança</span><span class="mono fs-secundario">{proxima}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">caução</span><span class="mono fs-secundario">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _card_dados_moto(moto):
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados da moto</h3>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">renavam</span><span class="mono" style="font-size:13px;">{moto.get('renavam') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">chassi</span><span class="mono" style="font-size:13px;">{moto.get('chassi') or '—'}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">placa</span><span class="mono" style="font-size:13px;">{formatar_placa(moto['placa'])}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">valor de aquisição</span><span class="mono" style="font-size:13px;">{formatar_moeda(moto.get('valor_aquisicao'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">data de aquisição</span><span class="mono" style="font-size:13px;">{formatar_data(moto.get('data_aquisicao'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">status</span><span style="font-size:13px;">{_STATUS_ROTULO[moto['status']]}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    corpo = f"""
+      <div class="grade-dados grade-dados--compacta">
+        <div class="campo"><span class="fs-legenda texto-2">renavam</span><span class="mono fs-secundario">{escape(str(moto.get('renavam') or '—'))}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">chassi</span><span class="mono fs-secundario">{escape(str(moto.get('chassi') or '—'))}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">placa</span><span class="mono fs-secundario">{formatar_placa(moto['placa'])}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">valor de aquisição</span><span class="mono fs-secundario">{formatar_moeda(moto.get('valor_aquisicao'))}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">data de aquisição</span><span class="mono fs-secundario">{formatar_data(moto.get('data_aquisicao'))}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">status</span><span class="fs-secundario">{_STATUS_ROTULO[moto['status']]}</span></div>
+      </div>
+    """
+    st.markdown(cartao_dados("Dados da moto", corpo), unsafe_allow_html=True)
 
 
 def _card_quilometragem(moto_id):
     historico = sorted(motos.historico(moto_id), key=lambda h: h["data"], reverse=True)[:8]
     linhas = "".join(
         f"""
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;
-                    {"border-bottom:1px solid rgba(30,34,39,0.12);" if i < len(historico) - 1 else ""}">
-          <span class="mono" style="font-size:13px;">{f"{h['km']:,}".replace(",", ".")} km</span>
-          <span style="font-size:12px;color:#585F66;">{formatar_data(h['data'])} · {h['origem']}</span>
+        <div class="leitura-km">
+          <span class="mono fs-secundario">{f"{h['km']:,}".replace(",", ".")} km</span>
+          <span class="fs-legenda texto-2">{formatar_data(h['data'])} · {escape(str(h['origem']))}</span>
         </div>
         """
         for i, h in enumerate(historico)
     )
     if not historico:
-        linhas = '<div style="padding:8px 0;color:#585F66;font-size:13px;">Nenhuma leitura registrada.</div>'
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;height:100%;">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Quilometragem</h3>
-          {linhas}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        linhas = '<div class="leitura-km leitura-km--vazia">Nenhuma leitura registrada.</div>'
+    st.markdown(cartao_dados("Quilometragem", linhas), unsafe_allow_html=True)
 
 
 def _aba_resumo(moto):
-    esquerda, direita = st.columns([1.5, 1], gap="medium")
-    with esquerda:
-        _card_contrato_ativo(moto["id"])
-        st.write("")
-        _card_dados_moto(moto)
-    with direita:
-        _card_quilometragem(moto["id"])
+    with paineis("moto_resumo") as (principal, lateral):
+        with principal:
+            _card_contrato_ativo(moto["id"])
+        with lateral:
+            _card_quilometragem(moto["id"])
+    _card_dados_moto(moto)
 
 
 def _aba_plano(moto):
@@ -384,7 +366,7 @@ def _aba_plano(moto):
         linhas.append(
             [
                 item["item"]["nome"],
-                f'<span style="color:#585F66;">{intervalo or "—"}</span>',
+                f'<span class="texto-2">{intervalo or "—"}</span>',
                 f'<span class="mono">{f"{item["ultima_km"]:,}".replace(",", ".") + " km" if item["ultima_km"] else "—"}</span>',
                 f'<span class="mono">{f"{item["proxima_km"]:,}".replace(",", ".") + " km" if item["proxima_km"] else "—"}</span>',
                 f'<span class="mono">{restante}</span>',
@@ -394,7 +376,7 @@ def _aba_plano(moto):
                 ),
             ]
         )
-    tabela_html(["Item", "Intervalo", "Última", "Próxima", "Restante", "Situação"], linhas)
+    tabela_html(["Item", "Intervalo", "Última", "Próxima", "Restante", "Situação"], linhas, legenda="Plano de manutenção da moto")
 
 
 def _aba_historico(moto):
@@ -415,19 +397,16 @@ def _aba_historico(moto):
     tabela_html(
         ["Data", "Tipo", "Descrição", "Km", "Oficina", "Custo"],
         linhas,
-        alinhar_direita={5},
+        legenda="Histórico de manutenção da moto",
     )
 
 
 def _aba_documentos(moto):
     registros = documentos.listar_por_moto(moto["id"])
-    with st.container(key="motos_card_documentos"):
-        cab = st.columns([1.2, 1.2, 1.2, 1.6, 0.8], vertical_alignment="center")
-        for coluna, rotulo in zip(cab, ["Tipo", "Referência", "Vencimento", "Situação", ""]):
-            coluna.markdown(f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>', unsafe_allow_html=True)
+    with lista_registros("motos_documentos", acoes=1):
         if not registros:
             st.markdown(
-                '<div style="padding:12px 20px;color:#585F66;font-size:13px;">Nenhum documento cadastrado.</div>',
+                '<div class="vazio vazio--linha">Nenhum documento cadastrado.</div>',
                 unsafe_allow_html=True,
             )
         hoje = hoje_br()
@@ -435,16 +414,21 @@ def _aba_documentos(moto):
             vencido = not doc["regularizado"] and date.fromisoformat(doc["vencimento"][:10]) < hoje
             situacao = "vencido" if vencido else ("a_vencer" if not doc["regularizado"] else "ok")
             texto_situacao = "Vencido" if vencido else ("A vencer" if not doc["regularizado"] else "Em dia")
-            linha = st.columns([1.2, 1.2, 1.2, 1.6, 0.8], vertical_alignment="center")
-            linha[0].markdown(f'<span style="font-size:13px;">{doc["tipo"].upper()}</span>', unsafe_allow_html=True)
-            linha[1].markdown(
-                f'<span style="font-size:13px;color:#585F66;">{doc.get("ano_referencia") or doc.get("descricao") or "—"}</span>',
-                unsafe_allow_html=True,
-            )
-            linha[2].markdown(f'<span class="mono" style="font-size:13px;">{formatar_data(doc["vencimento"])}</span>', unsafe_allow_html=True)
-            linha[3].markdown(selo_situacao(texto_situacao, situacao), unsafe_allow_html=True)
-            if not doc["regularizado"]:
-                if linha[4].button("Regularizar", key=f"reg_{doc['id']}"):
+            campos = [
+                campo("Referência", f'<span class="fs-secundario texto-2">{escape(str(doc.get("ano_referencia") or doc.get("descricao") or "—"))}</span>'),
+                campo("Vencimento", f'<span class="mono fs-secundario">{formatar_data(doc["vencimento"])}</span>'),
+            ]
+            with registro(
+                "motos_documentos",
+                doc["id"],
+                f'<span class="fs-secundario">{escape(doc["tipo"].upper())}</span>',
+                campos,
+                selo=selo_situacao(texto_situacao, situacao),
+                acoes=not doc["regularizado"],
+            ) as acoes:
+                if not doc["regularizado"] and botao_acao(
+                    acoes, "regularizar", f"regularizar_moto_doc_{doc['id']}", ajuda=f"Marcar o documento {doc['tipo'].upper()} como regularizado"
+                ):
                     _dialog_regularizar(doc)
 
 
@@ -456,7 +440,7 @@ def _aba_contratos(moto):
         [
             nomes.get(c["cliente_id"], "—"),
             f'<span class="mono">{formatar_data(c["data_inicio"])}</span>',
-            f'<span class="mono">{formatar_data(c["data_encerramento"]) if c["data_encerramento"] else "<span style=color:#9AA0A6>—</span>"}</span>',
+            f'<span class="mono">{formatar_data(c["data_encerramento"]) if c["data_encerramento"] else "<span class=texto-3>—</span>"}</span>',
             selo_situacao(
                 {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}[c["status"]],
                 c["status"],
@@ -465,7 +449,7 @@ def _aba_contratos(moto):
         ]
         for c in registros
     ]
-    tabela_html(["Cliente", "Início", "Fim", "Status", "Valor / período"], linhas, alinhar_direita={4})
+    tabela_html(["Cliente", "Início", "Fim", "Status", "Valor / período"], linhas, legenda="Contratos da moto")
 
 
 def _aba_financeiro(moto):
@@ -474,30 +458,22 @@ def _aba_financeiro(moto):
     if not dados:
         st.info("Sem dados financeiros para esta moto ainda.")
         return
+    faixa_dados(
+        [
+            ("Receita recebida", f'<span class="mono">{formatar_moeda_compacta(dados["receita_recebida"])}</span>', "sucesso"),
+            ("Custo de manutenção", f'<span class="mono">{formatar_moeda_compacta(dados["custo_manutencao"])}</span>'),
+            ("Custo de documentos", f'<span class="mono">{formatar_moeda_compacta(dados["custo_documentos"])}</span>'),
+            (
+                "Resultado",
+                f'<span class="mono">{formatar_moeda_compacta(dados["resultado"])}</span>',
+                "sucesso" if dados["resultado"] >= 0 else "perigo",
+            ),
+        ],
+        destaque=True,
+    )
+    custo_km = formatar_moeda(dados["custo_por_km"]) if dados["custo_por_km"] is not None else "—"
     st.markdown(
-        f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;">
-          <div style="flex:1;padding:18px 24px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">receita recebida</span>
-            <span class="mono" style="font-size:26px;font-weight:600;color:#2F9E6E;">{formatar_moeda_compacta(dados['receita_recebida'])}</span>
-          </div>
-          <div style="flex:1;padding:18px 24px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">custo de manutenção</span>
-            <span class="mono" style="font-size:26px;font-weight:600;">{formatar_moeda_compacta(dados['custo_manutencao'])}</span>
-          </div>
-          <div style="flex:1;padding:18px 24px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">custo de documentos</span>
-            <span class="mono" style="font-size:26px;font-weight:600;">{formatar_moeda_compacta(dados['custo_documentos'])}</span>
-          </div>
-          <div style="flex:1;padding:18px 24px;display:flex;flex-direction:column;gap:8px;">
-            <span class="rotulo" style="font-size:12px;color:#585F66;">resultado</span>
-            <span class="mono" style="font-size:26px;font-weight:600;color:{'#2F9E6E' if dados['resultado'] >= 0 else '#D64545'};">{formatar_moeda_compacta(dados['resultado'])}</span>
-          </div>
-        </div>
-        <div style="font-size:13px;color:#585F66;margin-top:16px;">Custo por km rodado desde a aquisição:
-          <span class="mono" style="color:#1E2227;font-weight:600;">{formatar_moeda(dados['custo_por_km']) if dados['custo_por_km'] is not None else '—'}</span>
-        </div>
-        """,
+        f'<div class="pagina-sub">Custo por km rodado desde a aquisição: <span class="mono texto-forte">{custo_km}</span></div>',
         unsafe_allow_html=True,
     )
 
@@ -509,7 +485,7 @@ def _exibir_ficha(moto_id):
         _ir_para_lista()
         return
 
-    if st.button("‹ Motos", key="voltar_motos"):
+    if botao_voltar("motos", "voltar_motos"):
         _ir_para_lista()
 
     contrato = next((c for c in contratos.listar() if c["moto_id"] == moto_id and c["status"] == "ativo"), None)
@@ -519,82 +495,66 @@ def _exibir_ficha(moto_id):
     else:
         linha_status = _STATUS_ROTULO[moto["status"]]
 
-    col_cab, col_acoes = st.columns([3, 1], vertical_alignment="center")
-    with col_cab:
-        st.markdown(
-            f"""
-            <div style="display:flex;align-items:center;gap:16px;">
-              {chip_placa(moto['placa'], "grande")}
-              <div>
-                <h1 class="rotulo" style="margin:0;font-size:24px;">{moto['marca']} {moto['modelo']}</h1>
-                <div style="font-size:13px;margin-top:3px;">
-                  {selo_situacao(
-                      "Alugada · " + linha_status if moto["status"] == "alugada" else linha_status,
-                      moto["status"],
-                  )}
-                </div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+    acoes = [
+        {"rotulo": "Editar", "chave": "editar_moto_ficha", "ajuda": "Editar os dados da moto"},
+        {"rotulo": "Atualizar km", "chave": "km_ficha", "icone": ":material/speed:", "ajuda": "Atualizar a quilometragem da moto"},
+    ]
+    if moto["status"] in ("disponivel", "inativa"):
+        reativar = moto["status"] == "inativa"
+        acoes.append(
+            {
+                "rotulo": "Reativar" if reativar else "Inativar",
+                "chave": "alternar_moto_ficha",
+                "icone": ":material/replay:" if reativar else ":material/block:",
+                "ajuda": "Voltar a oferecer a moto para locação" if reativar else "Tirar a moto da frota de locação",
+            }
         )
-    with col_acoes:
-        sub1, sub2 = st.columns(2)
-        if sub1.button("Editar", use_container_width=True):
-            _dialog_editar_moto(moto)
-        if moto["status"] in ("disponivel", "inativa"):
-            rotulo_toggle = "Reativar" if moto["status"] == "inativa" else "Inativar"
-            if sub2.button(rotulo_toggle, use_container_width=True):
-                motos.atualizar(
-                    moto["id"],
-                    {"status": "disponivel" if moto["status"] == "inativa" else "inativa"},
-                )
-                _salvo()
-
-    st.write("")
-    st.markdown(
-        f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;margin-bottom:20px;">
-          <div style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:4px;">
-            <span class="rotulo" style="font-size:11px;color:#585F66;">km atual</span>
-            <span class="mono" style="font-size:20px;font-weight:600;">{f"{moto['km_atual']:,}".replace(",", ".")} km</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">ano fab. / modelo</span><span class="mono" style="font-size:13px;">{moto.get('ano_fabricacao') or '—'} / {moto.get('ano_modelo') or '—'}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">cor</span><span style="font-size:13px;">{moto.get('cor') or '—'}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">locação sugerida</span><span class="mono" style="font-size:13px;">{formatar_moeda(moto.get('valor_locacao_sugerido'))} / mês</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    cliques = cabecalho_ficha(
+        ficha_identidade(
+            escape(f"{moto['marca']} {moto['modelo']}"),
+            selo=selo_situacao(
+                "Alugada · " + linha_status if moto["status"] == "alugada" and contrato else linha_status,
+                moto["status"],
+            ),
+            marca=chip_placa(moto["placa"], "grande"),
+        ),
+        acoes,
     )
-    if st.button("✎ Atualizar km", key="km_ficha"):
+    if cliques["editar_moto_ficha"]:
+        _dialog_editar_moto(moto)
+    if cliques["km_ficha"]:
         _dialog_km(moto)
+    if cliques.get("alternar_moto_ficha"):
+        inativando = moto["status"] != "inativa"
+        with proteger():
+            motos.atualizar(moto["id"], {"status": "inativa" if inativando else "disponivel"})
+            feedback.concluir(mensagens.moto_status_alterado(formatar_placa(moto["placa"]), inativando))
 
-    abas = st.tabs(
-        ["Resumo", "Plano de manutenção", "Histórico", "Documentos", "Contratos", "Financeiro"]
+    km_atual = f"{moto['km_atual']:,}".replace(",", ".")
+    faixa_dados(
+        [
+            ("Km atual", f'<span class="mono">{km_atual} km</span>'),
+            ("Ano fab. / modelo", f'<span class="mono">{moto.get("ano_fabricacao") or "—"} / {moto.get("ano_modelo") or "—"}</span>'),
+            ("Cor", escape(str(moto.get("cor") or "—"))),
+            ("Locação sugerida", f'<span class="mono">{formatar_moeda(moto.get("valor_locacao_sugerido"))} / mês</span>'),
+        ]
     )
-    with abas[0]:
-        _aba_resumo(moto)
-    with abas[1]:
-        _aba_plano(moto)
-    with abas[2]:
-        _aba_historico(moto)
-    with abas[3]:
-        _aba_documentos(moto)
-    with abas[4]:
-        _aba_contratos(moto)
-    with abas[5]:
-        _aba_financeiro(moto)
+
+    guias = abas(
+        "motos_ficha_abas",
+        ["Resumo", "Plano de manutenção", "Histórico", "Documentos", "Contratos", "Financeiro"],
+    )
+    desenho = (_aba_resumo, _aba_plano, _aba_historico, _aba_documentos, _aba_contratos, _aba_financeiro)
+    for guia, desenhar in zip(guias, desenho):
+        with guia:
+            if aba_ativa(guia):
+                desenhar(moto)
+
 
 
 def exibir():
     cabecalho("Motos", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         visao = st.session_state.get("motos_visao", "lista")
         if visao == "ficha" and st.session_state.get("motos_id_selecionado"):
             _exibir_ficha(st.session_state["motos_id_selecionado"])

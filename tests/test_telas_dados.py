@@ -6,6 +6,8 @@ from unittest.mock import patch
 from pathlib import Path
 from decimal import Decimal
 import pytest
+from src.domain.valores import hoje_br
+from src.ui.formatadores import formatar_mes
 from streamlit.testing.v1 import AppTest
 
 RAIZ = Path(__file__).resolve().parents[1]
@@ -132,10 +134,13 @@ def servicos():
         yield mocks
 
 
-def abrir(nome):
+def abrir(nome, **estado):
+    """Abre a página com sessão de teste; `estado` entra no session_state (ex.: a aba lembrada)."""
     app = AppTest.from_file(str(RAIZ / "pages" / nome), default_timeout=20)
     app.session_state["usuario"] = {"id": "teste", "email": "teste@example.com"}
     app.session_state["ultima_atividade"] = time()
+    for chave, valor in estado.items():
+        app.session_state[chave] = valor
     return app.run()
 
 
@@ -160,10 +165,10 @@ def test_paginas_com_dados(servicos, nome):
 
 def test_dialog_nova_moto_abre_com_campos_do_formulario(servicos):
     app = abrir("2_Motos.py")
-    next(b for b in app.button if b.label == "+ Nova moto").click().run()
+    next(b for b in app.button if b.label == "Nova moto").click().run()
     assert not app.error
     rotulos = {entrada.label for entrada in app.text_input}
-    assert {"Placa", "Marca", "Modelo", "Valor de aquisição (R$)"} <= rotulos
+    assert {"Placa *", "Marca *", "Modelo *", "Valor de aquisição"} <= rotulos
     assert any(b.label == "Salvar moto" for b in app.button)
 
 
@@ -187,9 +192,7 @@ def _abrir_dialogo_pagamento():
 
 def test_pagamento_parcial_envia_principal_separado(servicos):
     app = _abrir_dialogo_pagamento()
-    next(e for e in app.text_input if e.label == "Principal recebido (R$)").set_value(
-        "30,50"
-    )
+    next(e for e in app.text_input if e.key.startswith("pg_principal_")).set_value("30,50")
     next(b for b in app.button if b.label == "Confirmar pagamento").click().run()
     assert not app.error
     assert servicos["cobrancas.registrar_pagamento"].call_args.args[2:4] == (
@@ -205,7 +208,7 @@ def test_cobranca_rapida_do_dashboard_abre_o_dialogo_de_pagamento(servicos):
     app.session_state["cobranca_rapida"] = "c"
     app.run()
     assert not app.exception
-    assert any(e.label == "Principal recebido (R$)" for e in app.text_input)
+    assert any(e.key.startswith("pg_principal_") for e in app.text_input)
 
 
 def test_contrato_indicado_por_outra_ficha_fica_selecionado(servicos):
@@ -263,8 +266,17 @@ def test_relatorios_renderiza_abas_com_dados_e_alterna_custo(servicos):
     app = abrir("9_Relatorios.py")
     assert not app.exception and not app.error
     html = " ".join(m.value for m in app.markdown)
-    assert "R$ 850,00" in html and "Setembro de 2026" in html
+    # o período padrão é o mês corrente (muda com a data de hoje)
+    assert "R$ 850,00" in html and formatar_mes(hoje_br()) in html
+    assert "R$ 63,00" not in html  # só a aba ativa executa
+
+    app.session_state["relatorios_abas_indice"] = 2  # Inadimplência
+    app.run()
+    html = " ".join(m.value for m in app.markdown)
     assert "R$ 63,00" in html and "6,0%" in html
-    next(b for b in app.button if b.label == "Por moto").click().run()
+
+    app.session_state["relatorios_abas_indice"] = 1  # Custo de manutenção
+    app.run()
+    app.pills[0].set_value("moto").run()
     assert not app.exception and not app.error
     assert "R$ 0,20" in " ".join(m.value for m in app.markdown)

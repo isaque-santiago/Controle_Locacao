@@ -4,14 +4,16 @@ import streamlit as st
 from time import time
 from supabase_auth.errors import AuthApiError
 
+from src.domain.acesso_locatario import eh_email_de_locatario, identificador_para_email
 from src.db import (
     clear_session_tokens,
     get_client,
     get_refresh_token_cookie,
+    gravar_sessao_ja_autenticada,
     marcar_atividade_cookie,
     salvar_tema_escuro_cookie,
     sessao_ativa_no_cookie,
-    set_session_tokens,
+    sincronizar_refresh_token_cookie,
 )
 from src.ui import tema
 
@@ -27,7 +29,8 @@ def login(email: str, senha: str) -> None:
     resposta = get_client().auth.sign_in_with_password(
         {"email": email, "password": senha}
     )
-    set_session_tokens(resposta.session.access_token, resposta.session.refresh_token)
+    # sign_in_with_password já deixa o cliente autenticado sozinho; só falta o cookie.
+    gravar_sessao_ja_autenticada(resposta.session.refresh_token)
     st.session_state[_CHAVE_USUARIO] = {
         "id": resposta.user.id,
         "email": resposta.user.email,
@@ -60,7 +63,8 @@ def _tentar_restaurar_sessao() -> bool:
     if not resposta.session or not resposta.user:
         clear_session_tokens()
         return False
-    set_session_tokens(resposta.session.access_token, resposta.session.refresh_token)
+    # refresh_session já deixa o cliente autenticado sozinho; só falta o cookie.
+    gravar_sessao_ja_autenticada(resposta.session.refresh_token)
     st.session_state[_CHAVE_USUARIO] = {
         "id": resposta.user.id,
         "email": resposta.user.email,
@@ -71,19 +75,24 @@ def _tentar_restaurar_sessao() -> bool:
 
 
 def _exibir_formulario_login() -> None:
+    """Mostra o login. Ao autenticar, esvazia o formulário e segue a MESMA execução
+    (sem st.rerun): um rerun imediato descartaria o componente que grava o cookie
+    antes de o navegador executá-lo, e o F5 voltaria ao login."""
     from src.ui.login import exibir
 
-    enviado, email, senha = exibir()
+    espaco = st.empty()
+    with espaco.container():
+        enviado, email, senha = exibir()
 
     if enviado:
         if not email.strip() or not senha:
             st.error("Informe o e-mail e a senha.")
             return
         try:
-            login(email.strip(), senha)
-            st.rerun()
+            login(identificador_para_email(email), senha)
+            espaco.empty()
         except AuthApiError:
-            st.error("E-mail ou senha inválidos.")
+            st.error("E-mail, CPF ou senha inválidos.")
         except (RuntimeError, KeyError) as erro:
             st.error(f"O aplicativo não está configurado: {erro}")
         except Exception:
@@ -117,16 +126,20 @@ def require_login() -> None:
         and time() - st.session_state.get("ultima_atividade", 0) > 1800
     ):
         logout()
-        st.info("A sessão expirou por inatividade. Entre novamente.")
+        st.warning("A sessão expirou por inatividade. Entre novamente.")
     if not esta_autenticado():
         _exibir_formulario_login()
         st.stop()
 
     st.session_state["ultima_atividade"] = time()
     marcar_atividade_cookie()
+    sincronizar_refresh_token_cookie()
 
     email = st.session_state[_CHAVE_USUARIO]["email"]
-    nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
+    if eh_email_de_locatario(email):
+        nome = "Locatário"  # o e-mail interno é o CPF: não o mostra na tela
+    else:
+        nome = email.split("@")[0].replace(".", " ").replace("_", " ").title() or email
     inicial = nome[0].upper()
 
     with st.sidebar:
@@ -149,11 +162,9 @@ def require_login() -> None:
             col_perfil, col_sair = st.columns([1.6, 1], vertical_alignment="center")
             col_perfil.markdown(
                 f"""
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:28px;height:28px;border-radius:50%;background:#2B3036;
-                              display:flex;align-items:center;justify-content:center;
-                              color:#FAFAF9;font-size:12px;font-weight:600;flex-shrink:0;">{inicial}</div>
-                  <div style="color:#FAFAF9;font-size:13px;">{nome}</div>
+                <div class="usuario-lateral">
+                  <div class="usuario-lateral__avatar">{inicial}</div>
+                  <div class="usuario-lateral__nome">{nome}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,

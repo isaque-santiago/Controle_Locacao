@@ -2,18 +2,26 @@
 pagamento em diálogo — segue Cobrancas.dc.html do mockup."""
 
 from datetime import date
+from decimal import Decimal
+from html import escape
 
 import streamlit as st
 
+from src.domain import mensagens
 from src.domain.painel_cobrancas import (
     ABAS,
     mensagem_cobranca,
     pertence_a_aba,
     resumo_atraso,
 )
-from src.domain.valores import decimal_br, hoje_br
+from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
+from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, motos
-from src.ui.componentes import cabecalho, chip_placa, proteger
+from src.ui.componentes import botao_acao, cabecalho, cabecalho_pagina, chip_placa, proteger
+from src.ui import feedback
+from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario
+from src.ui.listas import abas, aba_ativa
+from src.ui.registros import campo, lista_registros, registro
 from src.ui.formatadores import formatar_data, formatar_moeda
 
 _FORMAS = ["pix", "dinheiro", "cartao", "transferencia", "outro"]
@@ -33,42 +41,38 @@ _VAZIO = {
 }
 
 
-def _salvo(mensagem="Pagamento registrado."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
+def _texto(valor, classe="", mono=False):
+    return f'<span class="fs-secundario {"mono" if mono else ""} {classe}">{valor}</span>'
 
 
-def _texto(valor, cor="", direita=False, mono=False):
-    estilo = f"font-size:13px;{cor}"
-    if direita:
-        estilo += "text-align:right;display:block;"
-    return f'<span class="{"mono" if mono else ""}" style="{estilo}">{valor}</span>'
-
-
-def _cartao(chave, colunas, linhas, acoes=None):
-    """Tabela em cartão: `colunas` = [(rótulo, peso, função(c) -> html)]; `acoes`
-    desenha os botões da última coluna."""
-    pesos = [peso for _, peso, _ in colunas] + ([1.0] if acoes else [])
-    with st.container(key=f"cobrancas_card_{chave}"):
-        cab = st.columns(pesos, vertical_alignment="center")
-        for coluna, (rotulo, _, _) in zip(cab, colunas):
-            coluna.markdown(_texto(rotulo, "color:#585F66;"), unsafe_allow_html=True)
+def _cartao(chave, colunas, linhas, acoes=None, subtitulo=None):
+    """Lista de cobranças em cartões: a primeira coluna de `colunas` é a identidade (cliente) e as
+    demais viram dados rotulados. `colunas` = [(rótulo, função(c) -> html)]; `subtitulo` é uma
+    função opcional (c -> html) para uma observação sob o nome; `acoes(c, grupo)` desenha os botões."""
+    (_, titulo), *dados = colunas
+    with lista_registros(f"cobrancas_{chave}", acoes=2 if acoes else 0):
         for c in linhas:
-            linha = st.columns(pesos, vertical_alignment="center")
-            for coluna, (_, _, desenhar) in zip(linha, colunas):
-                coluna.markdown(desenhar(c), unsafe_allow_html=True)
-            if acoes:
-                with linha[-1]:
-                    acoes(c)
+            campos = [campo(rotulo, desenhar(c)) for rotulo, desenhar in dados]
+            with registro(
+                f"cobrancas_{chave}",
+                c["id"],
+                titulo(c),
+                campos,
+                subtitulo=subtitulo(c) if subtitulo else None,
+                acoes=bool(acoes),
+            ) as grupo:
+                if acoes:
+                    acoes(c, grupo)
 
 
 def _acoes_abertas(chave):
-    def desenhar(c):
-        col_msg, col_pagar = st.columns(2)
-        with col_msg.popover(
-            ":material/chat:",
-            help="Copiar mensagem de cobrança",
-            use_container_width=True,
+    def desenhar(c, grupo):
+        with grupo.popover(
+            "Mensagem",
+            icon=":material/content_copy:",
+            help=f"Copiar a mensagem de cobrança de {c['cliente']}",
+            type="tertiary",
+            key=f"mensagem_{chave}_{c['id']}",
         ):
             st.code(
                 mensagem_cobranca(
@@ -81,11 +85,11 @@ def _acoes_abertas(chave):
                 language=None,
                 wrap_lines=True,
             )
-        if col_pagar.button(
-            ":material/check:",
-            key=f"pagar_{chave}_{c['id']}",
-            help="Registrar pagamento",
-            use_container_width=True,
+        if botao_acao(
+            grupo,
+            "pagar",
+            f"pagar_{chave}_{c['id']}",
+            ajuda=f"Registrar o pagamento de {c['cliente']}",
         ):
             _dialog_pagamento(c)
 
@@ -95,9 +99,8 @@ def _acoes_abertas(chave):
 @st.dialog("Registrar pagamento")
 def _dialog_pagamento(c):
     st.markdown(
-        f'{chip_placa(c["placa"])} <span style="margin-left:8px;">{c["cliente"]}</span>'
-        f'<div style="color:#585F66;font-size:13px;margin-top:4px;">'
-        f'{c["tipo"].capitalize()} · vencimento {formatar_data(c["vencimento"])}</div>',
+        f'{chip_placa(c["placa"])} <span class="dialogo-identidade">{escape(c["cliente"] or "")}</span>'
+        f'<div class="dialogo-sub">{c["tipo"].capitalize()} · vencimento {formatar_data(c["vencimento"])}</div>',
         unsafe_allow_html=True,
     )
     data = st.date_input(
@@ -106,28 +109,29 @@ def _dialog_pagamento(c):
     enc = cobrancas.calcular_encargos_cobranca(
         c, data, cobrancas.configuracao_encargos()
     )
-    linha = "display:flex;justify-content:space-between;"
+    def linha(rotulo, valor, total=False):
+        classe = "resumo-linhas__linha resumo-linhas__linha--total" if total else "resumo-linhas__linha"
+        return f'<div class="{classe}"><span>{rotulo}</span><span class="mono">{valor}</span></div>'
+
     st.markdown(
-        f"""
-        <div style="background:#EEF0F0;border-radius:2px;padding:12px 14px;font-size:13px;">
-          <div style="{linha}"><span>Valor original (saldo)</span><span class="mono">{formatar_moeda(c["saldo"])}</span></div>
-          <div style="{linha}"><span>Multa</span><span class="mono">{formatar_moeda(enc["multa"])}</span></div>
-          <div style="{linha}"><span>Juros ({enc["dias_atraso"]} dia(s) de atraso)</span><span class="mono">{formatar_moeda(enc["juros"])}</span></div>
-          <div style="{linha}font-weight:600;border-top:1px solid rgba(30,34,39,.12);margin-top:6px;padding-top:6px;"><span>Total</span><span class="mono">{formatar_moeda(enc["total"])}</span></div>
-        </div>
-        """,
+        '<div class="resumo-linhas">'
+        + linha("Valor original (saldo)", formatar_moeda(c["saldo"]))
+        + linha("Multa", formatar_moeda(enc["multa"]))
+        + linha(f'Juros ({enc["dias_atraso"]} dia(s) de atraso)', formatar_moeda(enc["juros"]))
+        + linha("Total", formatar_moeda(enc["total"]), total=True)
+        + "</div>",
         unsafe_allow_html=True,
     )
     sufixo = f"{c['id']}_{data.isoformat()}"
-    col_p, col_e = st.columns(2)
-    principal = col_p.text_input(
-        "Principal recebido (R$)", str(c["saldo"]), key=f"pg_principal_{sufixo}"
-    )
-    extras = col_e.text_input(
-        "Multa e juros recebidos (R$)",
-        str(enc["multa"] + enc["juros"]),
-        key=f"pg_extras_{sufixo}",
-    )
+    with linha_campos([1, 1], "pg_valores") as (col_principal, col_extras):
+        with col_principal:
+            principal = campo_moeda(
+                "Principal recebido", c["saldo"], f"pg_principal_{sufixo}", obrigatorio=True, ao_vivo=True
+            )
+        with col_extras:
+            extras = campo_moeda(
+                "Multa e juros recebidos", enc["multa"] + enc["juros"], f"pg_extras_{sufixo}", ao_vivo=True
+            )
     st.caption("Principal menor que o saldo deixa a cobrança em aberto com o restante.")
     forma = st.radio(
         "Forma de pagamento",
@@ -137,32 +141,44 @@ def _dialog_pagamento(c):
         key=f"pg_forma_{c['id']}",
     )
     observacoes = st.text_area("Observações", key=f"pg_obs_{c['id']}")
-    if st.button("Confirmar pagamento", type="primary", use_container_width=True):
-        try:
-            cobrancas.registrar_pagamento(
-                c["id"],
-                data,
-                decimal_br(principal, positivo=True),
-                decimal_br(extras),
-                forma,
-                observacoes or None,
+    legenda_obrigatorios()
+
+    saldo = Decimal(str(c["saldo"]))
+    erro = primeiro_erro(
+        erro_de(decimal_campo, principal, "Principal recebido", positivo=True),
+        erro_de(decimal_campo, extras, "Multa e juros recebidos"),
+    )
+    if not erro and decimal_campo(principal, "Principal recebido") > saldo:
+        erro = f"Principal recebido: não pode ser maior que o saldo da cobrança ({formatar_moeda(saldo)})."
+    acao = rodape_formulario("Confirmar pagamento", "pagamento", desabilitado=bool(erro), motivo=erro)
+    if acao.cancelou:
+        st.rerun()
+    if acao.confirmou:
+        with proteger():
+            valor_principal = decimal_campo(principal, "Principal recebido", positivo=True)
+            valor_extras = decimal_campo(extras, "Multa e juros recebidos")
+            chave = feedback.chave_operacao(
+                "pagamento", [c["id"], data, valor_principal, valor_extras, forma, observacoes or None]
             )
-        except ValueError as erro:
-            st.error(str(erro))
-        else:
-            _salvo()
+            cobrancas.registrar_pagamento(
+                c["id"], data, valor_principal, valor_extras, forma, observacoes or None, chave_operacao=chave
+            )
+            feedback.concluir(
+                mensagens.pagamento_registrado(valor_principal, valor_extras, quitada=valor_principal >= saldo),
+                "pagamento",
+            )
 
 
 def _colunas_base():
     return [
-        ("Cliente", 1.6, lambda c: _texto(c["cliente"] or "—")),
-        ("Moto", 1.1, lambda c: chip_placa(c["placa"]) if c["placa"] else "—"),
-        ("Vencimento", 1.1, lambda c: _texto(formatar_data(c["vencimento"]), mono=True)),
+        ("Cliente", lambda c: escape(c["cliente"] or "—")),
+        ("Moto", lambda c: chip_placa(c["placa"]) if c["placa"] else "—"),
+        ("Vencimento", lambda c: _texto(formatar_data(c["vencimento"]), mono=True)),
     ]
 
 
 def _moeda(campo):
-    return lambda c: _texto(formatar_moeda(c[campo]), direita=True, mono=True)
+    return lambda c: _texto(formatar_moeda(c[campo]), mono=True)
 
 
 def _aba_pagas(linhas):
@@ -176,9 +192,9 @@ def _aba_pagas(linhas):
         "pagas",
         _colunas_base()
         + [
-            ("Pago em", 1.1, lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
-            ("Forma", 1.1, lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "color:#585F66;")),
-            ("Valor", 1.1, _moeda("valor")),
+            ("Pago em", lambda c: _texto(formatar_data(c["pago_em"]) if c["pago_em"] else "—", mono=True)),
+            ("Forma", lambda c: _texto(_FORMAS_ROTULO.get(c["forma"], "—"), "texto-2")),
+            ("Valor", _moeda("valor")),
         ],
         linhas[:_LIMITE_PAGAS],
     )
@@ -187,21 +203,20 @@ def _aba_pagas(linhas):
 
 
 def _aba_atrasadas(linhas):
-    dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "color:#D64545;")
+    dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "texto-perigo")
     encargos = lambda c: _texto(
         formatar_moeda(c["encargos"]["multa"] + c["encargos"]["juros"]),
-        direita=True,
         mono=True,
     )
-    total = lambda c: _texto(formatar_moeda(c["encargos"]["total"]), direita=True, mono=True)
+    total = lambda c: _texto(formatar_moeda(c["encargos"]["total"]), mono=True)
     _cartao(
         "atrasadas",
         _colunas_base()
         + [
-            ("Atraso", 0.9, dias),
-            ("Original", 1.1, _moeda("saldo")),
-            ("Encargos", 1.1, encargos),
-            ("Total", 1.1, total),
+            ("Atraso", dias),
+            ("Original", _moeda("saldo")),
+            ("Encargos", encargos),
+            ("Total", total),
         ],
         linhas,
         _acoes_abertas("atrasadas"),
@@ -211,7 +226,7 @@ def _aba_atrasadas(linhas):
 def _aba_hoje(linhas):
     _cartao(
         "hoje",
-        _colunas_base() + [("Valor", 1.1, _moeda("saldo"))],
+        _colunas_base() + [("Valor", _moeda("saldo"))],
         linhas,
         _acoes_abertas("hoje"),
     )
@@ -219,12 +234,13 @@ def _aba_hoje(linhas):
 
 def _aba_proximos(linhas):
     primeira = lambda c: (
-        _texto("1ª parcela", "color:#585F66;") if c.get("numero") == 1 else ""
+        _texto("1ª parcela", "texto-2") if c.get("numero") == 1 else ""
     )
     _cartao(
         "proximos",
-        _colunas_base() + [("Valor", 1.1, _moeda("saldo")), ("", 1.1, primeira)],
+        _colunas_base() + [("Valor", _moeda("saldo"))],
         linhas,
+        subtitulo=primeira,
     )
 
 
@@ -238,7 +254,7 @@ _DESENHO_ABA = {
 
 def exibir():
     cabecalho("Cobranças", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         hoje = hoje_br()
         placas = {m["id"]: m["placa"] for m in motos.listar()}
         nomes = {cl["id"]: cl["nome"] for cl in clientes.listar()}
@@ -260,14 +276,7 @@ def exibir():
             if qtd_clientes
             else "Nenhuma cobrança em atraso"
         )
-        st.markdown(
-            f"""
-            <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Cobranças</h1>
-            <div style="color:#585F66;font-size:13px;margin-top:2px;">{subtitulo}</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.write("")
+        cabecalho_pagina("Cobranças", sub=subtitulo)
 
         por_aba = {
             aba: [
@@ -287,13 +296,15 @@ def exibir():
         if alvo:
             _dialog_pagamento(alvo)
 
-        guias = st.tabs([f"{aba} · {len(por_aba[aba])}" for aba in ABAS])
+        guias = abas("cobrancas_abas", [f"{aba} · {len(por_aba[aba])}" for aba in ABAS])
         for aba, guia in zip(ABAS, guias):
             with guia:
+                if not aba_ativa(guia):
+                    continue
                 if por_aba[aba]:
                     _DESENHO_ABA[aba](por_aba[aba])
                 else:
                     st.markdown(
-                        f'<div style="color:#585F66;font-size:13px;padding:8px 0;">{_VAZIO[aba]}</div>',
+                        f'<div class="vazio-aba">{_VAZIO[aba]}</div>',
                         unsafe_allow_html=True,
                     )

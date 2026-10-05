@@ -43,10 +43,9 @@ def test_lista_mostra_cabecalho_colunas_e_linhas(servicos):
 def test_filtro_por_tipo_e_contagens(servicos):
     servicos["vistorias.listar"].return_value = [DEVOLUCAO, ENTREGA]
     app = abrir("8_Vistorias.py")
-    rotulos = [b.label for b in app.button]
-    assert {"Todas · 2", "Entrega · 1", "Devolução · 1"} <= set(rotulos)
+    assert app.pills[0].options == ["Todas · 2", "Entrega · 1", "Devolução · 1"]
 
-    next(b for b in app.button if b.label == "Devolução · 1").click().run()
+    app.pills[0].set_value("devolucao").run()
     texto = _texto(app)
     assert "Retrovisor direito trincado" in texto
     assert "01/09/2026" not in texto
@@ -65,7 +64,8 @@ def test_lista_vazia(servicos):
     servicos["vistorias.listar"].return_value = []
     app = abrir("8_Vistorias.py")
     assert not app.exception and not app.error
-    assert "Nenhuma vistoria encontrada." in _texto(app)
+    assert "Ainda não há vistorias registradas." in _texto(app)
+    assert "Registrar vistoria" in _texto(app)  # próximo passo aponta a ação do cabeçalho
 
 
 def test_seta_abre_a_comparacao_do_contrato(servicos):
@@ -79,13 +79,13 @@ def test_seta_abre_a_comparacao_do_contrato(servicos):
     next(b for b in app.button if b.key == "ver_vist_v1").click().run()
     assert not app.exception and not app.error
     texto = _texto(app)
-    assert "Pessoa teste → Honda CG" in texto
+    assert "Pessoa teste" in texto and "Honda CG" in texto
     assert "2.520 km" in texto  # km rodados
     assert "1 registrada(s)" in texto
     assert "Retrovisor direito trincado" in texto
     assert "Retrovisores" in texto and "Avaria" in texto
-    assert any("fundo amarelo mudaram" in c.value for c in app.caption)
-    assert any(b.label == "‹ Vistorias" for b in app.button)
+    assert any("alterado" in c.value and "mudaram" in c.value for c in app.caption)
+    assert any(b.key == "voltar_vistorias" and b.label == "Voltar para vistorias" for b in app.button)
 
 
 def test_comparacao_sem_devolucao_mostra_pendente(servicos):
@@ -105,14 +105,14 @@ def test_voltar_retorna_para_a_lista(servicos):
     app.session_state["vistorias_visao"] = "comparacao"
     app.session_state["vistorias_contrato"] = "ct"
     app.run()
-    next(b for b in app.button if b.label == "‹ Vistorias").click().run()
+    next(b for b in app.button if b.key == "voltar_vistorias").click().run()
     assert "Entregas e devoluções registradas" in _texto(app)
 
 
 def test_dialogo_registrar_oferece_so_tipos_faltantes(servicos):
     servicos["vistorias.listar"].return_value = [ENTREGA]
     app = abrir("8_Vistorias.py")
-    next(b for b in app.button if b.label == "+ Registrar vistoria").click().run()
+    next(b for b in app.button if b.label == "Registrar vistoria").click().run()
     assert not app.exception and not app.error
     assert any(b.label == "Salvar vistoria" for b in app.button)
     tipo = next(r for r in app.radio if r.label == "Tipo")
@@ -122,7 +122,7 @@ def test_dialogo_registrar_oferece_so_tipos_faltantes(servicos):
 def test_dialogo_sem_contratos_pendentes_avisa(servicos):
     servicos["vistorias.listar"].return_value = [ENTREGA, DEVOLUCAO]
     app = abrir("8_Vistorias.py")
-    next(b for b in app.button if b.label == "+ Registrar vistoria").click().run()
+    next(b for b in app.button if b.label == "Registrar vistoria").click().run()
     assert any("já têm vistoria" in i.value for i in app.info)
 
 
@@ -160,7 +160,9 @@ def test_salvar_registra_com_dados_do_formulario():
     assert kwargs["checklist"]["farol_dianteiro"] == "ok"
     assert kwargs["data"].tzinfo is not None
     assert kwargs["data"].astimezone(ZoneInfo("America/Sao_Paulo")).date() == hoje_br()
-    assert app.session_state["mensagem_sucesso"] == "Vistoria registrada."
+    assert app.session_state["feedback_pendentes"] == [
+        ("Vistoria de devolução da moto ABC-1D23 registrada.", "toast", False)
+    ]
 
 
 def test_itens_adicionais_entram_no_checklist():
@@ -187,15 +189,16 @@ def test_itens_adicionais_invalidos_mostram_erro_sem_gravar():
 def test_salvar_recusa_data_anterior_ao_inicio_do_contrato():
     with patch("src.services.vistorias.registrar_vistoria") as registrar:
         app = _abrir_dialogo_registro()
-        next(d for d in app.date_input if d.label == "Data").set_value(date(2026, 8, 1))
-        next(b for b in app.button if b.label == "Salvar vistoria").click().run()
+        next(d for d in app.date_input if d.label == "Data").set_value(date(2026, 8, 1)).run()
 
     registrar.assert_not_called()
-    assert any("anteceder o início do contrato" in e.value for e in app.error)
+    assert app.button(key="vistreg_salvar").disabled
+    assert any("anteceder o início do contrato" in m.value for m in app.markdown)
 
 
 def test_falha_no_envio_de_foto_nao_desfaz_a_vistoria():
-    from src.ui.vistorias import _enviar_fotos, _mensagem_fotos
+    from src.domain.mensagens import vistoria_registrada
+    from src.ui.vistorias import _enviar_fotos
 
     foto = MagicMock()
     foto.name, foto.type = "a.jpg", "image/jpeg"
@@ -203,5 +206,6 @@ def test_falha_no_envio_de_foto_nao_desfaz_a_vistoria():
     with patch("src.services.vistorias.anexar_foto", side_effect=RuntimeError("storage fora")):
         falhas = _enviar_fotos({"vistoria_id": "novo"}, [foto, foto])
     assert falhas == 2
-    assert "2 foto(s) não foram enviadas" in _mensagem_fotos("Vistoria registrada.", falhas)
-    assert _mensagem_fotos("Vistoria registrada.", 0) == "Vistoria registrada."
+    aviso = vistoria_registrada("devolução", "ABC-1D23", falhas)
+    assert "2 fotos não foram enviadas" in aviso.texto and aviso.atencao
+    assert vistoria_registrada("devolução", "ABC-1D23", 0).tom == "toast"

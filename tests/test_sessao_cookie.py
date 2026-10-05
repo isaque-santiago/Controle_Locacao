@@ -98,3 +98,36 @@ def test_refresh_token_dura_no_maximo_sete_dias():
         db.set_session_tokens("acesso", "refresh")
 
     assert controlador.set.call_args.kwargs["max_age"] == 60 * 60 * 24 * 7
+
+
+def _cliente_com_refresh(refresh):
+    cliente = MagicMock()
+    cliente.auth.get_session.return_value = MagicMock(refresh_token=refresh)
+    return cliente
+
+
+def test_regrava_cookie_quando_supabase_rotaciona_o_refresh_token():
+    controlador = MagicMock()
+    estado = {db._CHAVE_REFRESH_GRAVADO: "antigo"}
+
+    with patch.object(db.st, "session_state", estado), patch(
+        "src.db._get_cookie_controller", return_value=controlador
+    ), patch("src.db.get_client", return_value=_cliente_com_refresh("novo")), patch(
+        "src.db._opcoes_cookie", return_value={}
+    ):
+        db.sincronizar_refresh_token_cookie()
+
+    assert controlador.set.call_args.args[:2] == ("sb_refresh_token", "novo")
+    assert estado[db._CHAVE_REFRESH_GRAVADO] == "novo"
+
+
+def test_nao_regrava_cookie_quando_o_refresh_token_nao_mudou():
+    controlador = MagicMock()
+    estado = {db._CHAVE_REFRESH_GRAVADO: "igual"}
+
+    with patch.object(db.st, "session_state", estado), patch(
+        "src.db._get_cookie_controller", return_value=controlador
+    ), patch("src.db.get_client", return_value=_cliente_com_refresh("igual")):
+        db.sincronizar_refresh_token_cookie()
+
+    controlador.set.assert_not_called()

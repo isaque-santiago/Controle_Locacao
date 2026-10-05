@@ -3,7 +3,7 @@
 from pathlib import PurePath
 from uuid import uuid4
 from src.db import get_client
-from src.repositories.consultas import invalida_cache, todos
+from src.repositories.consultas import inserir_idempotente, invalida_cache, todos
 
 TABELA = "documentos_moto"
 BUCKET = "documentos"
@@ -43,9 +43,8 @@ def obter(documento_id: str):
 
 
 @invalida_cache
-def criar(dados: dict):
-    resposta = get_client().table(TABELA).insert(dados).execute()
-    return resposta.data[0]
+def criar(dados: dict, chave_operacao=None):
+    return inserir_idempotente(TABELA, dados, chave_operacao)
 
 
 @invalida_cache

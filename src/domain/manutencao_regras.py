@@ -6,33 +6,40 @@ gravar qualquer coisa.
 """
 
 from datetime import date, timedelta
+from decimal import Decimal
 from typing import Optional
 
-from src.domain.valores import decimal_br
+from src.domain.entradas import decimal_campo
+
+
+def _vale(texto, esperado) -> bool:
+    """Campo vazio ou que equivale ao valor de uma linha ainda não preenchida (`1` ou `0,00`)."""
+    bruto = str(texto if texto is not None else "").strip()
+    if not bruto:
+        return True
+    try:
+        return decimal_campo(bruto, "Campo") == esperado
+    except ValueError:
+        return False
 
 
 def preparar_itens_adicionais(linhas: list[dict]) -> list[dict]:
-    """Valida as linhas livres adicionadas na tabela de peças e serviços."""
+    """Valida as linhas livres adicionadas na lista de peças e serviços. Cada erro cita a linha
+    pelo nome da peça ou serviço."""
     itens = []
     for linha in linhas:
         descricao = str(linha.get("descricao") or "").strip()
         quantidade = linha.get("quantidade")
         valor_unitario = linha.get("valor_unitario")
-        linha_vazia = not descricao and quantidade in (None, "", "1", 1) and valor_unitario in (
-            None,
-            "",
-            "0",
-            0,
-        )
-        if linha_vazia:
+        if not descricao and _vale(quantidade, Decimal("1")) and _vale(valor_unitario, Decimal("0")):
             continue
         if not descricao:
             raise ValueError("Informe a descrição de cada peça ou serviço adicional.")
         itens.append(
             {
                 "descricao": descricao,
-                "quantidade": decimal_br(str(quantidade or "1"), positivo=True),
-                "valor_unitario": decimal_br(str(valor_unitario or "0")),
+                "quantidade": decimal_campo(str(quantidade or "1"), f"Quantidade de {descricao}", positivo=True),
+                "valor_unitario": decimal_campo(str(valor_unitario or "0"), f"Valor unitário de {descricao}"),
             }
         )
     return itens

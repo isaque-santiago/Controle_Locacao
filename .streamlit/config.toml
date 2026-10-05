@@ -8,3 +8,6 @@ font = "sans serif"
 
 [server]
 maxUploadSize = 20
+enableStaticServing = true
+runOnSave = true
+fileWatcherType = "auto"

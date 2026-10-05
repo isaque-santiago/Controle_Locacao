@@ -6,36 +6,69 @@ from html import escape
 import streamlit as st
 
 from src.services import clientes, contratos, cobrancas, motos, configuracoes
+from src.domain import mensagens
+from src.domain.entradas import formatar_telefone
 from src.domain.valores import hoje_br
 from src.domain.cnh_regras import situacao_cnh
 from src.ui.componentes import (
     cabecalho,
+    cabecalho_pagina,
+    estado_vazio,
+    vazio_lista,
     proteger,
     campo_data,
     chip_placa,
     selo_situacao,
     tabela_html,
     abrir_ficha_contrato,
+    botao_acao,
+    botao_voltar,
+    cabecalho_ficha,
+    cartao_dados,
+    cartao_ficha,
+    faixa_dados,
+    ficha_identidade,
+    paineis,
+)
+from src.ui import feedback
+from src.ui.clientes_portal import aba_portal
+from src.ui.formularios import (
+    campo_cpf,
+    campo_email,
+    campo_telefone,
+    legenda_obrigatorios,
+    linha_campos,
+    rodape_formulario,
+    rotulo_obrigatorio,
+)
+from src.ui.registros import campo, lista_registros, registro
+from src.ui.listas import (
+    abas,
+    aba_ativa,
+    barra_filtros,
+    lembrar_registro,
+    paginar,
+    reiniciar_abas,
+    restaurar_posicao,
+    rodape_paginacao,
 )
 from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 
 _STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
-_FILTROS = ["Todos", "ativo", "bloqueado", "inativo"]
+_OPCOES_FILTRO = [("Todos", "Todos")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("ativo", "bloqueado", "inativo")]
 
 
 def _html(valor, padrao="—"):
     """Escapa dados cadastrados antes de inseri-los em blocos HTML."""
     if valor is None or valor == "":
         valor = padrao
-    return escape(str(valor))
-
-
-def _salvo(mensagem="Alterações salvas."):
-    st.session_state["mensagem_sucesso"] = mensagem
-    st.rerun()
+    # "*" vira entidade: o CPF mascarado (***.123.***-**) virava negrito/itálico no markdown
+    return escape(str(valor)).replace("*", "&#42;")
 
 
 def _ir_para_ficha(cliente_id):
+    reiniciar_abas("clientes_ficha_abas")
+    lembrar_registro("clientes", cliente_id)
     st.session_state["clientes_visao"] = "ficha"
     st.session_state["clientes_id_selecionado"] = cliente_id
     st.rerun()
@@ -53,6 +86,16 @@ def _iniciais(nome):
 
 def _situacao_selo_cliente(status):
     return "ativo_cliente" if status == "ativo" else status
+
+
+def _identidade_cliente(cliente):
+    """Avatar com a inicial + nome, como identidade do cartão da lista."""
+    cor_avatar = "var(--chip-fundo)" if cliente["status"] == "ativo" else "var(--avatar-inativo)"
+    return (
+        '<span class="identidade-linha">'
+        f'<span class="avatar avatar--pequeno" style="background:{cor_avatar};">{_html(_iniciais(cliente["nome"]))}</span>'
+        f'<span class="fs-secundario">{_html(cliente["nome"])}</span></span>'
+    )
 
 
 def _contrato_ativo_de(cliente_id, contratos_todos=None):
@@ -76,30 +119,41 @@ def _formulario_cliente(cliente):
     cliente = cliente or {}
     with st.form("form_cliente_" + cliente.get("id", "novo")):
         dados = {}
-        for campo, titulo in [
-            ("nome", "Nome completo"),
-            ("cpf", "CPF"),
-            ("telefone", "Telefone"),
-            ("whatsapp", "WhatsApp"),
-            ("email", "E-mail"),
-            ("endereco", "Endereço"),
-            ("cnh_numero", "Número da CNH"),
-            ("cnh_categoria", "Categoria da CNH"),
-        ]:
-            dados[campo] = st.text_input(titulo, cliente.get(campo) or "")
-        validade = campo_data("Validade da CNH", cliente.get("cnh_validade"))
-        dados["cnh_validade"] = validade.isoformat() if validade else None
+        dados["nome"] = st.text_input(rotulo_obrigatorio("Nome completo"), cliente.get("nome") or "")
+        dados["cpf"] = campo_cpf("CPF", cliente.get("cpf"), "cliente_cpf", obrigatorio=True)
+        with linha_campos([1, 1], "cliente_telefones") as (col_telefone, col_whatsapp):
+            with col_telefone:
+                telefone = campo_telefone("Telefone", cliente.get("telefone"), "cliente_telefone")
+            with col_whatsapp:
+                whatsapp = campo_telefone("WhatsApp", cliente.get("whatsapp"), "cliente_whatsapp")
+        dados["email"] = campo_email("E-mail", cliente.get("email"), "cliente_email")
+        dados["endereco"] = st.text_input("Endereço", cliente.get("endereco") or "")
+        with linha_campos([2, 1], "cliente_cnh") as (col_numero, col_categoria):
+            dados["cnh_numero"] = col_numero.text_input("Número da CNH", cliente.get("cnh_numero") or "")
+            dados["cnh_categoria"] = col_categoria.text_input("Categoria da CNH", cliente.get("cnh_categoria") or "")
         opcoes = ["ativo", "bloqueado", "inativo"]
-        dados["status"] = st.selectbox(
-            "Status", opcoes, index=opcoes.index(cliente.get("status", "ativo"))
-        )
+        with linha_campos([1, 1], "cliente_validade_status") as (col_validade, col_status):
+            with col_validade:
+                validade = campo_data("Validade da CNH", cliente.get("cnh_validade"))
+            dados["status"] = col_status.selectbox(
+                "Status", opcoes, index=opcoes.index(cliente.get("status", "ativo")),
+                format_func=_STATUS_ROTULO.get,
+            )
+        dados["cnh_validade"] = validade.isoformat() if validade else None
         dados["observacoes"] = st.text_area("Observações", cliente.get("observacoes") or "")
-        if st.form_submit_button("Salvar cliente", type="primary", use_container_width=True):
-            if cliente:
-                clientes.atualizar(cliente["id"], dados)
-            else:
-                clientes.criar(dados)
-            _salvo()
+        legenda_obrigatorios()
+        acao = rodape_formulario("Salvar cliente", "cliente", formulario=True)
+        if acao.cancelou:
+            st.rerun()
+        if acao.confirmou:
+            with proteger():
+                dados["telefone"] = formatar_telefone(telefone)
+                dados["whatsapp"] = formatar_telefone(whatsapp)
+                if cliente:
+                    clientes.atualizar(cliente["id"], dados)
+                else:
+                    clientes.criar(dados)
+                feedback.concluir(mensagens.cliente_salvo(dados["nome"].strip(), novo=not cliente))
 
 
 # ------------------------------------------------------------------ lista --
@@ -116,121 +170,68 @@ def _exibir_lista():
     contratos_ativos = {c["cliente_id"]: c["moto_id"] for c in contratos_todos if c["status"] == "ativo"}
     placas = {m["id"]: m["placa"] for m in motos.listar()}
 
-    col_titulo, col_botao = st.columns([5, 1], vertical_alignment="center")
-    col_titulo.markdown(
-        f"""
-        <h1 class="rotulo" style="margin:0;font-size:28px;color:#1E2227;">Clientes</h1>
-        <div style="color:#585F66;font-size:13px;margin-top:2px;">{len(registros)} cliente(s) cadastrado(s)</div>
-        """,
-        unsafe_allow_html=True,
+    if cabecalho_pagina(
+        "Clientes",
+        sub=f"{len(registros)} cliente(s) cadastrado(s)",
+        acao={"rotulo": "Novo cliente", "chave": "clientes_novo"},
+    ):
+        _dialog_novo_cliente()
+
+    filtros = barra_filtros(
+        "clientes",
+        _OPCOES_FILTRO,
+        padrao="Todos",
+        contagens={"Todos": len(registros), **contagem},
+        busca="Buscar por nome ou CPF",
     )
-    with col_botao:
-        if st.button("+ Novo cliente", type="primary", use_container_width=True):
-            _dialog_novo_cliente()
-
-    st.write("")
-    filtro_atual = st.session_state.get("clientes_filtro", "Todos")
-    col_pills, col_busca = st.columns([3, 1.3])
-    with col_pills:
-        with st.container(key="clientes_filtros"):
-            pills = st.columns(len(_FILTROS))
-            rotulos_pill = ["Todos"] + [_STATUS_ROTULO[f] for f in _FILTROS[1:]]
-            for coluna, valor, rotulo in zip(pills, _FILTROS, rotulos_pill):
-                total_pill = len(registros) if valor == "Todos" else contagem.get(valor, 0)
-                if coluna.button(
-                    f"{rotulo} · {total_pill}",
-                    key=f"pill_cli_{valor}",
-                    type="primary" if filtro_atual == valor else "secondary",
-                    use_container_width=True,
-                ):
-                    st.session_state["clientes_filtro"] = valor
-                    st.rerun()
-    with col_busca:
-        busca = st.text_input(
-            "Buscar", placeholder="Buscar por nome ou CPF", label_visibility="collapsed"
-        )
-
-    busca_normalizada = busca.casefold()
+    busca = filtros.busca.casefold()
+    digitos = "".join(ch for ch in busca if ch.isdigit())  # o CPF pode ser digitado com pontos e traço
     filtrados = [
         c
         for c in registros
-        if (filtro_atual == "Todos" or c["status"] == filtro_atual)
-        and (busca_normalizada in c["nome"].casefold() or busca_normalizada in (c.get("cpf") or ""))
+        if (filtros.valor == "Todos" or c["status"] == filtros.valor)
+        and (busca in c["nome"].casefold() or (digitos and digitos in (c.get("cpf") or "")))
     ]
+    filtros.resumo(len(filtrados), ("cliente", "clientes"))
+    pagina_atual, pagina = paginar("clientes", filtrados)
 
-    st.write("")
-    pagina_chave = "clientes_pagina"
-    por_pagina = 6
-    total_paginas = max(1, -(-len(filtrados) // por_pagina))
-    pagina = min(st.session_state.get(pagina_chave, 1), total_paginas)
-    inicio = (pagina - 1) * por_pagina
-    pagina_atual = filtrados[inicio : inicio + por_pagina]
-
-    with st.container(key="clientes_card_lista"):
-        cab = st.columns([1.6, 1.3, 1.3, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
-        for coluna, rotulo in zip(cab, ["Nome", "CPF", "WhatsApp", "CNH", "Status", "Moto atual", ""]):
-            coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
-                unsafe_allow_html=True,
-            )
+    with lista_registros("clientes", acoes=1):
         if not pagina_atual:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum cliente encontrado.</div>',
+                vazio_lista("Nenhum cliente encontrado.", "Ainda não há clientes cadastrados.", bool(registros), "Novo cliente"),
                 unsafe_allow_html=True,
             )
         for cliente in pagina_atual:
-            linha = st.columns([1.6, 1.3, 1.3, 1.2, 1.1, 1.1, 0.4], vertical_alignment="center")
-            cor_avatar = "#1E2227" if cliente["status"] == "ativo" else "#585F66"
-            linha[0].markdown(
-                f"""
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:26px;height:26px;border-radius:50%;background:{cor_avatar};color:#FAFAF9;
-                              display:flex;align-items:center;justify-content:center;font-size:11px;
-                              font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
-                  <span style="font-size:13px;">{_html(cliente['nome'])}</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            linha[1].markdown(
-                f'<span class="mono" style="font-size:13px;color:#585F66;">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>',
-                unsafe_allow_html=True,
-            )
-            linha[2].markdown(
-                f'<span class="mono" style="font-size:13px;">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>',
-                unsafe_allow_html=True,
-            )
+            identidade = _identidade_cliente(cliente)
             situacao_cnh_cliente = situacao_cnh(
                 _data_iso(cliente.get("cnh_validade")), hoje, config["alerta_cnh_dias"]
             )
             if situacao_cnh_cliente == "sem_cnh":
-                linha[3].markdown('<span style="font-size:13px;color:#9AA0A6;">—</span>', unsafe_allow_html=True)
+                cnh = '<span class="fs-secundario texto-3">—</span>'
             else:
-                linha[3].markdown(
-                    selo_situacao(formatar_data(cliente["cnh_validade"]), situacao_cnh_cliente),
-                    unsafe_allow_html=True,
-                )
-            linha[4].markdown(
-                selo_situacao(_STATUS_ROTULO[cliente["status"]], _situacao_selo_cliente(cliente["status"])),
-                unsafe_allow_html=True,
-            )
+                cnh = selo_situacao(formatar_data(cliente["cnh_validade"]), situacao_cnh_cliente)
             moto_id = contratos_ativos.get(cliente["id"])
-            linha[5].markdown(
-                chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span style="color:#9AA0A6;">—</span>',
-                unsafe_allow_html=True,
-            )
-            if linha[6].button("→", key=f"ficha_cli_{cliente['id']}", help="Ver ficha"):
-                _ir_para_ficha(cliente["id"])
+            campos = [
+                campo("CPF", f'<span class="mono fs-secundario texto-2">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>'),
+                campo("WhatsApp", f'<span class="mono fs-secundario">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>'),
+                campo("CNH", cnh),
+                campo(
+                    "Moto atual",
+                    chip_placa(placas[moto_id]) if moto_id and moto_id in placas else '<span class="texto-3">—</span>',
+                ),
+            ]
+            with registro(
+                "clientes",
+                cliente["id"],
+                identidade,
+                campos,
+                selo=selo_situacao(_STATUS_ROTULO[cliente["status"]], _situacao_selo_cliente(cliente["status"])),
+            ) as acoes:
+                if botao_acao(acoes, "abrir", f"ficha_cli_{cliente['id']}", ajuda=f"Abrir a ficha de {cliente['nome']}"):
+                    _ir_para_ficha(cliente["id"])
 
-    if total_paginas > 1:
-        st.caption(f"Mostrando {len(pagina_atual)} de {len(filtrados)} · página {pagina} de {total_paginas}")
-        col_ant, col_prox = st.columns(2)
-        if col_ant.button("‹ Anterior", disabled=pagina <= 1, key="cli_ant"):
-            st.session_state[pagina_chave] = pagina - 1
-            st.rerun()
-        if col_prox.button("Próxima ›", disabled=pagina >= total_paginas, key="cli_prox"):
-            st.session_state[pagina_chave] = pagina + 1
-            st.rerun()
+    rodape_paginacao("clientes", pagina)
+    restaurar_posicao("clientes")
 
 
 def _data_iso(valor):
@@ -247,12 +248,7 @@ def _card_contrato_ativo(cliente_id):
     contrato = _contrato_ativo_de(cliente_id)
     if not contrato:
         st.markdown(
-            """
-            <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
-              <h3 class="rotulo" style="margin:0 0 6px;font-size:14px;">Contrato ativo</h3>
-              <div style="font-size:13px;color:#585F66;">Nenhum contrato ativo para este cliente.</div>
-            </div>
-            """,
+            cartao_dados("Contrato ativo", '<div class="fs-secundario texto-2">Nenhum contrato ativo para este cliente.</div>'),
             unsafe_allow_html=True,
         )
         return
@@ -264,49 +260,45 @@ def _card_contrato_ativo(cliente_id):
     parcelas.sort(key=lambda c: c["vencimento"])
     proxima = formatar_data(parcelas[0]["vencimento"]) if parcelas else "—"
 
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-            <h3 class="rotulo" style="margin:0;font-size:14px;">Contrato ativo</h3>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            {chip_placa(moto['placa'], 'grande') if moto else ''}
-            <div>
-              <div style="font-size:14px;font-weight:500;">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
-              <div style="font-size:12px;color:#585F66;">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
+    acao = {"rotulo": "Ver contrato", "chave": "ver_contrato_cliente", "ajuda": "Abrir o contrato ativo deste cliente"}
+    with cartao_ficha("cliente_contrato", "Contrato ativo", acao) as ver_contrato:
+        if ver_contrato:
+            abrir_ficha_contrato(contrato["id"])
+        st.markdown(
+            f"""
+            <div class="resumo-contrato">
+              {chip_placa(moto['placa'], 'grande') if moto else ''}
+              <div class="resumo-contrato__texto">
+                <div class="resumo-contrato__titulo">{_html(moto['marca'] + ' ' + moto['modelo'] if moto else None)}</div>
+                <div class="fs-legenda texto-2">desde {_html(formatar_data(contrato['data_inicio']))} · {_html(contrato['periodicidade'])}</div>
+              </div>
             </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">valor / período</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['valor_periodo'])}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">próxima cobrança</span><span class="mono" style="font-size:13px;">{proxima}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">caução</span><span class="mono" style="font-size:13px;">{formatar_moeda(contrato['caucao_valor'])}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    if st.button("Ver contratos →", key="ver_contrato_cliente"):
-        abrir_ficha_contrato(contrato["id"])
+            <div class="grade-dados grade-dados--compacta campos-linha">
+              <div class="campo"><span class="fs-legenda texto-2">valor / período</span><span class="mono fs-secundario">{formatar_moeda(contrato['valor_periodo'])}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">próxima cobrança</span><span class="mono fs-secundario">{proxima}</span></div>
+              <div class="campo"><span class="fs-legenda texto-2">caução</span><span class="mono fs-secundario">{formatar_moeda(contrato['caucao_valor'])}</span></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _card_dados_pessoais(cliente):
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Dados pessoais</h3>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">cnh</span><span class="mono" style="font-size:13px;">{_html(cliente.get('cnh_numero'))} · cat. {_html(cliente.get('cnh_categoria'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">validade cnh</span><span class="mono" style="font-size:13px;">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">telefone</span><span class="mono" style="font-size:13px;">{_html(cliente.get('telefone'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{_html(cliente.get('email'))}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">endereço</span><span style="font-size:13px;">{_html(cliente.get('endereco'))}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Cartão em largura total: em coluna estreita os valores de 22px (CPF, CNH, e-mail) quebravam no meio."""
+    # A categoria vai no rótulo: o número da CNH sozinho cabe em meia largura no celular
+    categoria = cliente.get("cnh_categoria")
+    rotulo_categoria = f" · cat. {_html(categoria)}" if categoria else ""
+    corpo = f"""
+      <div class="grade-dados grade-dados--duas">
+        <div class="campo"><span class="texto-2">CPF</span><span class="mono">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span></div>
+        <div class="campo"><span class="texto-2">CNH{rotulo_categoria}</span><span class="mono">{_html(cliente.get('cnh_numero'))}</span></div>
+        <div class="campo"><span class="texto-2">Validade CNH</span><span class="mono">{_html(formatar_data(cliente.get('cnh_validade')))}</span></div>
+        <div class="campo"><span class="texto-2">telefone</span><span class="mono">{_html(cliente.get('telefone'))}</span></div>
+        <div class="campo campo--largo"><span class="texto-2">e-mail</span><span>{_html(cliente.get('email'))}</span></div>
+        <div class="campo campo--largo"><span class="texto-2">endereço</span><span>{_html(cliente.get('endereco'))}</span></div>
+      </div>
+    """
+    st.markdown(cartao_dados("Dados pessoais", corpo), unsafe_allow_html=True)
 
 
 def _card_situacao_financeira(parcelas, historicos):
@@ -324,86 +316,70 @@ def _card_situacao_financeira(parcelas, historicos):
     atrasado = sum(
         (Decimal(str(c["saldo"])) for c in parcelas if c["situacao"] == "atrasada"), Decimal(0)
     )
-    st.markdown(
-        f"""
-        <div style="background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;padding:18px 22px;height:100%;">
-          <h3 class="rotulo" style="margin:0 0 14px;font-size:14px;">Situação financeira</h3>
-          <div style="display:flex;flex-direction:column;gap:14px;">
-            <div class="campo"><span style="font-size:11px;color:#585F66;">pago no histórico</span><span class="mono" style="font-size:18px;color:#2F9E6E;">{formatar_moeda(pago)}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">em aberto</span><span class="mono" style="font-size:18px;">{formatar_moeda(em_aberto)}</span></div>
-            <div class="campo"><span style="font-size:11px;color:#585F66;">atrasado</span><span class="mono" style="font-size:18px;color:{'#D64545' if atrasado else '#1E2227'};">{formatar_moeda(atrasado)}</span></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    cor_atrasado = "texto-perigo" if atrasado else ""
+    corpo = f"""
+      <div class="campos-linha pilha-dados">
+        <div class="campo"><span class="fs-legenda texto-2">pago no histórico</span><span class="mono fs-destaque texto-sucesso">{formatar_moeda(pago)}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">em aberto</span><span class="mono fs-destaque">{formatar_moeda(em_aberto)}</span></div>
+        <div class="campo"><span class="fs-legenda texto-2">atrasado</span><span class="mono fs-destaque {cor_atrasado}">{formatar_moeda(atrasado)}</span></div>
+      </div>
+    """
+    st.markdown(cartao_dados("Situação financeira", corpo), unsafe_allow_html=True)
 
 
 def _aba_resumo(cliente, parcelas, historicos):
-    esquerda, direita = st.columns([1.5, 1], gap="medium")
-    with esquerda:
-        _card_contrato_ativo(cliente["id"])
-        st.write("")
-        _card_dados_pessoais(cliente)
-    with direita:
-        _card_situacao_financeira(parcelas, historicos)
+    with paineis("cliente_resumo") as (principal, lateral):
+        with principal:
+            _card_contrato_ativo(cliente["id"])
+        with lateral:
+            _card_situacao_financeira(parcelas, historicos)
+    _card_dados_pessoais(cliente)
 
 
 def _aba_contratos(cliente):
     registros = [c for c in contratos.listar() if c["cliente_id"] == cliente["id"]]
     registros.sort(key=lambda c: c["data_inicio"], reverse=True)
     frota = {m["id"]: m for m in motos.listar()}
-    larguras = [2, 1, 1, 1, 1]
-    with st.container(key="clientes_card_lista"):
-        cab = st.columns(larguras, vertical_alignment="center")
-        for coluna, rotulo in zip(cab, ["Moto", "Início", "Fim", "Status", "Valor / período"]):
-            coluna.markdown(
-                f'<span style="font-size:13px;color:#585F66;">{rotulo}</span>',
-                unsafe_allow_html=True,
-            )
+    with lista_registros("clientes_contratos", acoes=1):
         if not registros:
             st.markdown(
-                '<div style="padding:16px 20px;color:#585F66;font-size:13px;">Nenhum registro encontrado.</div>',
+                estado_vazio("Este cliente ainda não tem contratos.", "Os contratos aparecem aqui depois de criados em Contratos.", compacto=True),
                 unsafe_allow_html=True,
             )
         for c in registros:
             moto = frota.get(c["moto_id"])
-            linha = st.columns(larguras, vertical_alignment="center")
-            if moto:
-                col_placa, col_modelo = linha[0].columns([1, 1.6], vertical_alignment="center")
-                if col_placa.button(
-                    formatar_placa_simples(moto),
-                    key=f"placa_contrato_{c['id']}",
-                    help="Abrir contrato",
-                ):
-                    abrir_ficha_contrato(c["id"])
-                col_modelo.markdown(
-                    f'<span style="font-size:13px;">{_html(moto["marca"])} {_html(moto["modelo"])}</span>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                linha[0].markdown("—")
-            linha[1].markdown(
-                f'<span class="mono" style="font-size:13px;">{formatar_data(c["data_inicio"])}</span>',
-                unsafe_allow_html=True,
+            titulo = (
+                f'{chip_placa(moto["placa"])} <span class="fs-secundario">{_html(moto["marca"])} {_html(moto["modelo"])}</span>'
+                if moto
+                else "—"
             )
-            linha[2].markdown(
-                f'<span class="mono" style="font-size:13px;">{formatar_data(c["data_encerramento"])}</span>'
-                if c["data_encerramento"]
-                else '<span style="color:#9AA0A6;">—</span>',
-                unsafe_allow_html=True,
-            )
-            linha[3].markdown(
-                selo_situacao(
+            campos = [
+                campo("Início", f'<span class="mono fs-secundario">{formatar_data(c["data_inicio"])}</span>'),
+                campo(
+                    "Fim",
+                    f'<span class="mono fs-secundario">{formatar_data(c["data_encerramento"])}</span>'
+                    if c["data_encerramento"]
+                    else '<span class="texto-3">—</span>',
+                ),
+                campo("Valor / período", f'<span class="mono fs-secundario">{formatar_moeda(c["valor_periodo"])}</span>'),
+            ]
+            with registro(
+                "clientes_contratos",
+                c["id"],
+                titulo,
+                campos,
+                selo=selo_situacao(
                     {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}[c["status"]],
                     c["status"],
                 ),
-                unsafe_allow_html=True,
-            )
-            linha[4].markdown(
-                f'<div style="text-align:right;"><span class="mono" style="font-size:13px;">{formatar_moeda(c["valor_periodo"])}</span></div>',
-                unsafe_allow_html=True,
-            )
+            ) as acoes:
+                if botao_acao(
+                    acoes,
+                    "abrir",
+                    f"placa_contrato_{c['id']}",
+                    ajuda=f"Abrir o contrato da moto {formatar_placa_simples(moto)}" if moto else "Abrir o contrato",
+                ):
+                    abrir_ficha_contrato(c["id"])
 
 
 def _aba_pagamentos(parcelas, historicos):
@@ -431,9 +407,9 @@ def _aba_pagamentos(parcelas, historicos):
             [
                 f'<span class="mono">{formatar_data(c["vencimento"])}</span>',
                 _html(c["tipo"].capitalize()),
-                f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span style="color:#9AA0A6;">—</span>',
-                _html(ultimo["forma"].capitalize()) if ultimo else '<span style="color:#9AA0A6;">—</span>',
-                f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span style="color:#9AA0A6;">—</span>',
+                f'<span class="mono">{formatar_data(ultimo["data_pagamento"])}</span>' if ultimo else '<span class="texto-3">—</span>',
+                _html(ultimo["forma"].capitalize()) if ultimo else '<span class="texto-3">—</span>',
+                f'<span class="mono">{formatar_moeda(multa)}</span>' if multa else '<span class="texto-3">—</span>',
                 f'<span class="mono">{formatar_moeda(c["valor"])}</span>',
                 situacao_html,
             ]
@@ -441,7 +417,7 @@ def _aba_pagamentos(parcelas, historicos):
     tabela_html(
         ["Vencimento", "Tipo", "Pago em", "Forma", "Multa/juros", "Valor", "Situação"],
         linhas,
-        alinhar_direita={4, 5},
+        legenda="Pagamentos do cliente",
     )
 
 
@@ -452,7 +428,7 @@ def _exibir_ficha(cliente_id):
         _ir_para_lista()
         return
 
-    if st.button("‹ Clientes", key="voltar_clientes"):
+    if botao_voltar("clientes", "voltar_clientes"):
         _ir_para_lista()
 
     contrato = _contrato_ativo_de(cliente_id)
@@ -462,70 +438,52 @@ def _exibir_ficha(cliente_id):
     else:
         linha_status = _STATUS_ROTULO[cliente["status"]]
 
-    col_cab, col_acoes = st.columns([3, 1], vertical_alignment="center")
-    with col_cab:
-        cor_avatar = "#1E2227" if cliente["status"] == "ativo" else "#585F66"
-        st.markdown(
-            f"""
-            <div style="display:flex;align-items:center;gap:16px;">
-              <div style="width:48px;height:48px;border-radius:50%;background:{cor_avatar};color:#FAFAF9;
-                          display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;flex-shrink:0;">{_html(_iniciais(cliente['nome']))}</div>
-              <div>
-                <h1 class="rotulo" style="margin:0;font-size:24px;">{_html(cliente['nome'])}</h1>
-                <div style="font-size:13px;margin-top:3px;">
-                  {selo_situacao(linha_status, _situacao_selo_cliente(cliente["status"]))}
-                </div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with col_acoes:
-        if st.button("Editar", use_container_width=True):
-            _dialog_editar_cliente(cliente)
+    avatar = f'<div class="avatar-ficha{"" if cliente["status"] == "ativo" else " avatar-ficha--inativo"}">{_html(_iniciais(cliente["nome"]))}</div>'
+    cliques = cabecalho_ficha(
+        ficha_identidade(
+            _html(cliente["nome"]),
+            selo=selo_situacao(linha_status, _situacao_selo_cliente(cliente["status"])),
+            marca=avatar,
+        ),
+        [{"rotulo": "Editar", "chave": "editar_cliente_ficha", "ajuda": "Editar os dados do cliente"}],
+    )
+    if cliques["editar_cliente_ficha"]:
+        _dialog_editar_cliente(cliente)
 
-    st.write("")
     config = configuracoes.obter()
     situacao_cnh_cliente = situacao_cnh(_data_iso(cliente.get("cnh_validade")), hoje_br(), config["alerta_cnh_dias"])
-    cnh_html = (
-        f'<span style="font-size:13px;color:#9AA0A6;">Sem CNH cadastrada</span>'
-        if situacao_cnh_cliente == "sem_cnh"
-        else selo_situacao(
+    if situacao_cnh_cliente == "sem_cnh":
+        cnh_html = "Sem CNH cadastrada"
+        cnh_tom = "texto-3"
+    else:
+        cnh_html = selo_situacao(
             f"categoria {cliente.get('cnh_categoria') or '—'} · válida até {formatar_data(cliente['cnh_validade'])}",
             situacao_cnh_cliente,
         )
-    )
-    st.markdown(
-        f"""
-        <div style="display:flex;background:#FAFAF9;border:1px solid rgba(30,34,39,0.12);border-radius:2px;margin-bottom:20px;">
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">cpf</span><span class="mono" style="font-size:13px;">{_html(mascarar_cpf(cliente.get('cpf') or ''), '')}</span>
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">whatsapp</span><span class="mono" style="font-size:13px;">{_html(cliente.get('whatsapp') or cliente.get('telefone'))}</span>
-          </div>
-          <div style="flex:1;padding:14px 22px;border-right:1px solid rgba(30,34,39,0.12);display:flex;flex-direction:column;gap:4px;justify-content:center;">
-            <span class="rotulo" style="font-size:11px;color:#585F66;">cnh</span>
-            {cnh_html}
-          </div>
-          <div class="campo" style="flex:1;padding:14px 22px;justify-content:center;">
-            <span style="font-size:11px;color:#585F66;">e-mail</span><span style="font-size:13px;">{_html(cliente.get('email'))}</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+        cnh_tom = None
+    faixa_dados(
+        [
+            ("CPF", f'<span class="mono">{_html(mascarar_cpf(cliente.get("cpf") or ""), "")}</span>'),
+            ("WhatsApp", f'<span class="mono">{_html(cliente.get("whatsapp") or cliente.get("telefone"))}</span>'),
+            ("CNH", cnh_html, cnh_tom),
+            ("E-mail", _html(cliente.get("email"))),
+        ]
     )
 
     parcelas = [c for c in cobrancas.listar() if c["cliente_id"] == cliente_id]
     historicos = cobrancas.historicos_pagamentos([c["id"] for c in parcelas])
 
-    abas = st.tabs(["Resumo", "Contratos", "Pagamentos"])
-    with abas[0]:
-        _aba_resumo(cliente, parcelas, historicos)
-    with abas[1]:
-        _aba_contratos(cliente)
-    with abas[2]:
-        _aba_pagamentos(parcelas, historicos)
+    guias = abas("clientes_ficha_abas", ["Resumo", "Contratos", "Pagamentos", "Portal"])
+    desenho = (
+        lambda: _aba_resumo(cliente, parcelas, historicos),
+        lambda: _aba_contratos(cliente),
+        lambda: _aba_pagamentos(parcelas, historicos),
+        lambda: aba_portal(cliente),
+    )
+    for guia, desenhar in zip(guias, desenho):
+        with guia:
+            if aba_ativa(guia):
+                desenhar()
 
 
 def formatar_placa_simples(moto):
@@ -536,7 +494,7 @@ def formatar_placa_simples(moto):
 
 def exibir():
     cabecalho("Clientes", exibir_titulo=False)
-    with proteger():
+    with proteger(nova_tentativa=True):
         visao = st.session_state.get("clientes_visao", "lista")
         if visao == "ficha" and st.session_state.get("clientes_id_selecionado"):
             _exibir_ficha(st.session_state["clientes_id_selecionado"])
