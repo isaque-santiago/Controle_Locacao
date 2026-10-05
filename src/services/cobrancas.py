@@ -73,8 +73,9 @@ def registrar_pagamento(
 def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:
     """Gera as cobranças pendentes, no máximo uma vez por hora em cada sessão.
 
-    A RPC é idempotente e só atua em contratos sem prazo (exceção neste sistema);
-    rodá-la a cada abertura do Dashboard era uma escrita a mais no banco por página."""
+    A RPC é idempotente e atua nos contratos ativos por prazo indeterminado (a regra da
+    operação), gerando as cobranças da janela móvel; rodá-la a cada abertura do Dashboard
+    era uma escrita a mais no banco por página."""
     agora = monotonic()
     ultima = st.session_state.get(_CHAVE_GERACAO)
     if ultima is not None and agora - ultima < _INTERVALO_GERACAO_SEGUNDOS:

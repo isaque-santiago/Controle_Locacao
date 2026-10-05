@@ -5,6 +5,8 @@ uma tabela numa transação só) — não existe inserção direta aqui.
 """
 
 from datetime import date
+from decimal import Decimal
+from typing import Optional
 
 from src.db import get_client
 from src.repositories.consultas import invalida_cache, todos
@@ -26,7 +28,7 @@ def criar_com_vistoria(dados, vistoria):
 
 
 @invalida_cache
-def encerrar_com_vistoria(contrato_id, data, vistoria, caucao_devolvida):
+def encerrar_com_vistoria(contrato_id, data, vistoria, valor_danos, descricao_danos):
     return (
         get_client()
         .rpc(
@@ -35,7 +37,8 @@ def encerrar_com_vistoria(contrato_id, data, vistoria, caucao_devolvida):
                 "p_contrato_id": contrato_id,
                 "p_data": data.isoformat(),
                 "p_vistoria": vistoria,
-                "p_caucao_devolvida": caucao_devolvida,
+                "p_valor_danos": str(valor_danos),
+                "p_descricao_danos": descricao_danos,
             },
         )
         .execute()
@@ -73,7 +76,11 @@ def criar_via_rpc(payload: dict) -> dict:
 
 @invalida_cache
 def encerrar_via_rpc(
-    contrato_id: str, data: date, km_final: int, caucao_devolvida: bool
+    contrato_id: str,
+    data: date,
+    km_final: int,
+    valor_danos: Decimal,
+    descricao_danos: Optional[str],
 ) -> dict:
     resposta = (
         get_client()
@@ -83,7 +90,8 @@ def encerrar_via_rpc(
                 "p_contrato_id": contrato_id,
                 "p_data": data.isoformat(),
                 "p_km_final": km_final,
-                "p_caucao_devolvida": caucao_devolvida,
+                "p_valor_danos": str(valor_danos),
+                "p_descricao_danos": descricao_danos,
             },
         )
         .execute()

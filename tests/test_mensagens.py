@@ -79,3 +79,23 @@ def test_campos_alterados_compara_numeros_e_ignora_ausentes():
     depois = {"multa_atraso_valor": "20.00", "encargo_diario_valor": "7", "alerta_cnh_dias": 30}
     assert campos_alterados(antes, depois) == ["Multa de atraso (no vencimento)"]
     assert campos_alterados(antes, {}) == []
+
+
+def test_encerramento_diz_quanto_devolver_da_caucao_e_o_que_foi_descontado():
+    simples = mensagens.contrato_encerrado("Maria", "ABC-1D23")
+    assert simples.texto == "Contrato de Maria encerrado. A moto ABC-1D23 está disponível."
+    assert simples.tom == TOAST
+    com_desconto = mensagens.contrato_encerrado(
+        "Maria", "ABC-1D23", devolucao=Decimal("700"), desconto=Decimal("300"), excedente=Decimal("0")
+    )
+    assert "Devolver R$ 700,00 de caução ao cliente." in com_desconto.texto
+    assert "Danos descontados da caução: R$ 300,00." in com_desconto.texto
+    assert com_desconto.tom == TOAST
+
+
+def test_encerramento_com_danos_acima_da_caucao_gera_alerta_com_a_cobranca():
+    aviso = mensagens.contrato_encerrado(
+        "Maria", "ABC-1D23", devolucao=Decimal("0"), desconto=Decimal("1000"), excedente=Decimal("300")
+    )
+    assert aviso.tom == ALERTA
+    assert "cobrança de R$ 300,00" in aviso.texto

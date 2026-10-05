@@ -173,16 +173,46 @@ def test_assistente_etapa_3_recusa_fim_antes_do_inicio(servicos):
     app = abrir("4_Contratos.py", contrato_etapa=3, **CHAVES_WIZARD)
     app.text_input(key="wiz_valor").set_value("900,00")
     app.date_input(key="wiz_inicio").set_value(date(2026, 12, 10))
+    app.checkbox(key="wiz_indeterminado").uncheck().run()
     app.date_input(key="wiz_fim").set_value(date(2026, 12, 1)).run()
     assert app.button(key="wiz3_salvar").disabled
     assert "Fim previsto: escolha uma data igual ou posterior ao início." in _texto(app)
+
+
+def test_assistente_etapa_3_comeca_semanal_e_por_prazo_indeterminado(servicos):
+    app = abrir("4_Contratos.py", contrato_etapa=3, **CHAVES_WIZARD)
+    assert app.radio(key="wiz_periodicidade").value == "semanal"
+    assert app.checkbox(key="wiz_indeterminado").value is True
+    assert not [d for d in app.date_input if d.key == "wiz_fim"]
+
+
+def test_assistente_etapa_3_indeterminado_avanca_sem_data_final(servicos):
+    app = abrir("4_Contratos.py", contrato_etapa=3, **CHAVES_WIZARD)
+    app.text_input(key="wiz_valor").set_value("900,00").run()
+    assert not app.button(key="wiz3_salvar").disabled
+    app.button(key="wiz3_salvar").click().run()
+    assert app.session_state["contrato_etapa"] == 4
+    assert app.session_state["contrato_condicoes"]["data_fim_prevista"] is None
+    assert "Indeterminado" in _texto(app)
+    assert any("primeiros 30 dias" in c.value for c in app.caption)
+
+
+def test_assistente_etapa_3_com_prazo_definido_envia_a_data_final(servicos):
+    app = abrir("4_Contratos.py", contrato_etapa=3, **CHAVES_WIZARD)
+    app.text_input(key="wiz_valor").set_value("900,00")
+    app.date_input(key="wiz_inicio").set_value(date(2026, 12, 1))
+    app.checkbox(key="wiz_indeterminado").uncheck().run()
+    app.date_input(key="wiz_fim").set_value(date(2026, 12, 29)).run()
+    app.button(key="wiz3_salvar").click().run()
+    assert app.session_state["contrato_condicoes"]["data_fim_prevista"] == "2026-12-29"
+    assert not any("primeiros 30 dias" in c.value for c in app.caption)
 
 
 def test_voltar_e_alterar_nao_perdem_o_que_foi_preenchido(servicos):
     app = abrir("4_Contratos.py", contrato_etapa=3, **CHAVES_WIZARD)
     app.text_input(key="wiz_valor").set_value("950,00")
     app.text_input(key="wiz_caucao").set_value("100,00")
-    app.radio(key="wiz_periodicidade").set_value("semanal").run()
+    app.radio(key="wiz_periodicidade").set_value("quinzenal").run()
 
     app.button(key="alterar_moto_3").click().run()  # volta à etapa 2
     assert app.session_state["contrato_etapa"] == 2
@@ -194,7 +224,7 @@ def test_voltar_e_alterar_nao_perdem_o_que_foi_preenchido(servicos):
     assert app.session_state["contrato_etapa"] == 3
     assert app.text_input(key="wiz_valor").value == "950,00"
     assert app.text_input(key="wiz_caucao").value == "100,00"
-    assert app.radio(key="wiz_periodicidade").value == "semanal"
+    assert app.radio(key="wiz_periodicidade").value == "quinzenal"
 
 
 def test_voltar_da_etapa_3_guarda_o_texto_invalido_para_corrigir_depois(servicos):
@@ -425,3 +455,67 @@ def test_css_dos_formularios_responde_ao_proprio_conteiner():
     assert "st-key-contrato_periodicidade" not in css
     for linha in css.splitlines():
         assert not ("stColumn" in linha and "nth-child" in linha), linha[:120]
+
+
+# ------------------------------------------------------- caução e danos (14.3) --
+
+
+def _com_caucao(valor_pago):
+    return [{**COBRANCA, "id": "cau", "tipo": "caucao", "vencimento": "2026-09-01", "valor": Decimal("1000"),
+             "valor_pago": valor_pago, "saldo": Decimal("1000") - Decimal(str(valor_pago)),
+             "situacao": "paga" if valor_pago >= 1000 else "aberta"}]
+
+
+def test_encerrar_sem_danos_devolve_a_caucao_inteira(servicos):
+    servicos["cobrancas.listar_por_contrato"].return_value = _com_caucao(1000)
+    with patch("src.services.contratos.encerrar_com_vistoria") as encerrar:
+        app = _roteiro(_roteiro_encerrar)
+        assert "devolver ao cliente" in _texto(app) and "R$ 1.000,00" in _texto(app)
+        app.checkbox(key="enc_confirma").check().run()
+        app.button(key="perigo_enc_confirmar").click().run()
+    assert encerrar.call_args.args[3] == Decimal("0.00")
+
+
+def test_encerrar_com_dano_menor_que_a_caucao_mostra_e_envia_o_desconto(servicos):
+    servicos["cobrancas.listar_por_contrato"].return_value = _com_caucao(1000)
+    with patch("src.services.contratos.encerrar_com_vistoria") as encerrar:
+        app = _roteiro(_roteiro_encerrar)
+        app.text_input(key="enc_danos").set_value("300,00").run()
+        texto = _texto(app)
+        assert "Caução recebida R$ 1.000,00 − danos R$ 300,00" in texto and "R$ 700,00" in texto
+        assert "Os danos passam da caução" not in texto
+        # dano sem descrição não deixa encerrar
+        app.checkbox(key="enc_confirma").check().run()
+        assert app.button(key="perigo_enc_confirmar").disabled
+        assert "Descrição dos danos: informe o que foi danificado." in _texto(app)
+        app.text_area(key="enc_danos_descricao").set_value("Retrovisor quebrado").run()
+        assert not app.button(key="perigo_enc_confirmar").disabled
+        app.button(key="perigo_enc_confirmar").click().run()
+    encerrar.assert_called_once()
+    assert encerrar.call_args.args[3] == Decimal("300.00")
+    assert encerrar.call_args.args[4] == "Retrovisor quebrado"
+
+
+def test_encerrar_com_dano_maior_que_a_caucao_avisa_da_cobranca_do_excedente(servicos):
+    servicos["cobrancas.listar_por_contrato"].return_value = _com_caucao(1000)
+    app = _roteiro(_roteiro_encerrar)
+    app.text_input(key="enc_danos").set_value("1.300,00").run()
+    texto = _texto(app)
+    assert "Os danos passam da caução: será criada uma cobrança de" in texto and "R$ 300,00" in texto
+    assert "R$ 0,00" in texto  # nada a devolver
+
+
+def test_encerrar_recusa_dano_invalido_e_nomeia_o_campo(servicos):
+    servicos["cobrancas.listar_por_contrato"].return_value = _com_caucao(1000)
+    app = _roteiro(_roteiro_encerrar)
+    app.text_input(key="enc_danos").set_value("abc").run()
+    app.checkbox(key="enc_confirma").check().run()
+    assert app.button(key="perigo_enc_confirmar").disabled
+    assert "Danos a descontar da caução" in _texto(app)
+
+
+def test_encerrar_sem_caucao_recebida_nao_mostra_devolucao(servicos):
+    servicos["cobrancas.listar_por_contrato"].return_value = [COBRANCA]
+    app = _roteiro(_roteiro_encerrar)
+    assert "devolver ao cliente" not in _texto(app)
+

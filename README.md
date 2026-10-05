@@ -135,9 +135,14 @@ cartões selecionáveis (cliente bloqueado/inativo aparece desabilitado, "já
 aluga X" como aviso), periodicidade em pílulas e etapa final com resumo,
 prévia da agenda e a vistoria de entrega exigida pela Fase 5; ficha com
 faixa de dados, abas Cobranças/Vistorias/Manutenções e encerramento em
-modal. **Limitação conhecida:** o mockup mostra "Prazo indeterminado", mas
-`rpc_criar_contrato_com_vistoria` exige `data_fim_prevista` — por isso o
-"Fim previsto" continua obrigatório no assistente.
+modal. O contrato é por **prazo indeterminado** por padrão (decisão de negócio,
+seção 14.4 do plano): o assistente começa com "Prazo indeterminado" marcado e a
+periodicidade **semanal**; desmarcar mostra o "Fim previsto" para o caso de data final
+combinada. Sem data final a prévia mostra só os 30 primeiros dias e as cobranças
+seguintes são geradas por `rpc_gerar_cobrancas_pendentes` enquanto o contrato estiver ativo.
+No encerramento o dono informa os **danos**, que são descontados da caução recebida
+(`src/domain/caucao.py`, espelhado na RPC): caução R$ 1.000 − dano R$ 300 = devolver
+R$ 700; dano acima da caução zera a devolução e gera uma cobrança de dano com o excedente.
 
 Reconstrução de Cobranças (23/09/2026), conferida contra `Cobrancas.dc.html`:
 subtítulo com total em atraso e nº de clientes; abas Hoje, Atrasadas, Próximos 7
@@ -254,11 +259,13 @@ homologada apenas com base nas telas e testes isolados.
    - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
    - `20261002120000_idempotencia_operacoes.sql`: coluna `chave_operacao` e índice único em `pagamentos`, `manutencoes`, `documentos_moto` e `historico_km`, e `rpc_registrar_manutencao` passa a devolver o resultado do primeiro envio quando a chave se repete (Etapa 7 do plano de UI/UX). Rode `supabase/verificar_fluxos.sql` no projeto de homologação depois de aplicar.
    - `20261005120000_encargos_fixos.sql`: encargo de atraso fixo (decisão de negócio, seção 14.1 do plano) — `configuracoes` ganha `multa_atraso_valor` (R$ 15,00) e `encargo_diario_valor` (R$ 7,00) e perde `multa_atraso_percentual`, `juros_mensal_percentual` e `carencia_dias`. **Aplique antes de publicar esta versão do app**, que já não lê as colunas antigas.
+   - `20261005130000_contrato_indeterminado.sql`: `rpc_criar_contrato_com_vistoria` deixa de exigir `data_fim_prevista` (contrato por prazo indeterminado, seção 14.4 do plano).
+   - `20261005140000_caucao_danos.sql`: danos descontados da caução no encerramento (seção 14.3) — `contratos` ganha `caucao_desconto_danos`, `caucao_valor_devolvido` e `descricao_danos`; `rpc_encerrar_contrato` e `rpc_encerrar_contrato_com_vistoria` trocam `p_caucao_devolvida` por `p_valor_danos` e `p_descricao_danos` (as versões antigas são removidas). **Aplique antes de publicar esta versão do app.**
 3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
    executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
    projeto conectado com `supabase link` e use `supabase db push`.
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
-5. Em homologação, execute `supabase/verificar_fluxos.sql` e `supabase/verificar_portal_locatario.sql`. Os roteiros usam `ROLLBACK`.
+5. Em homologação, execute `supabase/verificar_fluxos.sql`, `supabase/verificar_portal_locatario.sql` e `supabase/verificar_regras_negocio.sql`. Os roteiros usam `ROLLBACK`.
 6. Reinicie o aplicativo com as dependências de `requirements.txt`.
 
 Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
@@ -337,15 +344,19 @@ Use um projeto de homologação; os passos criam dados.
 2. Cadastre uma moto e um cliente. Confira o plano automático e o histórico inicial.
    Confira recusa de placa/CPF duplicados e inválidos; confira CPF mascarado nas listas.
 3. Atualize o km. Uma leitura histórica menor exige confirmação e não reduz o km atual.
-4. Crie contrato com caução e vistoria. Compare a prévia com as parcelas geradas;
-   confira que a moto deixa de aparecer entre as disponíveis.
+4. Crie contrato com caução e vistoria (prazo indeterminado, semanal). Compare a prévia
+   com as parcelas geradas (caução e 1ª semana vencem na data de início); confira que a
+   moto deixa de aparecer entre as disponíveis.
 5. Registre pagamentos em dia, atrasado, parcial e total. Confira principal separado
-   dos encargos, saldo residual e recusa de pagamento superior ao saldo.
+   dos encargos (R$ 15 no vencimento + R$ 7 por dia, só locação), saldo residual e
+   recusa de pagamento superior ao saldo.
 6. Suba o km até o limite preventivo. Abra manutenção com peças e mão de obra; conclua
    o serviço. Confira custo total, status da moto e reinício apenas dos itens marcados.
 7. Cadastre documento vencido e confira destaque no Dashboard. Anexe comprovante,
    abra a URL assinada, regularize e crie o próximo ano pela sugestão de vencimento vazio.
-8. Anexe fotos à entrega. Encerre contrato com devolução e avaria; compare checklists.
+8. Anexe fotos à entrega. Encerre contrato com devolução e avaria, informando o dano
+   (confira o valor a devolver da caução e, com dano maior que a caução, a cobrança do
+   excedente); compare checklists.
    Confira preservação de dívida parcial, cancelamento das futuras sem pagamento e km final.
 9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
    Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente

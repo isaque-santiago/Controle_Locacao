@@ -182,8 +182,7 @@ begin
   perform rpc_encerrar_contrato_com_vistoria(
     v_contrato_carlos_id, hoje_br() - 30,
     jsonb_build_object('km', 8300, 'nivel_combustivel', '1/2',
-      'checklist', '{"farol_dianteiro":"ok","farol_traseiro":"ok","pneus":"ok","freios":"ok"}'::jsonb),
-    true
+      'checklist', '{"farol_dianteiro":"ok","farol_traseiro":"ok","pneus":"ok","freios":"ok"}'::jsonb)
   );
 
   -- -------------------------------------------------------------

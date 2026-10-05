@@ -71,8 +71,19 @@ def contrato_criado(nome, placa):
     )
 
 
-def contrato_encerrado(nome, placa):
-    return _toast(f"Contrato de {nome} encerrado. A moto {placa} está disponível.")
+def contrato_encerrado(nome, placa, devolucao=None, desconto=None, excedente=None):
+    """Confirma o encerramento. Com caução recebida (`devolucao` informada), diz quanto devolver
+    e quanto foi descontado de danos; danos acima da caução geram cobrança e pedem atenção."""
+    texto = f"Contrato de {nome} encerrado. A moto {placa} está disponível."
+    if devolucao is not None:
+        texto += f" Devolver {moeda(devolucao)} de caução ao cliente."
+    if Decimal(str(desconto or 0)) > 0:
+        texto += f" Danos descontados da caução: {moeda(desconto)}."
+    if Decimal(str(excedente or 0)) > 0:
+        return _alerta(
+            texto + f" Os danos passaram da caução: foi gerada uma cobrança de {moeda(excedente)} contra o cliente."
+        )
+    return _toast(texto)
 
 
 # --------------------------------------------------------------- cobranças --

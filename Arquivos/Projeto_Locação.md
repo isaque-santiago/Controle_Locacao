@@ -578,7 +578,7 @@ Operações que mexem em várias tabelas devem ser **funções PL/pgSQL** (trans
 | Função | O que faz (tudo atômico) |
 |---|---|
 | `rpc_criar_contrato(payload jsonb)` | Valida que a moto está `disponivel` e o cliente `ativo`; insere o contrato com `km_inicial = motos.km_atual` (ou o informado, se maior); grava `historico_km` (origem `contrato`); muda a moto para `alugada`; gera, na `data_inicio`, a cobrança da caução (se houver) e a da primeira semana, e as demais cobranças da agenda (regra 5.2; contrato indeterminado usa janela móvel). |
-| `rpc_encerrar_contrato(contrato_id, data, km_final, valor_danos, descricao_danos)` | Exige `km_final >= km_inicial`; fecha o contrato; cancela cobranças `aberta` com vencimento posterior à data de encerramento e sem pagamento; **calcula a devolução da caução** (`max(caução − valor_danos, 0)`), grava `caucao_desconto_danos`, `caucao_valor_devolvido` e `caucao_devolvida`; se `valor_danos` exceder a caução, cria cobrança `tipo = 'dano'` com o excedente (regra 5.2); grava `historico_km`; muda a moto para `disponivel`. |
+| `rpc_encerrar_contrato(contrato_id, data, km_final, valor_danos, descricao_danos)` | Exige `km_final >= km_inicial`; fecha o contrato; cancela cobranças `aberta` com vencimento posterior à data de encerramento e sem pagamento; **calcula a devolução da caução** (`max(caução recebida − valor_danos, 0)`), grava `caucao_desconto_danos`, `caucao_valor_devolvido` e `caucao_devolvida`; se `valor_danos` exceder a caução, cria cobrança `tipo = 'dano'` com o excedente (regra 5.2); grava `historico_km`; muda a moto para `disponivel`. |
 | `rpc_gerar_cobrancas_pendentes(horizonte_dias int default 30)` | Idempotente. Para contratos ativos, cria as cobranças que faltam até `hoje + horizonte`, sem duplicar (chave contrato + número). Chamada ao abrir o Dashboard. |
 | `rpc_registrar_manutencao(payload jsonb)` | Insere a manutenção e seus itens; soma `custo_pecas`; se `concluida`, atualiza `ultima_km`/`ultima_data` em `moto_plano_manutencao` para cada item com `item_id`; grava `historico_km` (só se `km >= km_atual`); se `aberta`, moto vai para `manutencao`; ao concluir, volta para `alugada` (se houver contrato ativo) ou `disponivel`; se `cobrar_do_cliente`, cria cobrança tipo `dano` no contrato vigente. |
 | `rpc_aplicar_plano_padrao(moto_id)` | Cria as linhas de `moto_plano_manutencao` para todos os itens ativos do catálogo, com **baseline**: `ultima_km = km_atual` e `ultima_data = hoje` (evita moto nova nascer com tudo "vencido"). O usuário pode ajustar para o histórico real. |
@@ -621,7 +621,7 @@ Valores iniciais para o dono ajustar por modelo em Configurações (referência 
 - **Contrato indeterminado é a regra** (seção 14.4): gera janela móvel (30 dias à frente) via `rpc_gerar_cobrancas_pendentes`, chamada ao abrir o Dashboard. A cobrança só deixa de ser gerada quando o contrato é encerrado.
 - Contrato com prazo definido (exceção): gera todas as parcelas até `data_fim_prevista`.
 - Caução é uma cobrança `tipo = 'caucao'` e não entra em receita.
-- **Devolução da caução no encerramento:** `devolução = max(caução − danos, 0)`. Se os danos excederem a caução, a devolução é R$ 0,00 e o excedente é cobrado do cliente em uma cobrança `tipo = 'dano'`.
+- **Devolução da caução no encerramento:** `devolução = max(caução recebida − danos, 0)`. A base é a caução efetivamente recebida (soma dos pagamentos da cobrança de caução): caução não paga não se devolve. Se os danos excederem a caução, a devolução é R$ 0,00 e o excedente é cobrado do cliente em uma cobrança `tipo = 'dano'`.
 
 ### 5.3 Encargos por atraso (`domain/encargos.py`)
 
@@ -899,7 +899,7 @@ O pagamento é **antecipado**: no dia do início do contrato o cliente já paga 
 
 ### 14.3 Caução e danos — CONFIRMADO
 
-A caução é cobrança separada (`tipo = 'caucao'`) e **o valor dos danos é descontado dela** na devolução. Exemplo: caução R$ 1.000,00, dano R$ 300,00 → devolução de R$ 700,00.
+A caução é cobrança separada (`tipo = 'caucao'`) e **o valor dos danos é descontado dela** na devolução (sobre a caução efetivamente recebida). Exemplo: caução R$ 1.000,00, dano R$ 300,00 → devolução de R$ 700,00.
 
 Impacto (Fase 5): o encerramento deve registrar o(s) dano(s) e calcular o valor a devolver (`caução − danos`) numa única RPC transacional (`rpc_encerrar_contrato`); regra pura em `src/domain` com testes.
 

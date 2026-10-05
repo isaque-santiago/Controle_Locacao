@@ -8,6 +8,7 @@ import streamlit as st
 
 from src.services import contratos, motos, clientes, cobrancas, vistorias, manutencao
 from src.domain import mensagens
+from src.domain.caucao import calcular_devolucao_caucao, caucao_paga
 from src.domain.encerramento import cobrancas_a_cancelar
 from src.domain.entradas import decimal_campo, erro_de, primeiro_erro
 from src.domain.valores import hoje_br, decimal_br
@@ -66,6 +67,7 @@ _CHAVES_WIZARD = (
     "contrato_rascunho",
     "wiz_inicio",
     "wiz_fim",
+    "wiz_indeterminado",
     "wiz_valor",
     "wiz_caucao",
     "wiz_periodicidade",
@@ -284,6 +286,7 @@ def _guardar_rascunho():
     for chave, campo_estado in (
         ("data_inicio", "wiz_inicio"),
         ("data_fim_prevista", "wiz_fim"),
+        ("indeterminado", "wiz_indeterminado"),
         ("valor_periodo", "wiz_valor"),
         ("caucao_valor", "wiz_caucao"),
         ("periodicidade", "wiz_periodicidade"),
@@ -351,16 +354,24 @@ def _wizard_etapa3():
                 rotulo_obrigatorio("Data de início"), rascunho.get("data_inicio") or hoje.isoformat(), key="wiz_inicio"
             )
         with col_fim:
-            fim = campo_data(
-                rotulo_obrigatorio("Fim previsto"),
-                rascunho.get("data_fim_prevista") or (hoje + timedelta(days=30)).isoformat(),
-                key="wiz_fim",
-                help="O prazo é obrigatório nesta versão do assistente.",
+            indeterminado = st.checkbox(
+                "Prazo indeterminado",
+                value=rascunho.get("indeterminado", True),
+                key="wiz_indeterminado",
+                help="O contrato segue aberto enquanto o cliente estiver com a moto e pagando, até ser "
+                "encerrado. Desmarque só se este contrato tiver data final combinada.",
             )
+            fim = None
+            if not indeterminado:
+                fim = campo_data(
+                    rotulo_obrigatorio("Fim previsto"),
+                    rascunho.get("data_fim_prevista") or (hoje + timedelta(days=30)).isoformat(),
+                    key="wiz_fim",
+                )
     periodicidade = st.radio(
         "Periodicidade",
         _PERIODOS,
-        index=_PERIODOS.index(rascunho.get("periodicidade", "mensal")),
+        index=_PERIODOS.index(rascunho.get("periodicidade", "semanal")),
         format_func=_PERIODOS_ROTULO.get,
         horizontal=True,
         key="wiz_periodicidade",
@@ -388,7 +399,7 @@ def _wizard_etapa3():
 
     erro = primeiro_erro(
         None if inicio else "Data de início: informe a data.",
-        None if fim else "Fim previsto: informe a data.",
+        None if indeterminado or fim else "Fim previsto: informe a data.",
         "Fim previsto: escolha uma data igual ou posterior ao início." if inicio and fim and fim < inicio else None,
         erro_de(decimal_campo, valor, "Valor do período", positivo=True),
         erro_de(decimal_campo, caucao, "Caução"),
@@ -400,7 +411,7 @@ def _wizard_etapa3():
     if acao.confirmou:
         st.session_state["contrato_condicoes"] = {
             "data_inicio": inicio.isoformat(),
-            "data_fim_prevista": fim.isoformat(),
+            "data_fim_prevista": None if indeterminado else fim.isoformat(),
             "periodicidade": periodicidade,
             "valor_periodo": str(decimal_campo(valor, "Valor do período", positivo=True)),
             "caucao_valor": str(decimal_campo(caucao, "Caução")),
@@ -414,11 +425,12 @@ def _wizard_etapa4():
     _resumo_selecao(cliente, moto, 4)
     condicoes = st.session_state["contrato_condicoes"]
 
+    fim_previsto = condicoes.get("data_fim_prevista")
     agenda = contratos.previa_agenda(
         date.fromisoformat(condicoes["data_inicio"]),
         condicoes["periodicidade"],
         decimal_br(condicoes["valor_periodo"], positivo=True),
-        date.fromisoformat(condicoes["data_fim_prevista"]),
+        date.fromisoformat(fim_previsto) if fim_previsto else None,
     )
     caucao_dec = decimal_br(condicoes["caucao_valor"])
 
@@ -438,7 +450,7 @@ def _wizard_etapa4():
             {item("periodicidade", _PERIODOS_ROTULO[condicoes['periodicidade']], mono=False)}
             {item("valor / período", formatar_moeda(condicoes['valor_periodo']))}
             {item("início", formatar_data(condicoes['data_inicio']))}
-            {item("fim previsto", formatar_data(condicoes['data_fim_prevista']))}
+            {item("prazo", formatar_data(fim_previsto) if fim_previsto else "Indeterminado", mono=bool(fim_previsto))}
             {item("caução", formatar_moeda(condicoes['caucao_valor']))}
           </div>
         </div>
@@ -459,6 +471,11 @@ def _wizard_etapa4():
             ]
         )
     tabela_html(["Item", "Vencimento", "Valor"], linhas, legenda="Cobranças previstas do contrato")
+    if not fim_previsto:
+        st.caption(
+            "Prazo indeterminado: a prévia mostra só os primeiros 30 dias. As cobranças seguintes são "
+            "geradas automaticamente enquanto o contrato estiver ativo."
+        )
 
     st.write("")
     st.markdown('<h3 class="rotulo wizard-secao">Vistoria de entrega</h3>', unsafe_allow_html=True)
@@ -541,9 +558,36 @@ def _dialog_encerrar(contrato, moto, cliente):
     vistoria = campos_vistoria(
         "devolucao", moto_atual["km_atual"], ajuda_km=f"Vale como km final do contrato (início: {contrato['km_inicial']:,} km).".replace(",", ".")
     )
-    devolvida = st.checkbox("Caução devolvida ao cliente", value=True, key="enc_caucao")
+    cobrancas_contrato = cobrancas.listar_por_contrato(contrato["id"])
+    recebida = caucao_paga(cobrancas_contrato)
+    st.markdown('<h3 class="rotulo wizard-secao">Caução e danos</h3>', unsafe_allow_html=True)
+    danos_texto = campo_moeda(
+        "Danos a descontar da caução",
+        0,
+        "enc_danos",
+        ao_vivo=True,
+        ajuda="Valor dos danos causados pelo cliente. É abatido da caução; o que passar dela é cobrado do cliente.",
+    )
+    descricao_danos = st.text_area(
+        "Descrição dos danos",
+        key="enc_danos_descricao",
+        placeholder="Obrigatória quando há danos. Ex.: tanque amassado e retrovisor quebrado.",
+    )
+    erro_danos = erro_de(decimal_campo, danos_texto, "Danos a descontar da caução")
+    valor_danos = None if erro_danos else decimal_campo(danos_texto, "Danos a descontar da caução")
+    devolucao = calcular_devolucao_caucao(recebida, valor_danos or 0)
+    if recebida > 0 or devolucao["danos"] > 0:
+        resumo_caucao = f"Caução recebida {formatar_moeda(recebida)}"
+        if devolucao["danos"] > 0:
+            resumo_caucao += f" − danos {formatar_moeda(devolucao['danos'])}"
+        st.markdown(
+            '<div class="resumo-linhas"><div class="resumo-linhas__linha resumo-linhas__linha--total">'
+            f'<span>{escape(resumo_caucao)} → devolver ao cliente</span>'
+            f'<span class="mono">{formatar_moeda(devolucao["devolucao"])}</span></div></div>',
+            unsafe_allow_html=True,
+        )
 
-    afetadas = cobrancas_a_cancelar(cobrancas.listar_por_contrato(contrato["id"]), data) if data else []
+    afetadas = cobrancas_a_cancelar(cobrancas_contrato, data) if data else []
     impacto = (
         f"As {len(afetadas)} cobranças abaixo serão canceladas:" if len(afetadas) > 1
         else ("A cobrança abaixo será cancelada:" if afetadas else "Nenhuma cobrança será cancelada.")
@@ -553,6 +597,12 @@ def _dialog_encerrar(contrato, moto, cliente):
         f'<span class="mono">{formatar_moeda(c["saldo"])}</span></li>'
         for c in afetadas[:_LIMITE_IMPACTO]
     )
+    linha_excedente = (
+        f"<li>Os danos passam da caução: será criada uma cobrança de "
+        f'<span class="mono">{formatar_moeda(devolucao["excedente"])}</span> contra o cliente.</li>'
+        if devolucao["excedente"] > 0
+        else ""
+    )
     resto = len(afetadas) - _LIMITE_IMPACTO
     mais = f"<li>e mais {resto} cobrança(s)</li>" if resto > 0 else ""
     st.markdown(
@@ -560,6 +610,7 @@ def _dialog_encerrar(contrato, moto, cliente):
         '<div class="impacto__titulo">O que acontece ao encerrar</div>'
         "<ul>"
         f"<li>O contrato passa a Encerrado e a moto volta a ficar disponível.</li>"
+        f"{linha_excedente}"
         f"<li>{impacto}</li></ul>"
         f'<ul class="impacto__lista">{itens}{mais}</ul>'
         "<p>Cobranças já vencidas até a data, ou com pagamento parcial, continuam em aberto.</p></div>",
@@ -568,7 +619,13 @@ def _dialog_encerrar(contrato, moto, cliente):
     confirmou_impacto = st.checkbox(
         "Entendo o que será alterado e quero encerrar o contrato.", key="enc_confirma"
     )
-    erro = primeiro_erro(None if data else "Data de encerramento: informe a data.")
+    erro = primeiro_erro(
+        None if data else "Data de encerramento: informe a data.",
+        erro_danos,
+        "Descrição dos danos: informe o que foi danificado."
+        if valor_danos and not (descricao_danos or "").strip()
+        else None,
+    )
     motivo = erro or (None if confirmou_impacto else "Marque a confirmação acima para encerrar o contrato.")
     acao = rodape_formulario(
         "Encerrar contrato", "enc", desabilitado=bool(motivo), motivo=motivo, perigo=True
@@ -577,8 +634,18 @@ def _dialog_encerrar(contrato, moto, cliente):
         st.rerun()
     if acao.confirmou:
         with proteger():
-            contratos.encerrar_com_vistoria(contrato["id"], data, preparar_vistoria(vistoria), devolvida)
-            feedback.concluir(mensagens.contrato_encerrado(cliente["nome"], formatar_placa(moto["placa"])))
+            contratos.encerrar_com_vistoria(
+                contrato["id"], data, preparar_vistoria(vistoria), devolucao["danos"], descricao_danos or None
+            )
+            feedback.concluir(
+                mensagens.contrato_encerrado(
+                    cliente["nome"],
+                    formatar_placa(moto["placa"]),
+                    devolucao=devolucao["devolucao"] if recebida > 0 else None,
+                    desconto=devolucao["desconto"],
+                    excedente=devolucao["excedente"],
+                )
+            )
 
 
 def _cabecalho_ficha(contrato, moto, cliente):
