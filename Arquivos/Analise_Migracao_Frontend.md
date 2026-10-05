@@ -4,8 +4,8 @@
 > iniciada. Fase atual: 0 (decisão e desenho).**
 > O layout do protótipo (`prototipo/`) foi aprovado. A mudança de escopo foi registrada no
 > `Plano_Melhorias_UI_UX.md` (seção 10) e no `Projeto_Locação.md` (seção 15).
-> **Hospedagem decidida** (VPS KingHost, domínio gratuito, deploy automático; seção 10.1). Restam apenas confirmar o
-> serviço de domínio gratuito e o orçamento antes do primeiro deploy; a Fase 1 pode começar.
+> **Hospedagem decidida** (VPS KingHost, domínio gratuito DuckDNS, deploy automático; seção 10.1). A contratação da VPS
+> fica para mais perto do primeiro deploy e não bloqueia a Fase 1.
 >
 > **Ao iniciar uma sessão nova:** leia este arquivo e o `CLAUDE.md`, confira o `git log` para saber o que já
 > foi feito e atualize a linha "Fase atual" acima ao concluir cada fase.
@@ -248,13 +248,19 @@ Internet ──HTTPS──▶ Caddy (proxy reverso, certificado automático Let'
 2. **Domínio:** gratuito, "da duck.com". **Atenção:** o `duck.com` é um serviço de e-mail do DuckDuckGo e não oferece
    domínios. O serviço gratuito com esse nome é o **DuckDNS** (subdomínios `nome.duckdns.org`), que apontam para o IP
    da VPS e funcionam com o certificado HTTPS automático do Caddy (o `duckdns.org` consta na lista pública de sufixos,
-   então não sofre limite compartilhado do Let's Encrypt). **A confirmar com o proprietário** antes do primeiro deploy.
+   então não sofre limite compartilhado do Let's Encrypt). **Confirmado pelo proprietário (05/10/2026): será o DuckDNS.**
    Limitação: o endereço fica no formato `nome.duckdns.org`; para um endereço próprio (`.com.br`) seria preciso
    registrar um domínio pago, o que pode ser feito depois sem alterar o app.
 3. **Administração do servidor:** Alisson (acesso SSH, atualizações e renovações).
 4. **Deploy:** **automático**, por GitHub Actions a cada merge na `main` com o `pytest` aprovado.
-5. **Orçamento:** não definido; o plano pequeno de VPS e o domínio gratuito mantêm o custo baixo. Confirmar o valor do
-   plano antes de contratar.
+5. **Orçamento:** consulta ao site da KingHost (`king.host/servidor-vps`, 05/10/2026): o plano mais barato é o
+   **VPS 4GB, R$ 32,90/mês** (2 vCPU, 4 GB de RAM, 70 GB de SSD, acesso root, IP dedicado, tráfego ilimitado); o seguinte
+   é o VPS 8GB por R$ 63,90/mês. O site cita cobrança anual e bienal parceláveis em até 12x, sem detalhar se o preço
+   anunciado vale para o mensal; **conferir no ato da contratação**, assim como o sistema operacional disponível
+   (o plano pressupõe Ubuntu LTS). O plano de 4 GB é mais que suficiente para este app. Custo do domínio: zero.
+6. **Quando contratar:** o proprietário decidiu deixar a contratação para depois ("é só uma decisão"). Como a Fase 1 e
+   a maior parte da migração rodam localmente, a VPS só é necessária para o primeiro deploy e para homologar o portal
+   dos locatários no celular real (Fase 4). Contratar até o fim da Fase 3.
 
 **Requisitos decorrentes para a Fase 1 em diante:**
 

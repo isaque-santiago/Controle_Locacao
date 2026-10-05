@@ -937,4 +937,4 @@ decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md)
   servidor), `.streamlit/` e as dependências do Streamlit.
 - O Portal do Locatário (Fase 7) fica **no mesmo app**, com login por CPF e papel separado.
 - As regras de trabalho do `CLAUDE.md` continuam valendo (fase por fase, `pytest`, README, commit por fase).
-- Hospedagem decidida: **VPS com acesso público e HTTPS** (os locatários usam o portal pelo celular). Provedor: KingHost (VPS pequena); domínio gratuito (DuckDNS, a confirmar); deploy automático por GitHub Actions; administração: Alisson (seção 10.1 do documento de migração).
+- Hospedagem decidida: **VPS com acesso público e HTTPS** (os locatários usam o portal pelo celular). Provedor: KingHost (VPS pequena); domínio gratuito (DuckDNS, confirmado); contratação da VPS (a partir de R$ 32,90/mês) adiada para antes do primeiro deploy; deploy automático por GitHub Actions; administração: Alisson (seção 10.1 do documento de migração).
