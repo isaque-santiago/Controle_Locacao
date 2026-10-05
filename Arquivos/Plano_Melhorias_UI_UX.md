@@ -545,6 +545,10 @@ zoom e teclado.
 
 **Prioridade:** necessária para encerrar o plano
 
+**Situação (05/10/2026): parte automatizada concluída; fechamento depende do usuário.** Resultado e pendências na seção 11 de
+`Design_UI.md`. Falta: gravar os 10 fluxos no banco de dev, aparelhos reais (Android e, se houver, iPhone/iPad) e a rodada
+autenticada, conforme `Arquivos/Roteiro_Homologacao_Manual.md`. O plano só se dá por encerrado depois disso.
+
 **Objetivo:** produzir evidência verificável de qualidade.
 
 #### Matriz mínima

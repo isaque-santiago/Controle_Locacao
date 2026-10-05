@@ -162,10 +162,13 @@ def verificar_teclado(page: Page, registrar, nome_pagina: str, maximo: int = 60)
     repetidos = 0
     for _ in range(maximo):
         page.keyboard.press("Tab")
+        page.wait_for_timeout(120)  # o WebKit rola o elemento para a vista depois do foco
         p = medir_foco_por_teclado(page, "ler")
         if p is None:
             break
         if p["chave"] == ultimo:
+            if p.get("ultimo"):
+                break  # saiu da página pelo fim (Firefox mantém o último elemento focado)
             repetidos += 1
             if repetidos >= 2:
                 registrar("P0", "armadilha-de-teclado", nome_pagina, "O foco não avança com Tab.", p["el"])
@@ -179,7 +182,9 @@ def verificar_teclado(page: Page, registrar, nome_pagina: str, maximo: int = 60)
         if not p["indicador"]:
             registrar("P1", "foco-invisivel", nome_pagina, "Elemento focado sem indicador visível.", f"{p['el']} «{p['rotulo']}»")
         if not p["dentro"]:
-            registrar("P1", "foco-fora-da-janela", nome_pagina, "Elemento focado fora da área visível.", f"{p['el']} «{p['rotulo']}»")
+            # Parcialmente visível (o WebKit deixa o campo rente à borda inferior) é P2: conferir em iPhone/iPad reais.
+            severidade = "P2" if p.get("parcial") else "P1"
+            registrar(severidade, "foco-fora-da-janela", nome_pagina, "Elemento focado fora da área visível.", f"{p['el']} «{p['rotulo']}»")
         if not p["rotulo"] and "stMain" not in p["el"]:  # a região principal é um marco, não um controle
             registrar("P1", "foco-sem-nome", nome_pagina, "Elemento focável sem nome acessível.", p["el"])
         if p["regressao"]:

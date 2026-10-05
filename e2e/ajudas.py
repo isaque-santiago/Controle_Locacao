@@ -37,6 +37,12 @@ def tem_formulario_login(page: Page) -> bool:
 def abrir_login(page: Page) -> None:
     page.goto(base_url() + "/")
     aguardar_app(page)
+    # O WebKit às vezes termina a execução antes de pintar o formulário: espera o botão (sem exigir que exista,
+    # pois com sessão ativa a tela de acesso nem aparece).
+    try:
+        page.get_by_role("button", name="Entrar no painel").wait_for(state="visible", timeout=6_000)
+    except PlaywrightTimeout:
+        pass
 
 
 def entrar(page: Page, email: str, senha: str) -> None:
@@ -241,7 +247,7 @@ _JS_DIALOGO = (
 
 
 _JS_FOCO = (
-    "(modo) => {"
+    "([modo, SELETOR]) => {"
     + _JS_COMUM
     + r"""
   if (modo === 'iniciar') {
@@ -300,7 +306,13 @@ _JS_FOCO = (
   }
   window.__regiaoFoco = regiao;
   window.__yFoco = y;
+  // Último elemento tabulável da página: o Firefox mantém nele o foco ao sair da página (o Chromium volta ao
+  // <body>), então "o foco não avança" ali é o fim do documento, não uma armadilha.
+  const tabulaveis = Array.from(document.querySelectorAll(SELETOR)).filter(e => visivel(e) && !e.disabled && !emBarraRecolhida(e));
+  const ultimo = tabulaveis.length === 0 || tabulaveis[tabulaveis.length - 1] === el || !tabulaveis.some(e => e !== el && (el.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING));
   return {
+    ultimo,
+    parcial: r.width > 0 && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw,
     fim_do_documento: false,
     chave: String(el.__idFoco),
     el: descrever(el),
@@ -345,7 +357,7 @@ def medir_overflow(page: Page) -> dict:
 
 def medir_foco_por_teclado(page: Page, modo: str) -> dict | None:
     """`iniciar` põe o início de tabulação no topo; `ler` descreve o elemento focado agora."""
-    return page.evaluate(_JS_FOCO, modo)
+    return page.evaluate(_JS_FOCO, [modo, SELETOR_INTERATIVOS])
 
 
 def medir_texto_cortado(page: Page) -> list[dict]:

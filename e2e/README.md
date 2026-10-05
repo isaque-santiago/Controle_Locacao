@@ -78,3 +78,15 @@ do sistema, pois o `config.toml` fixa `base = "light"`).
 - Botões de ação por ícone são localizados por nome acessível (`pagamento`, `‹ Motos` etc.).
   Se o rótulo mudar ou a lista estiver vazia, o cenário registra `INFO` em vez de falhar.
 - Emulação não substitui aparelho real; a homologação final (Etapa 9) usa telefone físico.
+
+## Etapa 9: homologação
+
+- `pytest e2e` agora também roda o **axe-core** (impacto crítico = P0, grave = P1) e o **teclado** (Tab: foco visível, dentro da
+  janela, nome acessível, sem armadilha). `--e2e-estrito` reprova com P0 ou axe crítico/grave.
+- `e2e/test_homologacao.py`: zoom 200%, reflow 320 px, paisagem, texto 200%, espaçamento WCAG e rede/CPU reduzidas.
+  Rodam na largura de referência de cada perfil (1440; 390 no móvel).
+- `e2e/test_regressao_visual.py`: compara com `e2e/referencia/<sistema>/...` (ignorado pelo git). A primeira execução
+  grava a referência; `--atualizar-referencia` a substitui; `--tolerancia-visual 0.3` é o percentual de pixels aceito.
+- Os fluxos agora rodam com os quatro perfis: `--perfil chromium-desktop --perfil chromium-movel --perfil firefox --perfil webkit`.
+- Instalação adicional: `axe-playwright-python` (já em `requirements-e2e.txt`).
+- O app só é testado em localhost. Para rodar sem credenciais reais há o login (`-k login`).
