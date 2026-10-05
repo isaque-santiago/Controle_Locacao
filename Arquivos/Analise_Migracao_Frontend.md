@@ -4,7 +4,8 @@
 > iniciada. Fase atual: 0 (decisão e desenho).**
 > O layout do protótipo (`prototipo/`) foi aprovado. A mudança de escopo foi registrada no
 > `Plano_Melhorias_UI_UX.md` (seção 10) e no `Projeto_Locação.md` (seção 15).
-> **Pendente antes da Fase 1:** hospedagem (decisão 3, seção 10).
+> **Hospedagem decidida** (VPS KingHost, domínio gratuito, deploy automático; seção 10.1). Restam apenas confirmar o
+> serviço de domínio gratuito e o orçamento antes do primeiro deploy; a Fase 1 pode começar.
 >
 > **Ao iniciar uma sessão nova:** leia este arquivo e o `CLAUDE.md`, confira o `git log` para saber o que já
 > foi feito e atualize a linha "Fase atual" acima ao concluir cada fase.
@@ -139,7 +140,7 @@ Cada fase só termina com `pytest` verde, README atualizado e commit descritivo 
 1. Decidir (seção 9) e registrar a mudança no `Projeto_Locação.md` e no `Plano_Melhorias_UI_UX.md`.
 2. Produzir um **protótipo estático em HTML** do shell: sidebar no desktop, barra inferior no celular,
    cabeçalho, padrão de lista/detalhe e de formulário, em claro e escuro, nas larguras 320 a 1440.
-3. Definir hospedagem, domínio e variáveis de ambiente.
+3. Contratar a VPS e configurar o domínio gratuito; definir variáveis de ambiente (seção 10.1). Só o primeiro deploy depende disso.
    *Aceite:* o proprietário aprova o protótipo.
 
 **Fase 1 — Fundação**
@@ -190,7 +191,7 @@ foi absorvida pela Fase 4 da migração (decisão 2).
 | Dois sistemas em paralelo por um período | Migrar página a página, com lista de "dono" de cada tela; congelar alterações de UI no Streamlit durante a Fase 3 |
 | Regressão funcional em fluxos transacionais (contrato, entrega/devolução) | Esses fluxos já são RPCs com testes; manter a lógica nas RPCs e testar cada rota contra o banco de desenvolvimento |
 | Falha de segurança na sessão própria (cookies, CSRF) | Usar cookie `httpOnly`/`Secure`/`SameSite`, CSRF, revisão de segurança antes de desligar o Streamlit |
-| Mudança de hospedagem (o código atual trata o proxy do Streamlit Cloud) | Decidir na Fase 0; escolher provedor com HTTPS e variáveis de ambiente |
+| App passa a ficar exposto na internet (painel do dono e portal do locatário no mesmo servidor) | HTTPS obrigatório, cookies `Secure`/`httpOnly`, limite de tentativas de login, atualizações do servidor e backups (seção 10.1) |
 | Esforço maior que o estimado | O piloto da Fase 2 serve de ponto de decisão: se o padrão não funcionar, parar com custo baixo |
 | Trabalho do plano de UI/UX perdido | Tokens, fontes, Design_UI e testes de domínio são reaproveitados; só o que dependia do DOM do Streamlit é descartado |
 
@@ -200,7 +201,7 @@ foi absorvida pela Fase 4 da migração (decisão 2).
 |---|---|---|
 | 1 | Mudança de escopo | **Substituir o Streamlit por inteiro.** Nenhuma tela fica no Streamlit ao final. |
 | 2 | Etapa 9 do plano de UI/UX | **Opção (b):** não terminar a Etapa 9 no Streamlit. A homologação (10 fluxos, aparelhos reais, rodada autenticada) é refeita no app novo, na Fase 4, reaproveitando `Roteiro_Homologacao_Manual.md`, os fluxos e a matriz de larguras. |
-| 3 | Hospedagem | **EM ABERTO.** O proprietário informou que o app roda localmente hoje. Falta definir onde o novo app roda e como os locatários acessam o Portal do Locatário (precisa ser alcançável por eles). Decidir na Fase 0, antes da Fase 1. |
+| 3 | Hospedagem | **VPS com acesso público** (KingHost, plano pequeno e barato), porque os locatários acessam o portal pelo celular (hoje o app só roda localmente). Domínio gratuito, deploy automático e administração: ver 10.1. |
 | 4 | Perfil de uso | **Desktop e celular, ambos.** Mantém as três faixas do protótipo. |
 | 5 | Portal do Locatário | **No mesmo app**, com login por CPF e papel separado. |
 | 6 | Estilo | **Tailwind**, sobre os tokens existentes (`Design_UI.md`). Ver nota abaixo. |
@@ -209,6 +210,59 @@ Nota sobre o Tailwind: o protótipo foi escrito em CSS próprio, com tokens como
 implementação, os tokens (cores, espaçamento, raio, fontes, modo escuro) viram a configuração do Tailwind,
 sem mudar a identidade visual. A forma de gerar o CSS (CLI independente do Tailwind, sem Node, ou build com Node)
 é uma decisão da Fase 0/1; preferir o CLI independente para manter a stack em Python.
+
+### 10.1 Hospedagem em VPS: proposta e pontos em aberto
+
+**Decidido:** o app roda em uma VPS acessível pela internet, com HTTPS, para o painel do dono e para o portal
+dos locatários (celular). O Supabase continua sendo o banco, a autenticação e o armazenamento.
+
+**Proposta de arquitetura** (recomendação, ainda não confirmada):
+
+```
+Internet ──HTTPS──▶ Caddy (proxy reverso, certificado automático Let's Encrypt)
+                       └──▶ uvicorn/FastAPI (Docker ou serviço systemd), usuário sem privilégios
+                                └──▶ Supabase (nuvem)
+```
+
+- **Sistema:** Ubuntu LTS, firewall liberando só 22 (SSH com chave, sem senha), 80 e 443.
+- **Caddy** como proxy: HTTPS e renovação de certificado automáticos, sem configuração manual de certificado.
+- **App em contêiner Docker** (ou serviço `systemd` com ambiente virtual), reiniciando sozinho em caso de falha.
+- **Segredos** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, chave de assinatura da sessão) em variáveis de ambiente do servidor,
+  nunca no repositório. A `service_role` continua proibida no app.
+- **Deploy:** `git pull` e reinício do serviço, ou GitHub Actions que faz isso a cada merge na `main` após o `pytest`.
+- **Backups:** os dados ficam no Supabase; na VPS não há dados a perder além da configuração. Manter o backup do
+  Supabase conforme a Fase 6 do plano.
+- **Monitoramento mínimo:** rota `/saude`, reinício automático e aviso se o site cair.
+
+**Segurança por exposição pública** (virão como requisitos da Fase 1):
+
+- limite de tentativas de login por IP/usuário, e mensagens de erro que não revelam se o e-mail/CPF existe;
+- cookies `httpOnly`, `Secure`, `SameSite=Lax`, e CSRF em todo formulário;
+- cabeçalhos de segurança (HSTS, CSP, `X-Frame-Options`) definidos no Caddy/aplicação;
+- o painel do dono e o portal do locatário continuam separados por papel; a RLS segue como proteção final dos dados;
+- atualizações automáticas de segurança do sistema operacional.
+
+**Respostas do proprietário (05/10/2026):**
+
+1. **Provedor:** KingHost (empresa brasileira), VPS pequena e barata. Região Brasil.
+2. **Domínio:** gratuito, "da duck.com". **Atenção:** o `duck.com` é um serviço de e-mail do DuckDuckGo e não oferece
+   domínios. O serviço gratuito com esse nome é o **DuckDNS** (subdomínios `nome.duckdns.org`), que apontam para o IP
+   da VPS e funcionam com o certificado HTTPS automático do Caddy (o `duckdns.org` consta na lista pública de sufixos,
+   então não sofre limite compartilhado do Let's Encrypt). **A confirmar com o proprietário** antes do primeiro deploy.
+   Limitação: o endereço fica no formato `nome.duckdns.org`; para um endereço próprio (`.com.br`) seria preciso
+   registrar um domínio pago, o que pode ser feito depois sem alterar o app.
+3. **Administração do servidor:** Alisson (acesso SSH, atualizações e renovações).
+4. **Deploy:** **automático**, por GitHub Actions a cada merge na `main` com o `pytest` aprovado.
+5. **Orçamento:** não definido; o plano pequeno de VPS e o domínio gratuito mantêm o custo baixo. Confirmar o valor do
+   plano antes de contratar.
+
+**Requisitos decorrentes para a Fase 1 em diante:**
+
+- Pipeline de deploy no GitHub Actions: `pytest` → conexão SSH na VPS com chave dedicada (guardada nos segredos do
+  repositório, nunca no código) → atualização do código e reinício do serviço → teste de `/saude`. Reversão simples
+  para a versão anterior em caso de falha.
+- Chave SSH de deploy com permissão restrita (usuário sem privilégio de administrador no servidor).
+- Compatibilidade com Ubuntu LTS e com os recursos pequenos da VPS (preferir um único processo, sem serviços pesados).
 
 ## 11. Protótipo do layout (Fase 0, item 2): produzido
 
@@ -233,4 +287,4 @@ testadas. **Não foi** testado em aparelhos reais nem com leitor de tela.
 
 ## 12. Próximo passo sugerido
 
-Layout aprovado. Falta decidir a hospedagem (seção 10, decisão 3) para fechar a Fase 0; depois, Fase 1.
+Layout aprovado e hospedagem decidida (10.1). A Fase 0 está concluída; próximo passo: Fase 1.
