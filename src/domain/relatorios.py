@@ -179,12 +179,12 @@ def analisar_inadimplencia(cobrancas, clientes, motos, config, hoje):
             continue
         saldo = valor(c["saldo"])
         encargos = calcular_encargos(
+            c["tipo"],
             saldo,
             date.fromisoformat(str(c["vencimento"])[:10]),
             hoje,
-            valor(config["multa_atraso_percentual"]),
-            valor(config["juros_mensal_percentual"]),
-            config["carencia_dias"],
+            valor(config["multa_atraso_valor"]),
+            valor(config["encargo_diario_valor"]),
         )
         linhas.append(
             {

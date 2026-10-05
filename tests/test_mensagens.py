@@ -68,14 +68,14 @@ def test_documento_regularizado_avisa_do_proximo_cadastro():
 
 @pytest.mark.parametrize(
     "alterados,trecho",
-    [([], "Nenhum valor foi alterado"), (["Carência", "Juros mensal"], "Carência, Juros mensal")],
+    [([], "Nenhum valor foi alterado"), (["Multa de atraso", "Adicional por dia"], "Multa de atraso, Adicional por dia")],
 )
 def test_configuracoes_dizem_o_que_mudou(alterados, trecho):
     assert trecho in mensagens.configuracoes_salvas(alterados).texto
 
 
 def test_campos_alterados_compara_numeros_e_ignora_ausentes():
-    antes = {"carencia_dias": 0, "juros_mensal_percentual": "1.50", "alerta_cnh_dias": 30}
-    depois = {"carencia_dias": 3, "juros_mensal_percentual": "1.5", "alerta_cnh_dias": 30}
-    assert campos_alterados(antes, depois) == ["Carência"]
+    antes = {"multa_atraso_valor": "15.00", "encargo_diario_valor": "7.00", "alerta_cnh_dias": 30}
+    depois = {"multa_atraso_valor": "20.00", "encargo_diario_valor": "7", "alerta_cnh_dias": 30}
+    assert campos_alterados(antes, depois) == ["Multa de atraso (no vencimento)"]
     assert campos_alterados(antes, {}) == []

@@ -143,8 +143,8 @@ Reconstrução de Cobranças (23/09/2026), conferida contra `Cobrancas.dc.html`:
 subtítulo com total em atraso e nº de clientes; abas Hoje, Atrasadas, Próximos 7
 dias e Pagas (com contagem); Atrasadas mostra atraso, original, encargos e total;
 ações por linha: mensagem de cobrança para copiar (popover) e registrar
-pagamento em diálogo, com multa/juros recalculados ao mudar a data. O pagamento
-mantém principal e "multa e juros" em campos separados (como grava a tabela
+pagamento em diálogo, com multa e adicional diário recalculados ao mudar a data. O pagamento
+mantém principal e "multa e adicional" em campos separados (como grava a tabela
 `pagamentos`), em vez do campo único "Valor a pagar" do mockup. A aba Pagas
 mostra as 30 mais recentes. Regras de abas/resumo/mensagem em
 `src/domain/painel_cobrancas.py`, testadas em `tests/test_painel_cobrancas.py`.
@@ -176,10 +176,10 @@ Cálculos em `src/domain/relatorios.py`, testados em
 `tests/test_relatorios_dominio.py`.
 
 Reconstrução de Configurações (23/09/2026), conferida contra `Configuracoes.dc.html`:
-quatro cartões em largura total (até 25/09/2026 eram de 780px) — Encargos por atraso (multa, juros mensal e carência,
-com exemplo calculado: R$ 500,00 vencida há 5 dias), Alertas de manutenção,
+quatro cartões em largura total (até 25/09/2026 eram de 780px) — Encargos por atraso (multa de atraso e adicional por dia, em reais,
+com exemplo calculado: locação de R$ 500,00 vencida há 5 dias), Alertas de manutenção,
 Alertas de documentos e CNH e Backup manual (ZIP de CSVs) — e botão "Salvar
-alterações" no cabeçalho. Percentuais entre 0 e 100 com até duas casas; demais
+alterações" no cabeçalho. Valores em reais com até duas casas, não negativos; demais
 campos, inteiros não negativos; erros aparecem em português sem gravar nada.
 O backup é gerado em dois passos (Gerar → Baixar) para não consultar as 14
 tabelas a cada interação. **Decisão a confirmar:** o mockup mostra "Último backup"
@@ -253,6 +253,7 @@ homologada apenas com base nas telas e testes isolados.
    - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
    - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
    - `20261002120000_idempotencia_operacoes.sql`: coluna `chave_operacao` e índice único em `pagamentos`, `manutencoes`, `documentos_moto` e `historico_km`, e `rpc_registrar_manutencao` passa a devolver o resultado do primeiro envio quando a chave se repete (Etapa 7 do plano de UI/UX). Rode `supabase/verificar_fluxos.sql` no projeto de homologação depois de aplicar.
+   - `20261005120000_encargos_fixos.sql`: encargo de atraso fixo (decisão de negócio, seção 14.1 do plano) — `configuracoes` ganha `multa_atraso_valor` (R$ 15,00) e `encargo_diario_valor` (R$ 7,00) e perde `multa_atraso_percentual`, `juros_mensal_percentual` e `carencia_dias`. **Aplique antes de publicar esta versão do app**, que já não lê as colunas antigas.
 3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
    executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
    projeto conectado com `supabase link` e use `supabase db push`.

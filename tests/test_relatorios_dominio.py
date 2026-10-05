@@ -10,9 +10,8 @@ from src.domain.relatorios import (
 from src.ui.formatadores import formatar_mes
 
 CONFIG = {
-    "multa_atraso_percentual": 2,
-    "juros_mensal_percentual": 1,
-    "carencia_dias": 0,
+    "multa_atraso_valor": Decimal("15.00"),
+    "encargo_diario_valor": Decimal("7.00"),
 }
 
 
@@ -82,9 +81,19 @@ def test_inadimplencia_total_percentual_clientes_e_encargos():
     primeira, segunda = resultado["linhas"]
     assert (primeira["cliente"], primeira["dias_atraso"]) == ("Ana", 10)
     assert primeira["placa"] == "ABC1D23"
-    # 100 + multa 2,00 + juros 100 * 1% / 30 * 10 = 0,33
-    assert primeira["total_com_encargos"] == Decimal("102.33")
+    # 100 + multa fixa 15,00 + 7,00 * 10 dias = 185,00
+    assert primeira["total_com_encargos"] == Decimal("185.00")
     assert segunda["dias_atraso"] == 6
+    # 300 + 15,00 + 7,00 * 6 dias = 357,00
+    assert segunda["total_com_encargos"] == Decimal("357.00")
+
+
+def test_inadimplencia_nao_aplica_encargos_a_cobranca_que_nao_e_locacao():
+    cobrancas = [_cobranca("a", "2026-09-13", situacao="atrasada", tipo="dano", saldo="100.00", valor="100.00")]
+    resultado = analisar_inadimplencia(
+        cobrancas, [{"id": "c1", "nome": "Ana"}], [{"id": "m1", "placa": "ABC1D23"}], CONFIG, date(2026, 9, 23)
+    )
+    assert resultado["linhas"][0]["total_com_encargos"] == Decimal("100.00")
 
 
 def test_inadimplencia_sem_carteira_nao_divide_por_zero():

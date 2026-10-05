@@ -82,7 +82,7 @@ def pagamento_registrado(principal, extras, quitada):
     """`Pagamento de R$ 450,00 registrado.` + encargos (se houver) + situação da cobrança."""
     texto = f"Pagamento de {moeda(principal)} registrado."
     if Decimal(str(extras or 0)) > 0:
-        texto += f" Multa e juros de {moeda(extras)} incluídos."
+        texto += f" Multa e adicional de {moeda(extras)} incluídos."
     texto += " Cobrança quitada." if quitada else " A cobrança continua em aberto com o saldo restante."
     return _toast(texto)
 

@@ -29,18 +29,18 @@ def listar_por_contrato(contrato_id: str):
 def calcular_encargos_cobranca(
     cobranca: dict, data_referencia: date, config: Optional[dict] = None
 ) -> dict:
-    """Multa/juros de uma cobrança em aberto, para exibir na tela antes do pagamento.
+    """Encargos fixos (multa + adicional diário) de uma cobrança em aberto, para exibir na tela
+    antes do pagamento. Só cobranças de locação têm encargos.
 
     Passe `config` para calcular várias cobranças sem reler as configurações."""
     config = config or configuracoes.obter()
-    saldo = Decimal(str(cobranca["saldo"]))
     return calcular_encargos(
-        saldo=saldo,
+        tipo=cobranca["tipo"],
+        saldo=Decimal(str(cobranca["saldo"])),
         vencimento=date.fromisoformat(cobranca["vencimento"]),
         data_referencia=data_referencia,
-        multa_percentual=Decimal(str(config["multa_atraso_percentual"])),
-        juros_mensal_percentual=Decimal(str(config["juros_mensal_percentual"])),
-        carencia_dias=config["carencia_dias"],
+        multa_valor=Decimal(str(config["multa_atraso_valor"])),
+        adicional_diario_valor=Decimal(str(config["encargo_diario_valor"])),
     )
 
 

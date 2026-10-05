@@ -125,9 +125,8 @@ def test_paginas_vazias_autenticadas(arquivo):
             patch(
                 "src.services.configuracoes.obter",
                 return_value={
-                    "multa_atraso_percentual": 2,
-                    "juros_mensal_percentual": 1,
-                    "carencia_dias": 0,
+                    "multa_atraso_valor": 15,
+                    "encargo_diario_valor": 7,
                     "alerta_manutencao_km": 300,
                     "alerta_manutencao_dias": 15,
                     "alerta_documento_dias": 30,

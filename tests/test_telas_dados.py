@@ -82,9 +82,10 @@ def servicos():
             "cobrancas.configuracao_encargos": {},
             "cobrancas.calcular_encargos_cobranca": {
                 "dias_atraso": 22,
-                "multa": Decimal(2),
-                "juros": Decimal(1),
-                "total": Decimal(63),
+                "multa": Decimal(15),
+                "adicional_diario": Decimal(154),
+                "encargos": Decimal(169),
+                "total": Decimal(230),
             },
             "manutencao.listar_catalogo": [ITEM],
             "manutencao.listar_manutencoes": [],
@@ -116,9 +117,8 @@ def servicos():
             "clientes.criar": CLIENTE,
             "cobrancas.registrar_pagamento": {},
             "configuracoes.obter": {
-                "multa_atraso_percentual": 2,
-                "juros_mensal_percentual": 1,
-                "carencia_dias": 0,
+                "multa_atraso_valor": 15,
+                "encargo_diario_valor": 7,
                 "alerta_manutencao_km": 300,
                 "alerta_manutencao_dias": 15,
                 "alerta_documento_dias": 30,
@@ -197,7 +197,7 @@ def test_pagamento_parcial_envia_principal_separado(servicos):
     assert not app.error
     assert servicos["cobrancas.registrar_pagamento"].call_args.args[2:4] == (
         Decimal("30.50"),
-        Decimal("3.00"),
+        Decimal("169.00"),
     )
 
 

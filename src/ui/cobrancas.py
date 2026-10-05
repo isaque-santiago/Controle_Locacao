@@ -116,8 +116,8 @@ def _dialog_pagamento(c):
     st.markdown(
         '<div class="resumo-linhas">'
         + linha("Valor original (saldo)", formatar_moeda(c["saldo"]))
-        + linha("Multa", formatar_moeda(enc["multa"]))
-        + linha(f'Juros ({enc["dias_atraso"]} dia(s) de atraso)', formatar_moeda(enc["juros"]))
+        + linha("Multa de atraso", formatar_moeda(enc["multa"]))
+        + linha(f'Adicional diário ({enc["dias_atraso"]} dia(s) de atraso)', formatar_moeda(enc["adicional_diario"]))
         + linha("Total", formatar_moeda(enc["total"]), total=True)
         + "</div>",
         unsafe_allow_html=True,
@@ -130,7 +130,7 @@ def _dialog_pagamento(c):
             )
         with col_extras:
             extras = campo_moeda(
-                "Multa e juros recebidos", enc["multa"] + enc["juros"], f"pg_extras_{sufixo}", ao_vivo=True
+                "Multa e adicional recebidos", enc["encargos"], f"pg_extras_{sufixo}", ao_vivo=True
             )
     st.caption("Principal menor que o saldo deixa a cobrança em aberto com o restante.")
     forma = st.radio(
@@ -146,7 +146,7 @@ def _dialog_pagamento(c):
     saldo = Decimal(str(c["saldo"]))
     erro = primeiro_erro(
         erro_de(decimal_campo, principal, "Principal recebido", positivo=True),
-        erro_de(decimal_campo, extras, "Multa e juros recebidos"),
+        erro_de(decimal_campo, extras, "Multa e adicional recebidos"),
     )
     if not erro and decimal_campo(principal, "Principal recebido") > saldo:
         erro = f"Principal recebido: não pode ser maior que o saldo da cobrança ({formatar_moeda(saldo)})."
@@ -156,7 +156,7 @@ def _dialog_pagamento(c):
     if acao.confirmou:
         with proteger():
             valor_principal = decimal_campo(principal, "Principal recebido", positivo=True)
-            valor_extras = decimal_campo(extras, "Multa e juros recebidos")
+            valor_extras = decimal_campo(extras, "Multa e adicional recebidos")
             chave = feedback.chave_operacao(
                 "pagamento", [c["id"], data, valor_principal, valor_extras, forma, observacoes or None]
             )
@@ -205,7 +205,7 @@ def _aba_pagas(linhas):
 def _aba_atrasadas(linhas):
     dias = lambda c: _texto(f'{c["encargos"]["dias_atraso"]} dia(s)', "texto-perigo")
     encargos = lambda c: _texto(
-        formatar_moeda(c["encargos"]["multa"] + c["encargos"]["juros"]),
+        formatar_moeda(c["encargos"]["encargos"]),
         mono=True,
     )
     total = lambda c: _texto(formatar_moeda(c["encargos"]["total"]), mono=True)

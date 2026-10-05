@@ -12,7 +12,7 @@ from src.services import configuracoes
 from src.ui import feedback
 from src.ui.componentes import cabecalho, cabecalho_pagina, proteger
 from src.ui.formatadores import formatar_moeda
-from src.ui.formularios import campo_inteiro, campo_moeda, campo_percentual, linha_campos
+from src.ui.formularios import campo_inteiro, campo_moeda, linha_campos
 
 
 def _titulo_cartao(titulo, descricao):
@@ -29,13 +29,13 @@ def _mono(texto, forte=False):
     return f'<span class="mono texto-forte{" texto-negrito" if forte else ""}">{escape(texto)}</span>'
 
 
-def _exemplo(multa, juros, carencia):
+def _exemplo(multa, adicional_diario):
     """Cálculo com os valores hoje salvos (o formulário só grava ao salvar)."""
-    e = exemplo_encargos(multa, juros, carencia)
+    e = exemplo_encargos(multa, adicional_diario)
     st.markdown(
-        '<div class="config-exemplo">Exemplo: cobrança de '
+        '<div class="config-exemplo">Exemplo: locação de '
         f'{_mono(formatar_moeda(e["saldo"]))}, vencida há {_mono(str(e["dias_vencida"]) + " dias")} → '
-        f'multa {_mono(formatar_moeda(e["multa"]))} + juros {_mono(formatar_moeda(e["juros"]))} = '
+        f'multa {_mono(formatar_moeda(e["multa"]))} + adicional {_mono(formatar_moeda(e["adicional_diario"]))} = '
         f'total {_mono(formatar_moeda(e["total"]), True)}</div>',
         unsafe_allow_html=True,
     )
@@ -58,26 +58,19 @@ def _formulario(config):
         with st.container(key="config_card_encargos"):
             _titulo_cartao(
                 "Encargos por atraso",
-                "Aplicados sobre o saldo em aberto após a carência.",
+                "Valores fixos cobrados das locações em atraso, sem carência: a multa já no dia do "
+                "vencimento e o adicional a cada dia depois dele.",
             )
-            with linha_campos([1, 1, 1], "cfg_encargos") as (c1, c2, c3):
+            with linha_campos([1, 1], "cfg_encargos") as (c1, c2):
                 with c1:
-                    entrada["multa_atraso_percentual"] = campo_percentual(
-                        "Multa por atraso", config["multa_atraso_percentual"], "cfg_multa"
+                    entrada["multa_atraso_valor"] = campo_moeda(
+                        "Multa de atraso (no vencimento)", config["multa_atraso_valor"], "cfg_multa"
                     )
                 with c2:
-                    entrada["juros_mensal_percentual"] = campo_percentual(
-                        "Juros mensal", config["juros_mensal_percentual"], "cfg_juros"
+                    entrada["encargo_diario_valor"] = campo_moeda(
+                        "Adicional por dia de atraso", config["encargo_diario_valor"], "cfg_adicional_diario"
                     )
-                with c3:
-                    entrada["carencia_dias"] = campo_inteiro(
-                        "Carência", config["carencia_dias"], "cfg_carencia", sufixo="dias", maximo=_LIMITE
-                    )
-            _exemplo(
-                config["multa_atraso_percentual"],
-                config["juros_mensal_percentual"],
-                config["carencia_dias"],
-            )
+            _exemplo(config["multa_atraso_valor"], config["encargo_diario_valor"])
 
         with st.container(key="config_card_manutencao"):
             _titulo_cartao(
