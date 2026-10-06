@@ -232,11 +232,11 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .placa {display: inline-block; padding: 3px 9px; border-radius: var(--raio-sm); background: var(--chip-fundo); color: var(--chip-texto); font: 600 13.5px/1.3 var(--fonte-mono); letter-spacing: .06em;}
 
 /* Medidor de ocupação: 24 segmentos, um por moto */
-.medidor {display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; height: 28px; margin: var(--e3) 0;}
+.medidor {display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; height: 28px; margin: var(--e3) 0;}
 .medidor span {border-radius: 2px; background: var(--seg-vazio);}
 .medidor span.cheio {background: var(--seg-cheio);}
 .medidor span.oficina {background: var(--alerta);}
-.legenda {display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
+.legenda {list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
 .legenda i {display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--seg-cheio);}
 .legenda i.livre {background: var(--seg-vazio);} .legenda i.oficina {background: var(--alerta);}
 

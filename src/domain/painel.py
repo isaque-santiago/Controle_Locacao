@@ -84,6 +84,15 @@ def segmentos_frota(contagem: dict[str, int]) -> list[SegmentoFrota]:
     ]
 
 
+def segmentos_medidor(contagem: dict[str, int]) -> list[str]:
+    """Um segmento por moto ativa para o medidor: `cheio` (alugada), `oficina` ou vazio (livre)."""
+    return (
+        ["cheio"] * contagem.get("alugada", 0)
+        + ["oficina"] * contagem.get("manutencao", 0)
+        + [""] * contagem.get("disponivel", 0)
+    )
+
+
 def descricao_medidor(contagem: dict[str, int]) -> str:
     """Texto alternativo do medidor para leitores de tela."""
     total = sum(contagem.values())

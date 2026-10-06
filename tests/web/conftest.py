@@ -2,6 +2,8 @@
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -85,6 +87,47 @@ class ServicoFalso:
 
     def sair(self, access_token):
         self.saidas.append(access_token)
+
+
+DADOS_PAINEL = {
+    "data_extenso": "terça-feira, 6 de outubro de 2026",
+    "frota_total": 5,
+    "contagem": {"alugada": 3, "disponivel": 1, "manutencao": 1, "inativa": 0},
+    "ocupacao": 60,
+    "segmentos_medidor": ["cheio", "cheio", "cheio", "oficina", ""],
+    "descricao_medidor": "Frota de 5 motos: 3 alugadas, 1 disponíveis, 1 em manutenção, 0 inativas",
+    "legenda": [
+        SimpleNamespace(status="alugada", quantidade=3, rotulo="3 alugadas"),
+        SimpleNamespace(status="disponivel", quantidade=1, rotulo="1 disponíveis"),
+        SimpleNamespace(status="manutencao", quantidade=1, rotulo="1 em manutenção"),
+        SimpleNamespace(status="inativa", quantidade=0, rotulo="0 inativas"),
+    ],
+    "recebido": Decimal("1480.00"),
+    "previsto": Decimal("2000.00"),
+    "percentual_recebido": 74,
+    "atrasado": Decimal("320.00"),
+    "clientes_atrasados": 1,
+    "manutencao_mes": Decimal("85.00"),
+    "ordens_concluidas": 1,
+    "hoje": [
+        {"id": "c1", "cliente": "Joana <b>Prado</b>", "placa": "QRS4T21", "vencimento": "2026-10-01",
+         "valor": Decimal("320.00"), "atrasada": True, "dias_atraso": 5},
+        {"id": "c2", "cliente": "Marcos Teles", "placa": "BRA2E19", "vencimento": "2026-10-06",
+         "valor": Decimal("290.00"), "atrasada": False, "dias_atraso": 0},
+    ],
+    "alertas": [
+        SimpleNamespace(quantidade=2, titulo="Manutenção vencida", descricao="Óleo e mais 1", tom="perigo", area="manutencao"),
+        SimpleNamespace(quantidade=1, titulo="Documento a vencer", descricao="próximos 30 dias", tom="atencao", area="documentos"),
+    ],
+}
+
+
+@pytest.fixture(autouse=True)
+def dados_painel_falsos(monkeypatch):
+    """Nenhum teste de rota fala com o Supabase: a camada de dados do Dashboard é trocada."""
+    from src.web import dados_painel
+
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: DADOS_PAINEL)
 
 
 @pytest.fixture

@@ -41,6 +41,11 @@ def test_segmentos_e_descricao_do_medidor():
     )
 
 
+def test_segmentos_do_medidor_so_com_motos_ativas():
+    contagem = painel.contar_por_status(_frota(alugada=2, manutencao=1, disponivel=1, inativa=5))
+    assert painel.segmentos_medidor(contagem) == ["cheio", "cheio", "oficina", ""]
+
+
 def test_percentual_recebido_limita_entre_0_e_100():
     assert painel.percentual_recebido(Decimal("500"), Decimal("1000")) == 50
     assert painel.percentual_recebido(Decimal("1500"), Decimal("1000")) == 100
