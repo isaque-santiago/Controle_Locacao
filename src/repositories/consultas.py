@@ -5,12 +5,14 @@ cobrança calculam a situação pela data). Toda escrita nos repositórios deve 
 decorador `invalida_cache`, para o app nunca exibir dados que ele mesmo acabou de alterar.
 """
 
+from copy import deepcopy
 from functools import wraps
+from threading import Lock
+from time import monotonic
 
-import streamlit as st
 from postgrest.exceptions import APIError
 
-from src.db import get_client
+from src.db import get_client, usuario_id_atual
 from src.domain.erros import eh_repeticao_de_envio
 from src.domain.valores import hoje_br
 
@@ -40,19 +42,35 @@ def _ler_todos(tabela, ordem, selecao, filtros):
         inicio += len(pagina)
 
 
-@st.cache_data(ttl=_TTL_SEGUNDOS, show_spinner=False)
+# Cache próprio (funciona no Streamlit e no FastAPI). A chave sempre inclui o usuário; sem
+# usuário identificado não há cache, para nunca servir dados de um usuário a outro.
+_CACHE: dict[tuple, tuple[float, list]] = {}
+_TRAVA_CACHE = Lock()
+
+
 def _todos_em_cache(usuario_id, dia, tabela, ordem, selecao, filtros):
-    return _ler_todos(tabela, ordem, selecao, filtros)
+    chave = (usuario_id, dia, tabela, ordem, selecao, filtros)
+    agora = monotonic()
+    with _TRAVA_CACHE:
+        achado = _CACHE.get(chave)
+        if achado and achado[0] > agora:
+            return deepcopy(achado[1])
+    registros = _ler_todos(tabela, ordem, selecao, filtros)
+    with _TRAVA_CACHE:
+        for velha in [c for c, (validade, _) in _CACHE.items() if validade <= agora]:
+            del _CACHE[velha]
+        _CACHE[chave] = (agora + _TTL_SEGUNDOS, deepcopy(registros))
+    return registros
 
 
 def todos(tabela, ordem="id", selecao="*", filtros=None, usar_cache=True):
     ordem = ordem if isinstance(ordem, str) else tuple(ordem)
     filtros_ordenados = tuple(sorted((filtros or {}).items()))
-    if not usar_cache:
+    usuario_id = usuario_id_atual()
+    if not usar_cache or not usuario_id:
         return _ler_todos(tabela, ordem, selecao, filtros_ordenados)
-    usuario = st.session_state.get("usuario") or {}
     return _todos_em_cache(
-        usuario.get("id"),
+        usuario_id,
         hoje_br().isoformat(),
         tabela,
         ordem,
@@ -88,7 +106,8 @@ def inserir_idempotente(tabela, dados, chave_operacao=None):
 
 
 def limpar_cache() -> None:
-    _todos_em_cache.clear()
+    with _TRAVA_CACHE:
+        _CACHE.clear()
 
 
 def invalida_cache(funcao):

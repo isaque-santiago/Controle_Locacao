@@ -1,0 +1,17 @@
+{% from "componentes/macros.html" import tabela, estado_vazio %}
+{% if a.manutencoes %}
+{% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Oficina", ""), ("Custo", "num")], "Histórico de manutenção da moto") %}
+  {% for m in a.manutencoes %}
+  <tr>
+    <td class="topo mono">{{ m.data_entrada|data_br }}</td>
+    <td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td>
+    <td class="total" data-rotulo="Descrição">{{ m.descricao }}</td>
+    <td class="num mono" data-rotulo="Km">{{ m.km|milhar }} km</td>
+    <td data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
+    <td class="num mono" data-rotulo="Custo">{{ m.custo_total|moeda }}</td>
+  </tr>
+  {% endfor %}
+{% endcall %}
+{% else %}
+{% call estado_vazio("Nenhuma manutenção registrada", "O histórico de serviços feitos nesta moto aparece aqui.", "0") %}{% endcall %}
+{% endif %}

@@ -1,9 +1,22 @@
 """Textos e formatos de exibição do app web."""
 
 from src.domain.acesso_locatario import eh_email_de_locatario
-from src.ui.formatadores import formatar_data, formatar_moeda
+from src.ui.formatadores import (
+    formatar_data,
+    formatar_moeda,
+    formatar_moeda_compacta,
+    formatar_placa,
+)
 
 TEMAS_VALIDOS = ("claro", "escuro")
+
+# Tom do selo (macro `selo`) para cada status de moto.
+TOM_STATUS_MOTO = {
+    "alugada": "ok",
+    "disponivel": "neutro",
+    "manutencao": "atencao",
+    "inativa": "neutro",
+}
 
 
 def nome_de_exibicao(email: str) -> str:
@@ -28,9 +41,20 @@ def destino_seguro(destino: str | None, padrao: str = "/") -> str:
     return destino
 
 
+def formatar_milhar(numero) -> str:
+    """Inteiro com ponto de milhar: 18420 -> '18.420'. Vazio vira travessão."""
+    if numero is None or numero == "":
+        return "—"
+    return f"{int(numero):,}".replace(",", ".")
+
+
 __all__ = [
     "formatar_data",
     "formatar_moeda",
+    "formatar_moeda_compacta",
+    "formatar_placa",
+    "formatar_milhar",
+    "TOM_STATUS_MOTO",
     "nome_de_exibicao",
     "tema_do_cookie",
     "destino_seguro",

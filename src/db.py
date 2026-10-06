@@ -16,6 +16,11 @@ _CLIENTE_REQUISICAO: ContextVar[Client | None] = ContextVar(
     "cliente_requisicao", default=None
 )
 
+# Id do usuário da requisição web: chave do cache e dos controles por usuário.
+_USUARIO_REQUISICAO: ContextVar[str | None] = ContextVar(
+    "usuario_requisicao", default=None
+)
+
 _CHAVE_CLIENTE = "supabase_client"
 _CHAVE_COOKIES = "cookie_controller"
 _COOKIE_REFRESH_TOKEN = "sb_refresh_token"
@@ -85,6 +90,25 @@ def criar_cliente_autenticado(access_token: str) -> Client:
 def definir_cliente_da_requisicao(cliente: Client | None) -> None:
     """Define o cliente que `get_client()` devolve no contexto atual (requisição web)."""
     _CLIENTE_REQUISICAO.set(cliente)
+
+
+def definir_usuario_da_requisicao(usuario_id: str | None) -> None:
+    """Define o usuário da requisição web (usado por `usuario_id_atual`)."""
+    _USUARIO_REQUISICAO.set(usuario_id)
+
+
+def usuario_id_atual() -> str | None:
+    """Id do usuário logado: o da requisição web ou, no Streamlit, o da sessão. None sem login.
+
+    Quem guarda dados que dependem da RLS (cache, controles) deve usar este id na chave e,
+    sem ele, não guardar nada: assim dois usuários nunca compartilham a mesma entrada."""
+    da_requisicao = _USUARIO_REQUISICAO.get()
+    if da_requisicao:
+        return da_requisicao
+    try:
+        return (st.session_state.get("usuario") or {}).get("id")
+    except Exception:
+        return None
 
 
 @contextmanager

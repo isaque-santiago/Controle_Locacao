@@ -1,0 +1,43 @@
+{% from "componentes/macros.html" import selo, placa, tabela, paginacao, estado_vazio, botao %}
+{# Trecho trocado pelo HTMX: filtros em chips, lista e paginação. O campo oculto mantém a situação nos envios do formulário. #}
+<input type="hidden" name="situacao" value="{{ situacao }}">
+
+<nav class="chips" aria-label="Filtrar por situação">
+  {% for chave, rotulo, quantidade, url in chips %}
+  <a class="chip" href="{{ url }}" hx-get="{{ url }}" hx-target="#resultado" hx-push-url="true"{% if chave == situacao %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>
+  {% endfor %}
+</nav>
+
+<p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+
+{% if d.itens %}
+{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Motos cadastradas") %}
+  {% for item in d.itens %}{% set m = item.moto %}{% set man = item.proxima_manutencao %}
+  <tr>
+    <td class="c-placa">{{ placa(m.placa|placa_br) }}</td>
+    <td class="c-moto modelo">{{ m.marca }} {{ m.modelo }}<span class="sub">{{ m.ano_modelo or m.ano_fabricacao or "—" }}{% if m.cor %}, {{ m.cor|lower }}{% endif %}</span></td>
+    <td class="c-sit">{{ selo(status_rotulo[m.status], tom_status_moto[m.status]) }}</td>
+    <td class="c-km num mono" data-rotulo="Km">{{ m.km_atual|milhar }}</td>
+    <td class="c-loc" data-rotulo="Locatário">{% if item.locatario %}{{ item.locatario }}{% else %}<span class="text-texto-3">Sem locatário</span>{% endif %}</td>
+    <td class="c-man{% if man.situacao == 'vencida' %} text-perigo font-medium{% endif %}" data-rotulo="Próxima manutenção">{{ man.texto }}</td>
+    <td class="c-acao"><a class="btn" href="/motos/{{ m.id }}" aria-label="Abrir a ficha da moto {{ m.placa|placa_br }}">Abrir ficha</a></td>
+  </tr>
+  {% endfor %}
+{% endcall %}
+
+{{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}
+{% if d.pagina.total > opcoes_por_pagina[0] %}
+<div class="campo por-pagina">
+  <label for="por_pagina">Motos por página</label>
+  <select class="entrada" id="por_pagina" name="por_pagina" hx-get="/motos" hx-include="#filtros" hx-target="#resultado" hx-push-url="true" hx-trigger="change">
+    {% for n in opcoes_por_pagina %}<option value="{{ n }}"{% if n == por_pagina %} selected{% endif %}>{{ n }}</option>{% endfor %}
+  </select>
+</div>
+{% endif %}
+{% elif filtrando %}
+{% call estado_vazio("Nenhuma moto encontrada", "Nenhuma moto atende à busca ou ao filtro escolhido.", "0") %}
+  {{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}
+{% endcall %}
+{% else %}
+{% call estado_vazio("Nenhuma moto cadastrada", "As motos da frota aparecem aqui assim que forem cadastradas.", "0") %}{% endcall %}
+{% endif %}

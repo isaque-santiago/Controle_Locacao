@@ -21,7 +21,8 @@ def _paginas(cliente, catalogo):
     paginas = {"login": cliente.get("/login").text, "catalogo": catalogo, "erro": cliente.get("/x").text}
     entrar(cliente)
     paginas["inicio"] = cliente.get("/").text
-    paginas["migracao"] = cliente.get("/motos").text
+    paginas["migracao"] = cliente.get("/clientes").text
+    paginas["motos"] = cliente.get("/motos").text
     cliente.cookies.clear()
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     paginas["portal"] = cliente.get("/portal").text
@@ -42,13 +43,13 @@ def test_toda_pagina_tem_lang_titulo_h1_e_link_de_pular(cliente, catalogo):
         assert '<html lang="pt-BR"' in html, nome
         assert re.search(r"<title>[^<]+· Controle de Locação</title>", html), nome
         assert len(re.findall(r"<h1[\s>]", html)) == 1, f"{nome}: precisa de exatamente um h1"
-    for nome in ("inicio", "migracao", "portal", "catalogo"):
+    for nome in ("inicio", "migracao", "motos", "portal", "catalogo"):
         assert 'href="#conteudo"' in paginas[nome], nome
 
 
 def test_todo_campo_tem_rotulo_associado(cliente, catalogo):
     for nome, html in _paginas(cliente, catalogo).items():
-        ids_com_rotulo = set(re.findall(r'<label for="([^"]+)"', html))
+        ids_com_rotulo = set(re.findall(r"<label[^>]*\sfor=\"([^\"]+)\"", html))
         for campo in re.findall(r"<(?:input|select|textarea)\b[^>]*>", html):
             if 'type="hidden"' in campo:
                 continue

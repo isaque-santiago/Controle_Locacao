@@ -106,6 +106,8 @@ h1, h2, h3 {font-family: var(--fonte-titulo); font-weight: 700; letter-spacing: 
 button, input, select, textarea {font: inherit; color: inherit;}
 a {color: inherit;}
 :focus-visible {outline: 3px solid var(--foco); outline-offset: 2px; border-radius: var(--raio-sm);}
+/* Contêineres focados só por código (tabindex=-1) não são controles: sem contorno */
+[tabindex="-1"]:focus:not(:focus-visible) {outline: none;}
 }
 
 @layer components {
@@ -118,7 +120,7 @@ a {color: inherit;}
 /* ---------- Estrutura: três faixas ---------- */
 .app {min-height: 100dvh; display: grid; grid-template-columns: var(--lateral-larg) minmax(0, 1fr);}
 .coluna {min-width: 0; display: flex; flex-direction: column;}
-main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 40px) var(--pad) 48px;}
+main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word; padding: clamp(24px, 4vw, 40px) var(--pad) 48px;}
 
 /* Barra lateral (desktop) / trilho (tablet) */
 .lateral {position: sticky; top: 0; height: 100dvh; background: var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto;}
@@ -187,7 +189,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .voltar:hover {background: var(--superficie-hover); color: var(--texto);}
 
 /* ---------- Botões e campos ---------- */
-.btn {display: inline-flex; align-items: center; justify-content: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e4); border-radius: var(--raio-campo); border: 1px solid var(--linha-forte); background: var(--superficie-elevada); color: var(--texto); font-weight: 500; text-decoration: none; cursor: pointer; transition: background 150ms ease, border-color 150ms ease;}
+.btn {white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e4); border-radius: var(--raio-campo); border: 1px solid var(--linha-forte); background: var(--superficie-elevada); color: var(--texto); font-weight: 500; text-decoration: none; cursor: pointer; transition: background 150ms ease, border-color 150ms ease;}
 .btn:hover {background: var(--superficie-hover);}
 .btn-primario {background: var(--btn); border-color: var(--btn); color: var(--btn-texto); font-weight: 600;}
 .btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover);}
@@ -195,7 +197,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .btn-perigo:hover {background: var(--perigo-fundo);}
 .btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-campo); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer;}
 .btn-bloco {width: 100%;}
-.campo {display: grid; gap: var(--e2); min-width: 0;}
+.campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
 .campo small {color: var(--texto-3); font-size: 12px;}
 .entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--linha-forte); background: var(--superficie-elevada);}
@@ -219,7 +221,8 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .kpi {background: var(--superficie); border: 1px solid var(--linha); border-top: 3px solid var(--texto); border-radius: var(--raio-md); padding: var(--e4) var(--e4) var(--e3);}
 .kpi.atencao {border-top-color: var(--perigo);}
 .kpi dt {color: var(--texto-2); font-size: 13px;}
-.kpi dd {margin: var(--e2) 0 0; font: 600 clamp(22px, 2.2vw, 26px)/1.1 var(--fonte-mono); letter-spacing: -.02em;}
+.kpi dd {margin: var(--e2) 0 0; font: 600 clamp(22px, 2.2vw, 26px)/1.1 var(--fonte-mono); letter-spacing: -.02em; overflow-wrap: anywhere;}
+.kpi {min-width: 0;}
 .kpi dd small {display: block; margin-top: var(--e2); font: 400 12.5px/1.3 var(--fonte-ui); color: var(--texto-3); letter-spacing: 0;}
 .duas-colunas {grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);}
 .selo {display: inline-flex; align-items: center; gap: 7px; padding: 2px 10px 2px 8px; min-height: 26px; border-radius: 99px; font-size: 12.5px; font-weight: 500; white-space: nowrap;}
@@ -229,14 +232,14 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .selo.perigo {background: var(--perigo-fundo); color: var(--perigo-texto);}
 .selo.info {background: var(--info-fundo); color: var(--info-texto);}
 .selo.neutro {background: var(--neutro-fundo); color: var(--neutro-texto);}
-.placa {display: inline-block; padding: 3px 9px; border-radius: var(--raio-sm); background: var(--chip-fundo); color: var(--chip-texto); font: 600 13.5px/1.3 var(--fonte-mono); letter-spacing: .06em;}
+.placa {display: inline-block; white-space: nowrap; padding: 3px 9px; border-radius: var(--raio-sm); background: var(--chip-fundo); color: var(--chip-texto); font: 600 13.5px/1.3 var(--fonte-mono); letter-spacing: .06em;}
 
 /* Medidor de ocupação: 24 segmentos, um por moto */
-.medidor {display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; height: 28px; margin: var(--e3) 0;}
+.medidor {display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; height: 28px; margin: var(--e3) 0;}
 .medidor span {border-radius: 2px; background: var(--seg-vazio);}
 .medidor span.cheio {background: var(--seg-cheio);}
 .medidor span.oficina {background: var(--alerta);}
-.legenda {display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
+.legenda {list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
 .legenda i {display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--seg-cheio);}
 .legenda i.livre {background: var(--seg-vazio);} .legenda i.oficina {background: var(--alerta);}
 
@@ -253,20 +256,25 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .barra-filtros {display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: var(--e3); margin-bottom: var(--e3);}
 .chips {display: flex; gap: var(--e2); overflow-x: auto; padding-bottom: var(--e1); margin-bottom: var(--e4); scrollbar-width: thin;}
 .chip {flex: none; display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e4); border-radius: 99px; border: 1px solid var(--linha-forte); background: var(--superficie-elevada); cursor: pointer; font-weight: 500;}
-.chip[aria-pressed="true"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
+.chip {text-decoration: none; color: inherit;}
+.chip[aria-pressed="true"], .chip[aria-current="true"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
 .chip b {font: 600 12.5px var(--fonte-mono);}
-.tabela-caixa {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); overflow: hidden;}
+.tabela-caixa {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); overflow: hidden; container-type: inline-size;}
 table.dados {width: 100%; border-collapse: collapse;}
 .dados th {text-align: left; font-weight: 600; font-size: 12.5px; color: var(--texto-2); padding: var(--e3) var(--e4); background: var(--superficie-hover); border-bottom: 1px solid var(--linha);}
 .dados td {padding: var(--e3) var(--e4); border-top: 1px solid var(--linha-sutil); vertical-align: middle;}
 .dados tbody tr:first-child td {border-top: 0;}
 .dados tbody tr:hover {background: var(--superficie-hover);}
 .dados td.num, .dados th.num {text-align: right;}
+/* Cabeçalho da coluna de ações: some da vista, mas continua lido pelos leitores de tela e mantém o fundo do cabeçalho */
+.dados th.col-acoes {font-size: 0;}
 .dados .modelo {font-weight: 500;} .dados .sub {display: block; font-size: 12.5px; color: var(--texto-3);}
 .paginacao {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); margin-top: var(--e4); color: var(--texto-2); font-size: 13px;}
 .paginacao div {display: flex; gap: var(--e2);}
+.por-pagina {max-width: 12rem; margin-top: var(--e3);}
 
-@media (max-width: 719px) {
+/* Tabela vira cartões conforme a largura da caixa dela (e não da tela): vale com a barra lateral, o trilho e o celular */
+@container (max-width: 859px) {
   .dados thead {display: none;}
   .dados, .dados tbody {display: block;}
   .dados tbody tr {display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2) var(--e4); padding: var(--e4); border-top: 1px solid var(--linha);}
@@ -278,7 +286,10 @@ table.dados {width: 100%; border-collapse: collapse;}
   .dados td.total {grid-column: 1 / -1;}
   .dados td.acao {grid-column: 1 / -1; margin-top: var(--e1);}
   .dados td.num {text-align: left;}
+
+@media (max-width: 719px) {
   .barra-filtros {grid-template-columns: 1fr;}
+}
 }
 
 /* ---------- Abas ---------- */
@@ -318,7 +329,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 .rodape-acoes {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--linha);}
 
 /* ---------- Diálogos ---------- */
-dialog {border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
+dialog {margin: auto; border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
 dialog::backdrop {background: rgba(21,24,28,.55);}
 .dialogo-cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
 .dialogo-cab h2 {font-size: 20px;}
@@ -345,6 +356,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 }
 @media (max-width: 719px) {
   .kpis {gap: var(--e3);}
+  .kpi dd {font-size: clamp(18px, 5.4vw, 22px);}
   .formulario {grid-template-columns: 1fr;}
   .passo span {display: none;} .passo.atual span {display: block;}
   .passos {grid-template-columns: repeat(4, 1fr);}
@@ -356,8 +368,8 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 }
 @media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}
 
-/* Lista de motos no celular: a ordem de leitura do cartão difere da ordem das colunas */
-@media (max-width: 719px) {
+/* Lista de motos em cartões: a ordem de leitura difere da ordem das colunas */
+@container (max-width: 859px) {
   .dados td.c-placa {order: 1;} .dados td.c-sit {order: 2; justify-self: end; text-align: right;}
   .dados td.c-moto {order: 3; grid-column: 1 / -1;} .dados td.c-km {order: 4;} .dados td.c-man {order: 5;}
   .dados td.c-loc {order: 6; grid-column: 1 / -1;} .dados td.c-acao {order: 7; grid-column: 1 / -1; margin-top: var(--e1);}
@@ -394,6 +406,10 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .portal-topo .marca {padding: 0; flex: 1; min-width: 0;}
 .portal-topo .btn-icone, .portal-topo .btn-texto {color: #fff; border: 1px solid rgba(255,255,255,.25); background: transparent;}
 .portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer;}
+.entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
+.campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
+.campo.caixa input[type="checkbox"] {width: 22px; height: 22px; accent-color: var(--btn);}
+form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .campo.com-erro .entrada {border-color: var(--perigo);}
 .campo .msg-erro {color: var(--perigo-texto); font-size: 12.5px;}
 .lateral-rodape form {display: contents;}

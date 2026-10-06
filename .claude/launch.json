@@ -23,6 +23,16 @@
       "autoPort": true
     },
     {
+      "name": "locacao-web-estavel",
+      "runtimeExecutable": ".venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "executar_web.py",
+        "--sem-recarga"
+      ],
+      "port": 8000,
+      "autoPort": true
+    },
+    {
       "name": "prototipo-layout",
       "runtimeExecutable": "python",
       "runtimeArgs": [

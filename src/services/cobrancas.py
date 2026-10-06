@@ -2,16 +2,18 @@
 
 from datetime import date
 from decimal import Decimal
+from threading import Lock
 from time import monotonic
 from typing import Optional
 
-import streamlit as st
-
+from src.db import usuario_id_atual
 from src.domain.encargos import calcular_encargos
 from src.repositories import cobrancas, configuracoes, pagamentos
 
-_CHAVE_GERACAO = "cobrancas_geradas_em"
 _INTERVALO_GERACAO_SEGUNDOS = 3600
+# Última geração por usuário (vale para o Streamlit e para o app web).
+_ULTIMA_GERACAO: dict[str | None, float] = {}
+_TRAVA_GERACAO = Lock()
 
 
 def listar():
@@ -71,18 +73,25 @@ def registrar_pagamento(
 
 
 def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:
-    """Gera as cobranças pendentes, no máximo uma vez por hora em cada sessão.
+    """Gera as cobranças pendentes, no máximo uma vez por hora para cada usuário.
 
     A RPC é idempotente e atua nos contratos ativos por prazo indeterminado (a regra da
     operação), gerando as cobranças da janela móvel; rodá-la a cada abertura do Dashboard
     era uma escrita a mais no banco por página."""
     agora = monotonic()
-    ultima = st.session_state.get(_CHAVE_GERACAO)
-    if ultima is not None and agora - ultima < _INTERVALO_GERACAO_SEGUNDOS:
-        return {"cobrancas_geradas": 0}
-    resultado = cobrancas.gerar_pendentes_via_rpc(horizonte_dias)
-    st.session_state[_CHAVE_GERACAO] = agora
-    return resultado
+    usuario = usuario_id_atual()
+    with _TRAVA_GERACAO:
+        ultima = _ULTIMA_GERACAO.get(usuario)
+        if ultima is not None and agora - ultima < _INTERVALO_GERACAO_SEGUNDOS:
+            return {"cobrancas_geradas": 0}
+        # Marca antes de chamar: requisições simultâneas não disparam a RPC duas vezes.
+        _ULTIMA_GERACAO[usuario] = agora
+    try:
+        return cobrancas.gerar_pendentes_via_rpc(horizonte_dias)
+    except Exception:
+        with _TRAVA_GERACAO:
+            _ULTIMA_GERACAO.pop(usuario, None)
+        raise
 
 
 def historico_pagamentos(cobranca_id):

@@ -125,6 +125,15 @@ class TestPlanoDaMoto:
         item = _plano(_linha(minimo_item=None, km_item=1000))
         assert item["alerta_inicio_km"] is None
 
+    def test_aceita_ultima_data_ja_convertida_pelo_banco(self):
+        linha = _linha(minimo_item=None, km_item=None, ultima_km=None)
+        linha["ultima_data"] = date(2026, 7, 1)
+        linha["item"]["intervalo_dias"] = 90
+
+        item = _plano(linha)
+
+        assert item["proxima_data"] == date(2026, 9, 29)
+
 
 class TestCatalogo:
     def test_aceita_faixa_valida(self):

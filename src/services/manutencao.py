@@ -64,8 +64,13 @@ def listar_plano_moto(moto_id: str) -> list:
             intervalo_km is None or intervalo_minimo_km >= intervalo_km
         ):
             intervalo_minimo_km = None  # sobrescrita por moto tornou a faixa incoerente: vale o alerta global
+        valor_ultima_data = linha["ultima_data"]
         ultima_data = (
-            date.fromisoformat(linha["ultima_data"]) if linha["ultima_data"] else None
+            valor_ultima_data
+            if isinstance(valor_ultima_data, date)
+            else date.fromisoformat(str(valor_ultima_data)[:10])
+            if valor_ultima_data
+            else None
         )
 
         proxima = calcular_proxima_manutencao(

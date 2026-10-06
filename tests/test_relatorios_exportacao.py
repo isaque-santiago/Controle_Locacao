@@ -139,6 +139,7 @@ def test_leitura_usa_cache_e_escrita_invalida(monkeypatch):
         "_ler_todos",
         lambda tabela, ordem, selecao, filtros: chamadas.append(tabela) or [1],
     )
+    monkeypatch.setattr(consultas, "usuario_id_atual", lambda: "u1")
     consultas.limpar_cache()
 
     assert consultas.todos("tabela_cache") == [1]
@@ -199,7 +200,8 @@ def test_geracao_de_cobrancas_roda_no_maximo_uma_vez_por_hora(monkeypatch):
         lambda horizonte: chamadas.append(horizonte) or {"cobrancas_geradas": 2},
     )
     monkeypatch.setattr(cobrancas, "monotonic", lambda: relogio[0])
-    monkeypatch.setattr(cobrancas.st, "session_state", {})
+    monkeypatch.setattr(cobrancas, "usuario_id_atual", lambda: "u1")
+    cobrancas._ULTIMA_GERACAO.clear()
 
     assert cobrancas.gerar_cobrancas_pendentes() == {"cobrancas_geradas": 2}
     assert cobrancas.gerar_cobrancas_pendentes() == {"cobrancas_geradas": 0}
@@ -208,3 +210,80 @@ def test_geracao_de_cobrancas_roda_no_maximo_uma_vez_por_hora(monkeypatch):
     relogio[0] += cobrancas._INTERVALO_GERACAO_SEGUNDOS + 1
     cobrancas.gerar_cobrancas_pendentes()
     assert len(chamadas) == 2
+
+
+def test_cache_nao_e_compartilhado_entre_usuarios(monkeypatch):
+    usuario = ["u1"]
+    chamadas = []
+    monkeypatch.setattr(consultas, "usuario_id_atual", lambda: usuario[0])
+    monkeypatch.setattr(
+        consultas,
+        "_ler_todos",
+        lambda tabela, ordem, selecao, filtros: chamadas.append(usuario[0]) or [usuario[0]],
+    )
+    consultas.limpar_cache()
+
+    assert consultas.todos("motos") == ["u1"]
+    usuario[0] = "u2"
+    assert consultas.todos("motos") == ["u2"]
+    assert consultas.todos("motos") == ["u2"]
+    assert chamadas == ["u1", "u2"]
+    consultas.limpar_cache()
+
+
+def test_sem_usuario_identificado_nao_usa_cache(monkeypatch):
+    chamadas = []
+    monkeypatch.setattr(consultas, "usuario_id_atual", lambda: None)
+    monkeypatch.setattr(
+        consultas,
+        "_ler_todos",
+        lambda tabela, ordem, selecao, filtros: chamadas.append(1) or [1],
+    )
+    consultas.limpar_cache()
+    consultas.todos("motos")
+    consultas.todos("motos")
+    assert len(chamadas) == 2
+
+
+def test_cache_devolve_copia_que_o_chamador_pode_alterar(monkeypatch):
+    monkeypatch.setattr(consultas, "usuario_id_atual", lambda: "u1")
+    monkeypatch.setattr(
+        consultas, "_ler_todos", lambda tabela, ordem, selecao, filtros: [{"a": 1}]
+    )
+    consultas.limpar_cache()
+    consultas.todos("motos")[0]["a"] = 99
+    assert consultas.todos("motos") == [{"a": 1}]
+    consultas.limpar_cache()
+
+
+def test_geracao_de_cobrancas_e_controlada_por_usuario(monkeypatch):
+    from src.services import cobrancas
+
+    chamadas = []
+    usuario = ["u1"]
+    monkeypatch.setattr(
+        cobrancas.cobrancas,
+        "gerar_pendentes_via_rpc",
+        lambda horizonte: chamadas.append(usuario[0]) or {"cobrancas_geradas": 1},
+    )
+    monkeypatch.setattr(cobrancas, "usuario_id_atual", lambda: usuario[0])
+    cobrancas._ULTIMA_GERACAO.clear()
+
+    cobrancas.gerar_cobrancas_pendentes()
+    usuario[0] = "u2"
+    cobrancas.gerar_cobrancas_pendentes()
+    assert chamadas == ["u1", "u2"]
+
+
+def test_geracao_com_falha_nao_bloqueia_nova_tentativa(monkeypatch):
+    from src.services import cobrancas
+
+    def falhar(horizonte):
+        raise RuntimeError("rede")
+
+    monkeypatch.setattr(cobrancas.cobrancas, "gerar_pendentes_via_rpc", falhar)
+    monkeypatch.setattr(cobrancas, "usuario_id_atual", lambda: "u1")
+    cobrancas._ULTIMA_GERACAO.clear()
+    with pytest.raises(RuntimeError):
+        cobrancas.gerar_cobrancas_pendentes()
+    assert "u1" not in cobrancas._ULTIMA_GERACAO

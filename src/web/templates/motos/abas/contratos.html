@@ -1,0 +1,18 @@
+{% from "componentes/macros.html" import tabela, selo, estado_vazio %}
+{% set rotulo = {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"} %}
+{% set tom = {"ativo": "ok", "encerrado": "neutro", "cancelado": "neutro"} %}
+{% if a.contratos %}
+{% call tabela([("Cliente", ""), ("Início", ""), ("Fim", ""), ("Status", ""), ("Valor / período", "num")], "Contratos da moto") %}
+  {% for c in a.contratos %}
+  <tr>
+    <td class="topo font-medium">{{ c.cliente }}</td>
+    <td class="mono" data-rotulo="Início">{{ c.data_inicio|data_br }}</td>
+    <td class="mono" data-rotulo="Fim">{{ c.data_encerramento|data_br }}</td>
+    <td data-rotulo="Status">{{ selo(rotulo[c.status], tom[c.status]) }}</td>
+    <td class="num mono" data-rotulo="Valor / período">{{ c.valor_periodo|moeda }}</td>
+  </tr>
+  {% endfor %}
+{% endcall %}
+{% else %}
+{% call estado_vazio("Nenhum contrato", "Os contratos desta moto, atuais e antigos, aparecem aqui.", "0") %}{% endcall %}
+{% endif %}

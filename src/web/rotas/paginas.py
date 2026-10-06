@@ -1,10 +1,10 @@
-"""Páginas da Fase 1: saúde, início do dono, portal do locatário e telas em migração."""
+"""Páginas: saúde, Dashboard do dono, portal do locatário e telas em migração."""
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 
 from src.services.autenticacao import PAPEL_DONO, PAPEL_LOCATARIO
-from src.web import navegacao
+from src.web import dados_painel, navegacao
 from src.web.dependencias import exigir_dono, exigir_sessao
 from src.web.sessao import Sessao
 from src.web.templates import renderizar
@@ -22,7 +22,7 @@ def saude():
 def inicio(request: Request, sessao: Sessao = Depends(exigir_sessao)):
     if sessao.papel == PAPEL_LOCATARIO:
         return RedirectResponse("/portal", status_code=303)
-    return renderizar(request, "inicio.html", {"titulo": "Dashboard"})
+    return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar()})
 
 
 @router.get("/portal")
@@ -41,6 +41,7 @@ def _registrar_em_migracao(item: navegacao.ItemNavegacao) -> None:
 
 
 # As demais telas seguem no Streamlit até a sua fase; a rota existe para o menu não dar 404.
+_JA_MIGRADAS = {navegacao.DASHBOARD, navegacao.MOTOS}
 for _item in navegacao.TODOS:
-    if _item.caminho != "/":
+    if _item not in _JA_MIGRADAS:
         _registrar_em_migracao(_item)

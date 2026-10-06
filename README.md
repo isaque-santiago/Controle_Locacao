@@ -36,8 +36,25 @@ pytest
 O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisões em
 [Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
-papéis, CSRF, erros e biblioteca de componentes. As demais telas ainda não existem no app novo
+papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
+Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). As demais telas ainda não existem no app novo
 (o menu mostra "Em migração").
+
+**Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
+- **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
+  o HTMX troca só `#resultado` (e a restauração do histórico recebe a página inteira); chips são links, então
+  funcionam sem JS. A tabela vira cartões conforme a largura **da própria caixa** (container query), não da tela.
+- **Ficha com abas** (`macros.abas_remotas`): cada aba carrega o painel por HTMX, com URL própria
+  (`/motos/{id}?aba=plano`); o servidor devolve as abas junto do painel (swap fora de banda), então o botão
+  voltar do navegador fica coerente. Setas movem o foco, Enter abre.
+- **Formulário em diálogo** (`macros.form_dialogo`, `rotas/motos_formularios.py`): o diálogo `#dlg-form` abre ao
+  chegar o conteúdo; a validação é no servidor, campo a campo (`src/domain/formulario_moto.py`): com erro o mesmo
+  formulário volta com a mensagem ao lado do campo; com sucesso vem `HX-Redirect` e um aviso de confirmação
+  (uma vez só, guardado na sessão). Operações repetíveis levam `chave_operacao`.
+- **Camadas:** a rota chama `dados_*.py` (leitura) e `acoes_*.py` (gravação), que chamam os serviços e o
+  `src/domain`; os testes de rota trocam esses dois módulos por dados fictícios (`tests/web/conftest.py`).
+- **Cache** de leituras (`repositories/consultas.py`): por usuário e por dia, 60 s; sem usuário identificado não
+  há cache. O limite de "gerar cobranças uma vez por hora" também é por usuário.
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
@@ -46,7 +63,9 @@ Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as 
 .venv\Scripts\python.exe executar_web.py
 ```
 
-Abre em `http://localhost:8000`. Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
+Abre em `http://localhost:8000`. O servidor recarrega ao salvar um `.py`, e como as sessões ficam na memória isso
+**derruba o login**; para conferir telas no navegador use `executar_web.py --sem-recarga` (no preview, a
+configuração `locacao-web-estavel`) e reinicie à mão depois de editar. Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
 script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
 
 Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macros dos componentes em

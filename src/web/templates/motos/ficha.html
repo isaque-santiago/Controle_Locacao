@@ -1,0 +1,40 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas, botao %}
+
+{% block conteudo %}
+{{ voltar("/motos", "Voltar para motos") }}
+
+<header class="cabecalho">
+  <div class="cabecalho-texto">
+    <div class="ficha-titulo">
+      <h1 class="so-leitor">Moto {{ moto.placa|placa_br }}</h1>
+      <span class="placa" aria-hidden="true">{{ moto.placa|placa_br }}</span>
+      {{ selo(status_rotulo[moto.status], tom_status_moto[moto.status]) }}
+    </div>
+    <p class="mt-3">
+      {{ moto.marca }} {{ moto.modelo }}{% if moto.ano_modelo %}, {{ moto.ano_modelo }}{% endif %}{% if moto.cor %}, {{ moto.cor|lower }}{% endif %}.
+      {% if cabecalho.locatario %}Locada para {{ cabecalho.locatario }} desde {{ cabecalho.desde|data_br }}.{% endif %}
+    </p>
+  </div>
+  <div class="acoes">
+    {{ botao("Editar", extra='hx-get="/motos/' ~ moto.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+    {{ botao("Atualizar km", extra='hx-get="/motos/' ~ moto.id ~ '/km" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+    {% if moto.status in ("disponivel", "inativa") %}
+    <form method="post" action="/motos/{{ moto.id }}/situacao">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ botao("Reativar" if moto.status == "inativa" else "Inativar", tipo="submit") }}
+    </form>
+    {% endif %}
+  </div>
+</header>
+
+<dl class="grade kpis">
+  {{ kpi("Km atual", moto.km_atual|milhar, "quilômetros") }}
+  {{ kpi("Ano fab. / modelo", (moto.ano_fabricacao or "—") ~ " / " ~ (moto.ano_modelo or "—")) }}
+  {{ kpi("Cor", moto.cor or "—") }}
+  {{ kpi("Locação sugerida", moto.valor_locacao_sugerido|moeda, "por mês") }}
+</dl>
+
+{{ abas_remotas("Seções da ficha", abas_da_ficha, aba) }}
+{% include "motos/_painel.html" %}
+{% endblock %}
