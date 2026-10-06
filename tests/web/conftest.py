@@ -161,6 +161,42 @@ class BaseMotos:
         self.plano = [
             {"moto_id": self.motos[0]["id"], "situacao": "vencida", "km_restantes": -120, "dias_restantes": None},
         ]
+        self.leituras = [
+            {"km": 1000, "data": "2026-09-01", "origem": "manual"},
+            {"km": 900, "data": "2026-08-01", "origem": "contrato"},
+        ]
+        self.plano_da_moto = [
+            {
+                "item": {"nome": "Troca de óleo"},
+                "intervalo_km_efetivo": 3000, "intervalo_minimo_km_efetivo": None,
+                "intervalo_dias_efetivo": None, "ultima_km": 500, "proxima_km": 3500, "proxima_data": None,
+            }
+        ]
+        self.manutencoes = [
+            {"data_entrada": "2026-08-28", "tipo": "preventiva", "descricao": "Óleo <i>e filtro</i>",
+             "km": 900, "oficina": None, "custo_total": Decimal("85.00")},
+        ]
+        self.documentos = [
+            {"id": "d1", "tipo": "crlv", "ano_referencia": 2026, "descricao": None,
+             "vencimento": "2020-01-01", "regularizado": False},
+        ]
+        self.cobrancas = [
+            {"situacao": "aberta", "tipo": "locacao", "vencimento": "2026-10-10"},
+            {"situacao": "aberta", "tipo": "locacao", "vencimento": "2026-10-03"},
+        ]
+        self.financeiro = [
+            {"moto_id": self.motos[0]["id"], "receita_recebida": Decimal("1200"), "custo_manutencao": Decimal("85"),
+             "custo_documentos": Decimal("0"), "resultado": Decimal("1115"), "custo_por_km": Decimal("0.09")},
+        ]
+        self.contratos.append(
+            {"id": "k0", "moto_id": self.motos[0]["id"], "cliente_id": "c1", "status": "encerrado",
+             "data_inicio": "2026-01-01", "data_encerramento": "2026-06-30", "valor_periodo": Decimal("300"),
+             "periodicidade": "semanal", "caucao_valor": Decimal("0")}
+        )
+        self.contratos[0].update(
+            data_inicio="2026-07-01", data_encerramento=None, valor_periodo=Decimal("320"),
+            periodicidade="semanal", caucao_valor=Decimal("500"),
+        )
 
 
 @pytest.fixture(autouse=True)
@@ -169,10 +205,32 @@ def base_motos(monkeypatch):
     from src.web import dados_motos
 
     base = BaseMotos()
-    monkeypatch.setattr(dados_motos, "motos", SimpleNamespace(listar=lambda: base.motos))
+    monkeypatch.setattr(
+        dados_motos,
+        "motos",
+        SimpleNamespace(
+            listar=lambda: base.motos,
+            obter=lambda id_: next((m for m in base.motos if m["id"] == id_), None),
+            historico=lambda id_: base.leituras,
+        ),
+    )
     monkeypatch.setattr(dados_motos, "contratos", SimpleNamespace(listar=lambda: base.contratos))
     monkeypatch.setattr(dados_motos, "clientes", SimpleNamespace(listar=lambda: base.clientes))
     monkeypatch.setattr(dados_motos, "alertas", SimpleNamespace(listar_manutencao=lambda: base.plano))
+    monkeypatch.setattr(
+        dados_motos,
+        "manutencao",
+        SimpleNamespace(
+            listar_plano_moto=lambda id_: base.plano_da_moto,
+            situacao_item_plano=lambda linha, km: "proxima",
+            listar_manutencoes=lambda id_: base.manutencoes,
+        ),
+    )
+    monkeypatch.setattr(dados_motos, "documentos", SimpleNamespace(listar_por_moto=lambda id_: base.documentos))
+    monkeypatch.setattr(dados_motos, "cobrancas", SimpleNamespace(listar_por_contrato=lambda id_: base.cobrancas))
+    monkeypatch.setattr(
+        dados_motos, "relatorios", SimpleNamespace(resultado_por_moto=lambda i, f: {"resultado": base.financeiro})
+    )
     return base
 
 

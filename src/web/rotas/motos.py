@@ -1,12 +1,14 @@
 """Motos: lista com filtro, busca e paginação (HTMX troca só o resultado)."""
 
 from urllib.parse import urlencode
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.domain import motos_lista
 from src.domain.paginacao import OPCOES_POR_PAGINA
 from src.web import dados_motos
+from src.web.apresentacao import formatar_placa
 from src.web.dependencias import exigir_dono
 from src.web.sessao import Sessao
 from src.web.templates import renderizar
@@ -86,3 +88,59 @@ def lista(
     }
     modelo = "motos/_resultado.html" if _so_o_resultado(request) else "motos/lista.html"
     return renderizar(request, modelo, contexto)
+
+
+# ------------------------------------------------------------------ ficha --
+
+def _moto_ou_404(moto_id: str) -> dict:
+    try:
+        UUID(moto_id)
+    except ValueError:
+        raise HTTPException(status_code=404)
+    moto = dados_motos.obter_moto(moto_id)
+    if moto is None:
+        raise HTTPException(status_code=404)
+    return moto
+
+
+def _contexto_da_aba(moto: dict, aba: str) -> dict:
+    return {
+        "moto": moto,
+        "aba": aba,
+        "abas_da_ficha": [
+            (chave, rotulo, f"/motos/{moto['id']}/abas/{chave}", f"/motos/{moto['id']}?aba={chave}")
+            for chave, rotulo in motos_lista.ABAS_FICHA
+        ],
+        "status_rotulo": motos_lista.STATUS_ROTULO,
+        "a": dados_motos.carregar_aba(moto, aba),
+    }
+
+
+@router.get("/motos/{moto_id}")
+def ficha(
+    request: Request,
+    moto_id: str,
+    aba: str | None = None,
+    _: Sessao = Depends(exigir_dono),
+):
+    moto = _moto_ou_404(moto_id)
+    contexto = _contexto_da_aba(moto, motos_lista.aba_valida(aba))
+    contexto.update(
+        titulo=f"Moto {formatar_placa(moto['placa'])}",
+        cabecalho=dados_motos.carregar_cabecalho(moto),
+    )
+    return renderizar(request, "motos/ficha.html", contexto)
+
+
+@router.get("/motos/{moto_id}/abas/{aba}")
+def aba_da_ficha(
+    request: Request,
+    moto_id: str,
+    aba: str,
+    _: Sessao = Depends(exigir_dono),
+):
+    """Conteúdo de uma aba, para o HTMX trocar sem recarregar a página."""
+    if aba not in {chave for chave, _rotulo in motos_lista.ABAS_FICHA}:
+        raise HTTPException(status_code=404)
+    moto = _moto_ou_404(moto_id)
+    return renderizar(request, "motos/_painel.html", _contexto_da_aba(moto, aba))

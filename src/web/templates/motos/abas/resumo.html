@@ -1,0 +1,48 @@
+{% set c = a.contrato %}
+<div class="grade duas-colunas">
+  <section class="cartao" aria-labelledby="t-contrato">
+    <div class="cartao-cab"><h2 id="t-contrato">Contrato ativo</h2>{% if c %}<a href="/contratos" aria-label="Ver contratos de {{ c.cliente }}">Ver contrato</a>{% endif %}</div>
+    {% if c %}
+    <div class="flex items-center gap-3 mb-4">
+      <span class="avatar text-white" aria-hidden="true">{{ c.cliente[:1]|upper }}</span>
+      <div class="min-w-0">
+        <strong class="block">{{ c.cliente }}</strong>
+        <span class="text-texto-2 text-[13px]">desde {{ c.data_inicio|data_br }} · {{ c.periodicidade }}</span>
+      </div>
+    </div>
+    <dl class="dl">
+      <div><dt>Valor / período</dt><dd class="mono">{{ c.valor_periodo|moeda }}</dd></div>
+      <div><dt>Próxima cobrança</dt><dd class="mono">{{ c.proxima_cobranca|data_br }}</dd></div>
+      <div><dt>Caução</dt><dd class="mono">{{ c.caucao|moeda }}</dd></div>
+    </dl>
+    {% else %}
+    <p class="text-texto-2">Nenhum contrato ativo para esta moto.</p>
+    {% endif %}
+  </section>
+
+  <section class="cartao" aria-labelledby="t-km">
+    <div class="cartao-cab"><h2 id="t-km">Quilometragem</h2></div>
+    {% if a.leituras %}
+    <ul class="grid gap-3 list-none p-0 m-0">
+      {% for h in a.leituras %}
+      <li><span class="mono block">{{ h.km|milhar }} km</span><span class="text-texto-2 text-[13px]">{{ h.data|data_br }} · {{ h.origem }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-texto-2">Nenhuma leitura registrada.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="cartao mt-4" aria-labelledby="t-dados">
+  <div class="cartao-cab"><h2 id="t-dados">Dados da moto</h2></div>
+  <dl class="dl">
+    <div><dt>Renavam</dt><dd class="mono">{{ moto.renavam or "—" }}</dd></div>
+    <div><dt>Chassi</dt><dd class="mono">{{ moto.chassi or "—" }}</dd></div>
+    <div><dt>Placa</dt><dd class="mono">{{ moto.placa|placa_br }}</dd></div>
+    <div><dt>Valor de aquisição</dt><dd class="mono">{{ moto.valor_aquisicao|moeda }}</dd></div>
+    <div><dt>Data de aquisição</dt><dd class="mono">{{ moto.data_aquisicao|data_br }}</dd></div>
+    <div><dt>Situação</dt><dd>{{ status_rotulo[moto.status] }}</dd></div>
+  </dl>
+  {% if moto.observacoes %}<p class="mt-4 text-texto-2">{{ moto.observacoes }}</p>{% endif %}
+</section>

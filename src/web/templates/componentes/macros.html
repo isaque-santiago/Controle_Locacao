@@ -118,6 +118,14 @@
 <div class="painel" id="painel-{{ id }}" role="tabpanel" aria-labelledby="aba-{{ id }}"{% if not aberto %} hidden{% endif %}>{{ caller() }}</div>
 {%- endmacro %}
 
+{# Abas que carregam o painel pelo HTMX (um só painel, `painel_remoto`). itens: lista de (id, rotulo, url_do_painel, url_da_pagina);
+   `ativa` é o id selecionado. Sem JS, o rótulo é um botão sem efeito: a página também abre direto na aba (url_da_pagina). #}
+{% macro abas_remotas(rotulo, itens, ativa, painel="painel-aba") -%}
+<div class="abas" role="tablist" aria-label="{{ rotulo }}">
+  {% for id, texto, url_painel, url_pagina in itens %}<button role="tab" type="button" id="aba-{{ id }}" data-remoto aria-selected="{{ 'true' if id == ativa else 'false' }}" aria-controls="{{ painel }}"{% if id != ativa %} tabindex="-1"{% endif %} hx-get="{{ url_painel }}" hx-target="#{{ painel }}" hx-swap="outerHTML" hx-push-url="{{ url_pagina }}">{{ texto }}</button>{% endfor %}
+</div>
+{%- endmacro %}
+
 {# Botão que abre um diálogo (ver `dialogo`). #}
 {% macro abrir_dialogo(id, rotulo, icone_nome=None, variante="primario") -%}
 {{ botao(rotulo, variante=variante, icone_nome=icone_nome, extra='data-abrir="' ~ id ~ '"') }}

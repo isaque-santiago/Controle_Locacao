@@ -96,3 +96,43 @@ def test_situacao_do_documento():
     assert ml.situacao_documento({"regularizado": True, "vencimento": "2020-01-01"}, hoje) == ("ok", "Em dia")
     assert ml.situacao_documento({"regularizado": False, "vencimento": "2026-10-05"}, hoje) == ("vencido", "Vencido")
     assert ml.situacao_documento({"regularizado": False, "vencimento": "2026-10-06"}, hoje) == ("a_vencer", "A vencer")
+
+
+def _linha(**extra):
+    base = {
+        "item": {"nome": "Troca de óleo"},
+        "intervalo_km_efetivo": 3000,
+        "intervalo_minimo_km_efetivo": None,
+        "intervalo_dias_efetivo": 180,
+        "ultima_km": 15998,
+        "proxima_km": 18998,
+        "proxima_data": None,
+    }
+    return {**base, **extra}
+
+
+def test_item_do_plano_com_intervalo_em_km_e_dias():
+    r = ml.descrever_item_plano(_linha(), 18420, "proxima", date(2026, 10, 6))
+    assert (r.item, r.intervalo, r.ultima, r.proxima, r.restante) == (
+        "Troca de óleo", "3.000 km / 180 dias", "15.998 km", "18.998 km", "578 km",
+    )
+    assert ml.rotulo_situacao_plano(r.situacao) == "Próxima"
+
+
+def test_item_do_plano_com_faixa_de_km():
+    r = ml.descrever_item_plano(_linha(intervalo_minimo_km_efetivo=2000, intervalo_dias_efetivo=None), 0, "em_dia", date(2026, 10, 6))
+    assert r.intervalo == "2.000 a 3.000 km"
+
+
+def test_item_do_plano_vencido_por_km_e_por_data():
+    r = ml.descrever_item_plano(_linha(), 19100, "vencida", date(2026, 10, 6))
+    assert r.restante == "vencida há 102 km"
+    so_data = _linha(proxima_km=None, intervalo_km_efetivo=None, proxima_data=date(2026, 10, 1))
+    assert ml.descrever_item_plano(so_data, 0, "vencida", date(2026, 10, 6)).restante == "vencida há 5 dias"
+    assert ml.descrever_item_plano({**so_data, "proxima_data": "2026-10-16"}, 0, "em_dia", date(2026, 10, 6)).restante == "10 dias"
+
+
+def test_item_do_plano_sem_dados_usa_travessao():
+    vazio = _linha(intervalo_km_efetivo=None, intervalo_dias_efetivo=None, ultima_km=None, proxima_km=None)
+    r = ml.descrever_item_plano(vazio, 0, "em_dia", date(2026, 10, 6))
+    assert (r.intervalo, r.ultima, r.proxima, r.restante) == ("—", "—", "—", "—")

@@ -1,0 +1,30 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas %}
+
+{% block conteudo %}
+{{ voltar("/motos", "Voltar para motos") }}
+
+<header class="cabecalho">
+  <div class="cabecalho-texto">
+    <div class="ficha-titulo">
+      <h1 class="so-leitor">Moto {{ moto.placa|placa_br }}</h1>
+      <span class="placa" aria-hidden="true">{{ moto.placa|placa_br }}</span>
+      {{ selo(status_rotulo[moto.status], tom_status_moto[moto.status]) }}
+    </div>
+    <p class="mt-3">
+      {{ moto.marca }} {{ moto.modelo }}{% if moto.ano_modelo %}, {{ moto.ano_modelo }}{% endif %}{% if moto.cor %}, {{ moto.cor|lower }}{% endif %}.
+      {% if cabecalho.locatario %}Locada para {{ cabecalho.locatario }} desde {{ cabecalho.desde|data_br }}.{% endif %}
+    </p>
+  </div>
+</header>
+
+<dl class="grade kpis">
+  {{ kpi("Km atual", (moto.km_atual|milhar) ~ " km") }}
+  {{ kpi("Ano fab. / modelo", (moto.ano_fabricacao or "—") ~ " / " ~ (moto.ano_modelo or "—")) }}
+  {{ kpi("Cor", moto.cor or "—") }}
+  {{ kpi("Locação sugerida", (moto.valor_locacao_sugerido|moeda) ~ " / mês") }}
+</dl>
+
+{{ abas_remotas("Seções da ficha", abas_da_ficha, aba) }}
+{% include "motos/_painel.html" %}
+{% endblock %}

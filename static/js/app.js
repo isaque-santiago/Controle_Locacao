@@ -21,11 +21,15 @@
   });
 
   // ---- Abas: clique e setas, Home e End ----
-  function irParaAba(lista, aba) {
+  // Abas com data-remoto carregam o painel pelo HTMX (um painel só): o JS não esconde painéis e,
+  // ao navegar por setas, só move o foco; Enter ou Espaço (clique) é que abre a aba.
+  function irParaAba(lista, aba, soFoco) {
+    var remota = aba.hasAttribute('data-remoto');
     lista.querySelectorAll('[role="tab"]').forEach(function (a) {
       var selecionada = a === aba;
-      a.setAttribute('aria-selected', selecionada ? 'true' : 'false');
+      if (!(remota && soFoco)) a.setAttribute('aria-selected', selecionada ? 'true' : 'false');
       a.tabIndex = selecionada ? 0 : -1;
+      if (remota) return;
       var painel = document.getElementById(a.getAttribute('aria-controls'));
       if (painel) painel.hidden = !selecionada;
     });
@@ -44,7 +48,8 @@
     var proxima = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: abas.length - 1 }[e.key];
     if (proxima === undefined) return;
     e.preventDefault();
-    irParaAba(lista, abas[(proxima + abas.length) % abas.length]);
+    var destino = abas[(proxima + abas.length) % abas.length];
+    irParaAba(lista, destino, destino.hasAttribute('data-remoto'));
   });
 
   // ---- Chips de filtro em botão: um pressionado por grupo. Chips em link (<a>) vêm prontos do servidor ----

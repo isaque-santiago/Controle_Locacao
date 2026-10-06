@@ -1,0 +1,16 @@
+{% from "componentes/macros.html" import tabela, selo, estado_vazio %}
+{% set tom = {"vencido": "perigo", "a_vencer": "atencao", "ok": "ok"} %}
+{% if a.documentos %}
+{% call tabela([("Documento", ""), ("Referência", ""), ("Vencimento", ""), ("Situação", "")], "Documentos da moto") %}
+  {% for i in a.documentos %}{% set d = i.documento %}
+  <tr>
+    <td class="topo font-medium">{{ d.tipo|upper }}</td>
+    <td class="text-texto-2" data-rotulo="Referência">{{ d.ano_referencia or d.descricao or "—" }}</td>
+    <td class="mono" data-rotulo="Vencimento">{{ d.vencimento|data_br }}</td>
+    <td data-rotulo="Situação">{{ selo(i.rotulo, tom[i.situacao]) }}</td>
+  </tr>
+  {% endfor %}
+{% endcall %}
+{% else %}
+{% call estado_vazio("Nenhum documento cadastrado", "CRLV, seguro e demais documentos desta moto aparecem aqui.", "0") %}{% endcall %}
+{% endif %}

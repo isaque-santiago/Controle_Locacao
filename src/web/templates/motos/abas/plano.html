@@ -1,0 +1,18 @@
+{% from "componentes/macros.html" import tabela, selo, estado_vazio %}
+{% set tom = {"vencida": "perigo", "proxima": "atencao", "em_dia": "ok"} %}
+{% if a.linhas %}
+{% call tabela([("Item", ""), ("Intervalo", ""), ("Última", ""), ("Próxima", ""), ("Restante", ""), ("Situação", "")], "Plano de manutenção da moto") %}
+  {% for l in a.linhas %}
+  <tr>
+    <td class="topo font-medium">{{ l.item }}</td>
+    <td class="text-texto-2" data-rotulo="Intervalo">{{ l.intervalo }}</td>
+    <td class="mono" data-rotulo="Última">{{ l.ultima }}</td>
+    <td class="mono" data-rotulo="Próxima">{{ l.proxima }}</td>
+    <td class="mono" data-rotulo="Restante">{{ l.restante }}</td>
+    <td data-rotulo="Situação">{{ selo(a.rotulo_situacao(l.situacao), tom[l.situacao]) }}</td>
+  </tr>
+  {% endfor %}
+{% endcall %}
+{% else %}
+{% call estado_vazio("Nenhum item no plano", "Esta moto ainda não tem itens de manutenção programados.", "0") %}{% endcall %}
+{% endif %}

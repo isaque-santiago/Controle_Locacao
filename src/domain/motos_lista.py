@@ -123,3 +123,53 @@ def situacao_documento(documento: dict, hoje: date) -> tuple[str, str]:
     if date.fromisoformat(str(documento["vencimento"])[:10]) < hoje:
         return "vencido", "Vencido"
     return "a_vencer", "A vencer"
+
+
+@dataclass(frozen=True)
+class LinhaPlano:
+    item: str
+    intervalo: str
+    ultima: str
+    proxima: str
+    restante: str
+    situacao: str  # em_dia, proxima ou vencida
+
+
+_ROTULO_SITUACAO_PLANO = {"vencida": "Vencida", "proxima": "Próxima", "em_dia": "Em dia"}
+
+
+def rotulo_situacao_plano(situacao: str) -> str:
+    return _ROTULO_SITUACAO_PLANO.get(situacao, situacao)
+
+
+def _como_data(valor) -> date:
+    return valor if isinstance(valor, date) else date.fromisoformat(str(valor)[:10])
+
+
+def descrever_item_plano(linha: dict, km_atual: int, situacao: str, hoje: date) -> LinhaPlano:
+    """Textos de uma linha do plano de manutenção da moto (já com intervalos efetivos e próxima km/data)."""
+    partes = []
+    if linha.get("intervalo_km_efetivo"):
+        faixa = f"{_milhar(linha['intervalo_minimo_km_efetivo'])} a " if linha.get("intervalo_minimo_km_efetivo") else ""
+        partes.append(f"{faixa}{_milhar(linha['intervalo_km_efetivo'])} km")
+    if linha.get("intervalo_dias_efetivo"):
+        partes.append(f"{linha['intervalo_dias_efetivo']} dias")
+
+    proxima_km = linha.get("proxima_km")
+    if proxima_km is not None:
+        falta = proxima_km - km_atual
+        restante = f"{_milhar(falta)} km" if falta >= 0 else f"vencida há {_milhar(falta)} km"
+    elif linha.get("proxima_data"):
+        dias = (_como_data(linha["proxima_data"]) - hoje).days
+        restante = f"{dias} dias" if dias >= 0 else f"vencida há {abs(dias)} dias"
+    else:
+        restante = "—"
+
+    return LinhaPlano(
+        item=linha["item"]["nome"],
+        intervalo=" / ".join(partes) or "—",
+        ultima=f"{_milhar(linha['ultima_km'])} km" if linha.get("ultima_km") else "—",
+        proxima=f"{_milhar(proxima_km)} km" if proxima_km else "—",
+        restante=restante,
+        situacao=situacao,
+    )
