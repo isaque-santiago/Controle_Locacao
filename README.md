@@ -35,7 +35,7 @@ pytest
 
 O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisões em
 [Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
-rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída:** app, login/logout, sessão,
+rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. As demais telas ainda não existem no app novo
 (o menu mostra "Em migração").
 

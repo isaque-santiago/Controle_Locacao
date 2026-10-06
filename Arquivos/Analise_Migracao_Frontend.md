@@ -1,8 +1,7 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
-> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 1 (fundação)
-> implementada em 06/10/2026 na branch `fase-1-fundacao-web`; falta só a validação do login real no banco de
-> desenvolvimento (critério de aceite) para marcá-la como concluída. Próxima: Fase 2 (Dashboard e Motos).**
+> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 1 (fundação) CONCLUÍDA em
+> 06/10/2026 (login, F5 e logout validados no banco de desenvolvimento). Próxima: Fase 2 (Dashboard e Motos).**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
