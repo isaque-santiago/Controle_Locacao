@@ -1,12 +1,20 @@
 """Fábrica do cliente Supabase (com sessão do usuário, para valer o RLS)."""
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from time import monotonic
 
 import streamlit as st
 from streamlit_cookies_controller import CookieController
-from supabase import Client, create_client
+from supabase import Client, ClientOptions, create_client
 
 from src.config import get_supabase_anon_key, get_supabase_url
+
+# Cliente da requisição web (FastAPI). Quando definido, tem prioridade sobre o cliente
+# guardado no st.session_state, para os repositórios funcionarem nos dois frontends.
+_CLIENTE_REQUISICAO: ContextVar[Client | None] = ContextVar(
+    "cliente_requisicao", default=None
+)
 
 _CHAVE_CLIENTE = "supabase_client"
 _CHAVE_COOKIES = "cookie_controller"
@@ -47,8 +55,53 @@ def _opcoes_cookie() -> dict:
     return opcoes
 
 
+def criar_cliente_anonimo() -> Client:
+    """Cliente novo, sem usuário (anon key), para entrar ou renovar a sessão.
+
+    Sem renovação automática nem persistência: no app web quem guarda e renova os
+    tokens é o servidor de sessões."""
+    return create_client(
+        get_supabase_url(),
+        get_supabase_anon_key(),
+        ClientOptions(auto_refresh_token=False, persist_session=False),
+    )
+
+
+def criar_cliente_autenticado(access_token: str) -> Client:
+    """Cliente com o token do usuário (a RLS vale), sem chamada de rede extra.
+
+    Usa a anon key; a service_role nunca é usada no app."""
+    return create_client(
+        get_supabase_url(),
+        get_supabase_anon_key(),
+        ClientOptions(
+            headers={"Authorization": f"Bearer {access_token}"},
+            auto_refresh_token=False,
+            persist_session=False,
+        ),
+    )
+
+
+def definir_cliente_da_requisicao(cliente: Client | None) -> None:
+    """Define o cliente que `get_client()` devolve no contexto atual (requisição web)."""
+    _CLIENTE_REQUISICAO.set(cliente)
+
+
+@contextmanager
+def usar_cliente(cliente: Client):
+    """Usa `cliente` como o `get_client()` do bloco (ex.: consultar o papel no login)."""
+    marca = _CLIENTE_REQUISICAO.set(cliente)
+    try:
+        yield cliente
+    finally:
+        _CLIENTE_REQUISICAO.reset(marca)
+
+
 def get_client() -> Client:
     """Retorna o cliente Supabase da sessão atual, criando se necessário."""
+    cliente_da_requisicao = _CLIENTE_REQUISICAO.get()
+    if cliente_da_requisicao is not None:
+        return cliente_da_requisicao
     if _CHAVE_CLIENTE not in st.session_state:
         st.session_state[_CHAVE_CLIENTE] = create_client(
             get_supabase_url(), get_supabase_anon_key()

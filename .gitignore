@@ -13,3 +13,5 @@ e2e/capturas/
 
 e2e/capturas_atuais/
 e2e/referencia/
+
+tools/tailwindcss*

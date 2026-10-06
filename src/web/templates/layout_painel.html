@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "componentes/macros.html" import icone %}
+{# Painel do dono: barra lateral (≥1100 px), trilho de ícones (720–1099 px) e barra inferior (<720 px). #}
+{% set ativo = item_ativo(caminho_atual) %}
+{% set inicial = (usuario_nome or "?")[0]|upper %}
+
+{% block corpo %}
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<div class="app">
+
+  <aside class="lateral" aria-label="Menu principal">
+    <a class="marca" href="/">
+      <span class="marca-simbolo" aria-hidden="true">CL</span>
+      <div><strong>Controle de Locação</strong><span class="sub">frota de motos</span></div>
+    </a>
+    <nav aria-label="Seções do sistema">
+      {% for grupo, itens in grupos_nav %}
+      <div class="nav-grupo"><h2>{{ grupo }}</h2><ul class="nav-lista">
+        {% for item in itens %}
+        <li><a class="nav-item" href="{{ item.caminho }}" title="{{ item.rotulo }}"{% if item == ativo %} aria-current="page"{% endif %}>{{ icone(item.icone) }}<span class="rotulo">{{ item.rotulo }}</span></a></li>
+        {% endfor %}
+      </ul></div>
+      {% endfor %}
+    </nav>
+    <div class="lateral-rodape">
+      <button class="btn-lateral" type="button" data-alternar-tema title="Alternar tema">{{ icone('tema') }}<span>Alternar tema</span></button>
+      <div class="usuario"><span class="avatar" aria-hidden="true">{{ inicial }}</span><div>{{ usuario_nome }}</div></div>
+      <form method="post" action="/logout">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn-lateral" type="submit" title="Sair">{{ icone('sair') }}<span>Sair</span></button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="coluna">
+    <header class="topo-movel">
+      <a class="marca" href="/"><span class="marca-simbolo" aria-hidden="true">CL</span><div><strong>Controle de Locação</strong></div></a>
+      <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema">{{ icone('tema') }}</button>
+    </header>
+
+    <main id="conteudo" tabindex="-1">
+      <div id="avisos" aria-live="polite"></div>
+      {% block conteudo %}{% endblock %}
+    </main>
+  </div>
+
+  <nav class="barra-inferior" aria-label="Navegação principal">
+    {% for item in barra_inferior %}
+    <a href="{{ item.caminho }}"{% if item == ativo %} aria-current="page"{% endif %}>{{ icone(item.icone) }}{{ item.rotulo if item.chave != 'dashboard' else 'Início' }}</a>
+    {% endfor %}
+    <button type="button" data-abrir="dlg-mais"{% if mais_esta_ativo(caminho_atual) %} aria-current="page"{% endif %}>{{ icone('mais') }}Mais</button>
+  </nav>
+</div>
+
+<dialog class="folha" id="dlg-mais" aria-labelledby="t-mais">
+  <div class="dialogo-cab"><h2 id="t-mais">Mais opções</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
+  <ul class="folha-lista">
+    {% for item in folha_mais %}
+    <li><a href="{{ item.caminho }}">{{ icone(item.icone) }}{{ item.rotulo }}</a></li>
+    {% endfor %}
+    <li><form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button type="submit">{{ icone('sair') }}Sair</button></form></li>
+  </ul>
+</dialog>
+{% endblock %}

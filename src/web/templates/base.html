@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR"{% if tema %} data-tema="{{ tema }}"{% endif %}>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{# HTMX sem estilos nem eval inline (a CSP não permite) e com erros 4xx/5xx trocados na tela #}
+<meta name="htmx-config" content='{"includeIndicatorStyles": false, "allowEval": false, "responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "[45]..", "swap": true, "error": true}]}'>
+<title>{% block titulo_pagina %}{% if titulo %}{{ titulo }} · {% endif %}Controle de Locação{% endblock %}</title>
+<link rel="icon" href="{{ url_estatico('favicon.svg') }}" type="image/svg+xml">
+<link rel="stylesheet" href="{{ url_estatico('css/app.css') }}">
+<script src="{{ url_estatico('js/htmx.min.js') }}" defer></script>
+<script src="{{ url_estatico('js/app.js') }}" defer></script>
+</head>
+<body{% if csrf_token %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
+{% include "_icones.html" %}
+{% block corpo %}{% endblock %}
+</body>
+</html>

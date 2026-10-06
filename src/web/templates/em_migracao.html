@@ -1,0 +1,9 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, estado_vazio, botao %}
+
+{% block conteudo %}
+{{ cabecalho_pagina(item.rotulo, "Esta tela ainda não foi migrada.") }}
+{% call estado_vazio("Em migração", "A tela de " ~ item.rotulo ~ " segue no sistema atual até a sua fase da migração. Ela vai usar os mesmos padrões de lista, ficha e formulário.", "·") %}
+{{ botao("Voltar ao dashboard", href="/", variante="primario") }}
+{% endcall %}
+{% endblock %}

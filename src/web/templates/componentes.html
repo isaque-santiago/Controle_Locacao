@@ -1,0 +1,75 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import icone, botao, campo, campo_lista, aviso, selo, placa, cartao, cabecalho_pagina, voltar, estado_vazio, kpi, tabela, abas, painel_aba, abrir_dialogo, dialogo, paginacao %}
+{# Catálogo dos componentes (só em LOCACAO_AMBIENTE=dev). Dados fictícios. #}
+
+{% block conteudo %}
+{% call cabecalho_pagina("Componentes", "Catálogo visual da Fase 1. Use para conferir larguras (320 a 1440 px), tema claro e escuro e teclado.") %}
+{{ botao("Novo item", variante="primario", icone_nome="novo") }}
+{{ botao("Secundário") }}
+{% endcall %}
+
+{{ voltar("/", "Voltar ao dashboard") }}
+
+<h2 class="mb-3">Avisos</h2>
+<div class="grid gap-2 mb-6">
+  {{ aviso("erro", "E-mail, CPF ou senha inválidos.") }}
+  {{ aviso("atencao", "A sessão expira em 5 minutos por inatividade.", "Atenção:") }}
+  {{ aviso("sucesso", "Manutenção registrada.") }}
+  {{ aviso("info", "O sistema atual continua funcionando em paralelo.") }}
+</div>
+
+<h2 class="mb-3">Indicadores, selos e placa</h2>
+<dl class="grade kpis">
+  {{ kpi("Motos alugadas", "18 / 24", "6 disponíveis para alugar") }}
+  {{ kpi("Recebido no mês", 21480|moeda, "de " ~ (26200|moeda) ~ " previstos") }}
+  {{ kpi("Em atraso", 2310|moeda, "4 cobranças, 3 clientes", atencao=True) }}
+  {{ kpi("Na oficina", "3", "1 com previsão para amanhã") }}
+</dl>
+<div class="flex flex-wrap items-center gap-2 mb-6">
+  {{ selo("Alugada", "ok") }} {{ selo("Na oficina", "atencao") }} {{ selo("Em atraso", "perigo") }} {{ selo("Informativo", "info") }} {{ selo("Livre", "neutro") }}
+  {{ placa("QRS-4T21") }}
+</div>
+
+<h2 class="mb-3">Tabela (cartões no celular) e paginação</h2>
+<div class="mb-6">
+{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", "")], "Motos de exemplo") %}
+  <tr><td class="c-placa">{{ placa("QRS-4T21") }}</td><td class="c-moto modelo">Honda CG 160 Fan<span class="sub">2023, vermelha</span></td><td class="c-sit">{{ selo("Alugada", "ok") }}</td><td class="c-km num mono" data-rotulo="Km">18.420</td><td class="c-loc" data-rotulo="Locatário">Joana Prado</td></tr>
+  <tr><td class="c-placa">{{ placa("FLM-7K03") }}</td><td class="c-moto modelo">Honda CG 160 Start<span class="sub">2024, azul</span></td><td class="c-sit">{{ selo("Na oficina", "atencao") }}</td><td class="c-km num mono" data-rotulo="Km">9.870</td><td class="c-loc" data-rotulo="Locatário">Sem locatário</td></tr>
+{% endcall %}
+{{ paginacao(1, 2, 24, url_proxima="/componentes?pagina=2") }}
+</div>
+
+<h2 class="mb-3">Abas e estado vazio</h2>
+<div class="mb-6">
+  {{ abas("Seções da ficha", [("resumo", "Resumo"), ("vistorias", "Vistorias")]) }}
+  {% call painel_aba("resumo", aberto=True) %}
+    {% call cartao("Dados da moto") %}<p>Modelo, ano, cor e quilometragem aparecem aqui.</p>{% endcall %}
+  {% endcall %}
+  {% call painel_aba("vistorias") %}
+    {% call estado_vazio("Nenhuma vistoria registrada", "As vistorias de entrega e de devolução aparecem aqui, com as fotos de cada uma.") %}
+      {{ botao("Registrar vistoria", variante="primario") }}
+    {% endcall %}
+  {% endcall %}
+</div>
+
+<h2 class="mb-3">Formulário e diálogo</h2>
+<div class="mb-6">
+  {% call cartao() %}
+  <div class="formulario">
+    {{ campo("f-inicio", "Início", valor="06/10/2026", inputmode="numeric", obrigatorio=True) }}
+    {{ campo("f-valor", "Valor da semana", valor="320,00", prefixo="R$", mono=True, inputmode="decimal", ajuda="Cobrado toda semana.") }}
+    {{ campo("f-placa", "Placa", valor="QRS", erro="Informe a placa completa.") }}
+    {{ campo_lista("f-dia", "Dia de vencimento", [("seg", "Segunda-feira"), ("qua", "Quarta-feira"), ("sex", "Sexta-feira")], selecionado="qua") }}
+  </div>
+  <div class="rodape-acoes">
+    {{ botao("Cancelar") }}
+    {{ abrir_dialogo("dlg-exemplo", "Registrar manutenção", icone_nome="manutencao") }}
+  </div>
+  {% endcall %}
+  {% call dialogo("dlg-exemplo", "Registrar manutenção", "Salvar manutenção", "/componentes", csrf_token) %}
+    {{ campo("m-data", "Data", valor="05/10/2026") }}
+    {{ campo("m-km", "Quilometragem", valor="18.420", mono=True) }}
+    {{ campo("m-valor", "Valor", valor="85,00", prefixo="R$", mono=True) }}
+  {% endcall %}
+</div>
+{% endblock %}

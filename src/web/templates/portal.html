@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "componentes/macros.html" import icone, cabecalho_pagina, estado_vazio %}
+{# Portal do locatário: cabeçalho simples, sem o menu do dono. #}
+
+{% block corpo %}
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<header class="portal-topo">
+  <a class="marca" href="/portal"><span class="marca-simbolo" aria-hidden="true">CL</span><div><strong>Controle de Locação</strong></div></a>
+  <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema">{{ icone('tema') }}</button>
+  <form method="post" action="/logout">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn-texto" type="submit">{{ icone('sair') }}Sair</button>
+  </form>
+</header>
+<main id="conteudo" tabindex="-1">
+  <div id="avisos" aria-live="polite"></div>
+  {{ cabecalho_pagina("Portal do locatário", "Seu contrato, suas cobranças e a troca de óleo da moto.") }}
+  {{ estado_vazio("Portal em migração", "O portal segue no sistema atual até a sua fase da migração.", "·") }}
+</main>
+{% endblock %}

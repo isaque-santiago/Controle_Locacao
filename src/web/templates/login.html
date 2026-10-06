@@ -1,0 +1,16 @@
+{% extends "layout_acesso.html" %}
+{% from "componentes/macros.html" import aviso, campo, botao %}
+{% set titulo = "Entrar" %}
+
+{% block caixa %}
+<form class="cartao" method="post" action="/login">
+  <h1>Entrar</h1>
+  {% if mensagem_aviso %}{{ aviso("atencao", mensagem_aviso) }}{% endif %}
+  {% if erro %}{{ aviso("erro", erro) }}{% endif %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_login }}">
+  <input type="hidden" name="proximo" value="{{ proximo }}">
+  {{ campo("identificador", "E-mail ou CPF", valor=identificador, autocomplete="username", obrigatorio=True, extra='autofocus autocapitalize="none" spellcheck="false"') }}
+  {{ campo("senha", "Senha", tipo="password", autocomplete="current-password", obrigatorio=True) }}
+  {{ botao("Entrar", tipo="submit", variante="primario", bloco=True) }}
+</form>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, estado_vazio, botao %}
+
+{% block conteudo %}
+{{ cabecalho_pagina("Dashboard", "Visão geral da frota e das cobranças.") }}
+{% call estado_vazio("Dashboard em migração", "Os indicadores, o medidor de ocupação e as pendências chegam na próxima fase da migração. Enquanto isso, use o sistema atual.", "·") %}
+{{ botao("Ver as motos", href="/motos", variante="primario") }}
+{% endcall %}
+{% endblock %}

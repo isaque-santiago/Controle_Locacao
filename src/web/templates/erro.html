@@ -1,0 +1,15 @@
+{% extends "layout_acesso.html" %}
+{% from "componentes/macros.html" import botao %}
+
+{% block caixa %}
+<section class="cartao vazio acesso-erro" aria-labelledby="titulo-erro">
+  <span class="adesivo" aria-hidden="true">{{ status }}</span>
+  <h1 id="titulo-erro">{{ titulo }}</h1>
+  <p>{{ mensagem }}</p>
+  {% if sessao %}
+  {{ botao("Ir para o início", href="/portal" if sessao.papel == "locatario" else "/", variante="primario") }}
+  {% else %}
+  {{ botao("Entrar", href="/login", variante="primario") }}
+  {% endif %}
+</section>
+{% endblock %}
