@@ -118,7 +118,15 @@
   document.body.addEventListener('htmx:afterSwap', function (e) {
     var alvo = e.detail.target;
     var dialogo = alvo && alvo.closest ? alvo.closest('dialog') : null;
-    if (dialogo && !dialogo.open) dialogo.showModal();
+    if (dialogo && !dialogo.open) {
+      dialogo.showModal();
+      // Foco no primeiro campo (com o conteúdo selecionado, para digitar por cima do valor atual)
+      var primeiro = dialogo.querySelector('input:not([type="hidden"]):not([type="checkbox"]), select, textarea');
+      if (primeiro) {
+        primeiro.focus();
+        if (primeiro.select && primeiro.type !== 'date') primeiro.select();
+      }
+    }
   });
   document.addEventListener('close', function (e) {
     var dialogo = e.target;

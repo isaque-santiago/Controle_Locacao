@@ -114,7 +114,8 @@ def _aba_resumo(moto: dict, hoje: date) -> dict:
             "caucao": contrato["caucao_valor"],
             "proxima_cobranca": abertas[0]["vencimento"] if abertas else None,
         }
-    leituras = sorted(motos.historico(moto["id"]), key=lambda h: h["data"], reverse=True)
+    # Mesma data: a leitura maior primeiro (a mais recente do dia)
+    leituras = sorted(motos.historico(moto["id"]), key=lambda h: (h["data"], h["km"]), reverse=True)
     return {"contrato": resumo_contrato, "leituras": leituras[:_LEITURAS_DE_KM_NA_FICHA]}
 
 

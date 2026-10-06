@@ -197,7 +197,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .btn-perigo:hover {background: var(--perigo-fundo);}
 .btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-campo); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer;}
 .btn-bloco {width: 100%;}
-.campo {display: grid; gap: var(--e2); min-width: 0;}
+.campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
 .campo small {color: var(--texto-3); font-size: 12px;}
 .entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--linha-forte); background: var(--superficie-elevada);}
@@ -329,7 +329,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 .rodape-acoes {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--linha);}
 
 /* ---------- Diálogos ---------- */
-dialog {border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
+dialog {margin: auto; border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
 dialog::backdrop {background: rgba(21,24,28,.55);}
 .dialogo-cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
 .dialogo-cab h2 {font-size: 20px;}
