@@ -65,6 +65,7 @@ async def sessao_opcional(request: Request) -> Sessao | None:
         return None
     await run_in_threadpool(_garantir_tokens_validos, estado, sessao)
     db.definir_cliente_da_requisicao(sessao.cliente)
+    db.definir_usuario_da_requisicao(sessao.usuario_id)
     request.state.sessao = sessao
     return sessao
 
