@@ -37,8 +37,9 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 [Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
-Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). As demais telas ainda não existem no app novo
-(o menu mostra "Em migração").
+Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 iniciada (06/10/2026):** Clientes
+(`/clientes`, `/clientes/{id}`) está em homologação parcial no banco de desenvolvimento. As demais
+telas continuam mostrando "Em migração".
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -55,6 +56,13 @@ Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). As demais telas ainda não ex
   `src/domain`; os testes de rota trocam esses dois módulos por dados fictícios (`tests/web/conftest.py`).
 - **Cache** de leituras (`repositories/consultas.py`): por usuário e por dia, 60 s; sem usuário identificado não
   há cache. O limite de "gerar cobranças uma vez por hora" também é por usuário.
+
+**Continuidade da Fase 3.** Clientes reaproveita os mesmos padrões de lista, abas e diálogo em
+`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A conferência manual confirmou contagens, busca,
+cadastro, edição, responsividade e três abas, mas ainda faltam a aba Portal e o cartão de contrato ativo no Resumo;
+considere também paginar a lista extensa da aba Pagamentos. Após corrigir e repetir o aceite, a próxima página é
+Contratos, preservando no assistente as quatro etapas e o rascunho ao voltar. Não marque Clientes nem a Fase 3 como
+concluída antes desse fechamento.
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

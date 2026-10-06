@@ -287,6 +287,13 @@ table.dados {width: 100%; border-collapse: collapse;}
   .dados td.acao {grid-column: 1 / -1; margin-top: var(--e1);}
   .dados td.num {text-align: left;}
 
+  /* Em caixas muito estreitas (320 px de viewport), duas colunas cortavam CPF e telefone. */
+  @container (max-width: 340px) {
+    .dados tbody tr {grid-template-columns: minmax(0, 1fr);}
+    .dados td {min-width: 0; overflow-wrap: anywhere;}
+    .dados td .mono, .dados td.mono {white-space: normal;}
+  }
+
 @media (max-width: 719px) {
   .barra-filtros {grid-template-columns: 1fr;}
 }

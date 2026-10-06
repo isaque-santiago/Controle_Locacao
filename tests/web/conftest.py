@@ -287,6 +287,49 @@ def acoes_motos_falsas(monkeypatch, base_motos):
     return falsas
 
 
+class BaseClientes:
+    def __init__(self):
+        self.id = "00000000-0000-0000-0000-0000000000c1"
+        self.clientes = [{"id": self.id, "nome": "Maria <b>Silva</b>", "cpf": "52998224725",
+                          "telefone": "11987654321", "whatsapp": "11987654321", "email": "maria@example.com",
+                          "endereco": "Rua Um", "cnh_numero": "123", "cnh_categoria": "A",
+                          "cnh_validade": "2027-10-06", "status": "ativo", "observacoes": None}]
+        self.motos = [{"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG"}]
+        self.contratos = [{"id": "k1", "cliente_id": self.id, "moto_id": "m1", "status": "ativo",
+                           "data_inicio": "2026-01-01", "data_encerramento": None,
+                           "valor_periodo": Decimal("300"), "caucao_valor": Decimal("500"), "periodicidade": "semanal"}]
+        self.cobrancas = [{"id": "b1", "vencimento": "2026-10-01", "tipo": "locacao", "valor": Decimal("300"),
+                            "saldo": Decimal("100"), "situacao": "atrasada"}]
+
+
+@pytest.fixture(autouse=True)
+def base_clientes(monkeypatch):
+    from src.web import dados_clientes
+    base = BaseClientes()
+    monkeypatch.setattr(dados_clientes, "clientes", SimpleNamespace(listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None)))
+    monkeypatch.setattr(dados_clientes, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    monkeypatch.setattr(dados_clientes, "motos", SimpleNamespace(listar=lambda: base.motos))
+    monkeypatch.setattr(dados_clientes, "configuracoes", SimpleNamespace(obter=lambda: {"alerta_cnh_dias": 30}))
+    monkeypatch.setattr(dados_clientes, "cobrancas", SimpleNamespace(
+        listar_por_contrato=lambda id_: base.cobrancas,
+        historicos_pagamentos=lambda ids: {id_: [] for id_ in ids},
+    ))
+    return base
+
+
+@pytest.fixture(autouse=True)
+def acoes_clientes_falsas(monkeypatch, base_clientes):
+    from src.web import acoes_clientes
+    chamadas = []
+    def criar(dados):
+        chamadas.append(("criar", dados)); return {"id": base_clientes.id, **dados}
+    def atualizar(cliente_id, dados):
+        chamadas.append(("atualizar", cliente_id, dados)); return {"id": cliente_id, **dados}
+    monkeypatch.setattr(acoes_clientes, "criar_cliente", criar)
+    monkeypatch.setattr(acoes_clientes, "atualizar_cliente", atualizar)
+    return chamadas
+
+
 @pytest.fixture
 def relogio():
     return Relogio()

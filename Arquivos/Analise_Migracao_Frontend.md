@@ -1,7 +1,8 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
-> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 2 (Dashboard e Motos)
-> CONCLUÍDA em 06/10/2026. Próxima: Fase 3 (demais páginas, uma por vez).**
+> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
+> uma por vez), INICIADA em 06/10/2026. Clientes está em homologação parcial: lista, cadastro, edição e três abas
+> funcionam, mas faltam a aba Portal e o cartão de contrato ativo no Resumo. Próxima página após esse aceite: Contratos.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -167,6 +168,21 @@ verificados. A suíte terminou com 830 testes passando.
 Clientes → Contratos (assistente em 4 etapas) → Cobranças → Manutenção → Vistorias (com fotos) →
 Documentos → Relatórios (exportação) → Configurações (backup) → Portal do Locatário.
 O Streamlit continua funcionando em paralelo, no mesmo banco, até a última página migrar.
+
+**Andamento (06/10/2026): Clientes em homologação parcial.** O app novo já possui lista com filtro por status, busca por
+nome/CPF, paginação e resposta parcial HTMX; ficha com abas Resumo, Contratos e Pagamentos; cadastro e edição em
+diálogo, com validação por campo, CSRF, mensagens e dados preservados após erro. A rota usa as fronteiras
+`dados_clientes.py` e `acoes_clientes.py`, sem acesso direto ao banco, e tem testes web com serviços falsos.
+Conferência lado a lado realizada no banco de desenvolvimento em 06/10/2026: ambos mostraram 30 clientes após a
+criação do registro fictício `Teste Migração Fase 3 Editado` (24 ativos, 4 bloqueados e 2 inativos); busca por CPF,
+paginação, dados pessoais, contrato, valores financeiros, cadastro e edição bateram. O diálogo funcionou em 320 px,
+fechou com Esc e devolveu o foco. A conferência encontrou e corrigiu o corte de CPF/WhatsApp em 320 px e o rótulo
+técnico `multa_manutencao`. Não houve overflow global nem alvo interativo menor que 44 px.
+
+**Pendências antes do aceite de Clientes:** migrar a quarta aba **Portal** (`src/ui/clientes_portal.py`) e recolocar
+no Resumo o cartão de contrato ativo existente no Streamlit. A aba Pagamentos funciona, porém a massa E2E gera uma
+lista muito longa; avaliar paginação durante esse fechamento. Só depois repetir a ficha lado a lado, registrar o
+aceite e iniciar Contratos (assistente de quatro etapas).
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

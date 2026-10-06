@@ -1,0 +1,11 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% block conteudo %}
+{% call cabecalho_pagina("Clientes", d.total_cadastrados ~ (" cliente cadastrado" if d.total_cadastrados == 1 else " clientes cadastrados")) %}
+{{ botao("Novo cliente", variante="primario", icone_nome="novo", extra='hx-get="/clientes/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+{% endcall %}
+<form id="filtros" role="search" action="/clientes" method="get" hx-get="/clientes" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
+  <div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca">Buscar clientes</label><input class="entrada" id="busca" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="Buscar por nome ou CPF" autocomplete="off"></div></div>
+  <div id="resultado" tabindex="-1">{% include "clientes/_resultado.html" %}</div>
+</form>
+{% endblock %}

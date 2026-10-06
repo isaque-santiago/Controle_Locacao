@@ -16,6 +16,8 @@ from src.web.apresentacao import (
     nome_de_exibicao,
     tema_do_cookie,
 )
+from src.domain.entradas import formatar_telefone
+from src.ui.formatadores import mascarar_cpf
 
 RAIZ = Path(__file__).resolve().parents[2]
 PASTA_ESTATICOS = RAIZ / "static"
@@ -45,6 +47,8 @@ templates.env.filters["data_br"] = formatar_data
 templates.env.filters["moeda_compacta"] = formatar_moeda_compacta
 templates.env.filters["placa_br"] = formatar_placa
 templates.env.filters["milhar"] = formatar_milhar
+templates.env.filters["cpf_mascarado"] = mascarar_cpf
+templates.env.filters["telefone_br"] = formatar_telefone
 templates.env.globals["tom_status_moto"] = TOM_STATUS_MOTO
 
 

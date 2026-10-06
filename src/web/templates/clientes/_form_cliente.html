@@ -1,0 +1,16 @@
+{% from "componentes/macros.html" import campo, campo_lista, area_texto, form_dialogo %}
+{% set v = valores %}{% set e = erros %}
+{% call form_dialogo("Novo cliente" if nova else "Editar dados do cliente", acao, "Salvar cliente", csrf_token, erro_geral) %}
+{{ campo("f-nome", "Nome completo", nome="nome", valor=v.nome, obrigatorio=True, erro=e.nome, autocomplete="name", largo=True, extra='maxlength="160"') }}
+{{ campo("f-cpf", "CPF", nome="cpf", valor=v.cpf, obrigatorio=True, mono=True, inputmode="numeric", erro=e.cpf, autocomplete="off", extra='maxlength="14" placeholder="000.000.000-00"') }}
+{{ campo("f-email", "E-mail", nome="email", valor=v.email, tipo="email", erro=e.email, autocomplete="email") }}
+{{ campo("f-telefone", "Telefone", nome="telefone", valor=v.telefone, inputmode="tel", erro=e.telefone, autocomplete="tel", extra='maxlength="15"') }}
+{{ campo("f-whatsapp", "WhatsApp", nome="whatsapp", valor=v.whatsapp, inputmode="tel", erro=e.whatsapp, autocomplete="tel", extra='maxlength="15"') }}
+{{ campo("f-endereco", "Endereço", nome="endereco", valor=v.endereco, erro=e.endereco, autocomplete="street-address", largo=True) }}
+{{ campo("f-cnh", "Número da CNH", nome="cnh_numero", valor=v.cnh_numero, erro=e.cnh_numero, autocomplete="off") }}
+{{ campo("f-categoria", "Categoria da CNH", nome="cnh_categoria", valor=v.cnh_categoria, erro=e.cnh_categoria, autocomplete="off", extra='maxlength="5"') }}
+{{ campo("f-validade", "Validade da CNH", nome="cnh_validade", valor=v.cnh_validade, tipo="date", erro=e.cnh_validade) }}
+{{ campo_lista("f-status", "Status", [("ativo", "Ativo"), ("bloqueado", "Bloqueado"), ("inativo", "Inativo")], nome="status", selecionado=v.status) }}
+{{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, erro=e.observacoes, largo=True, maximo=1000) }}
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
+{% endcall %}
