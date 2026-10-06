@@ -32,6 +32,8 @@ class Sessao:
     # requisições HTMX da mesma sessão podem chegar ao mesmo tempo.
     trava: Lock = field(default_factory=Lock, repr=False)
     cliente: object | None = field(default=None, repr=False)
+    # Confirmações a mostrar na próxima página (uma só vez), como "Moto cadastrada."
+    avisos: list = field(default_factory=list, repr=False)
 
     def access_token_vencendo(self, agora: float) -> bool:
         return self.expira_em - agora <= MARGEM_RENOVACAO_SEGUNDOS

@@ -1,13 +1,14 @@
-{% from "componentes/macros.html" import tabela, selo, estado_vazio %}
+{% from "componentes/macros.html" import tabela, selo, estado_vazio, botao %}
 {% set tom = {"vencido": "perigo", "a_vencer": "atencao", "ok": "ok"} %}
 {% if a.documentos %}
-{% call tabela([("Documento", ""), ("Referência", ""), ("Vencimento", ""), ("Situação", "")], "Documentos da moto") %}
+{% call tabela([("Documento", ""), ("Referência", ""), ("Vencimento", ""), ("Situação", ""), ("Ação", "col-acoes")], "Documentos da moto") %}
   {% for i in a.documentos %}{% set d = i.documento %}
   <tr>
     <td class="topo font-medium">{{ d.tipo|upper }}</td>
     <td class="text-texto-2" data-rotulo="Referência">{{ d.ano_referencia or d.descricao or "—" }}</td>
     <td class="mono" data-rotulo="Vencimento">{{ d.vencimento|data_br }}</td>
     <td data-rotulo="Situação">{{ selo(i.rotulo, tom[i.situacao]) }}</td>
+    <td class="acao">{% if not d.regularizado %}{{ botao("Regularizar", extra='hx-get="/motos/' ~ moto.id ~ '/documentos/' ~ d.id ~ '/regularizar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML" aria-label="Regularizar o documento ' ~ (d.tipo|upper) ~ '"') }}{% endif %}</td>
   </tr>
   {% endfor %}
 {% endcall %}

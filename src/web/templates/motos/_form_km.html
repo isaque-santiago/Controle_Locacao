@@ -1,0 +1,8 @@
+{% from "componentes/macros.html" import campo, caixa, placa, form_dialogo %}
+{% set v = valores %}
+{% call form_dialogo("Atualizar quilometragem", acao, "Registrar leitura", csrf_token, erro_geral) %}
+  <div class="largo flex items-center gap-3">{{ placa(moto.placa|placa_br) }}<span class="text-texto-2">Km atual: <span class="mono text-texto">{{ moto.km_atual|milhar }} km</span></span></div>
+  <input type="hidden" name="chave_operacao" value="{{ v.chave_operacao }}">
+  {{ campo("f-km", "Nova leitura", nome="km", valor=v.km, obrigatorio=True, mono=True, inputmode="numeric", erro=erros.km, ajuda="Em km.", autocomplete="off", largo=True) }}
+  {{ caixa("f-confirmar", "Confirmo o lançamento de uma leitura histórica menor (o km atual será mantido)", nome="confirmar_km_menor", marcada=v.confirmar_km_menor|default(false)) }}
+{% endcall %}

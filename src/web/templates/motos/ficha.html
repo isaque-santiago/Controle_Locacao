@@ -1,5 +1,5 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas %}
+{% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas, botao %}
 
 {% block conteudo %}
 {{ voltar("/motos", "Voltar para motos") }}
@@ -15,6 +15,16 @@
       {{ moto.marca }} {{ moto.modelo }}{% if moto.ano_modelo %}, {{ moto.ano_modelo }}{% endif %}{% if moto.cor %}, {{ moto.cor|lower }}{% endif %}.
       {% if cabecalho.locatario %}Locada para {{ cabecalho.locatario }} desde {{ cabecalho.desde|data_br }}.{% endif %}
     </p>
+  </div>
+  <div class="acoes">
+    {{ botao("Editar", extra='hx-get="/motos/' ~ moto.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+    {{ botao("Atualizar km", extra='hx-get="/motos/' ~ moto.id ~ '/km" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+    {% if moto.status in ("disponivel", "inativa") %}
+    <form method="post" action="/motos/{{ moto.id }}/situacao">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {{ botao("Reativar" if moto.status == "inativa" else "Inativar", tipo="submit") }}
+    </form>
+    {% endif %}
   </div>
 </header>
 

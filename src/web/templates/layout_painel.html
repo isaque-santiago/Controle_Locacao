@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "componentes/macros.html" import icone %}
+{% from "componentes/macros.html" import icone, aviso %}
 {# Painel do dono: barra lateral (≥1100 px), trilho de ícones (720–1099 px) e barra inferior (<720 px). #}
 {% set ativo = item_ativo(caminho_atual) %}
 {% set inicial = (usuario_nome or "?")[0]|upper %}
@@ -39,7 +39,7 @@
     </header>
 
     <main id="conteudo" tabindex="-1">
-      <div id="avisos" aria-live="polite"></div>
+      <div id="avisos" aria-live="polite">{% for a in avisos %}{{ aviso(a.tipo, a.texto) }}{% endfor %}</div>
       {% block conteudo %}{% endblock %}
     </main>
   </div>
@@ -51,6 +51,9 @@
     <button type="button" data-abrir="dlg-mais"{% if mais_esta_ativo(caminho_atual) %} aria-current="page"{% endif %}>{{ icone('mais') }}Mais</button>
   </nav>
 </div>
+
+{# Diálogo de formulários carregados sob demanda pelo HTMX (conteúdo vem de /.../nova, /.../editar etc.) #}
+<dialog class="cheio" id="dlg-form" aria-labelledby="dlg-form-titulo"><div id="dlg-form-conteudo"></div></dialog>
 
 <dialog class="folha" id="dlg-mais" aria-labelledby="t-mais">
   <div class="dialogo-cab"><h2 id="t-mais">Mais opções</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>

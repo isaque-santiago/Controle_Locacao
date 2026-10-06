@@ -177,7 +177,7 @@ class BaseMotos:
              "km": 900, "oficina": None, "custo_total": Decimal("85.00")},
         ]
         self.documentos = [
-            {"id": "d1", "tipo": "crlv", "ano_referencia": 2026, "descricao": None,
+            {"id": "00000000-0000-0000-0000-0000000000d1", "tipo": "crlv", "ano_referencia": 2026, "descricao": None,
              "vencimento": "2020-01-01", "regularizado": False},
         ]
         self.cobrancas = [
@@ -232,6 +232,59 @@ def base_motos(monkeypatch):
         dados_motos, "relatorios", SimpleNamespace(resultado_por_moto=lambda i, f: {"resultado": base.financeiro})
     )
     return base
+
+
+class AcoesMotosFalsas:
+    """Registra as gravações em vez de falar com o banco; `falhar_com` faz a próxima gravação levantar."""
+
+    def __init__(self, base):
+        self.base = base
+        self.chamadas: list[tuple] = []
+        self.falhar_com: Exception | None = None
+
+    def _gravar(self, nome, *args):
+        if self.falhar_com is not None:
+            raise self.falhar_com
+        self.chamadas.append((nome, *args))
+
+    def criar_moto(self, dados):
+        self._gravar("criar_moto", dados)
+        return {"id": "00000000-0000-0000-0000-0000000000aa", **dados}
+
+    def atualizar_moto(self, moto_id, dados):
+        self._gravar("atualizar_moto", moto_id, dados)
+        return {"id": moto_id, **dados}
+
+    def registrar_km(self, moto_id, km, confirmar, chave):
+        self._gravar("registrar_km", moto_id, km, confirmar, chave)
+        return {}
+
+    def alterar_situacao(self, moto_id, inativar):
+        self._gravar("alterar_situacao", moto_id, inativar)
+        return {}
+
+    def obter_documento(self, documento_id):
+        return next(
+            ({**d, "moto_id": self.base.motos[0]["id"]} for d in self.base.documentos if d["id"] == documento_id),
+            None,
+        )
+
+    def regularizar_documento(self, documento_id, data):
+        self._gravar("regularizar_documento", documento_id, data)
+        return {}
+
+
+@pytest.fixture(autouse=True)
+def acoes_motos_falsas(monkeypatch, base_motos):
+    from src.web import acoes_motos
+
+    falsas = AcoesMotosFalsas(base_motos)
+    for nome in (
+        "criar_moto", "atualizar_moto", "registrar_km", "alterar_situacao",
+        "obter_documento", "regularizar_documento",
+    ):
+        monkeypatch.setattr(acoes_motos, nome, getattr(falsas, nome))
+    return falsas
 
 
 @pytest.fixture

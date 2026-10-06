@@ -48,6 +48,14 @@ templates.env.filters["milhar"] = formatar_milhar
 templates.env.globals["tom_status_moto"] = TOM_STATUS_MOTO
 
 
+def _consumir_avisos(sessao, nome_do_modelo: str) -> list:
+    """Avisos guardados na sessão, entregues uma única vez e só a páginas inteiras (não a trechos HTMX)."""
+    if sessao is None or nome_do_modelo.rsplit("/", 1)[-1].startswith("_"):
+        return []
+    avisos, sessao.avisos[:] = list(sessao.avisos), []
+    return avisos
+
+
 def renderizar(
     request: Request,
     nome: str,
@@ -63,5 +71,6 @@ def renderizar(
         "tema": tema_do_cookie(request.cookies.get("tema")),
         "caminho_atual": request.url.path,
     }
+    comum["avisos"] = _consumir_avisos(sessao, nome)
     comum.update(contexto or {})
     return templates.TemplateResponse(request, nome, comum, status_code=status)

@@ -43,6 +43,40 @@
 </div>
 {%- endmacro %}
 
+{# Área de texto com rótulo, ajuda e erro. #}
+{% macro area_texto(id, rotulo, nome=None, valor="", ajuda="", erro="", largo=False, linhas=3, maximo=None) -%}
+{%- set descricao = (id ~ "-ajuda " if ajuda else "") ~ (id ~ "-erro" if erro else "") -%}
+<div class="campo{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
+  <label for="{{ id }}">{{ rotulo }}</label>
+  <textarea class="entrada area" id="{{ id }}" name="{{ nome or id }}" rows="{{ linhas }}"{% if maximo %} maxlength="{{ maximo }}"{% endif %}
+    {%- if erro %} aria-invalid="true"{% endif %}{% if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %}>{{ valor }}</textarea>
+  {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Caixa de seleção com rótulo ao lado. #}
+{% macro caixa(id, rotulo, nome=None, marcada=False, ajuda="", largo=True) -%}
+<div class="campo caixa{{ ' largo' if largo else '' }}">
+  <label for="{{ id }}"><input type="checkbox" id="{{ id }}" name="{{ nome or id }}"{{ ' checked' if marcada else '' }}{% if ajuda %} aria-describedby="{{ id }}-ajuda"{% endif %}> {{ rotulo }}</label>
+  {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Formulário do diálogo `#dlg-form`, enviado pelo HTMX: com erro, a resposta troca este mesmo formulário (outerHTML) e
+   o diálogo continua aberto; com sucesso, a resposta traz HX-Redirect. Os campos vêm do bloco {% call %}. #}
+{% macro form_dialogo(titulo, acao, rotulo_enviar, csrf_token="", erro_geral="") -%}
+<form id="form-dialogo" method="post" action="{{ acao }}" hx-post="{{ acao }}" hx-target="#form-dialogo" hx-swap="outerHTML" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="dialogo-cab"><h2 id="dlg-form-titulo">{{ titulo }}</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
+  <div class="dialogo-corpo">
+    {% if erro_geral %}<div class="mb-4">{{ aviso('erro', erro_geral) }}</div>{% endif %}
+    <div class="formulario">{{ caller() }}</div>
+  </div>
+  <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit">{{ rotulo_enviar }}</button></div>
+</form>
+{%- endmacro %}
+
 {# Aviso. tipo: "erro", "sucesso", "atencao", "info". Erros são anunciados na hora (role=alert). #}
 {% macro aviso(tipo, mensagem, titulo=None) -%}
 <div class="aviso {{ tipo }}" role="{{ 'alert' if tipo == 'erro' else 'status' }}">

@@ -114,6 +114,25 @@
     else if (alvo.hasAttribute('tabindex')) alvo.focus({ preventScroll: true });
   });
 
+  // ---- Diálogos de formulário carregados pelo HTMX: abrem quando o conteúdo chega e se esvaziam ao fechar ----
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    var alvo = e.detail.target;
+    var dialogo = alvo && alvo.closest ? alvo.closest('dialog') : null;
+    if (dialogo && !dialogo.open) dialogo.showModal();
+  });
+  document.addEventListener('close', function (e) {
+    var dialogo = e.target;
+    if (dialogo && dialogo.id === 'dlg-form') {
+      var conteudo = document.getElementById('dlg-form-conteudo');
+      if (conteudo) conteudo.innerHTML = '';
+    }
+  }, true);
+  // Formulário devolvido com erro: leva o foco ao primeiro campo inválido
+  document.body.addEventListener('htmx:afterSettle', function () {
+    var invalido = document.querySelector('#form-dialogo [aria-invalid="true"]');
+    if (invalido) invalido.focus();
+  });
+
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
