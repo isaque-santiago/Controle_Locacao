@@ -19,10 +19,10 @@
 </header>
 
 <dl class="grade kpis">
-  {{ kpi("Km atual", (moto.km_atual|milhar) ~ " km") }}
+  {{ kpi("Km atual", moto.km_atual|milhar, "quilômetros") }}
   {{ kpi("Ano fab. / modelo", (moto.ano_fabricacao or "—") ~ " / " ~ (moto.ano_modelo or "—")) }}
   {{ kpi("Cor", moto.cor or "—") }}
-  {{ kpi("Locação sugerida", (moto.valor_locacao_sugerido|moeda) ~ " / mês") }}
+  {{ kpi("Locação sugerida", moto.valor_locacao_sugerido|moeda, "por mês") }}
 </dl>
 
 {{ abas_remotas("Seções da ficha", abas_da_ficha, aba) }}

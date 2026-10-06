@@ -37,7 +37,8 @@
   }
   document.addEventListener('click', function (e) {
     var aba = e.target.closest('[role="tab"]');
-    if (aba) irParaAba(aba.closest('[role="tablist"]'), aba);
+    // Abas remotas: quem marca a aba selecionada é a resposta do servidor (o HTMX troca as abas junto do painel)
+    if (aba && !aba.hasAttribute('data-remoto')) irParaAba(aba.closest('[role="tablist"]'), aba);
   });
   document.addEventListener('keydown', function (e) {
     var aba = e.target.closest && e.target.closest('[role="tab"]');
@@ -73,6 +74,44 @@
     if (proximo) raiz.setAttribute('data-tema', proximo); else raiz.removeAttribute('data-tema');
     var seguro = location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = 'tema=' + proximo + '; path=/; max-age=' + (proximo ? 31536000 : 0) + '; SameSite=Lax' + seguro;
+  });
+
+  // ---- Troca parcial do HTMX: se o elemento focado vai ser substituído (chip, paginação, seletor),
+  // devolve o foco ao equivalente na lista nova; sem equivalente, ao próprio trecho trocado ----
+  var focoAntes = null;
+  var focoPorId = null;
+  document.body.addEventListener('htmx:beforeSwap', function (e) {
+    var ativo = document.activeElement;
+    var alvo = e.detail.target;
+    var dentro = ativo && ativo !== document.body && alvo && alvo.contains(ativo) && alvo !== ativo;
+    var grupo = dentro ? ativo.closest('nav') : null;
+    focoPorId = ativo && ativo !== document.body && ativo.id ? ativo.id : null;
+    focoAntes = dentro ? { id: ativo.id, href: ativo.getAttribute('href'), texto: (ativo.textContent || '').trim(), grupo: grupo ? grupo.className : '' } : null;
+  });
+  document.body.addEventListener('htmx:afterSettle', function (e) {
+    if (focoPorId && (!document.activeElement || document.activeElement === document.body)) {
+      var mesmo = document.getElementById(focoPorId);
+      if (mesmo) mesmo.focus({ preventScroll: true });
+    }
+    focoPorId = null;
+    if (!focoAntes) return;
+    var alvo = e.detail.target;
+    var igual = null;
+    if (focoAntes.id) igual = document.getElementById(focoAntes.id);
+    if (!igual && focoAntes.href) {
+      igual = Array.prototype.slice.call(alvo.querySelectorAll('a[href]')).filter(function (a) {
+        return a.getAttribute('href') === focoAntes.href;
+      })[0];
+    }
+    if (!igual && focoAntes.grupo) {
+      // Mesmo botão no mesmo grupo (ex.: "Próxima" da paginação, cujo endereço mudou)
+      igual = Array.prototype.slice.call(alvo.querySelectorAll('nav.' + focoAntes.grupo.split(' ')[0] + ' a, nav.' + focoAntes.grupo.split(' ')[0] + ' button:not([disabled])')).filter(function (b) {
+        return (b.textContent || '').trim() === focoAntes.texto;
+      })[0];
+    }
+    focoAntes = null;
+    if (igual) igual.focus({ preventScroll: true });
+    else if (alvo.hasAttribute('tabindex')) alvo.focus({ preventScroll: true });
   });
 
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----

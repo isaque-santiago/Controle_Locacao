@@ -13,7 +13,6 @@
 </dl>
 
 <div class="grade duas-colunas">
-  <div class="grid gap-4 content-start min-w-0">
     <section class="cartao" aria-labelledby="t-ocupacao">
       <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2><span class="mono">{{ d.ocupacao }}%</span></div>
       {% if d.segmentos_medidor %}
@@ -27,27 +26,6 @@
         {% endfor %}
       </ul>
     </section>
-
-    <section class="cartao" aria-labelledby="t-hoje">
-      <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">vencendo hoje e atrasadas</span></div>
-      {% if d.hoje %}
-      {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}
-        {% for c in d.hoje %}
-        <tr>
-          <td class="topo font-medium">{{ c.cliente }}</td>
-          <td data-rotulo="Moto">{{ placa(c.placa|placa_br) }}</td>
-          <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
-          <td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>
-          <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
-          <td class="acao"><a class="btn" href="/cobrancas" aria-label="Registrar pagamento de {{ c.cliente }}">Pagar</a></td>
-        </tr>
-        {% endfor %}
-      {% endcall %}
-      {% else %}
-      <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
-      {% endif %}
-    </section>
-  </div>
 
   <section class="cartao content-start" aria-labelledby="t-alertas">
     <div class="cartao-cab"><h2 id="t-alertas">Precisa de atenção</h2></div>
@@ -66,4 +44,24 @@
     {% endif %}
   </section>
 </div>
+
+    <section class="cartao mt-4" aria-labelledby="t-hoje">
+      <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">vencendo hoje e atrasadas</span></div>
+      {% if d.hoje %}
+      {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}
+        {% for c in d.hoje %}
+        <tr>
+          <td class="topo font-medium">{{ c.cliente }}</td>
+          <td data-rotulo="Moto">{{ placa(c.placa|placa_br) }}</td>
+          <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
+          <td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>
+          <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
+          <td class="acao"><a class="btn" href="/cobrancas" aria-label="Registrar pagamento de {{ c.cliente }}">Pagar</a></td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+      {% else %}
+      <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
+      {% endif %}
+    </section>
 {% endblock %}

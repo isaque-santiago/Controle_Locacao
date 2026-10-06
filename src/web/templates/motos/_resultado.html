@@ -11,7 +11,7 @@
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 
 {% if d.itens %}
-{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "so-leitor")], "Motos cadastradas") %}
+{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Motos cadastradas") %}
   {% for item in d.itens %}{% set m = item.moto %}{% set man = item.proxima_manutencao %}
   <tr>
     <td class="c-placa">{{ placa(m.placa|placa_br) }}</td>

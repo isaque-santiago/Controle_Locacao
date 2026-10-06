@@ -118,10 +118,11 @@
 <div class="painel" id="painel-{{ id }}" role="tabpanel" aria-labelledby="aba-{{ id }}"{% if not aberto %} hidden{% endif %}>{{ caller() }}</div>
 {%- endmacro %}
 
-{# Abas que carregam o painel pelo HTMX (um só painel, `painel_remoto`). itens: lista de (id, rotulo, url_do_painel, url_da_pagina);
+{# Abas que carregam o painel pelo HTMX (um só painel). A resposta do painel repete as abas com `oob=True`, para o
+   servidor ser a única fonte da aba selecionada (inclusive ao voltar no histórico). itens: lista de (id, rotulo, url_do_painel, url_da_pagina);
    `ativa` é o id selecionado. Sem JS, o rótulo é um botão sem efeito: a página também abre direto na aba (url_da_pagina). #}
-{% macro abas_remotas(rotulo, itens, ativa, painel="painel-aba") -%}
-<div class="abas" role="tablist" aria-label="{{ rotulo }}">
+{% macro abas_remotas(rotulo, itens, ativa, painel="painel-aba", oob=False) -%}
+<div class="abas" id="lista-{{ painel }}" role="tablist" aria-label="{{ rotulo }}"{% if oob %} hx-swap-oob="true"{% endif %}>
   {% for id, texto, url_painel, url_pagina in itens %}<button role="tab" type="button" id="aba-{{ id }}" data-remoto aria-selected="{{ 'true' if id == ativa else 'false' }}" aria-controls="{{ painel }}"{% if id != ativa %} tabindex="-1"{% endif %} hx-get="{{ url_painel }}" hx-target="#{{ painel }}" hx-swap="outerHTML" hx-push-url="{{ url_pagina }}">{{ texto }}</button>{% endfor %}
 </div>
 {%- endmacro %}
@@ -149,8 +150,8 @@
 <nav class="paginacao" aria-label="Paginação">
   <span>Mostrando {{ inicio }} a {{ fim }} de {{ total }}</span>
   <div>
-    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ url_anterior }}" hx-target="{{ alvo }}" hx-push-url="true"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
-    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ url_proxima }}" hx-target="{{ alvo }}" hx-push-url="true"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
+    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ url_anterior }}" hx-target="{{ alvo }}" hx-swap="innerHTML show:{{ alvo }}:top" hx-push-url="true"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
+    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ url_proxima }}" hx-target="{{ alvo }}" hx-swap="innerHTML show:{{ alvo }}:top" hx-push-url="true"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
   </div>
 </nav>
 {%- endmacro %}

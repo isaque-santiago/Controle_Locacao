@@ -30,7 +30,7 @@ def test_cabecalho_da_ficha_mostra_placa_situacao_e_locatario(cliente):
     assert len(re.findall(r"<h1[\s>]", html)) == 1
     assert "Honda CG 101, 2023, vermelha." in html
     assert "Locada para Joana &lt;b&gt;Prado&lt;/b&gt; desde 01/07/2026." in html
-    assert "1.000 km" in html and "2023 / 2023" in html
+    assert "1.000" in html and "2023 / 2023" in html
     assert 'href="/motos"' in html and "Voltar para motos" in html
 
 
@@ -131,3 +131,13 @@ def test_toda_aba_segue_as_regras_de_html(cliente):
         ):
             assert not re.search(r"\sstyle\s*=|<style[\s>]|\son[a-z]+\s*=", html), aba
             assert len(re.findall(r"<h1[\s>]", html)) <= 1
+
+
+def test_resposta_da_aba_traz_as_abas_fora_de_banda_com_a_nova_selecionada(cliente):
+    entrar(cliente)
+    html = cliente.get(f"/motos/{MOTO}/abas/documentos", headers=PAINEL).text
+    assert 'id="lista-painel-aba"' in html and 'hx-swap-oob="true"' in html
+    assert re.search(r'id="aba-documentos"[^>]*aria-selected="true"', html)
+    assert html.count('aria-selected="true"') == 1
+    pagina = cliente.get(f"/motos/{MOTO}?aba=documentos").text
+    assert 'hx-swap-oob' not in pagina  # a página inteira não repete as abas

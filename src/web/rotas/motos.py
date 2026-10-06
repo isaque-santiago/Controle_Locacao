@@ -143,4 +143,4 @@ def aba_da_ficha(
     if aba not in {chave for chave, _rotulo in motos_lista.ABAS_FICHA}:
         raise HTTPException(status_code=404)
     moto = _moto_ou_404(moto_id)
-    return renderizar(request, "motos/_painel.html", _contexto_da_aba(moto, aba))
+    return renderizar(request, "motos/_resposta_aba.html", _contexto_da_aba(moto, aba))

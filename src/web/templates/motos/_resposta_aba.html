@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import abas_remotas %}
+{# Resposta do HTMX ao abrir uma aba: o painel (alvo) e as abas, trocadas fora de banda com a aba nova selecionada. #}
+{% include "motos/_painel.html" %}
+{{ abas_remotas("Seções da ficha", abas_da_ficha, aba, oob=True) }}
