@@ -130,6 +130,52 @@ def dados_painel_falsos(monkeypatch):
     monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: DADOS_PAINEL)
 
 
+def _moto(i, status="disponivel", **extra):
+    return {
+        "id": f"00000000-0000-0000-0000-{i:012d}",
+        "placa": f"ABC{i % 10}D{i % 100:02d}",
+        "marca": "Honda",
+        "modelo": f"CG {100 + i}",
+        "cor": "Vermelha",
+        "ano_fabricacao": 2023,
+        "ano_modelo": 2023,
+        "km_atual": 1000 * i,
+        "status": status,
+        **extra,
+    }
+
+
+class BaseMotos:
+    """Dados fictícios que os serviços de motos devolvem nos testes das rotas."""
+
+    def __init__(self):
+        self.motos = [
+            _moto(1, "alugada"),
+            _moto(2, "disponivel", marca="Yamaha", modelo="Factor"),
+            _moto(3, "inativa"),
+        ]
+        self.contratos = [
+            {"id": "k1", "moto_id": self.motos[0]["id"], "cliente_id": "c1", "status": "ativo"},
+        ]
+        self.clientes = [{"id": "c1", "nome": "Joana <b>Prado</b>"}]
+        self.plano = [
+            {"moto_id": self.motos[0]["id"], "situacao": "vencida", "km_restantes": -120, "dias_restantes": None},
+        ]
+
+
+@pytest.fixture(autouse=True)
+def base_motos(monkeypatch):
+    """Troca os serviços usados por src/web/dados_motos; a montagem dos dados roda de verdade."""
+    from src.web import dados_motos
+
+    base = BaseMotos()
+    monkeypatch.setattr(dados_motos, "motos", SimpleNamespace(listar=lambda: base.motos))
+    monkeypatch.setattr(dados_motos, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    monkeypatch.setattr(dados_motos, "clientes", SimpleNamespace(listar=lambda: base.clientes))
+    monkeypatch.setattr(dados_motos, "alertas", SimpleNamespace(listar_manutencao=lambda: base.plano))
+    return base
+
+
 @pytest.fixture
 def relogio():
     return Relogio()

@@ -253,7 +253,8 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; padding: clamp(24px, 4vw, 
 .barra-filtros {display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: var(--e3); margin-bottom: var(--e3);}
 .chips {display: flex; gap: var(--e2); overflow-x: auto; padding-bottom: var(--e1); margin-bottom: var(--e4); scrollbar-width: thin;}
 .chip {flex: none; display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e4); border-radius: 99px; border: 1px solid var(--linha-forte); background: var(--superficie-elevada); cursor: pointer; font-weight: 500;}
-.chip[aria-pressed="true"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
+.chip {text-decoration: none; color: inherit;}
+.chip[aria-pressed="true"], .chip[aria-current="true"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
 .chip b {font: 600 12.5px var(--fonte-mono);}
 .tabela-caixa {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); overflow: hidden;}
 table.dados {width: 100%; border-collapse: collapse;}
@@ -265,6 +266,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 .dados .modelo {font-weight: 500;} .dados .sub {display: block; font-size: 12.5px; color: var(--texto-3);}
 .paginacao {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); margin-top: var(--e4); color: var(--texto-2); font-size: 13px;}
 .paginacao div {display: flex; gap: var(--e2);}
+.por-pagina {max-width: 12rem; margin-top: var(--e3);}
 
 @media (max-width: 719px) {
   .dados thead {display: none;}

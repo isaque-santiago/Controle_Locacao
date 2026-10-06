@@ -47,9 +47,9 @@
     irParaAba(lista, abas[(proxima + abas.length) % abas.length]);
   });
 
-  // ---- Chips de filtro: um pressionado por grupo (a página reage via HTMX, se quiser) ----
+  // ---- Chips de filtro em botão: um pressionado por grupo. Chips em link (<a>) vêm prontos do servidor ----
   document.addEventListener('click', function (e) {
-    var chip = e.target.closest('.chip');
+    var chip = e.target.closest('button.chip');
     if (!chip) return;
     var grupo = chip.closest('.chips');
     if (!grupo) return;

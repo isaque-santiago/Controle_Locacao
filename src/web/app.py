@@ -18,6 +18,7 @@ from src.web.erros import registrar_tratadores
 from src.web.limitador import LimitadorTentativas
 from src.web.rotas import autenticacao as rotas_autenticacao
 from src.web.rotas import componentes as rotas_componentes
+from src.web.rotas import motos as rotas_motos
 from src.web.rotas import paginas as rotas_paginas
 from src.web.seguranca import CabecalhosSeguranca
 from src.web.sessao import ArmazemSessoes
@@ -58,6 +59,7 @@ def criar_app(
     app.mount("/static", StaticFiles(directory=str(PASTA_ESTATICOS)), name="static")
 
     app.include_router(rotas_paginas.router)
+    app.include_router(rotas_motos.router)
     app.include_router(rotas_autenticacao.router)
     if desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento():
         app.include_router(rotas_componentes.router)
