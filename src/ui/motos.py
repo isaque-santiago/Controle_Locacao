@@ -368,7 +368,10 @@ def _aba_plano(moto):
         if item["proxima_km"] is not None:
             restante = f"{item['proxima_km'] - moto['km_atual']:,} km".replace(",", ".")
         elif item["proxima_data"]:
-            dias = (date.fromisoformat(item["proxima_data"]) - hoje_br()).days
+            proxima_data = item["proxima_data"]
+            if not isinstance(proxima_data, date):
+                proxima_data = date.fromisoformat(str(proxima_data)[:10])
+            dias = (proxima_data - hoje_br()).days
             restante = f"{dias} dias"
         else:
             restante = "—"

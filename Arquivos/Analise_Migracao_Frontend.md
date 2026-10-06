@@ -1,7 +1,7 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
-> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 1 (fundação) CONCLUÍDA em
-> 06/10/2026 (login, F5 e logout validados no banco de desenvolvimento). Próxima: Fase 2 (Dashboard e Motos).**
+> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 2 (Dashboard e Motos)
+> CONCLUÍDA em 06/10/2026. Próxima: Fase 3 (demais páginas, uma por vez).**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -154,6 +154,14 @@ tratamento de erros (`src/domain/erros.py` reaproveitado) e biblioteca de compon
 **Fase 2 — Páginas piloto: Dashboard e Motos**
 Valida os padrões de lista, filtro, paginação, ficha e formulário.
 *Aceite:* sem overflow horizontal de 320 a 1440 px; alvos ≥ 44 px; teclado completo; paridade funcional.
+
+**Conclusão (06/10/2026):** Dashboard e Motos foram validados no banco de desenvolvimento, lado a lado com o
+Streamlit. Os dois mostraram 31 motos (19 alugadas, 4 disponíveis, 4 em manutenção e 4 inativas), 49 itens no
+cartão Hoje (48 atrasados e 1 vencendo no dia), os mesmos indicadores e alertas, e as mesmas 10 linhas na
+primeira página da lista. Cadastro e validação por campo, edição, atualização normal e histórica de km,
+inativação/reativação e regularização de documento foram conferidos de ponta a ponta. A ficha, suas seis abas,
+o diálogo em 390 px, a navegação por teclado, o fechamento com Esc e a devolução de foco também foram
+verificados. A suíte terminou com 830 testes passando.
 
 **Fase 3 — Demais páginas, uma por vez**
 Clientes → Contratos (assistente em 4 etapas) → Cobranças → Manutenção → Vistorias (com fotos) →
