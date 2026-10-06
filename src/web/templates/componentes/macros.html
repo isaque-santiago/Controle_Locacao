@@ -1,0 +1,148 @@
+{# Biblioteca de componentes. Uso: {% from "componentes/macros.html" import botao, campo, ... %}
+   Os valores são escapados; só os parâmetros `extra` (atributos HTML escritos por nós) entram sem escape. #}
+
+{% macro icone(nome, classe="") -%}
+<svg class="i {{ classe }}" aria-hidden="true" focusable="false"><use href="#i-{{ nome }}"/></svg>
+{%- endmacro %}
+
+{# Botão ou link com aparência de botão (href). variante: "", "primario", "perigo". #}
+{% macro botao(rotulo, href=None, tipo="button", variante="", icone_nome=None, bloco=False, extra="") -%}
+{%- set classes = "btn" ~ (" btn-primario" if variante == "primario" else "") ~ (" btn-perigo" if variante == "perigo" else "") ~ (" btn-bloco" if bloco else "") -%}
+{%- if href -%}
+<a class="{{ classes }}" href="{{ href }}" {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</a>
+{%- else -%}
+<button class="{{ classes }}" type="{{ tipo }}" {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</button>
+{%- endif -%}
+{%- endmacro %}
+
+{# Campo de texto com rótulo, ajuda e erro ligados por aria-describedby. prefixo: "R$". #}
+{% macro campo(id, rotulo, nome=None, valor="", tipo="text", ajuda="", erro="", obrigatorio=False, mono=False, prefixo=None, inputmode=None, autocomplete=None, largo=False, extra="") -%}
+{%- set descricao = (id ~ "-ajuda " if ajuda else "") ~ (id ~ "-erro" if erro else "") -%}
+<div class="campo{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
+  <label for="{{ id }}">{{ rotulo }}{% if obrigatorio %} <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span>{% endif %}</label>
+  {% if prefixo %}<div class="prefixo"><span aria-hidden="true">{{ prefixo }}</span>{% endif -%}
+  <input class="entrada{{ ' mono' if mono else '' }}" id="{{ id }}" name="{{ nome or id }}" type="{{ tipo }}" value="{{ valor }}"
+    {%- if inputmode %} inputmode="{{ inputmode }}"{% endif %}
+    {%- if autocomplete %} autocomplete="{{ autocomplete }}"{% endif %}
+    {%- if obrigatorio %} required{% endif %}
+    {%- if erro %} aria-invalid="true"{% endif %}
+    {%- if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %} {{ extra|safe }}>
+  {%- if prefixo %}</div>{% endif %}
+  {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
+</div>
+{%- endmacro %}
+
+{# Lista suspensa. opcoes: lista de (valor, rotulo). #}
+{% macro campo_lista(id, rotulo, opcoes, nome=None, selecionado=None, largo=False) -%}
+<div class="campo{{ ' largo' if largo else '' }}">
+  <label for="{{ id }}">{{ rotulo }}</label>
+  <select class="entrada" id="{{ id }}" name="{{ nome or id }}">
+    {% for valor, texto in opcoes %}<option value="{{ valor }}"{{ ' selected' if valor == selecionado else '' }}>{{ texto }}</option>{% endfor %}
+  </select>
+</div>
+{%- endmacro %}
+
+{# Aviso. tipo: "erro", "sucesso", "atencao", "info". Erros são anunciados na hora (role=alert). #}
+{% macro aviso(tipo, mensagem, titulo=None) -%}
+<div class="aviso {{ tipo }}" role="{{ 'alert' if tipo == 'erro' else 'status' }}">
+  {{ icone('alerta' if tipo in ('erro', 'atencao') else ('check' if tipo == 'sucesso' else 'info')) }}
+  <div>{% if titulo %}<strong>{{ titulo }}</strong> {% endif %}{{ mensagem }}</div>
+</div>
+{%- endmacro %}
+
+{# Selo de situação. tipo: "ok", "atencao", "perigo", "info", "neutro". #}
+{% macro selo(texto, tipo="neutro") -%}
+<span class="selo {{ tipo }}">{{ texto }}</span>
+{%- endmacro %}
+
+{% macro placa(texto) -%}
+<span class="placa">{{ texto }}</span>
+{%- endmacro %}
+
+{# Cartão com título opcional. O conteúdo vem do bloco {% call %}. #}
+{% macro cartao(titulo=None, classe="") -%}
+<section class="cartao {{ classe }}">
+  {% if titulo %}<h2>{{ titulo }}</h2>{% endif %}
+  {{ caller() }}
+</section>
+{%- endmacro %}
+
+{# Cabeçalho padrão da página: <h1>, descrição e, no bloco {% call %}, as ações. #}
+{% macro cabecalho_pagina(titulo, descricao=None) -%}
+<header class="cabecalho">
+  <div class="cabecalho-texto"><h1>{{ titulo }}</h1>{% if descricao %}<p>{{ descricao }}</p>{% endif %}</div>
+  {% if caller is defined %}<div class="acoes">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro voltar(href, rotulo) -%}
+<a class="voltar" href="{{ href }}">{{ icone('voltar') }}{{ rotulo }}</a>
+{%- endmacro %}
+
+{# Estado vazio; a ação (botão) vai no bloco {% call %}. #}
+{% macro estado_vazio(titulo, texto, simbolo="0") -%}
+<div class="cartao vazio">
+  <span class="adesivo" aria-hidden="true">{{ simbolo }}</span>
+  <h3>{{ titulo }}</h3>
+  <p>{{ texto }}</p>
+  {% if caller is defined %}{{ caller() }}{% endif %}
+</div>
+{%- endmacro %}
+
+{# Indicador numérico. atencao=True pinta a borda de vermelho. #}
+{% macro kpi(rotulo, valor, detalhe=None, atencao=False) -%}
+<div class="kpi{{ ' atencao' if atencao else '' }}"><dt>{{ rotulo }}</dt><dd>{{ valor }}{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}</dd></div>
+{%- endmacro %}
+
+{# Tabela que vira cartões no celular. colunas: lista de (rotulo, classe_do_th).
+   As linhas vêm do bloco {% call %}: cada <td> leva data-rotulo="..." para o rótulo no cartão. #}
+{% macro tabela(colunas, descricao) -%}
+<div class="tabela-caixa">
+  <table class="dados">
+    <caption class="so-leitor">{{ descricao }}</caption>
+    <thead><tr>{% for rotulo, classe in colunas %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}>{{ rotulo }}</th>{% endfor %}</tr></thead>
+    <tbody>{{ caller() }}</tbody>
+  </table>
+</div>
+{%- endmacro %}
+
+{# Abas acessíveis (setas, Home e End funcionam via app.js). itens: lista de (id, rotulo); a primeira abre selecionada. #}
+{% macro abas(rotulo, itens) -%}
+<div class="abas" role="tablist" aria-label="{{ rotulo }}">
+  {% for id, texto in itens %}<button role="tab" type="button" id="aba-{{ id }}" aria-selected="{{ 'true' if loop.first else 'false' }}" aria-controls="painel-{{ id }}"{% if not loop.first %} tabindex="-1"{% endif %}>{{ texto }}</button>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro painel_aba(id, aberto=False) -%}
+<div class="painel" id="painel-{{ id }}" role="tabpanel" aria-labelledby="aba-{{ id }}"{% if not aberto %} hidden{% endif %}>{{ caller() }}</div>
+{%- endmacro %}
+
+{# Botão que abre um diálogo (ver `dialogo`). #}
+{% macro abrir_dialogo(id, rotulo, icone_nome=None, variante="primario") -%}
+{{ botao(rotulo, variante=variante, icone_nome=icone_nome, extra='data-abrir="' ~ id ~ '"') }}
+{%- endmacro %}
+
+{# Diálogo de formulário: janela no desktop, tela cheia no celular. Campos no bloco {% call %}.
+   `acao` é o endereço do POST; o token CSRF entra sozinho. #}
+{% macro dialogo(id, titulo, rotulo_enviar, acao, csrf_token="") -%}
+<dialog class="cheio" id="{{ id }}" aria-labelledby="{{ id }}-titulo">
+  <form method="post" action="{{ acao }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="dialogo-cab"><h2 id="{{ id }}-titulo">{{ titulo }}</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
+    <div class="dialogo-corpo"><div class="formulario">{{ caller() }}</div></div>
+    <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit">{{ rotulo_enviar }}</button></div>
+  </form>
+</dialog>
+{%- endmacro %}
+
+{# Paginação. URLs None desabilitam o botão. Com HTMX, passe alvo="#lista" para trocar só a lista. #}
+{% macro paginacao(inicio, fim, total, url_anterior=None, url_proxima=None, alvo=None) -%}
+<nav class="paginacao" aria-label="Paginação">
+  <span>Mostrando {{ inicio }} a {{ fim }} de {{ total }}</span>
+  <div>
+    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ url_anterior }}" hx-target="{{ alvo }}" hx-push-url="true"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
+    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ url_proxima }}" hx-target="{{ alvo }}" hx-push-url="true"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
+  </div>
+</nav>
+{%- endmacro %}

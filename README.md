@@ -31,6 +31,55 @@ streamlit run app.py
 pytest
 ```
 
+## Frontend novo (FastAPI + Jinja2 + HTMX + Tailwind), em migração
+
+O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisões em
+[Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
+rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída:** app, login/logout, sessão,
+papéis, CSRF, erros e biblioteca de componentes. As demais telas ainda não existem no app novo
+(o menu mostra "Em migração").
+
+Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
+`SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
+
+```bash
+.venv\Scripts\python.exe executar_web.py
+```
+
+Abre em `http://localhost:8000`. Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
+script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
+
+Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macros dos componentes em
+`templates/componentes/macros.html`, estilos em `estilos/app.css`), `static/` (CSS compilado, fontes,
+`htmx.min.js` e `app.js`). Regras de negócio seguem em `src/domain`; o acesso ao Supabase, em
+`src/services/autenticacao.py` e nos repositórios (o cliente da requisição entra por
+`src.db.get_client()`).
+
+**Sessão e segurança.**
+- A sessão vive na **memória do processo**: o cookie leva só um identificador aleatório (`httpOnly`,
+  `SameSite=Lax`, `Secure` em HTTPS) e os tokens do Supabase ficam no servidor. Expira após 30 min sem
+  atividade; o F5 mantém a sessão; sem "lembrar de mim". Reiniciar o app ou fazer deploy encerra
+  todas as sessões.
+- **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
+  atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
+  sessões e o usuário seria deslogado ao acaso.
+- Todo POST exige token CSRF (campo `csrf_token` ou cabeçalho `X-CSRF-Token`, que o HTMX envia sozinho).
+- Login limitado a 5 falhas por e-mail/CPF e 20 por IP em 15 min (também em memória).
+- Cabeçalhos de segurança (CSP sem inline, HSTS em HTTPS, `X-Frame-Options`) saem da aplicação. Por
+  causa da CSP não há `style=` nem `<script>` inline nos templates; há testes que garantem isso.
+
+**CSS (Tailwind).** O `static/css/app.css` é gerado a partir de `src/web/estilos/app.css` e **fica
+versionado** (a VPS não precisa do Tailwind). Depois de mudar templates ou estilos, recompile:
+
+```bash
+.venv\Scripts\python.exe scripts/construir_css.py            # uma vez
+.venv\Scripts\python.exe scripts/construir_css.py --watch    # ao salvar
+```
+
+Precisa do Tailwind CLI standalone (sem Node) em `tools/tailwindcss.exe` (ou `tools/tailwindcss` no
+Linux), baixado de https://github.com/tailwindlabs/tailwindcss/releases. A pasta `tools/` não vai para
+o git. Os testes de `tests/web/` ficam em `pytest` normalmente.
+
 ## Estrutura
 
 Ver seção 3 do plano ([Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md)).

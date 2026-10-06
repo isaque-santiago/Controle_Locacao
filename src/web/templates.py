@@ -1,0 +1,59 @@
+"""Ambiente Jinja2 e função de renderização comum a todas as rotas."""
+
+from pathlib import Path
+
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+
+from src.web import navegacao
+from src.web.apresentacao import (
+    formatar_data,
+    formatar_moeda,
+    nome_de_exibicao,
+    tema_do_cookie,
+)
+
+RAIZ = Path(__file__).resolve().parents[2]
+PASTA_ESTATICOS = RAIZ / "static"
+
+templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+
+
+def url_estatico(caminho: str) -> str:
+    """URL de um arquivo de /static com a data de modificação, para o navegador não usar cópia velha."""
+    try:
+        versao = int((PASTA_ESTATICOS / caminho).stat().st_mtime)
+    except OSError:
+        versao = 0
+    return f"/static/{caminho}?v={versao}"
+
+
+templates.env.globals.update(
+    url_estatico=url_estatico,
+    grupos_nav=navegacao.GRUPOS,
+    barra_inferior=navegacao.BARRA_INFERIOR,
+    folha_mais=navegacao.FOLHA_MAIS,
+    item_ativo=navegacao.item_ativo,
+    mais_esta_ativo=navegacao.mais_esta_ativo,
+)
+templates.env.filters["moeda"] = formatar_moeda
+templates.env.filters["data_br"] = formatar_data
+
+
+def renderizar(
+    request: Request,
+    nome: str,
+    contexto: dict | None = None,
+    status: int = 200,
+):
+    """Renderiza um template com o contexto comum (usuário, CSRF, tema, caminho atual)."""
+    sessao = getattr(request.state, "sessao", None)
+    comum = {
+        "sessao": sessao,
+        "usuario_nome": nome_de_exibicao(sessao.email) if sessao else "",
+        "csrf_token": sessao.csrf_token if sessao else "",
+        "tema": tema_do_cookie(request.cookies.get("tema")),
+        "caminho_atual": request.url.path,
+    }
+    comum.update(contexto or {})
+    return templates.TemplateResponse(request, nome, comum, status_code=status)
