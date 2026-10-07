@@ -529,6 +529,7 @@ def base_manutencao(monkeypatch):
     monkeypatch.setattr(dados_manutencao, "manutencao", SimpleNamespace(
         listar_manutencoes=lambda: base.manutencoes,
         listar_catalogo=lambda: base.catalogo,
+        obter_manutencao=lambda id_: next((m for m in base.manutencoes if m["id"] == id_), None),
     ))
     return base
 
@@ -536,6 +537,7 @@ def base_manutencao(monkeypatch):
 class AcoesManutencaoFalsas:
     def __init__(self):
         self.registros = []
+        self.finalizacoes = []
         self.falhar_com = None
 
     def registrar(self, dados, chave):
@@ -544,6 +546,12 @@ class AcoesManutencaoFalsas:
         self.registros.append((dados, chave))
         return {"id": "man1"}
 
+    def finalizar(self, manutencao_id, status, data, km):
+        if self.falhar_com:
+            raise self.falhar_com
+        self.finalizacoes.append((manutencao_id, status, data, km))
+        return {"manutencao_id": manutencao_id}
+
 
 @pytest.fixture(autouse=True)
 def acoes_manutencao_falsas(monkeypatch):
@@ -551,6 +559,7 @@ def acoes_manutencao_falsas(monkeypatch):
 
     falsas = AcoesManutencaoFalsas()
     monkeypatch.setattr(acoes_manutencao, "registrar", falsas.registrar)
+    monkeypatch.setattr(acoes_manutencao, "finalizar", falsas.finalizar)
     return falsas
 
 

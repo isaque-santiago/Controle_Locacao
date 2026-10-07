@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, icone %}
+{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, icone, botao %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
 {% if aba == "alertas" %}
 <nav class="chips" aria-label="Filtrar alertas por situação">{% for chave, rotulo, quantidade, url, parcial in chips %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == situacao %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
@@ -22,12 +22,13 @@
 </form>
 <p class="so-leitor" role="status" aria-live="polite">{{ d.historico.pagina.resumo() }}</p>
 {% if d.historico.itens %}
-{% call tabela([("Moto", ""), ("Data", ""), ("Tipo", ""), ("Oficina", ""), ("Custo", "num"), ("Descrição", ""), ("Situação", "")], "Histórico de manutenções") %}
+{% call tabela([("Moto", ""), ("Data", ""), ("Tipo", ""), ("Oficina", ""), ("Custo", "num"), ("Descrição", ""), ("Situação", ""), ("Ações", "col-acoes")], "Histórico de manutenções") %}
 {% for m in d.historico.itens %}<tr>
 <td>{% if m.moto %}{{ placa(m.moto.placa|placa_br) }}{% else %}—{% endif %}</td><td class="mono" data-rotulo="Data">{{ m.data_entrada|data_br }}</td>
 <td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td><td data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
 <td class="num mono" data-rotulo="Custo">{{ m.custo_total|moeda }}</td><td class="modelo" data-rotulo="Descrição">{{ m.descricao }}</td>
 <td data-rotulo="Situação">{{ selo(status_rotulo[m.status], "ok" if m.status == "concluida" else ("neutro" if m.status == "cancelada" else "info")) }}</td>
+<td class="c-acao">{% if m.status == "aberta" and m.moto %}<div class="flex flex-wrap gap-2">{{ botao("Concluir", href="/manutencao/" ~ m.id ~ "/concluir", aria="Concluir manutenção da moto " ~ (m.moto.placa|placa_br), extra='hx-get="/manutencao/' ~ m.id ~ '/concluir" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Cancelar", href="/manutencao/" ~ m.id ~ "/cancelar", aria="Cancelar manutenção da moto " ~ (m.moto.placa|placa_br), extra='hx-get="/manutencao/' ~ m.id ~ '/cancelar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div>{% else %}—{% endif %}</td>
 </tr>{% endfor %}
 {% endcall %}
 {% if d.historico.pagina.total > d.historico.pagina.por_pagina %}{{ paginacao(d.historico.pagina.inicio + 1, d.historico.pagina.fim, d.historico.pagina.total, url_anterior, url_proxima, alvo="#painel-aba", troca="outerHTML", parcial_anterior=parcial_anterior, parcial_proxima=parcial_proxima) }}{% endif %}

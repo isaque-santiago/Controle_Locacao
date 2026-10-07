@@ -5,7 +5,14 @@ from decimal import Decimal
 
 import pytest
 
-from src.domain.formulario_manutencao import alterar_linhas, ler, previa, valores_iniciais
+from src.domain.formulario_manutencao import (
+    alterar_linhas,
+    ler,
+    ler_finalizacao,
+    previa,
+    valores_finalizacao,
+    valores_iniciais,
+)
 from src.domain.formulario_moto import ErroDeCampos
 
 MOTO = {"id": "m1", "km_atual": 1000}
@@ -44,3 +51,27 @@ def test_previa_e_linhas_dinamicas_sao_tolerantes():
                    extra_qtd_0="x", extra_valor_0="5", custo_mao_obra="30")
     assert previa(valores, CATALOGO)["total"] == Decimal("50.00")
     assert alterar_linhas(valores, "remover:0")["extras_ids"] == ""
+
+
+def test_finalizacao_sugere_hoje_e_maior_km_e_valida_limites():
+    manutencao = {"data_entrada": "2026-10-01", "km": 1200}
+    moto = {"km_atual": 1500}
+    assert valores_finalizacao(date(2026, 10, 7), manutencao, moto) == {
+        "data": "2026-10-07", "km": "1500", "confirmar": False,
+    }
+    dados = ler_finalizacao({"data": "2026-10-07", "km": "1500"}, manutencao, moto, "concluida")
+    assert dados == {"data": date(2026, 10, 7), "km": 1500, "status": "concluida"}
+    with pytest.raises(ErroDeCampos) as capturado:
+        ler_finalizacao({"data": "2026-09-30", "km": "1499"}, manutencao, moto, "concluida")
+    assert set(capturado.value.erros) == {"data", "km"}
+
+
+def test_cancelamento_exige_confirmacao():
+    manutencao = {"data_entrada": "2026-10-01", "km": 1200}
+    moto = {"km_atual": 1500}
+    with pytest.raises(ErroDeCampos) as capturado:
+        ler_finalizacao({"data": "2026-10-07", "km": "1500"}, manutencao, moto, "cancelada")
+    assert "confirmar" in capturado.value.erros
+    assert ler_finalizacao(
+        {"data": "2026-10-07", "km": "1500", "confirmar": "on"}, manutencao, moto, "cancelada"
+    )["status"] == "cancelada"

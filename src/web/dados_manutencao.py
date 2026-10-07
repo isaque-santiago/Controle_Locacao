@@ -69,3 +69,11 @@ def opcoes_do_registro():
     frota = [m for m in motos.listar() if m["status"] != "inativa"]
     catalogo = [i for i in manutencao.listar_catalogo() if i["ativo"]]
     return frota, catalogo
+
+
+def obter_aberta(manutencao_id):
+    registro = manutencao.obter_manutencao(manutencao_id)
+    if registro is None or registro.get("status") != "aberta":
+        return None
+    moto = next((m for m in motos.listar() if m["id"] == registro["moto_id"]), None)
+    return {"manutencao": registro, "moto": moto} if moto else None

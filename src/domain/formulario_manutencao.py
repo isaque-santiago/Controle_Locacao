@@ -122,3 +122,30 @@ def ler(valores: dict, moto: dict, catalogo: list[dict]) -> dict:
         "oficina": _texto(valores, "oficina") or None, "custo_mao_obra": mao_obra,
         "cobrar_do_cliente": bool(valores.get("cobrar_do_cliente")), "itens": itens,
     }
+
+
+def valores_finalizacao(hoje: date, manutencao: dict, moto: dict) -> dict:
+    entrada = date.fromisoformat(str(manutencao["data_entrada"])[:10])
+    return {
+        "data": max(hoje, entrada).isoformat(),
+        "km": str(max(int(moto["km_atual"]), int(manutencao["km"]))),
+        "confirmar": False,
+    }
+
+
+def ler_finalizacao(valores: dict, manutencao: dict, moto: dict, acao: str) -> dict:
+    """Data e km aceitos pela RPC; cancelar exige confirmação explícita."""
+    erros = {}
+    entrada = date.fromisoformat(str(manutencao["data_entrada"])[:10])
+    data_texto = _coletar(erros, "data", _data_iso, _texto(valores, "data"), "Data", True)
+    if data_texto and date.fromisoformat(data_texto) < entrada:
+        erros["data"] = "Data: escolha uma data igual ou posterior à entrada da manutenção."
+    minimo = max(int(moto["km_atual"]), int(manutencao["km"]))
+    km = _coletar(erros, "km", inteiro_campo, _texto(valores, "km"), "Quilometragem", minimo)
+    if acao not in ("concluida", "cancelada"):
+        erros["acao"] = "Ação de finalização inválida."
+    if acao == "cancelada" and not valores.get("confirmar"):
+        erros["confirmar"] = "Marque a confirmação para cancelar a manutenção."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {"data": date.fromisoformat(data_texto), "km": km, "status": acao}

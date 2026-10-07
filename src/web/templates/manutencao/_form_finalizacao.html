@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo(titulo, acao, titulo, csrf_token, erro_geral, perigo=(acao_nome == "cancelar"), rotulo_cancelar=("Manter manutenção" if acao_nome == "cancelar" else "Cancelar")) %}
+{% include "manutencao/_campos_finalizacao.html" %}
+{% endcall %}

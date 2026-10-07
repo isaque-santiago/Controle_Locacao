@@ -1,0 +1,12 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/manutencao?aba=historico", "Voltar para o histórico") }}
+{{ cabecalho_pagina(titulo, "Confira o registro antes de continuar.") }}
+<form class="cartao" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">{% include "manutencao/_campos_finalizacao.html" %}</div>
+  <div class="rodape-acoes"><a class="btn" href="/manutencao?aba=historico">{{ "Manter manutenção" if acao_nome == "cancelar" else "Cancelar" }}</a><button class="btn {{ 'btn-perigo' if acao_nome == 'cancelar' else 'btn-primario' }}" type="submit">{{ titulo }}</button></div>
+</form>
+{% endblock %}
