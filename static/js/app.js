@@ -143,6 +143,10 @@
     if (invalido) invalido.focus();
   });
 
+  // Página inteira devolvida com erro de formulário (assistente de contrato, sem HTMX): foco no primeiro campo inválido
+  var invalidoNaPagina = document.querySelector('main form [aria-invalid="true"]');
+  if (invalidoNaPagina) invalidoNaPagina.focus();
+
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });

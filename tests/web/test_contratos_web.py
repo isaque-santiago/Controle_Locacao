@@ -68,3 +68,11 @@ def test_contratos_exigem_dono(cliente, base_contratos):
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get("/contratos").status_code == 403
     assert cliente.get(f"/contratos/{base_contratos.id}").status_code == 403
+
+
+def test_tipo_da_cobranca_aparece_com_acento_na_ficha_do_contrato_e_do_cliente(cliente, base_contratos, base_clientes):
+    entrar(cliente)
+    contrato = cliente.get(f"/contratos/{base_contratos.id}").text
+    assert "Caução" in contrato and "Locação" in contrato and "Caucao" not in contrato
+    base_clientes.cobrancas[0]["tipo"] = "multa_transito"
+    assert "Multa de trânsito" in cliente.get(f"/clientes/{base_clientes.id}?aba=pagamentos").text

@@ -4,7 +4,7 @@
 {% if a.cobrancas %}
 {% call tabela([("Tipo", ""), ("Vencimento", ""), ("Pago em", ""), ("Valor", "num"), ("Situação", "")], "Cobranças do contrato") %}
 {% for c in a.cobrancas %}<tr>
-<td>{{ c.tipo|replace("_", " ")|capitalize }}</td>
+<td>{{ c.tipo|tipo_cobranca }}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="mono" data-rotulo="Pago em">{% if c.pago_em %}{{ c.pago_em|data_br }}{% else %}<span class="text-texto-3">—</span>{% endif %}</td>
 <td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>

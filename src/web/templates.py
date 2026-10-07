@@ -14,6 +14,7 @@ from src.web.apresentacao import (
     formatar_moeda_compacta,
     formatar_placa,
     nome_de_exibicao,
+    rotulo_tipo_cobranca,
     tema_do_cookie,
 )
 from src.domain.entradas import formatar_telefone
@@ -43,6 +44,7 @@ templates.env.globals.update(
     mais_esta_ativo=navegacao.mais_esta_ativo,
 )
 templates.env.filters["moeda"] = formatar_moeda
+templates.env.filters["tipo_cobranca"] = rotulo_tipo_cobranca
 templates.env.filters["data_br"] = formatar_data
 templates.env.filters["moeda_compacta"] = formatar_moeda_compacta
 templates.env.filters["placa_br"] = formatar_placa

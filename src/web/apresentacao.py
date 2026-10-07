@@ -59,3 +59,11 @@ __all__ = [
     "tema_do_cookie",
     "destino_seguro",
 ]
+
+
+_TIPOS_COBRANCA = {"locacao": "Locação", "caucao": "Caução", "dano": "Dano", "multa_transito": "Multa de trânsito", "outros": "Outros"}
+
+
+def rotulo_tipo_cobranca(tipo) -> str:
+    """'locacao' -> 'Locação'; tipo desconhecido vira texto legível em vez de quebrar a tela."""
+    return _TIPOS_COBRANCA.get(tipo) or str(tipo or "—").replace("_", " ").capitalize()
