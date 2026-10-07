@@ -1,0 +1,39 @@
+{% from "componentes/macros.html" import cartao, tabela, selo, estado_vazio %}
+<div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
+{% if aba == "cobrancas" %}
+{% if a.cobrancas %}
+{% call tabela([("Tipo", ""), ("Vencimento", ""), ("Pago em", ""), ("Valor", "num"), ("Situação", "")], "Cobranças do contrato") %}
+{% for c in a.cobrancas %}<tr>
+<td>{{ c.tipo|replace("_", " ")|capitalize }}</td>
+<td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
+<td class="mono" data-rotulo="Pago em">{% if c.pago_em %}{{ c.pago_em|data_br }}{% else %}<span class="text-texto-3">—</span>{% endif %}</td>
+<td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>
+<td data-rotulo="Situação">{{ selo(c.situacao|capitalize, "ok" if c.situacao == "paga" else ("perigo" if c.situacao == "atrasada" else "neutro")) }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma cobrança", "As cobranças deste contrato aparecerão aqui.") }}{% endif %}
+{% elif aba == "vistorias" %}
+<div class="grade cols-2">
+{% for v in a.vistorias %}{% set r = v.registro %}
+{% call cartao(v.titulo) %}
+{% if r %}<dl class="grade-dados"><div><dt>Data</dt><dd class="mono">{{ r.data|data_br }}</dd></div><div><dt>Km</dt><dd class="mono">{{ r.km|milhar }} km</dd></div><div><dt>Combustível</dt><dd>{{ (r.nivel_combustivel or "—")|capitalize }}</dd></div><div><dt>Avarias</dt><dd>{{ v.avarias }}</dd></div></dl>
+{% else %}<p class="text-texto-2">Ainda não realizada{% if v.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>{% endif %}
+{% endcall %}
+{% endfor %}
+</div>
+{% else %}
+{% if a.manutencoes %}
+{% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Cobrada do cliente", ""), ("Custo", "num")], "Manutenções durante o contrato") %}
+{% for m in a.manutencoes %}<tr>
+<td class="mono">{{ m.data_entrada|data_br }}</td>
+<td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td>
+<td data-rotulo="Descrição">{{ m.descricao }}</td>
+<td class="num mono" data-rotulo="Km">{{ m.km|milhar }} km</td>
+<td data-rotulo="Cobrada do cliente">{% if m.cobrar_do_cliente %}Sim{% else %}<span class="text-texto-2">Não</span>{% endif %}</td>
+<td class="num mono" data-rotulo="Custo">{{ m.custo_total|moeda }}</td>
+</tr>{% endfor %}
+{% endcall %}
+<p class="text-texto-2 text-[13px]">Mostrando apenas manutenções realizadas durante a vigência deste contrato.</p>
+{% else %}{{ estado_vazio("Nenhuma manutenção no período", "As manutenções feitas durante a vigência deste contrato aparecerão aqui.") }}{% endif %}
+{% endif %}
+</div>

@@ -41,7 +41,7 @@ def _registrar_em_migracao(item: navegacao.ItemNavegacao) -> None:
 
 
 # As demais telas seguem no Streamlit até a sua fase; a rota existe para o menu não dar 404.
-_JA_MIGRADAS = {navegacao.DASHBOARD, navegacao.MOTOS, navegacao.CLIENTES}
+_JA_MIGRADAS = {navegacao.DASHBOARD, navegacao.MOTOS, navegacao.CLIENTES, navegacao.CONTRATOS}
 for _item in navegacao.TODOS:
     if _item not in _JA_MIGRADAS:
         _registrar_em_migracao(_item)

@@ -1,0 +1,19 @@
+{% from "componentes/macros.html" import selo, placa, tabela, paginacao, estado_vazio, botao %}
+<input type="hidden" name="status" value="{{ status }}">
+<nav class="chips" aria-label="Filtrar por situação">{% for chave, rotulo, quantidade, url in chips %}<a class="chip" href="{{ url }}" hx-get="{{ url }}" hx-target="#resultado" hx-push-url="true"{% if chave == status %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
+<p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+{% if d.itens %}
+{% call tabela([("Cliente", ""), ("Situação", ""), ("Moto", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num"), ("Ações", "col-acoes")], "Contratos") %}
+{% for item in d.itens %}{% set c = item.contrato %}<tr>
+<td class="modelo{% if c.status != 'ativo' %} text-texto-3{% endif %}">{{ item.cliente_nome }}</td>
+<td data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else ("perigo" if c.status == "cancelado" else "neutro")) }}</td>
+<td data-rotulo="Moto">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td class="mono" data-rotulo="Início">{{ c.data_inicio|data_br }}</td>
+<td data-rotulo="Periodicidade">{{ periodos_rotulo.get(c.periodicidade, c.periodicidade) }}</td>
+<td class="num mono" data-rotulo="Valor / período">{{ c.valor_periodo|moeda }}</td>
+<td class="c-acao"><a class="btn" href="/contratos/{{ c.id }}" aria-label="Abrir o contrato de {{ item.cliente_nome }}">Abrir ficha</a></td></tr>{% endfor %}
+{% endcall %}
+{{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}
+{% if d.pagina.total > opcoes_por_pagina[0] %}<div class="campo por-pagina"><label for="por_pagina">Contratos por página</label><select class="entrada" id="por_pagina" name="por_pagina" hx-get="/contratos" hx-include="#filtros" hx-target="#resultado" hx-push-url="true" hx-trigger="change">{% for n in opcoes_por_pagina %}<option value="{{ n }}"{% if n == por_pagina %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>{% endif %}
+{% elif filtrando %}{% call estado_vazio("Nenhum contrato encontrado", "Nenhum contrato atende à busca ou ao filtro escolhido.", "0") %}{{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}{% endcall %}
+{% else %}{% call estado_vazio("Nenhum contrato cadastrado", "Os contratos aparecem aqui assim que forem criados.", "0") %}{{ botao("Novo contrato", href="/contratos/novo", variante="primario") }}{% endcall %}{% endif %}

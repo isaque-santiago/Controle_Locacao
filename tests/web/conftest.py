@@ -347,6 +347,56 @@ def acoes_clientes_falsas(monkeypatch, base_clientes):
     return chamadas
 
 
+class BaseContratos:
+    """Dados fictícios dos serviços usados por src/web/dados_contratos."""
+
+    def __init__(self):
+        self.id = "00000000-0000-0000-0000-0000000000d1"
+        self.cliente = {"id": "00000000-0000-0000-0000-0000000000c1", "nome": "Maria <b>Silva</b>", "cpf": "52998224725", "status": "ativo"}
+        self.moto = {"id": "00000000-0000-0000-0000-0000000000a1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160",
+                     "km_atual": 12000, "status": "alugada"}
+        self.contratos = [
+            {"id": self.id, "cliente_id": self.cliente["id"], "moto_id": self.moto["id"], "status": "ativo",
+             "data_inicio": "2026-08-01", "data_fim_prevista": None, "data_encerramento": None, "periodicidade": "semanal",
+             "valor_periodo": Decimal("280"), "caucao_valor": Decimal("400"), "km_inicial": 10500},
+            {"id": "00000000-0000-0000-0000-0000000000d2", "cliente_id": self.cliente["id"], "moto_id": self.moto["id"],
+             "status": "encerrado", "data_inicio": "2026-01-01", "data_fim_prevista": "2026-06-30", "data_encerramento": "2026-06-30",
+             "periodicidade": "mensal", "valor_periodo": Decimal("900"), "caucao_valor": Decimal("0"), "km_inicial": 8000},
+        ]
+        self.cobrancas = [
+            {"id": "b1", "vencimento": "2026-08-01", "tipo": "caucao", "valor": Decimal("400"), "saldo": Decimal("0"), "situacao": "paga"},
+            {"id": "b2", "vencimento": "2026-08-08", "tipo": "locacao", "valor": Decimal("280"), "saldo": Decimal("280"), "situacao": "atrasada"},
+            {"id": "b3", "vencimento": "2026-10-08", "tipo": "locacao", "valor": Decimal("280"), "saldo": Decimal("280"), "situacao": "aberta"},
+        ]
+        self.pagamentos = {"b1": [{"data_pagamento": "2026-08-01"}]}
+        self.vistorias = [{"tipo": "entrega", "data": "2026-08-01", "km": 10500, "nivel_combustivel": "cheio",
+                           "checklist": {"freio_dianteiro": "avaria", "farol": "ok", "espelho_retrovisor": "avaria"}}]
+        self.manutencoes = [
+            {"data_entrada": "2026-09-10", "tipo": "preventiva", "descricao": "Óleo <i>e filtro</i>", "km": 11000,
+             "cobrar_do_cliente": True, "custo_total": Decimal("85")},
+            {"data_entrada": "2026-05-10", "tipo": "corretiva", "descricao": "Antes do contrato", "km": 9000,
+             "cobrar_do_cliente": False, "custo_total": Decimal("50")},
+        ]
+
+
+@pytest.fixture(autouse=True)
+def base_contratos(monkeypatch):
+    from src.web import dados_contratos
+
+    base = BaseContratos()
+    monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    monkeypatch.setattr(dados_contratos, "clientes", SimpleNamespace(
+        listar=lambda: [base.cliente], obter=lambda id_: base.cliente if id_ == base.cliente["id"] else None))
+    monkeypatch.setattr(dados_contratos, "motos", SimpleNamespace(
+        listar=lambda: [base.moto], obter=lambda id_: base.moto if id_ == base.moto["id"] else None))
+    monkeypatch.setattr(dados_contratos, "cobrancas", SimpleNamespace(
+        listar_por_contrato=lambda id_: base.cobrancas,
+        historicos_pagamentos=lambda ids: {i: base.pagamentos.get(i, []) for i in ids}))
+    monkeypatch.setattr(dados_contratos, "vistorias", SimpleNamespace(listar_por_contrato=lambda id_: base.vistorias))
+    monkeypatch.setattr(dados_contratos, "manutencao", SimpleNamespace(listar_manutencoes=lambda id_: base.manutencoes))
+    return base
+
+
 @pytest.fixture
 def relogio():
     return Relogio()
