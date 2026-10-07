@@ -86,7 +86,7 @@
     var dentro = ativo && ativo !== document.body && alvo && alvo.contains(ativo) && alvo !== ativo;
     var grupo = dentro ? ativo.closest('nav') : null;
     focoPorId = ativo && ativo !== document.body && ativo.id ? ativo.id : null;
-    focoAntes = dentro ? { id: ativo.id, href: ativo.getAttribute('href'), texto: (ativo.textContent || '').trim(), grupo: grupo ? grupo.className : '' } : null;
+    focoAntes = dentro ? { alvoId: alvo.id, id: ativo.id, href: ativo.getAttribute('href'), texto: (ativo.textContent || '').trim(), grupo: grupo ? grupo.className : '' } : null;
   });
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (focoPorId && (!document.activeElement || document.activeElement === document.body)) {
@@ -96,6 +96,8 @@
     focoPorId = null;
     if (!focoAntes) return;
     var alvo = e.detail.target;
+    // Troca por outerHTML: o alvo antigo saiu do DOM, o equivalente novo tem o mesmo id
+    if (!alvo.isConnected && focoAntes.alvoId) alvo = document.getElementById(focoAntes.alvoId) || alvo;
     var igual = null;
     if (focoAntes.id) igual = document.getElementById(focoAntes.id);
     if (!igual && focoAntes.href) {
