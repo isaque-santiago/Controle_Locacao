@@ -484,6 +484,55 @@ def base_cobrancas(monkeypatch):
     return base
 
 
+class BaseManutencao:
+    """Dados fictícios da parte somente leitura de Manutenção."""
+
+    def __init__(self):
+        self.motos = [
+            {"id": "m1", "placa": "BRA2E19", "km_atual": 18420},
+            {"id": "m2", "placa": "QRS4T21", "km_atual": 9000},
+        ]
+        self.alertas = [
+            {"moto_id": "m1", "placa": "BRA2E19", "item": "Pneu <traseiro>", "km_atual": 18420,
+             "proxima_km": 19000, "proxima_data": None, "km_restantes": 580, "dias_restantes": None,
+             "situacao": "proxima"},
+            {"moto_id": "m1", "placa": "BRA2E19", "item": "Filtro de ar", "km_atual": 18420,
+             "proxima_km": 18000, "proxima_data": None, "km_restantes": -420, "dias_restantes": None,
+             "situacao": "vencida"},
+            {"moto_id": "m2", "placa": "QRS4T21", "item": "Em dia", "km_atual": 9000,
+             "proxima_km": 12000, "proxima_data": None, "km_restantes": 3000, "dias_restantes": None,
+             "situacao": "em_dia"},
+        ]
+        self.manutencoes = [
+            {"id": "h1", "moto_id": "m1", "tipo": "preventiva", "status": "aberta",
+             "data_entrada": "2026-09-01", "descricao": "Revisão <geral>", "oficina": "Central",
+             "km": 18000, "custo_total": Decimal("95.00")},
+            {"id": "h2", "moto_id": "m2", "tipo": "corretiva", "status": "concluida",
+             "data_entrada": "2026-08-01", "descricao": "Buzina", "oficina": None,
+             "km": 8900, "custo_total": Decimal("60.00")},
+        ]
+        self.catalogo = [
+            {"id": "i1", "nome": "Kit de tração", "intervalo_km": 5000, "intervalo_minimo_km": 3000,
+             "intervalo_dias": None, "ativo": True},
+            {"id": "i2", "nome": "Item antigo", "intervalo_km": None, "intervalo_minimo_km": None,
+             "intervalo_dias": 90, "ativo": False},
+        ]
+
+
+@pytest.fixture(autouse=True)
+def base_manutencao(monkeypatch):
+    from src.web import dados_manutencao
+
+    base = BaseManutencao()
+    monkeypatch.setattr(dados_manutencao, "motos", SimpleNamespace(listar=lambda: base.motos))
+    monkeypatch.setattr(dados_manutencao, "alertas", SimpleNamespace(listar_manutencao=lambda: base.alertas))
+    monkeypatch.setattr(dados_manutencao, "manutencao", SimpleNamespace(
+        listar_manutencoes=lambda: base.manutencoes,
+        listar_catalogo=lambda: base.catalogo,
+    ))
+    return base
+
+
 class AcoesCobrancasFalsas:
     """Registra os pagamentos em vez de falar com o banco; `falhar_com` faz a próxima gravação levantar."""
 

@@ -1,0 +1,45 @@
+{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, icone %}
+<div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
+{% if aba == "alertas" %}
+<nav class="chips" aria-label="Filtrar alertas por situação">{% for chave, rotulo, quantidade, url, parcial in chips %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == situacao %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
+{% if d.alertas.itens %}
+{% call tabela([("Moto", ""), ("Item", ""), ("Km atual", "num"), ("Próxima", ""), ("Restante", ""), ("Situação", "")], "Alertas de manutenção") %}
+{% for a in d.alertas.itens %}<tr>
+<td>{% if a.placa %}{{ placa(a.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td class="modelo" data-rotulo="Item">{{ a.item }}</td>
+<td class="num mono" data-rotulo="Km atual">{{ a.km_atual|milhar }} km</td>
+<td class="mono" data-rotulo="Próxima">{% if a.proxima_km is not none %}{{ a.proxima_km|milhar }} km{% endif %}{% if a.proxima_km is not none and a.proxima_data %} / {% endif %}{% if a.proxima_data %}{{ a.proxima_data|data_br }}{% endif %}</td>
+<td class="mono{{ ' text-perigo' if (a.km_restantes is not none and a.km_restantes < 0) or (a.dias_restantes is not none and a.dias_restantes < 0) else '' }}" data-rotulo="Restante">{% if a.km_restantes is not none %}{{ a.km_restantes|milhar }} km{% endif %}{% if a.km_restantes is not none and a.dias_restantes is not none %} / {% endif %}{% if a.dias_restantes is not none %}{{ a.dias_restantes }} dias{% endif %}</td>
+<td data-rotulo="Situação">{{ selo("Vencida" if a.situacao == "vencida" else "Próxima", "perigo" if a.situacao == "vencida" else "atencao") }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% else %}{{ estado_vazio("Nenhum alerta neste filtro", "Nenhuma manutenção vencida ou próxima aparece neste filtro.", "0") }}{% endif %}
+{% elif aba == "historico" %}
+<form id="filtros-manutencao" role="search" action="/manutencao" method="get" hx-get="/manutencao" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="true" hx-trigger="input from:#busca-manutencao delay:300ms, submit">
+<input type="hidden" name="aba" value="historico"><input type="hidden" name="tipo" value="{{ tipo }}">
+<div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca-manutencao">Buscar manutenções</label><input class="entrada" id="busca-manutencao" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="Buscar por moto ou oficina" autocomplete="off"></div></div>
+<nav class="chips" aria-label="Filtrar por tipo">{% for chave, rotulo, quantidade, url, parcial in chips %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == tipo %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
+</form>
+<p class="so-leitor" role="status" aria-live="polite">{{ d.historico.pagina.resumo() }}</p>
+{% if d.historico.itens %}
+{% call tabela([("Moto", ""), ("Data", ""), ("Tipo", ""), ("Oficina", ""), ("Custo", "num"), ("Descrição", ""), ("Situação", "")], "Histórico de manutenções") %}
+{% for m in d.historico.itens %}<tr>
+<td>{% if m.moto %}{{ placa(m.moto.placa|placa_br) }}{% else %}—{% endif %}</td><td class="mono" data-rotulo="Data">{{ m.data_entrada|data_br }}</td>
+<td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td><td data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
+<td class="num mono" data-rotulo="Custo">{{ m.custo_total|moeda }}</td><td class="modelo" data-rotulo="Descrição">{{ m.descricao }}</td>
+<td data-rotulo="Situação">{{ selo(status_rotulo[m.status], "ok" if m.status == "concluida" else ("neutro" if m.status == "cancelada" else "info")) }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% if d.historico.pagina.total > d.historico.pagina.por_pagina %}{{ paginacao(d.historico.pagina.inicio + 1, d.historico.pagina.fim, d.historico.pagina.total, url_anterior, url_proxima, alvo="#painel-aba", troca="outerHTML", parcial_anterior=parcial_anterior, parcial_proxima=parcial_proxima) }}{% endif %}
+{% else %}{{ estado_vazio("Nenhuma manutenção encontrada", "Nenhuma manutenção atende à busca ou ao filtro escolhido.", "0") }}{% endif %}
+{% else %}
+{% if d.catalogo %}
+{% call tabela([("Item", ""), ("Intervalo km", "num"), ("Alerta a partir de", "num"), ("Intervalo dias", "num"), ("Situação", "")], "Catálogo de manutenção") %}
+{% for item in d.catalogo %}<tr><td class="modelo">{{ item.nome }}</td>
+<td class="num mono" data-rotulo="Intervalo km">{% if item.intervalo_km %}{{ item.intervalo_km|milhar }} km{% else %}—{% endif %}</td>
+<td class="num mono" data-rotulo="Alerta a partir de">{% if item.intervalo_minimo_km %}{{ item.intervalo_minimo_km|milhar }} km{% else %}—{% endif %}</td>
+<td class="num mono" data-rotulo="Intervalo dias">{{ item.intervalo_dias or "—" }}</td><td data-rotulo="Situação">{{ selo("Ativo" if item.ativo else "Inativo", "ok" if item.ativo else "neutro") }}</td></tr>{% endfor %}
+{% endcall %}
+{% else %}{{ estado_vazio("Nenhum item no catálogo", "Os itens de manutenção aparecem aqui assim que forem cadastrados.", "0") }}{% endif %}
+{% endif %}
+</div>
