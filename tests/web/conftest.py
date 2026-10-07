@@ -489,8 +489,8 @@ class BaseManutencao:
 
     def __init__(self):
         self.motos = [
-            {"id": "m1", "placa": "BRA2E19", "km_atual": 18420},
-            {"id": "m2", "placa": "QRS4T21", "km_atual": 9000},
+            {"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG", "km_atual": 18420, "status": "alugada"},
+            {"id": "m2", "placa": "QRS4T21", "marca": "Yamaha", "modelo": "Factor", "km_atual": 9000, "status": "disponivel"},
         ]
         self.alertas = [
             {"moto_id": "m1", "placa": "BRA2E19", "item": "Pneu <traseiro>", "km_atual": 18420,
@@ -531,6 +531,27 @@ def base_manutencao(monkeypatch):
         listar_catalogo=lambda: base.catalogo,
     ))
     return base
+
+
+class AcoesManutencaoFalsas:
+    def __init__(self):
+        self.registros = []
+        self.falhar_com = None
+
+    def registrar(self, dados, chave):
+        if self.falhar_com:
+            raise self.falhar_com
+        self.registros.append((dados, chave))
+        return {"id": "man1"}
+
+
+@pytest.fixture(autouse=True)
+def acoes_manutencao_falsas(monkeypatch):
+    from src.web import acoes_manutencao
+
+    falsas = AcoesManutencaoFalsas()
+    monkeypatch.setattr(acoes_manutencao, "registrar", falsas.registrar)
+    return falsas
 
 
 class AcoesCobrancasFalsas:

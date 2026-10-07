@@ -62,3 +62,10 @@ def carregar(aba, situacao="todas", tipo="todas", busca="", pagina=1):
     else:
         dados["catalogo"] = manutencao.listar_catalogo()
     return dados
+
+
+def opcoes_do_registro():
+    """Motos não inativas e itens ativos disponíveis no formulário."""
+    frota = [m for m in motos.listar() if m["status"] != "inativa"]
+    catalogo = [i for i in manutencao.listar_catalogo() if i["ativo"]]
+    return frota, catalogo

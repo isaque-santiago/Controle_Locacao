@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo("Registrar manutenção", acao, "Salvar manutenção", csrf_token, erro_geral) %}
+{% include "manutencao/_campos_registro.html" %}
+{% endcall %}
