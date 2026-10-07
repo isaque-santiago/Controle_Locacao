@@ -6,7 +6,7 @@ HX = {"HX-Request": "true"}
 
 
 def _dados(token, **extra):
-    return {"csrf_token": token, "chave_operacao": "chave-1", "moto_id": "m1", "tipo": "preventiva",
+    return {"csrf_token": token, "chave_operacao": "chave-1", "moto_id": "m1", "moto_id_referencia": "m1", "tipo": "preventiva",
             "status": "concluida", "data_entrada": "2026-10-07", "data_saida": "2026-10-07",
             "km": "18420", "oficina": "Central", "descricao": "Revisão", "custo_mao_obra": "30,00",
             "extras_ids": "", **extra}
@@ -31,14 +31,26 @@ def test_previa_seleciona_item_adiciona_linha_e_calcula_total(cliente, base_manu
     assert resposta.status_code == 200
     html = resposta.text
     assert "Kit de tração" in html and 'name="extra_descricao_0"' in html and "R$ 100,00" in html
+    assert 'hx-sync="closest form:replace"' in html
 
 
 def test_trocar_moto_atualiza_o_piso_e_o_km(cliente, base_manutencao):
     entrar(cliente)
     resposta = cliente.post("/manutencao/registrar/previa", data=_dados(
-        csrf_da_sessao(cliente), moto_id="m2", km="18420", alteracao="moto"
+        csrf_da_sessao(cliente), moto_id="m2", moto_id_referencia="m1", km="18420", alteracao="moto"
     ), headers=HX)
     assert 'name="km" type="number" value="9000"' in resposta.text and "9.000 km atuais" in resposta.text
+    assert 'name="moto_id_referencia" value="m2"' in resposta.text
+
+
+def test_envio_imediato_apos_trocar_moto_pede_confirmacao_do_km(cliente, base_manutencao, acoes_manutencao_falsas):
+    entrar(cliente)
+    resposta = cliente.post("/manutencao/registrar", data=_dados(
+        csrf_da_sessao(cliente), moto_id="m2", moto_id_referencia="m1", km="18420"
+    ), headers=HX)
+    assert resposta.status_code == 422 and "a moto mudou; confira a leitura atualizada" in resposta.text
+    assert 'name="km" type="number" value="9000"' in resposta.text
+    assert acoes_manutencao_falsas.registros == []
 
 
 def test_erros_por_campo_preservam_valores_e_nao_gravam(cliente, base_manutencao, acoes_manutencao_falsas):

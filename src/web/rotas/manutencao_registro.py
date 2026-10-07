@@ -32,7 +32,7 @@ def _contexto(valores, erros=None, erro_geral=None):
     frota, catalogo = dados_manutencao.opcoes_do_registro()
     moto = _moto(frota, valores.get("moto_id"))
     if moto and not valores.get("moto_id"):
-        valores = {**valores, "moto_id": moto["id"], "km": str(moto["km_atual"])}
+        valores = {**valores, "moto_id": moto["id"], "moto_id_referencia": moto["id"], "km": str(moto["km_atual"])}
     return {
         "titulo": "Registrar manutenção", "acao": "/manutencao/registrar", "acao_previa": "/manutencao/registrar/previa",
         "v": valores, "erros": erros or {}, "erro_geral": erro_geral, "frota": frota, "catalogo": catalogo,
@@ -52,11 +52,12 @@ def abrir(request: Request, _: Sessao = Depends(exigir_dono)):
 async def atualizar_previa(request: Request, _: Sessao = Depends(exigir_dono)):
     entrada = await _entrada(request)
     valores = formulario.alterar_linhas(formulario.texto_da_entrada(entrada), entrada.get("acao_linha"))
-    if entrada.get("alteracao") == "moto":
+    if valores.get("moto_id") != valores.get("moto_id_referencia"):
         frota, _ = dados_manutencao.opcoes_do_registro()
         moto = _moto(frota, valores.get("moto_id"))
         if moto:
             valores["km"] = str(moto["km_atual"])
+            valores["moto_id_referencia"] = moto["id"]
     return renderizar(request, "manutencao/_campos_registro.html", _contexto(valores))
 
 
@@ -71,6 +72,9 @@ def _registrar(request, sessao, entrada):
             raise ValueError("Cadastre uma moto ativa antes de registrar manutenções.")
         if moto is None:
             raise ErroDeCampos({"moto_id": "Moto: escolha uma das motos disponíveis."})
+        if valores.get("moto_id_referencia") != moto["id"]:
+            contexto["v"] = {**valores, "km": str(moto["km_atual"]), "moto_id_referencia": moto["id"]}
+            raise ErroDeCampos({"km": "Quilometragem: a moto mudou; confira a leitura atualizada e salve novamente."})
         chave = (valores.get("chave_operacao") or "").strip()[:64] or str(uuid4())
         dados = formulario.ler(valores, moto, contexto["catalogo"])
         acoes_manutencao.registrar(dados, chave)

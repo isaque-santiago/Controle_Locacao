@@ -1,8 +1,9 @@
 {% from "componentes/macros.html" import campo, campo_lista, area_texto, caixa, botao, placa %}
-{% set atualizar = 'hx-post="' ~ acao_previa ~ '" hx-target="#campos-registro" hx-swap="outerHTML" hx-include="closest form"' %}
+{% set atualizar = 'hx-post="' ~ acao_previa ~ '" hx-target="#campos-registro" hx-swap="outerHTML" hx-include="closest form" hx-sync="closest form:replace"' %}
 <div id="campos-registro" class="contents">
 <input type="hidden" name="chave_operacao" value="{{ v.chave_operacao }}">
 <input type="hidden" name="extras_ids" value="{{ v.extras_ids }}">
+<input type="hidden" name="moto_id_referencia" value="{{ v.moto_id_referencia }}">
 {% if not frota %}
 <div class="largo aviso info" role="status"><div>Cadastre uma moto ativa antes de registrar manutenções.</div></div>
 {% else %}

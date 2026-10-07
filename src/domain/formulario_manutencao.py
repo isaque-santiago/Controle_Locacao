@@ -12,7 +12,8 @@ STATUS = ("concluida", "aberta")
 
 def valores_iniciais(hoje: date, moto: dict | None) -> dict:
     return {
-        "moto_id": moto["id"] if moto else "", "tipo": "preventiva", "status": "concluida",
+        "moto_id": moto["id"] if moto else "", "moto_id_referencia": moto["id"] if moto else "",
+        "tipo": "preventiva", "status": "concluida",
         "data_entrada": hoje.isoformat(), "data_saida": hoje.isoformat(),
         "km": str(moto.get("km_atual", 0) if moto else 0), "oficina": "", "descricao": "",
         "custo_mao_obra": texto_moeda(0), "cobrar_do_cliente": False,
