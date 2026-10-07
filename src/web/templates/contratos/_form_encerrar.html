@@ -10,6 +10,5 @@
   {{ campo("f-danos", "Danos a descontar da caução", nome="valor_danos", valor=v.valor_danos, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_danos, ajuda="Valor dos danos causados pelo cliente. É abatido da caução; o que passar dela é cobrado do cliente.", autocomplete="off", largo=True, extra=gatilho) }}
   {{ area_texto("f-danos-desc", "Descrição dos danos", nome="descricao_danos", valor=v.descricao_danos, erro=erros.descricao_danos, ajuda="Obrigatória quando há danos. Ex.: tanque amassado e retrovisor quebrado.", largo=True) }}
   {% include "contratos/_previa_encerramento.html" %}
-  {{ caixa("f-confirmar-enc", "Entendo o que será alterado e quero encerrar o contrato.", nome="confirmar", marcada=v.confirmar) }}
-  {% if erros.confirmar %}<small class="msg-erro largo">{{ erros.confirmar }}</small>{% endif %}
+  {{ caixa("f-confirmar-enc", "Entendo o que será alterado e quero encerrar o contrato.", nome="confirmar", marcada=v.confirmar, erro=erros.confirmar) }}
 {% endcall %}

@@ -55,11 +55,13 @@
 </div>
 {%- endmacro %}
 
-{# Caixa de seleção com rótulo ao lado. #}
-{% macro caixa(id, rotulo, nome=None, marcada=False, ajuda="", largo=True) -%}
-<div class="campo caixa{{ ' largo' if largo else '' }}">
-  <label for="{{ id }}"><input type="checkbox" id="{{ id }}" name="{{ nome or id }}"{{ ' checked' if marcada else '' }}{% if ajuda %} aria-describedby="{{ id }}-ajuda"{% endif %}> {{ rotulo }}</label>
+{# Caixa de seleção com rótulo ao lado. Com `erro`, o campo fica inválido e a mensagem é lida junto com ele. #}
+{% macro caixa(id, rotulo, nome=None, marcada=False, ajuda="", largo=True, erro="") -%}
+{%- set descricao = (id ~ "-ajuda " if ajuda else "") ~ (id ~ "-erro" if erro else "") -%}
+<div class="campo caixa{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
+  <label for="{{ id }}"><input type="checkbox" id="{{ id }}" name="{{ nome or id }}"{{ ' checked' if marcada else '' }}{% if erro %} aria-invalid="true"{% endif %}{% if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %}> {{ rotulo }}</label>
   {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
 </div>
 {%- endmacro %}
 

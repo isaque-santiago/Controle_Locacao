@@ -38,7 +38,7 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
 Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 em andamento (iniciada em 06/10/2026):** Clientes
-(`/clientes`, `/clientes/{id}`) concluída; as demais telas continuam mostrando "Em migração".
+(`/clientes`, `/clientes/{id}`) e Contratos (`/contratos`, `/contratos/{id}`, `/contratos/novo`) concluídos; as demais telas continuam mostrando "Em migração".
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -61,9 +61,20 @@ contrato ativo, Contratos, Pagamentos paginados de 10 em 10 e Portal), cadastro 
 `src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A aba Portal cria o acesso do locatário, gera nova
 senha e remove o acesso; a senha só existe na resposta do POST (sem sessão, URL ou cache, `Cache-Control: no-store`)
 e as fotos das trocas abrem por redirecionamento para URL assinada de 5 minutos. Foi aceita sem a comparação lado a
-lado com o Streamlit nos passos finais (decisão do proprietário). **Próxima página: Contratos** (assistente de quatro
-etapas, preservando o rascunho ao voltar). Depois da Fase 3, resolver a falta de recarga automática do app web
-(hoje o preview usa `locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor).
+lado com o Streamlit nos passos finais (decisão do proprietário).
+
+**Fase 3, andamento: Contratos concluída (07/10/2026).** Lista (abre nos ativos; filtro por situação, busca por
+cliente ou placa, paginação) e ficha com faixa de dados e abas Cobranças, Vistorias e Manutenções
+(`rotas/contratos.py`, `templates/contratos/`). **Novo contrato** é um assistente de quatro etapas (Cliente, Moto,
+Condições, Confirmar) em `rotas/contratos_novo.py`: cada etapa tem URL própria (`/contratos/novo?etapa=N`), funciona
+sem JavaScript e o rascunho (escolhas e texto digitado, mesmo inválido) fica em `sessao.rascunho_contrato`, então dá
+para voltar e revisar; a criação usa a RPC única de contrato com vistoria de entrega. **Encerrar contrato**
+(`rotas/contratos_encerramento.py`) abre um diálogo com a vistoria de devolução, danos descontados da caução e uma
+prévia (caução a devolver, excedente cobrado, cobranças canceladas) recalculada pelo servidor ao mudar a data ou os
+danos. Regras puras em `src/domain/contratos_lista.py`, `formulario_contrato.py` e `encerramento.py`. Fotos da
+vistoria continuam sendo anexadas na página Vistorias (como no Streamlit). **Próxima página: Cobranças.**
+Depois da Fase 3, resolver a falta de recarga automática do app web (hoje o preview usa `locacao-web-estavel`, sem
+recarga, porque a sessão fica na memória do servidor; templates e CSS recarregam, o Python não).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

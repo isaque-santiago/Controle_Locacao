@@ -2,8 +2,8 @@
 
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
-> incluindo Portal). Próxima página: Contratos (assistente em 4 etapas). Depois da Fase 3, resolver a falta de
-> recarga automática do app web.**
+> incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
+> Próxima página: Cobranças. Depois da Fase 3, resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -190,8 +190,37 @@ novo) e agora usa o do cabeçalho do cliente por requisição; o foco voltava ao
 `outerHTML` e agora volta ao botão equivalente. **Não verificado:** fotos das trocas de óleo (o banco de dev não
 tem trocas; só testes automatizados), leitor de tela e aparelhos reais (ficam para a Fase 4).
 
-**Próxima: Contratos** (assistente de quatro etapas), seguida de Cobranças, Manutenção, Vistorias, Documentos,
-Relatórios, Configurações e Portal do Locatário.
+**Andamento: Contratos concluída (07/10/2026).** Entregue em três partes, cada uma com testes e commit:
+(A) lista e ficha somente leitura; (B) assistente de novo contrato em quatro etapas; (C) encerramento em diálogo.
+
+- **Lista e ficha:** abre nos contratos ativos; chips de situação com contagem, busca por cliente ou placa, paginação
+  e resposta parcial HTMX. Ficha com faixa de dados (valor, caução, km inicial, prazo, próxima cobrança) e abas
+  Cobranças (com "pago em"), Vistorias (entrega e devolução) e Manutenções (só as da vigência). O cartão de contrato
+  ativo da ficha do cliente abre esta ficha.
+- **Assistente:** Cliente → Moto → Condições → Confirmar, uma URL por etapa, sem depender de JavaScript. Decisão de
+  implementação: o rascunho fica **na sessão do servidor** (`sessao.rascunho_contrato`), inclusive texto inválido,
+  para voltar e revisar sem perder o progresso; some ao concluir, cancelar ou iniciar outro contrato. Regras mantidas
+  do Streamlit: só cliente ativo aluga, só moto disponível aparece, prazo indeterminado é o padrão, o km da vistoria
+  não pode ser menor que o da moto e vira o km inicial, a criação usa a RPC única. A vistoria de entrega não tem fotos
+  (como no Streamlit; elas entram na página Vistorias).
+- **Encerramento:** diálogo com data, vistoria de devolução, danos descontados da caução (descrição obrigatória) e
+  prévia de impacto recalculada pelo servidor; o aviso final diz quanto devolver e o excedente cobrado.
+- **Conferência no banco de desenvolvimento (07/10/2026):** contrato de teste criado pelo assistente (Carlos Eduardo
+  Lima, moto E2E-0A04): 5 parcelas semanais geradas, vistoria de entrega registrada, moto passou a Alugada; encerrado
+  pelo diálogo: parcelas futuras canceladas, a do dia mantida, vistoria de devolução registrada, moto Disponível de
+  novo. Validação por campo, prévia ao vivo (danos acima da caução geram aviso de cobrança de dano), foco no campo com
+  erro e Esc conferidos. Sem rolagem horizontal e sem alvo menor que 44 px em 320 px (lista, ficha, etapas 1 a 4 e
+  diálogo) e em 1440 px (etapa 3 com resumo ao lado).
+- **Correções do caminho:** tipo da cobrança com acento (Locação, Caução); links "Alterar cliente/moto" de 19 px
+  viraram botões de 44 px; foco no primeiro campo inválido em páginas recarregadas; macro `caixa` com erro; token do
+  dono no repositório do portal (Clientes).
+- **Não verificado:** comparação lado a lado com o Streamlit (não feita nesta página), contrato com caução recebida
+  encerrado de verdade (só a prévia foi vista, no contrato do João da Silva; o cálculo tem testes), leitor de
+  tela e aparelhos reais (Fase 4). Enter num campo de texto da etapa 4 cria o contrato, como nos formulários do
+  Streamlit.
+
+**Próxima: Cobranças**, seguida de Manutenção, Vistorias (com fotos), Documentos, Relatórios, Configurações e
+Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

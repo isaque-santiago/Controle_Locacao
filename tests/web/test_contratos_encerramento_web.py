@@ -113,3 +113,12 @@ def test_encerramento_exige_dono_e_csrf(cliente, base_contratos):
     cliente.post("/logout", data={"csrf_token": csrf_da_sessao(cliente)})
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get(_url(base_contratos)).status_code == 403
+
+
+def test_confirmacao_ausente_marca_a_caixa_como_invalida_para_receber_o_foco(cliente, base_contratos):
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    dados = {k: v for k, v in _dados(token).items() if k != "confirmar"}
+    html = cliente.post(_url(base_contratos), data=dados, headers=HX).text
+    assert 'id="f-confirmar-enc"' in html and 'aria-invalid="true" aria-describedby="f-confirmar-enc-erro"' in html
+    assert 'id="f-confirmar-enc-erro"' in html
