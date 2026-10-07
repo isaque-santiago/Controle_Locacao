@@ -38,7 +38,8 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
 Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 em andamento (iniciada em 06/10/2026):** Clientes
-(`/clientes`, `/clientes/{id}`), Contratos (`/contratos`, `/contratos/{id}`, `/contratos/novo`) e Cobranças (`/cobrancas`) concluídos; as demais telas continuam mostrando "Em migração".
+(`/clientes`, `/clientes/{id}`), Contratos (`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`)
+e Manutenção (`/manutencao`) concluídos; as demais telas continuam mostrando "Em migração".
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -82,7 +83,12 @@ Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a da
 (`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
 mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
 texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
-**Próxima página: Manutenção.** Depois da Fase 3, resolver a falta de recarga automática do app web (hoje o preview usa
+**Fase 3, andamento: Manutenção concluída (07/10/2026).** Abas Alertas, Histórico e Catálogo; filtros, busca e
+paginação; registro com itens do plano, peças adicionais, prévia de custos e idempotência; conclusão e cancelamento
+de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
+por campo. Homologada no banco de desenvolvimento e em 320, 390 e 1440 px; 981 testes passaram.
+
+**Próxima página: Vistorias (com fotos).** Depois da Fase 3, resolver a falta de recarga automática do app web (hoje o preview usa
 `locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor; templates e CSS recarregam, o Python não).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis

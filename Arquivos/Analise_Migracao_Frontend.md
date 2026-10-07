@@ -3,7 +3,7 @@
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
-> Cobranças CONCLUÍDA em 07/10/2026 (abas, pagamento e mensagem). Próxima página: Manutenção. Depois da Fase 3,
+> Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Próxima página: Vistorias (com fotos). Depois da Fase 3,
 > resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
@@ -249,7 +249,21 @@ tem trocas; só testes automatizados), leitor de tela e aparelhos reais (ficam p
   transferência (o navegador bloqueia a leitura; só o aviso de sucesso foi visto), cobranças parceladas de outros tipos
   (dano, multa de trânsito) em pagamento real, leitor de tela e aparelhos reais (Fase 4).
 
-**Próxima: Manutenção**, seguida de Vistorias (com fotos), Documentos, Relatórios, Configurações e Portal do Locatário.
+**Andamento: Manutenção concluída (07/10/2026).** Entregue em quatro partes: abas somente leitura; registro com
+itens e custos; conclusão/cancelamento; cadastro e edição do catálogo. Alertas filtram vencidas e próximas; o
+Histórico tem busca, filtro e paginação. O registro aceita itens do plano e adicionais, calcula a prévia no servidor,
+preserva dados em erro e usa chave idempotente. Concluir atualiza km/plano pela RPC; cancelar exige confirmação e não
+reinicia o plano. O Catálogo valida intervalos e faixas de km.
+
+Homologação no banco de desenvolvimento (07/10/2026): 8 alertas vencidos; item fictício criado, editado e inativado;
+manutenção aberta de R$ 45,00 registrada e cancelada; outra aberta e concluída com 15.000 km. Diálogos, validação,
+Esc com devolução de foco e ausência de overflow/alvos menores que 44 px em 320, 390 e 1440 px foram conferidos.
+A homologação encontrou e corrigiu duas corridas HTMX: respostas antigas restauravam custos e a troca rápida de moto
+podia manter o km da seleção anterior. A prévia agora sincroniza por formulário e o servidor confirma a referência da
+moto antes de gravar. Suíte final: 981 testes. Itens fictícios de homologação permaneceram no banco, inativos ou
+cancelados/concluídos. Leitor de tela e aparelhos reais ficam para a Fase 4.
+
+**Próxima: Vistorias (com fotos)**, seguida de Documentos, Relatórios, Configurações e Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de
