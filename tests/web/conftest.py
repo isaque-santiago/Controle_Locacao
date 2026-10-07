@@ -367,9 +367,9 @@ class BaseContratos:
              "periodicidade": "mensal", "valor_periodo": Decimal("900"), "caucao_valor": Decimal("0"), "km_inicial": 8000},
         ]
         self.cobrancas = [
-            {"id": "b1", "vencimento": "2026-08-01", "tipo": "caucao", "valor": Decimal("400"), "saldo": Decimal("0"), "situacao": "paga"},
-            {"id": "b2", "vencimento": "2026-08-08", "tipo": "locacao", "valor": Decimal("280"), "saldo": Decimal("280"), "situacao": "atrasada"},
-            {"id": "b3", "vencimento": "2026-10-08", "tipo": "locacao", "valor": Decimal("280"), "saldo": Decimal("280"), "situacao": "aberta"},
+            {"id": "b1", "vencimento": "2026-08-01", "tipo": "caucao", "valor": Decimal("400"), "saldo": Decimal("0"), "situacao": "paga", "valor_pago": Decimal("400")},
+            {"id": "b2", "vencimento": "2026-08-08", "tipo": "locacao", "valor": Decimal("280"), "saldo": Decimal("280"), "situacao": "atrasada", "valor_pago": Decimal("0")},
+            {"id": "b3", "vencimento": "2026-10-20", "tipo": "locacao", "valor": Decimal("280"), "saldo": Decimal("280"), "situacao": "aberta", "valor_pago": Decimal("0")},
         ]
         self.pagamentos = {"b1": [{"data_pagamento": "2026-08-01"}]}
         self.vistorias = [{"tipo": "entrega", "data": "2026-08-01", "km": 10500, "nivel_combustivel": "cheio",
@@ -409,6 +409,7 @@ class AcoesContratosFalsas:
 
     def __init__(self):
         self.chamadas: list[tuple] = []
+        self.encerramentos: list[tuple] = []
         self.falhar_com: Exception | None = None
 
     def criar_contrato_com_vistoria(self, dados, vistoria):
@@ -417,6 +418,12 @@ class AcoesContratosFalsas:
         self.chamadas.append((dados, vistoria))
         return {"contrato_id": "00000000-0000-0000-0000-0000000000e1"}
 
+    def encerrar_contrato_com_vistoria(self, contrato_id, data, vistoria, valor_danos, descricao_danos):
+        if self.falhar_com is not None:
+            raise self.falhar_com
+        self.encerramentos.append((contrato_id, data, vistoria, valor_danos, descricao_danos))
+        return {}
+
 
 @pytest.fixture(autouse=True)
 def acoes_contratos_falsas(monkeypatch):
@@ -424,6 +431,7 @@ def acoes_contratos_falsas(monkeypatch):
 
     falsas = AcoesContratosFalsas()
     monkeypatch.setattr(acoes_contratos, "criar_contrato_com_vistoria", falsas.criar_contrato_com_vistoria)
+    monkeypatch.setattr(acoes_contratos, "encerrar_contrato_com_vistoria", falsas.encerrar_contrato_com_vistoria)
     return falsas
 
 

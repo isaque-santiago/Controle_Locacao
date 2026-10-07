@@ -74,3 +74,38 @@ def test_vistoria_rejeita_combustivel_estado_e_adicional_invalidos():
     assert set(erros) == {"nivel_combustivel", "item_buzina", "adicionais"}
     assert "nome=estado" in erros["adicionais"]
     assert "adicionais" in _erros(f.ler_vistoria, _vistoria(adicionais="x=talvez"), 0)
+
+
+def _encerramento(**extra):
+    return {"data_encerramento": "2026-10-10", "valor_danos": "0,00", "descricao_danos": "", "confirmar": "on",
+            **f.vistoria_inicial(12000), **extra}
+
+
+def test_encerramento_valido_sem_danos():
+    dados = f.ler_encerramento(_encerramento(), "2026-08-01", 12000)
+    assert dados["data"] == date(2026, 10, 10) and dados["valor_danos"] == Decimal("0.00")
+    assert dados["descricao_danos"] is None and dados["vistoria"]["km"] == 12000
+
+
+def test_encerramento_com_danos_exige_descricao():
+    assert "descricao_danos" in _erros(f.ler_encerramento, _encerramento(valor_danos="150,00"), "2026-08-01", 12000)
+    dados = f.ler_encerramento(_encerramento(valor_danos="150,00", descricao_danos=" tanque amassado "), "2026-08-01", 12000)
+    assert dados["valor_danos"] == Decimal("150.00") and dados["descricao_danos"] == "tanque amassado"
+
+
+def test_encerramento_data_antes_do_inicio_e_sem_confirmacao():
+    sem_confirmar = {k: v for k, v in _encerramento(data_encerramento="2026-07-31").items() if k != "confirmar"}
+    erros = _erros(f.ler_encerramento, sem_confirmar, "2026-08-01", 12000)
+    assert set(erros) == {"data_encerramento", "confirmar"}
+    assert "posterior ao início" in erros["data_encerramento"]
+
+
+def test_encerramento_junta_erros_da_vistoria_e_dos_danos():
+    erros = _erros(f.ler_encerramento, _encerramento(km="1", valor_danos="x", nivel_combustivel="?"), "2026-08-01", 12000)
+    assert set(erros) == {"km", "valor_danos", "nivel_combustivel"}
+
+
+def test_condicoes_do_encerramento_nao_comecam_antes_do_inicio():
+    assert f.condicoes_do_encerramento(date(2026, 10, 7), "2026-08-01")["data_encerramento"] == "2026-10-07"
+    assert f.condicoes_do_encerramento(date(2026, 7, 1), "2026-08-01")["data_encerramento"] == "2026-08-01"
+    assert f.texto_do_encerramento({"confirmar": "on"})["confirmar"] is True

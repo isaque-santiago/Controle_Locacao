@@ -7,6 +7,7 @@ from datetime import date
 from decimal import Decimal
 
 from src.domain import clientes_lista, contratos_lista
+from src.domain.encerramento import resumo_encerramento
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, contratos, manutencao, motos, vistorias
 
@@ -108,3 +109,17 @@ def previa_agenda(condicoes):
         date.fromisoformat(condicoes["data_inicio"]), condicoes["periodicidade"],
         Decimal(condicoes["valor_periodo"]), date.fromisoformat(fim) if fim else None,
     )
+
+
+# ----------------------------------------------------------------- encerramento --
+
+def previa_encerramento(contrato_id, data, valor_danos):
+    """Caução, danos e cobranças que o encerramento cancelaria (`data` e `valor_danos` podem ser None)."""
+    return resumo_encerramento(cobrancas.listar_por_contrato(contrato_id), data, valor_danos)
+
+
+def avarias_da_entrega(contrato_id):
+    """Itens com avaria na vistoria de entrega, como base para o valor dos danos; texto vazio se não houver."""
+    entrega = next((v for v in vistorias.listar_por_contrato(contrato_id) if v["tipo"] == "entrega"), None)
+    texto = _avarias((entrega or {}).get("checklist"))
+    return "" if texto == "Nenhuma" else texto

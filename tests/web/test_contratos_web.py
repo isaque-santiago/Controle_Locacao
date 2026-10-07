@@ -38,7 +38,7 @@ def test_ficha_mostra_faixa_de_dados_e_cobrancas(cliente, base_contratos):
     html = cliente.get(f"/contratos/{base_contratos.id}").text
     assert "Maria &lt;b&gt;Silva&lt;/b&gt;" in html and "CG 160" in html and "BRA-2E19" in html
     assert "R$ 280,00" in html and "R$ 400,00" in html and "10.500 km" in html
-    assert "Indeterminado" in html and "08/10/2026" in html
+    assert "Indeterminado" in html and "20/10/2026" in html
     assert "Atrasada" in html and "Paga" in html and "01/08/2026" in html
     assert 'href="/clientes/' + base_contratos.cliente["id"] in html
 

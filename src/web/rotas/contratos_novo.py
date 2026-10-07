@@ -16,7 +16,7 @@ from src.domain.formulario_moto import ErroDeCampos
 from src.domain.valores import hoje_br
 from src.domain.vistorias import CHECKLIST_PADRAO, ESTADOS_ITEM, NIVEIS_COMBUSTIVEL, rotulo_item
 from src.web import acoes_contratos, dados_contratos
-from src.web.apresentacao import formatar_placa
+from src.web.apresentacao import formatar_milhar, formatar_placa
 from src.web.dependencias import exigir_dono, validar_csrf
 from src.web.rotas.motos_formularios import _concluir, _devolver_formulario, _entrada
 from src.web.sessao import Sessao
@@ -79,6 +79,7 @@ def _extra_confirmar(rascunho, moto):
     return {
         "condicoes": condicoes, "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
         "v": digitada or formulario.vistoria_inicial(moto["km_atual"]),
+        "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(moto['km_atual'])} km) e vira o km inicial do contrato.",
         "itens_checklist": [(PREFIXO + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],
         "estados": [(e, _ESTADOS_ROTULO[e]) for e in ESTADOS_ITEM],
         "niveis": [(n, n.capitalize()) for n in NIVEIS_COMBUSTIVEL],

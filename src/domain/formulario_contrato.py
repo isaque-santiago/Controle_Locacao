@@ -5,6 +5,7 @@ ou levantam `ErroDeCampos` com uma mensagem por campo, para a tela mostrar o err
 
 import re
 from datetime import date, timedelta
+from decimal import Decimal
 
 from src.domain.contratos_lista import PERIODOS_ROTULO
 from src.domain.entradas import decimal_campo, inteiro_campo, texto_moeda
@@ -119,4 +120,53 @@ def ler_vistoria(entrada: dict, km_minimo: int) -> dict:
         "nivel_combustivel": combustivel,
         "checklist": {**checklist, **(adicionais or {})},
         "avarias": _texto(entrada, "avarias"),
+    }
+
+
+def _juntar(erros: dict, funcao, *args):
+    """Roda uma leitura que levanta `ErroDeCampos` e acumula os erros dela em `erros`."""
+    try:
+        return funcao(*args)
+    except ErroDeCampos as erro:
+        erros.update(erro.erros)
+    return None
+
+
+def condicoes_do_encerramento(hoje: date, data_inicio: str) -> dict:
+    """Texto inicial dos campos do diálogo de encerramento (a data não pode ser anterior ao início)."""
+    inicio = date.fromisoformat(str(data_inicio)[:10])
+    return {"data_encerramento": max(hoje, inicio).isoformat(), "valor_danos": texto_moeda(0), "descricao_danos": "", "confirmar": False}
+
+
+def texto_do_encerramento(entrada: dict) -> dict:
+    return {
+        "data_encerramento": _texto(entrada, "data_encerramento"),
+        "valor_danos": _texto(entrada, "valor_danos"),
+        "descricao_danos": _texto(entrada, "descricao_danos"),
+        "confirmar": bool(entrada.get("confirmar")),
+    }
+
+
+def ler_encerramento(entrada: dict, data_inicio: str, km_minimo: int) -> dict:
+    """Encerramento pronto para `contratos.encerrar_com_vistoria`: data, vistoria de devolução, danos e
+    confirmação. Os danos são descontados da caução e exigem descrição."""
+    erros: dict[str, str] = {}
+    inicio = date.fromisoformat(str(data_inicio)[:10])
+    data = _coletar(erros, "data_encerramento", _data_iso, _texto(entrada, "data_encerramento"), "Data de encerramento", True)
+    if data and date.fromisoformat(data) < inicio:
+        erros["data_encerramento"] = "Data de encerramento: escolha uma data igual ou posterior ao início do contrato."
+    danos = _coletar(erros, "valor_danos", decimal_campo, entrada.get("valor_danos"), "Danos a descontar da caução")
+    descricao = _texto(entrada, "descricao_danos")
+    if danos and danos > 0 and not descricao:
+        erros["descricao_danos"] = "Descrição dos danos: informe o que foi danificado."
+    vistoria = _juntar(erros, ler_vistoria, entrada, km_minimo)
+    if not entrada.get("confirmar"):
+        erros["confirmar"] = "Marque a confirmação para encerrar o contrato."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {
+        "data": date.fromisoformat(data),
+        "vistoria": vistoria,
+        "valor_danos": Decimal(danos),
+        "descricao_danos": descricao or None,
     }
