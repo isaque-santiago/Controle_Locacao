@@ -37,9 +37,8 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 [Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
-Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 iniciada (06/10/2026):** Clientes
-(`/clientes`, `/clientes/{id}`) está em homologação parcial no banco de desenvolvimento. As demais
-telas continuam mostrando "Em migração".
+Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 em andamento (iniciada em 06/10/2026):** Clientes
+(`/clientes`, `/clientes/{id}`) concluída; as demais telas continuam mostrando "Em migração".
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -57,12 +56,14 @@ telas continuam mostrando "Em migração".
 - **Cache** de leituras (`repositories/consultas.py`): por usuário e por dia, 60 s; sem usuário identificado não
   há cache. O limite de "gerar cobranças uma vez por hora" também é por usuário.
 
-**Continuidade da Fase 3.** Clientes reaproveita os mesmos padrões de lista, abas e diálogo em
-`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A conferência manual confirmou contagens, busca,
-cadastro, edição, responsividade e três abas, mas ainda faltam a aba Portal e o cartão de contrato ativo no Resumo;
-considere também paginar a lista extensa da aba Pagamentos. Após corrigir e repetir o aceite, a próxima página é
-Contratos, preservando no assistente as quatro etapas e o rascunho ao voltar. Não marque Clientes nem a Fase 3 como
-concluída antes desse fechamento.
+**Fase 3, andamento: Clientes concluída (07/10/2026).** Lista, ficha com quatro abas (Resumo com cartão de
+contrato ativo, Contratos, Pagamentos paginados de 10 em 10 e Portal), cadastro e edição em diálogo, em
+`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A aba Portal cria o acesso do locatário, gera nova
+senha e remove o acesso; a senha só existe na resposta do POST (sem sessão, URL ou cache, `Cache-Control: no-store`)
+e as fotos das trocas abrem por redirecionamento para URL assinada de 5 minutos. Foi aceita sem a comparação lado a
+lado com o Streamlit nos passos finais (decisão do proprietário). **Próxima página: Contratos** (assistente de quatro
+etapas, preservando o rascunho ao voltar). Depois da Fase 3, resolver a falta de recarga automática do app web
+(hoje o preview usa `locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

@@ -1,8 +1,9 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
-> uma por vez), INICIADA em 06/10/2026. Clientes está em homologação parcial: lista, cadastro, edição e três abas
-> funcionam, mas faltam a aba Portal e o cartão de contrato ativo no Resumo. Próxima página após esse aceite: Contratos.**
+> uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
+> incluindo Portal). Próxima página: Contratos (assistente em 4 etapas). Depois da Fase 3, resolver a falta de
+> recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -169,20 +170,28 @@ Clientes → Contratos (assistente em 4 etapas) → Cobranças → Manutenção 
 Documentos → Relatórios (exportação) → Configurações (backup) → Portal do Locatário.
 O Streamlit continua funcionando em paralelo, no mesmo banco, até a última página migrar.
 
-**Andamento (06/10/2026): Clientes em homologação parcial.** O app novo já possui lista com filtro por status, busca por
-nome/CPF, paginação e resposta parcial HTMX; ficha com abas Resumo, Contratos e Pagamentos; cadastro e edição em
-diálogo, com validação por campo, CSRF, mensagens e dados preservados após erro. A rota usa as fronteiras
-`dados_clientes.py` e `acoes_clientes.py`, sem acesso direto ao banco, e tem testes web com serviços falsos.
-Conferência lado a lado realizada no banco de desenvolvimento em 06/10/2026: ambos mostraram 30 clientes após a
-criação do registro fictício `Teste Migração Fase 3 Editado` (24 ativos, 4 bloqueados e 2 inativos); busca por CPF,
-paginação, dados pessoais, contrato, valores financeiros, cadastro e edição bateram. O diálogo funcionou em 320 px,
-fechou com Esc e devolveu o foco. A conferência encontrou e corrigiu o corte de CPF/WhatsApp em 320 px e o rótulo
-técnico `multa_manutencao`. Não houve overflow global nem alvo interativo menor que 44 px.
+**Andamento: Clientes concluída (07/10/2026).** O app novo possui lista com filtro por status, busca por
+nome/CPF, paginação e resposta parcial HTMX; ficha com abas Resumo (com cartão de contrato ativo), Contratos,
+Pagamentos (paginados de 10 em 10, URL `?aba=pagamentos&pagina=N`) e Portal; cadastro e edição em diálogo, com
+validação por campo, CSRF, mensagens e dados preservados após erro. A rota usa as fronteiras `dados_clientes.py` e
+`acoes_clientes.py`, sem acesso direto ao banco, e tem testes web com serviços falsos (846 testes na suíte).
 
-**Pendências antes do aceite de Clientes:** migrar a quarta aba **Portal** (`src/ui/clientes_portal.py`) e recolocar
-no Resumo o cartão de contrato ativo existente no Streamlit. A aba Pagamentos funciona, porém a massa E2E gera uma
-lista muito longa; avaliar paginação durante esse fechamento. Só depois repetir a ficha lado a lado, registrar o
-aceite e iniciar Contratos (assistente de quatro etapas).
+Conferência lado a lado em 06/10/2026 no banco de desenvolvimento: 30 clientes (24 ativos, 4 bloqueados e 2
+inativos), busca por CPF, paginação, dados pessoais, contrato, valores financeiros, cadastro e edição bateram com o
+Streamlit; diálogo em 320 px, Esc e foco ok. Em 07/10/2026, no app novo: cartão de contrato ativo conferido; aba
+Portal exercitada de ponta a ponta no cliente fictício (criar acesso, fechar o aviso, gerar nova senha, remover
+acesso); paginação testada num cliente com 183 cobranças (avanço, Voltar do navegador, última página, teclado);
+sem rolagem horizontal e sem alvo menor que 44 px em 320, 390 e 1440 px; setas percorrem as abas. Decisão do
+proprietário: aceite **sem** repetir a comparação lado a lado dos itens novos (Resumo, Portal, Pagamentos
+paginados).
+
+Correções feitas no fechamento: o repositório do portal lia o JWT do dono da sessão do Streamlit (nulo no app
+novo) e agora usa o do cabeçalho do cliente por requisição; o foco voltava ao topo após a paginação por
+`outerHTML` e agora volta ao botão equivalente. **Não verificado:** fotos das trocas de óleo (o banco de dev não
+tem trocas; só testes automatizados), leitor de tela e aparelhos reais (ficam para a Fase 4).
+
+**Próxima: Contratos** (assistente de quatro etapas), seguida de Cobranças, Manutenção, Vistorias, Documentos,
+Relatórios, Configurações e Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de
