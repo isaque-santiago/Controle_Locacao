@@ -20,6 +20,7 @@ from src.web.rotas import autenticacao as rotas_autenticacao
 from src.web.rotas import componentes as rotas_componentes
 from src.web.rotas import clientes as rotas_clientes
 from src.web.rotas import clientes_formularios as rotas_clientes_formularios
+from src.web.rotas import clientes_portal as rotas_clientes_portal
 from src.web.rotas import motos as rotas_motos
 from src.web.rotas import motos_formularios as rotas_motos_formularios
 from src.web.rotas import paginas as rotas_paginas
@@ -63,6 +64,7 @@ def criar_app(
 
     app.include_router(rotas_paginas.router)
     app.include_router(rotas_clientes_formularios.router)
+    app.include_router(rotas_clientes_portal.router)
     app.include_router(rotas_clientes.router)
     # Formulários antes da ficha: /motos/nova não pode cair em /motos/{moto_id}
     app.include_router(rotas_motos_formularios.router)

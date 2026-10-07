@@ -55,6 +55,17 @@ def alterar_senha(nova_senha: str) -> None:
 # ---- Somente o dono ----------------------------------------------------------
 
 
+def _jwt_do_dono(cliente) -> str:
+    """JWT do usuário logado: o da sessão (Streamlit) ou o do cabeçalho do cliente por requisição (web)."""
+    sessao = cliente.auth.get_session()
+    if sessao is not None:
+        return sessao.access_token
+    autorizacao = cliente.options.headers.get("Authorization", "")
+    if not autorizacao.startswith("Bearer "):
+        raise ValueError("Sessão expirada. Entre novamente.")
+    return autorizacao.removeprefix("Bearer ")
+
+
 @invalida_cache
 def gerenciar_acesso(acao: str, cliente_id: str) -> dict:
     """Chama a Edge Function criar-locatario (criar, redefinir ou remover o acesso).
@@ -62,11 +73,10 @@ def gerenciar_acesso(acao: str, cliente_id: str) -> dict:
     Só ela usa a service_role, dentro do Supabase; o app manda apenas o JWT do dono.
     A função responde sempre JSON: {"ok": true, ...} ou {"ok": false, "erro": "..."}."""
     cliente = get_client()
-    sessao = cliente.auth.get_session()
     return cliente.functions.invoke(
         FUNCAO_ACESSO,
         invoke_options={
-            "headers": {"Authorization": f"Bearer {sessao.access_token}"},
+            "headers": {"Authorization": f"Bearer {_jwt_do_dono(cliente)}"},
             "body": {"acao": acao, "cliente_id": cliente_id},
             "responseType": "json",
         },

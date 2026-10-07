@@ -299,7 +299,12 @@ class BaseClientes:
                            "data_inicio": "2026-01-01", "data_encerramento": None,
                            "valor_periodo": Decimal("300"), "caucao_valor": Decimal("500"), "periodicidade": "semanal"}]
         self.cobrancas = [{"id": "b1", "vencimento": "2026-10-01", "tipo": "locacao", "valor": Decimal("300"),
-                            "saldo": Decimal("100"), "situacao": "atrasada"}]
+                            "saldo": Decimal("100"), "situacao": "atrasada"},
+                           {"id": "b2", "vencimento": "2026-10-08", "tipo": "locacao", "valor": Decimal("300"),
+                            "saldo": Decimal("300"), "situacao": "aberta"}]
+        self.troca_id = "00000000-0000-0000-0000-0000000000f1"
+        self.trocas = [{"id": self.troca_id, "criado_em": "2026-09-20T10:00:00+00:00", "km": 12500, "km_excedente": 300,
+                        "cobranca_id": "b9", "foto_painel_path": "c1/painel.jpg", "nota_fiscal_path": "c1/nota.jpg"}]
 
 
 @pytest.fixture(autouse=True)
@@ -310,6 +315,7 @@ def base_clientes(monkeypatch):
     monkeypatch.setattr(dados_clientes, "contratos", SimpleNamespace(listar=lambda: base.contratos))
     monkeypatch.setattr(dados_clientes, "motos", SimpleNamespace(listar=lambda: base.motos))
     monkeypatch.setattr(dados_clientes, "configuracoes", SimpleNamespace(obter=lambda: {"alerta_cnh_dias": 30}))
+    monkeypatch.setattr(dados_clientes, "portal_locatario", SimpleNamespace(listar_trocas=lambda id_: base.trocas))
     monkeypatch.setattr(dados_clientes, "cobrancas", SimpleNamespace(
         listar_por_contrato=lambda id_: base.cobrancas,
         historicos_pagamentos=lambda ids: {id_: [] for id_ in ids},
@@ -325,8 +331,19 @@ def acoes_clientes_falsas(monkeypatch, base_clientes):
         chamadas.append(("criar", dados)); return {"id": base_clientes.id, **dados}
     def atualizar(cliente_id, dados):
         chamadas.append(("atualizar", cliente_id, dados)); return {"id": cliente_id, **dados}
+    def acesso(nome, senha="Senha-Temp-123"):
+        def chamar(cliente_id):
+            chamadas.append((nome, cliente_id))
+            return {"email": "52998224725@locatario.local", "senha": senha}
+        return chamar
+    def remover(cliente_id):
+        chamadas.append(("remover_acesso", cliente_id))
     monkeypatch.setattr(acoes_clientes, "criar_cliente", criar)
     monkeypatch.setattr(acoes_clientes, "atualizar_cliente", atualizar)
+    monkeypatch.setattr(acoes_clientes, "criar_acesso_portal", acesso("criar_acesso"))
+    monkeypatch.setattr(acoes_clientes, "redefinir_senha_portal", acesso("redefinir_senha"))
+    monkeypatch.setattr(acoes_clientes, "remover_acesso_portal", remover)
+    monkeypatch.setattr(acoes_clientes, "url_arquivo_troca", lambda caminho: f"https://storage.exemplo/assinada/{caminho}?token=x")
     return chamadas
 
 
