@@ -3,7 +3,8 @@
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
-> Próxima página: Cobranças. Depois da Fase 3, resolver a falta de recarga automática do app web.**
+> Cobranças CONCLUÍDA em 07/10/2026 (abas, pagamento e mensagem). Próxima página: Manutenção. Depois da Fase 3,
+> resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -219,8 +220,36 @@ tem trocas; só testes automatizados), leitor de tela e aparelhos reais (ficam p
   tela e aparelhos reais (Fase 4). Enter num campo de texto da etapa 4 cria o contrato, como nos formulários do
   Streamlit.
 
-**Próxima: Cobranças**, seguida de Manutenção, Vistorias (com fotos), Documentos, Relatórios, Configurações e
-Portal do Locatário.
+**Andamento: Cobranças concluída (07/10/2026).** Entregue em três partes, cada uma com testes e commit:
+(A) lista com abas, somente leitura; (B) registrar pagamento; (C) mensagem de cobrança com cópia.
+
+- **Lista:** abas Hoje, Atrasadas, Próximos 7 dias e Pagas com contagem, URL própria e painel por HTMX; resumo de atraso
+  no cabeçalho; encargos por cobrança atrasada (multa de R$ 15 já no vencimento + R$ 7 por dia, só locação);
+  paginação de 10 em 10 em todas as abas (o Streamlit cortava Pagas em 30; Atrasadas no banco de dev tem 49).
+  Pagas ordenam pelo pagamento mais recente, as demais pelo vencimento mais antigo.
+- **Pagamento:** diálogo (HTMX) e página sem JavaScript com o mesmo formulário; a página é o destino do "Pagar" do
+  Dashboard, que antes só levava à lista. Prévia de encargos recalculada pelo servidor ao mudar a data (valores voltam
+  ao sugerido, como no Streamlit). Principal > 0 e <= saldo; menos que o saldo deixa o restante em aberto.
+  `chave_operacao` torna o reenvio idempotente. Após pagar, volta à aba de origem com aviso de quitada ou saldo.
+- **Mensagem:** diálogo ou página com o texto de atraso ou de vencimento e botão de copiar (área de transferência, com
+  seleção do texto como alternativa).
+- **Conferência no banco de desenvolvimento (07/10/2026):** contagens (Hoje 2, Atrasadas 49, Próximos 9, Pagas 14) e
+  total em atraso (R$ 11.239.088,11, 4 clientes) batem com o Dashboard (card Hoje com 51 = 2 + 49); encargos conferidos à
+  mão (39 dias = R$ 15 + 39 x R$ 7 = R$ 288; caução sem encargos). Parcela de teste do Carlos Eduardo Lima (R$ 204,00):
+  pagamento parcial de R$ 100,00 + R$ 15,00 pelo diálogo (saldo R$ 104,00, continuou em Hoje) e pagamento final de
+  R$ 104,00 pela página (quitada: Hoje 2 -> 1, Pagas 14 -> 15, parcela "Paga" na ficha do contrato). Validação por campo
+  com foco, Esc com devolução de foco, paginação por teclado, Voltar do navegador, cópia da mensagem com aviso. Sem rolagem
+  horizontal e sem alvo menor que 44 px em 320 px (abas, diálogos e páginas) e 1440 px.
+- **Correções do caminho:** o macro `botao` ganhou `aria` (escapado); antes, o nome do cliente concatenado em `extra`
+  escapava as aspas dos atributos HTMX.
+- **Regra a decidir (não alterada):** o encargo é fixo e não considera o que já foi recebido; depois de um pagamento
+  parcial com encargos o formulário sugere os mesmos encargos de novo (igual ao Streamlit). Mudar isso é decisão de
+  regra de negócio.
+- **Não verificado:** comparação lado a lado com o Streamlit (dispensada pelo proprietário), o conteúdo da área de
+  transferência (o navegador bloqueia a leitura; só o aviso de sucesso foi visto), cobranças parceladas de outros tipos
+  (dano, multa de trânsito) em pagamento real, leitor de tela e aparelhos reais (Fase 4).
+
+**Próxima: Manutenção**, seguida de Vistorias (com fotos), Documentos, Relatórios, Configurações e Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

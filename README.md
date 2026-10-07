@@ -38,7 +38,7 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
 Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 em andamento (iniciada em 06/10/2026):** Clientes
-(`/clientes`, `/clientes/{id}`) e Contratos (`/contratos`, `/contratos/{id}`, `/contratos/novo`) concluídos; as demais telas continuam mostrando "Em migração".
+(`/clientes`, `/clientes/{id}`), Contratos (`/contratos`, `/contratos/{id}`, `/contratos/novo`) e Cobranças (`/cobrancas`) concluídos; as demais telas continuam mostrando "Em migração".
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -72,9 +72,18 @@ para voltar e revisar; a criação usa a RPC única de contrato com vistoria de 
 (`rotas/contratos_encerramento.py`) abre um diálogo com a vistoria de devolução, danos descontados da caução e uma
 prévia (caução a devolver, excedente cobrado, cobranças canceladas) recalculada pelo servidor ao mudar a data ou os
 danos. Regras puras em `src/domain/contratos_lista.py`, `formulario_contrato.py` e `encerramento.py`. Fotos da
-vistoria continuam sendo anexadas na página Vistorias (como no Streamlit). **Próxima página: Cobranças.**
-Depois da Fase 3, resolver a falta de recarga automática do app web (hoje o preview usa `locacao-web-estavel`, sem
-recarga, porque a sessão fica na memória do servidor; templates e CSS recarregam, o Python não).
+vistoria continuam sendo anexadas na página Vistorias (como no Streamlit).
+
+**Fase 3, andamento: Cobranças concluída (07/10/2026).** Abas Hoje, Atrasadas, Próximos 7 dias e Pagas com contagem
+e URL própria (`?aba=`), resumo de atraso no cabeçalho, encargos por cobrança atrasada e paginação de 10 em 10
+(`rotas/cobrancas.py`, `templates/cobrancas/`; regras puras em `src/domain/cobrancas_lista.py`). **Registrar pagamento**
+(`rotas/cobrancas_pagamento.py`) abre em diálogo pelo HTMX e também como página sem JavaScript (é para onde o "Pagar" do
+Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a data muda, a validação é por campo
+(`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
+mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
+texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
+**Próxima página: Manutenção.** Depois da Fase 3, resolver a falta de recarga automática do app web (hoje o preview usa
+`locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor; templates e CSS recarregam, o Python não).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
