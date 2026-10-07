@@ -435,6 +435,53 @@ def acoes_contratos_falsas(monkeypatch):
     return falsas
 
 
+class BaseCobrancas:
+    """Dados fictícios dos serviços usados por src/web/dados_cobrancas (hoje = 07/10/2026)."""
+
+    def __init__(self):
+        self.clientes = [{"id": "cl1", "nome": "Ana <b>Souza</b>"}, {"id": "cl2", "nome": "Bruno Lima"}]
+        self.motos = [{"id": "m1", "placa": "BRA2E19"}, {"id": "m2", "placa": "QRS4T21"}]
+
+        def c(id_, cliente, moto, venc, situacao, saldo="204", valor="204", **extra):
+            return {"id": id_, "contrato_id": "k1", "cliente_id": cliente, "moto_id": moto, "tipo": "locacao",
+                    "vencimento": venc, "valor": Decimal(valor), "saldo": Decimal(saldo), "situacao": situacao, **extra}
+
+        self.cobrancas = [
+            c("h1", "cl1", "m1", "2026-10-07", "aberta"),
+            c("a1", "cl1", "m1", "2026-10-01", "atrasada", saldo="280", valor="280"),
+            c("a2", "cl2", "m2", "2026-09-20", "atrasada", saldo="300", valor="300"),
+            c("p1", "cl2", "m2", "2026-10-10", "aberta", numero=1),
+            c("p2", "cl1", "m1", "2026-10-14", "aberta", numero=2),
+            c("f1", "cl1", "m1", "2026-10-30", "aberta"),
+            c("g1", "cl1", "m1", "2026-09-01", "paga", saldo="0", valor="280"),
+            c("g2", "cl2", "m2", "2026-09-08", "paga", saldo="0", valor="300"),
+        ]
+        self.pagamentos = {
+            "g1": [{"cobranca_id": "g1", "data_pagamento": "2026-09-02", "forma": "pix"}],
+            "g2": [{"cobranca_id": "g2", "data_pagamento": "2026-09-09", "forma": "dinheiro"}],
+        }
+
+
+@pytest.fixture(autouse=True)
+def base_cobrancas(monkeypatch):
+    from datetime import date
+
+    from src.services.cobrancas import calcular_encargos_cobranca
+    from src.web import dados_cobrancas
+
+    base = BaseCobrancas()
+    monkeypatch.setattr(dados_cobrancas, "hoje_br", lambda: date(2026, 10, 7))
+    monkeypatch.setattr(dados_cobrancas, "clientes", SimpleNamespace(listar=lambda: base.clientes))
+    monkeypatch.setattr(dados_cobrancas, "motos", SimpleNamespace(listar=lambda: base.motos))
+    monkeypatch.setattr(dados_cobrancas, "cobrancas", SimpleNamespace(
+        listar=lambda: base.cobrancas,
+        configuracao_encargos=lambda: {"multa_atraso_valor": "15", "encargo_diario_valor": "7"},
+        calcular_encargos_cobranca=calcular_encargos_cobranca,
+        historicos_pagamentos=lambda ids: {i: base.pagamentos.get(i, []) for i in ids},
+    ))
+    return base
+
+
 @pytest.fixture
 def relogio():
     return Relogio()
