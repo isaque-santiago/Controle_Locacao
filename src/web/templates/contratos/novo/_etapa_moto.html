@@ -1,0 +1,10 @@
+{% from "componentes/macros.html" import icone %}
+{% set rotulo_busca = "Buscar moto disponível por placa ou modelo" %}
+{% include "contratos/novo/_resumo_selecao.html" %}
+{% include "contratos/novo/_busca.html" %}
+<div id="resultado" tabindex="-1">{% include "contratos/novo/_selecao.html" %}</div>
+<div class="rodape-acoes">
+  <a class="btn" href="{{ base }}?etapa=1">Voltar</a>
+  {% if selecionado_id %}<a class="btn btn-primario" href="{{ base }}?etapa=3">Avançar</a>
+  {% else %}<span><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button><small id="dica-avancar" class="text-texto-2"> Selecione uma moto disponível para continuar.</small></span>{% endif %}
+</div>

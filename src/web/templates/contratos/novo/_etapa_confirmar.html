@@ -1,0 +1,37 @@
+{% from "componentes/macros.html" import campo, campo_lista, area_texto, aviso, tabela, cartao %}
+{% include "contratos/novo/_resumo_selecao.html" %}
+{% call cartao(cliente.nome ~ " vai alugar " ~ (moto.placa|placa_br) ~ " · " ~ moto.marca ~ " " ~ moto.modelo) %}
+<dl class="grade-dados">
+  <div><dt>Periodicidade</dt><dd>{{ periodos_rotulo[condicoes.periodicidade] }}</dd></div>
+  <div><dt>Valor / período</dt><dd class="mono">{{ condicoes.valor_periodo|moeda }}</dd></div>
+  <div><dt>Início</dt><dd class="mono">{{ condicoes.data_inicio|data_br }}</dd></div>
+  <div><dt>Prazo</dt><dd>{% if condicoes.data_fim_prevista %}<span class="mono">{{ condicoes.data_fim_prevista|data_br }}</span>{% else %}Indeterminado{% endif %}</dd></div>
+  <div><dt>Caução</dt><dd class="mono">{{ condicoes.caucao_valor|moeda }}</dd></div>
+</dl>
+{% endcall %}
+
+<h2 class="rotulo">Prévia da agenda de cobranças</h2>
+{% call tabela([("Item", ""), ("Vencimento", ""), ("Valor", "num")], "Cobranças previstas do contrato") %}
+{% if tem_caucao %}<tr><td>Caução</td><td class="mono" data-rotulo="Vencimento">{{ condicoes.data_inicio|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ condicoes.caucao_valor|moeda }}</td></tr>{% endif %}
+{% for parcela in agenda %}<tr><td>Parcela {{ parcela.numero }}</td><td class="mono" data-rotulo="Vencimento">{{ parcela.vencimento|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ parcela.valor|moeda }}</td></tr>{% endfor %}
+{% endcall %}
+{% if not condicoes.data_fim_prevista %}<p class="text-texto-2 text-[13px]">Prazo indeterminado: a prévia mostra só os primeiros 30 dias. As cobranças seguintes são geradas automaticamente enquanto o contrato estiver ativo.</p>{% endif %}
+
+<h2 class="rotulo">Vistoria de entrega</h2>
+<form class="cartao" method="post" action="{{ base }}/criar">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button class="so-leitor" type="submit" name="acao" value="criar" tabindex="-1" aria-hidden="true">Criar contrato</button>
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    {{ campo("v-km", "Quilometragem da vistoria", nome="km", valor=v.km, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.km, ajuda="Em km. Não pode ser menor que a leitura atual da moto (" ~ (moto.km_atual|milhar) ~ " km) e vira o km inicial do contrato.", autocomplete="off") }}
+    {{ campo_lista("v-comb", "Combustível", niveis, nome="nivel_combustivel", selecionado=v.nivel_combustivel) }}
+    {% for nome, rotulo in itens_checklist %}{{ campo_lista("v-" ~ nome, rotulo, estados, nome=nome, selecionado=v[nome]) }}{% endfor %}
+    {{ area_texto("v-adicionais", "Itens adicionais (um por linha: nome=estado)", nome="adicionais", valor=v.adicionais, erro=erros.adicionais, ajuda="Estados: ok, avaria, ausente ou nao_aplicavel. Exemplo: capa de chuva=ok", largo=True) }}
+    {{ area_texto("v-avarias", "Descrição das avarias", nome="avarias", valor=v.avarias, largo=True) }}
+  </div>
+  <p class="text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. As fotos da vistoria são anexadas depois, na página Vistorias.</p>
+  <div class="rodape-acoes">
+    <button class="btn" type="submit" name="acao" value="voltar" formnovalidate>Voltar</button>
+    <button class="btn btn-primario" type="submit" name="acao" value="criar">Criar contrato</button>
+  </div>
+</form>

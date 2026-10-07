@@ -355,6 +355,9 @@ class BaseContratos:
         self.cliente = {"id": "00000000-0000-0000-0000-0000000000c1", "nome": "Maria <b>Silva</b>", "cpf": "52998224725", "status": "ativo"}
         self.moto = {"id": "00000000-0000-0000-0000-0000000000a1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160",
                      "km_atual": 12000, "status": "alugada"}
+        self.cliente_bloqueado = {"id": "00000000-0000-0000-0000-0000000000c2", "nome": "Pedro Bloqueado", "cpf": "11144477735", "status": "bloqueado"}
+        self.moto_livre = {"id": "00000000-0000-0000-0000-0000000000a2", "placa": "QRS4T21", "marca": "Yamaha", "modelo": "Factor",
+                           "km_atual": 5000, "status": "disponivel", "valor_locacao_sugerido": Decimal("300")}
         self.contratos = [
             {"id": self.id, "cliente_id": self.cliente["id"], "moto_id": self.moto["id"], "status": "ativo",
              "data_inicio": "2026-08-01", "data_fim_prevista": None, "data_encerramento": None, "periodicidade": "semanal",
@@ -384,17 +387,44 @@ def base_contratos(monkeypatch):
     from src.web import dados_contratos
 
     base = BaseContratos()
-    monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    from src.services.contratos import previa_agenda
+
+    pessoas = [base.cliente, base.cliente_bloqueado]
+    frota = [base.moto, base.moto_livre]
+    monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(listar=lambda: base.contratos, previa_agenda=previa_agenda))
     monkeypatch.setattr(dados_contratos, "clientes", SimpleNamespace(
-        listar=lambda: [base.cliente], obter=lambda id_: base.cliente if id_ == base.cliente["id"] else None))
+        listar=lambda: pessoas, obter=lambda id_: next((c for c in pessoas if c["id"] == id_), None)))
     monkeypatch.setattr(dados_contratos, "motos", SimpleNamespace(
-        listar=lambda: [base.moto], obter=lambda id_: base.moto if id_ == base.moto["id"] else None))
+        listar=lambda: frota, obter=lambda id_: next((m for m in frota if m["id"] == id_), None)))
     monkeypatch.setattr(dados_contratos, "cobrancas", SimpleNamespace(
         listar_por_contrato=lambda id_: base.cobrancas,
         historicos_pagamentos=lambda ids: {i: base.pagamentos.get(i, []) for i in ids}))
     monkeypatch.setattr(dados_contratos, "vistorias", SimpleNamespace(listar_por_contrato=lambda id_: base.vistorias))
     monkeypatch.setattr(dados_contratos, "manutencao", SimpleNamespace(listar_manutencoes=lambda id_: base.manutencoes))
     return base
+
+
+class AcoesContratosFalsas:
+    """Registra a criação em vez de falar com o banco; `falhar_com` faz a próxima gravação levantar."""
+
+    def __init__(self):
+        self.chamadas: list[tuple] = []
+        self.falhar_com: Exception | None = None
+
+    def criar_contrato_com_vistoria(self, dados, vistoria):
+        if self.falhar_com is not None:
+            raise self.falhar_com
+        self.chamadas.append((dados, vistoria))
+        return {"contrato_id": "00000000-0000-0000-0000-0000000000e1"}
+
+
+@pytest.fixture(autouse=True)
+def acoes_contratos_falsas(monkeypatch):
+    from src.web import acoes_contratos
+
+    falsas = AcoesContratosFalsas()
+    monkeypatch.setattr(acoes_contratos, "criar_contrato_com_vistoria", falsas.criar_contrato_com_vistoria)
+    return falsas
 
 
 @pytest.fixture

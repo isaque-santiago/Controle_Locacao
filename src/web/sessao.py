@@ -34,6 +34,8 @@ class Sessao:
     cliente: object | None = field(default=None, repr=False)
     # Confirmações a mostrar na próxima página (uma só vez), como "Moto cadastrada."
     avisos: list = field(default_factory=list, repr=False)
+    # Rascunho do assistente de novo contrato (cliente, moto, condições e textos digitados); some ao concluir.
+    rascunho_contrato: dict = field(default_factory=dict, repr=False)
 
     def access_token_vencendo(self, agora: float) -> bool:
         return self.expira_em - agora <= MARGEM_RENOVACAO_SEGUNDOS

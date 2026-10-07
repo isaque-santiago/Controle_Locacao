@@ -3,7 +3,10 @@
 Fronteira de leitura entre a rota e a camada de dados; os testes das rotas trocam estes serviços
 por dados fictícios."""
 
-from src.domain import contratos_lista
+from datetime import date
+from decimal import Decimal
+
+from src.domain import clientes_lista, contratos_lista
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, contratos, manutencao, motos, vistorias
 
@@ -67,3 +70,41 @@ def carregar_ficha(contrato, aba):
             key=lambda m: m["data_entrada"], reverse=True,
         )
     return dados
+
+
+# ----------------------------------------------------- assistente de novo contrato --
+
+def candidatos_cliente(busca):
+    """Clientes que casam com a busca, com a moto que já alugam (informativo) e se podem alugar (status ativo)."""
+    ativos = {c["cliente_id"]: c["moto_id"] for c in contratos.listar() if c["status"] == "ativo"}
+    placas = {m["id"]: m["placa"] for m in motos.listar()}
+    return [
+        {"cliente": c, "elegivel": c["status"] == "ativo", "placa_atual": placas.get(ativos.get(c["id"]))}
+        for c in clientes_lista.filtrar(clientes.listar(), clientes_lista.TODOS, busca)
+    ]
+
+
+def candidatas_moto(busca):
+    disponiveis = [m for m in motos.listar() if m["status"] == "disponivel"]
+    return contratos_lista.filtrar_motos(disponiveis, busca)
+
+
+def cliente_para_contrato(cliente_id):
+    """O cliente, se existir e puder alugar; senão None."""
+    cliente = clientes.obter(cliente_id) if cliente_id else None
+    return cliente if cliente and cliente["status"] == "ativo" else None
+
+
+def moto_para_contrato(moto_id):
+    """A moto, se existir e estiver disponível; senão None."""
+    moto = motos.obter(moto_id) if moto_id else None
+    return moto if moto and moto["status"] == "disponivel" else None
+
+
+def previa_agenda(condicoes):
+    """Parcelas previstas (a mesma lógica da RPC). Prazo indeterminado mostra só a janela inicial."""
+    fim = condicoes.get("data_fim_prevista")
+    return contratos.previa_agenda(
+        date.fromisoformat(condicoes["data_inicio"]), condicoes["periodicidade"],
+        Decimal(condicoes["valor_periodo"]), date.fromisoformat(fim) if fim else None,
+    )

@@ -1,0 +1,24 @@
+{% from "componentes/macros.html" import selo, placa, tabela, estado_vazio %}
+{# Trecho trocado pelo HTMX nas etapas 1 e 2. Cada linha é um formulário próprio (escolher grava no rascunho e volta à etapa). #}
+{% if etapa == 1 %}
+{% if candidatos %}
+{% call tabela([("Cliente", ""), ("CPF", ""), ("Situação", ""), ("Ação", "col-acoes")], "Clientes para o contrato") %}
+{% for item in candidatos %}{% set c = item.cliente %}{% set escolhido = c.id == selecionado_id %}<tr>
+<td class="modelo">{{ c.nome }}</td>
+<td class="mono" data-rotulo="CPF">{{ c.cpf|cpf_mascarado }}</td>
+<td data-rotulo="Situação">{% if not item.elegivel %}{{ selo((c.status|capitalize) ~ " · não pode alugar", "perigo") }}{% elif item.placa_atual %}{{ selo("Já aluga " ~ (item.placa_atual|placa_br), "atencao") }}{% else %}<span class="text-texto-3">—</span>{% endif %}</td>
+<td class="c-acao"><form method="post" action="{{ base }}/cliente"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="cliente_id" value="{{ c.id }}"><input type="hidden" name="q" value="{{ busca }}"><button class="btn{{ ' btn-primario' if escolhido else '' }}" type="submit"{% if escolhido %} aria-pressed="true"{% endif %}{% if not item.elegivel %} disabled{% endif %} aria-label="{{ 'Cliente selecionado: ' if escolhido else 'Escolher ' }}{{ c.nome }}">{{ "Selecionado" if escolhido else "Selecionar" }}</button></form></td></tr>{% endfor %}
+{% endcall %}
+{% else %}{{ estado_vazio("Nenhum cliente encontrado", "Confira a busca ou cadastre o cliente na página Clientes.", "0") }}{% endif %}
+{% else %}
+{% if candidatas %}
+{% call tabela([("Placa", ""), ("Moto", ""), ("Km", "num"), ("Locação sugerida", "num"), ("Ação", "col-acoes")], "Motos disponíveis") %}
+{% for m in candidatas %}{% set escolhida = m.id == selecionado_id %}<tr>
+<td class="c-placa">{{ placa(m.placa|placa_br) }}</td>
+<td class="modelo">{{ m.marca }} {{ m.modelo }}</td>
+<td class="num mono" data-rotulo="Km">{{ m.km_atual|milhar }}</td>
+<td class="num mono" data-rotulo="Locação sugerida">{% if m.valor_locacao_sugerido %}{{ m.valor_locacao_sugerido|moeda }}{% else %}—{% endif %}</td>
+<td class="c-acao"><form method="post" action="{{ base }}/moto"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="moto_id" value="{{ m.id }}"><input type="hidden" name="q" value="{{ busca }}"><button class="btn{{ ' btn-primario' if escolhida else '' }}" type="submit"{% if escolhida %} aria-pressed="true"{% endif %} aria-label="{{ 'Moto selecionada: ' if escolhida else 'Escolher ' }}{{ m.placa|placa_br }}">{{ "Selecionada" if escolhida else "Selecionar" }}</button></form></td></tr>{% endfor %}
+{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma moto disponível encontrada", "Só motos com situação Disponível podem ser alugadas.", "0") }}{% endif %}
+{% endif %}

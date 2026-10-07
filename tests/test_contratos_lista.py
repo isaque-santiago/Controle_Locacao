@@ -37,3 +37,12 @@ def test_montar_pagina_ordena_do_mais_recente_e_conta_sem_filtro():
 def test_prazo_indeterminado_quando_nao_ha_data_final():
     assert regras.prazo_texto(None) is None
     assert regras.prazo_texto("2026-12-31T00:00:00") == "2026-12-31"
+
+
+def test_filtrar_motos_por_placa_com_ou_sem_hifen_e_por_modelo():
+    motos = [{"placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160"}, {"placa": "QRS4T21", "marca": "Yamaha", "modelo": "Factor"}]
+    assert regras.filtrar_motos(motos, "") == motos
+    assert [m["placa"] for m in regras.filtrar_motos(motos, "qrs-4t21")] == ["QRS4T21"]
+    assert [m["placa"] for m in regras.filtrar_motos(motos, "factor")] == ["QRS4T21"]
+    assert [m["placa"] for m in regras.filtrar_motos(motos, "honda cg")] == ["BRA2E19"]
+    assert regras.filtrar_motos(motos, "---") == []

@@ -47,3 +47,15 @@ def montar_pagina(itens, status, busca, pagina, por_pagina):
 def prazo_texto(data_fim_prevista) -> str | None:
     """None quando o contrato tem prazo indeterminado (a regra padrão da operação)."""
     return str(data_fim_prevista)[:10] if data_fim_prevista else None
+
+
+def filtrar_motos(motos: list[dict], busca: str) -> list[dict]:
+    """Motos do assistente: a busca olha a placa (com ou sem hífen) e "marca modelo"."""
+    termo = (busca or "").strip().casefold()
+    placa_termo = re.sub(r"[^a-z0-9]", "", termo)
+    return [
+        m for m in motos
+        if not termo
+        or termo in f"{m.get('marca', '')} {m.get('modelo', '')}".casefold()
+        or bool(placa_termo and placa_termo in re.sub(r"[^a-z0-9]", "", (m.get("placa") or "").casefold()))
+    ]
