@@ -1,6 +1,6 @@
 {% from "componentes/macros.html" import placa %}
 {# Cliente e moto já escolhidos, com o caminho para revisar cada etapa. #}
-<p class="flex flex-wrap items-center gap-x-4 gap-y-2">
-  {% if cliente %}<span><b>Cliente</b> {{ cliente.nome }} <a href="{{ base }}?etapa=1">Alterar cliente</a></span>{% endif %}
-  {% if moto %}<span><b>Moto</b> {{ placa(moto.placa|placa_br) }} {{ moto.marca }} {{ moto.modelo }} <a href="{{ base }}?etapa=2">Alterar moto</a></span>{% endif %}
-</p>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+  {% if cliente %}<span class="flex flex-wrap items-center gap-2"><span><b>Cliente</b> {{ cliente.nome }}</span><a class="btn" href="{{ base }}?etapa=1">Alterar cliente</a></span>{% endif %}
+  {% if moto %}<span class="flex flex-wrap items-center gap-2"><span><b>Moto</b> {{ placa(moto.placa|placa_br) }} {{ moto.marca }} {{ moto.modelo }}</span><a class="btn" href="{{ base }}?etapa=2">Alterar moto</a></span>{% endif %}
+</div>
