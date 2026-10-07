@@ -1,0 +1,7 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina %}
+{% block conteudo %}
+{{ voltar("/cobrancas", "Voltar para cobranças") }}
+{{ cabecalho_pagina("Mensagem de cobrança", "Copie o texto e envie ao cliente.") }}
+<section class="cartao"><div class="formulario">{% include "cobrancas/_corpo_mensagem.html" %}</div></section>
+{% endblock %}

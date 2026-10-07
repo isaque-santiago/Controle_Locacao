@@ -1,5 +1,5 @@
 {% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, botao %}
-{% macro pagar(c) %}<td class="c-acao">{{ botao("Pagar", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</td>{% endmacro %}
+{% macro pagar(c) %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ botao("Mensagem", href="/cobrancas/" ~ c.id ~ "/mensagem", aria="Mensagem de cobrança para " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/mensagem" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Pagar", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div></td>{% endmacro %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
 {% if d.itens %}
 {% if aba == "atrasadas" %}

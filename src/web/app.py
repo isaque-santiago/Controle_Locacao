@@ -20,6 +20,7 @@ from src.web.rotas import autenticacao as rotas_autenticacao
 from src.web.rotas import componentes as rotas_componentes
 from src.web.rotas import clientes as rotas_clientes
 from src.web.rotas import cobrancas as rotas_cobrancas
+from src.web.rotas import cobrancas_mensagem as rotas_cobrancas_mensagem
 from src.web.rotas import cobrancas_pagamento as rotas_cobrancas_pagamento
 from src.web.rotas import clientes_formularios as rotas_clientes_formularios
 from src.web.rotas import clientes_portal as rotas_clientes_portal
@@ -72,6 +73,7 @@ def criar_app(
     app.include_router(rotas_clientes_portal.router)
     app.include_router(rotas_clientes.router)
     # O assistente antes da ficha: /contratos/novo não pode cair em /contratos/{contrato_id}
+    app.include_router(rotas_cobrancas_mensagem.router)
     app.include_router(rotas_cobrancas_pagamento.router)
     app.include_router(rotas_cobrancas.router)
     app.include_router(rotas_contratos_novo.router)

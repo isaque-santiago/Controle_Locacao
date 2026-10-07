@@ -20,6 +20,22 @@
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
 
+  // ---- Copiar texto: data-copiar="id-do-campo" copia o valor; data-copiar-aviso="id" recebe o resultado ----
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('[data-copiar]');
+    if (!botao) return;
+    var campo = document.getElementById(botao.getAttribute('data-copiar'));
+    var aviso = document.getElementById(botao.getAttribute('data-copiar-aviso'));
+    if (!campo) return;
+    function avisar(texto) { if (aviso) aviso.textContent = texto; }
+    function selecionar() { campo.focus(); campo.select(); avisar('Texto selecionado: use Ctrl+C para copiar.'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(campo.value).then(function () { avisar('Mensagem copiada.'); }, selecionar);
+    } else {
+      selecionar();
+    }
+  });
+
   // ---- Abas: clique e setas, Home e End ----
   // Abas com data-remoto carregam o painel pelo HTMX (um painel só): o JS não esconde painéis e,
   // ao navegar por setas, só move o foco; Enter ou Espaço (clique) é que abre a aba.
