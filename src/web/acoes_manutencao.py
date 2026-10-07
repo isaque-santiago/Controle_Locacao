@@ -9,3 +9,11 @@ def registrar(dados: dict, chave_operacao: str):
 
 def finalizar(manutencao_id, status, data, km):
     return manutencao.finalizar(manutencao_id, status, data, km)
+
+
+def criar_item(dados):
+    return manutencao.criar_item_catalogo(dados)
+
+
+def atualizar_item(item_id, dados):
+    return manutencao.atualizar_item_catalogo(item_id, dados)

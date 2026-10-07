@@ -34,12 +34,14 @@
 {% if d.historico.pagina.total > d.historico.pagina.por_pagina %}{{ paginacao(d.historico.pagina.inicio + 1, d.historico.pagina.fim, d.historico.pagina.total, url_anterior, url_proxima, alvo="#painel-aba", troca="outerHTML", parcial_anterior=parcial_anterior, parcial_proxima=parcial_proxima) }}{% endif %}
 {% else %}{{ estado_vazio("Nenhuma manutenção encontrada", "Nenhuma manutenção atende à busca ou ao filtro escolhido.", "0") }}{% endif %}
 {% else %}
+<div class="flex justify-end mb-4">{{ botao("Novo item", href="/manutencao/catalogo/novo", variante="primario", icone_nome="novo", extra='hx-get="/manutencao/catalogo/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div>
 {% if d.catalogo %}
-{% call tabela([("Item", ""), ("Intervalo km", "num"), ("Alerta a partir de", "num"), ("Intervalo dias", "num"), ("Situação", "")], "Catálogo de manutenção") %}
+{% call tabela([("Item", ""), ("Intervalo km", "num"), ("Alerta a partir de", "num"), ("Intervalo dias", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Catálogo de manutenção") %}
 {% for item in d.catalogo %}<tr><td class="modelo">{{ item.nome }}</td>
 <td class="num mono" data-rotulo="Intervalo km">{% if item.intervalo_km %}{{ item.intervalo_km|milhar }} km{% else %}—{% endif %}</td>
 <td class="num mono" data-rotulo="Alerta a partir de">{% if item.intervalo_minimo_km %}{{ item.intervalo_minimo_km|milhar }} km{% else %}—{% endif %}</td>
-<td class="num mono" data-rotulo="Intervalo dias">{{ item.intervalo_dias or "—" }}</td><td data-rotulo="Situação">{{ selo("Ativo" if item.ativo else "Inativo", "ok" if item.ativo else "neutro") }}</td></tr>{% endfor %}
+<td class="num mono" data-rotulo="Intervalo dias">{{ item.intervalo_dias or "—" }}</td><td data-rotulo="Situação">{{ selo("Ativo" if item.ativo else "Inativo", "ok" if item.ativo else "neutro") }}</td>
+<td class="c-acao">{{ botao("Editar", href="/manutencao/catalogo/" ~ item.id ~ "/editar", aria="Editar o item " ~ item.nome, extra='hx-get="/manutencao/catalogo/' ~ item.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</td></tr>{% endfor %}
 {% endcall %}
 {% else %}{{ estado_vazio("Nenhum item no catálogo", "Os itens de manutenção aparecem aqui assim que forem cadastrados.", "0") }}{% endif %}
 {% endif %}

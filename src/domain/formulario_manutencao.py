@@ -149,3 +149,43 @@ def ler_finalizacao(valores: dict, manutencao: dict, moto: dict, acao: str) -> d
     if erros:
         raise ErroDeCampos(erros)
     return {"data": date.fromisoformat(data_texto), "km": km, "status": acao}
+
+
+def valores_item_catalogo(item: dict | None = None) -> dict:
+    item = item or {}
+    return {
+        "nome": item.get("nome") or "",
+        "intervalo_km": str(item.get("intervalo_km") or 0),
+        "intervalo_minimo_km": str(item.get("intervalo_minimo_km") or 0),
+        "intervalo_dias": str(item.get("intervalo_dias") or 0),
+        "ativo": item.get("ativo", True),
+    }
+
+
+def ler_item_catalogo(valores: dict) -> dict:
+    erros = {}
+    nome = _texto(valores, "nome")
+    if not nome:
+        erros["nome"] = "Nome: informe o nome do item."
+    km = _coletar(erros, "intervalo_km", inteiro_campo, _texto(valores, "intervalo_km"), "Intervalo em km", 0)
+    minimo = _coletar(
+        erros, "intervalo_minimo_km", inteiro_campo,
+        _texto(valores, "intervalo_minimo_km"), "Alerta a partir de", 0,
+    )
+    dias = _coletar(erros, "intervalo_dias", inteiro_campo, _texto(valores, "intervalo_dias"), "Intervalo em dias", 0)
+    if km == 0 and dias == 0:
+        erros["intervalo_km"] = "Intervalo: informe km, dias ou os dois; zero significa sem limite."
+        erros["intervalo_dias"] = "Intervalo: informe km, dias ou os dois; zero significa sem limite."
+    if minimo and not km:
+        erros["intervalo_minimo_km"] = "Alerta a partir de: informe também o intervalo em km."
+    elif minimo and km and minimo >= km:
+        erros["intervalo_minimo_km"] = "Alerta a partir de: deve ser menor que o intervalo em km."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {
+        "nome": nome,
+        "intervalo_km": km or None,
+        "intervalo_minimo_km": minimo or None,
+        "intervalo_dias": dias or None,
+        "ativo": bool(valores.get("ativo")),
+    }

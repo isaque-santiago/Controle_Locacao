@@ -77,3 +77,7 @@ def obter_aberta(manutencao_id):
         return None
     moto = next((m for m in motos.listar() if m["id"] == registro["moto_id"]), None)
     return {"manutencao": registro, "moto": moto} if moto else None
+
+
+def obter_item(item_id):
+    return next((item for item in manutencao.listar_catalogo() if item["id"] == item_id), None)

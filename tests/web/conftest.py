@@ -538,6 +538,8 @@ class AcoesManutencaoFalsas:
     def __init__(self):
         self.registros = []
         self.finalizacoes = []
+        self.itens_criados = []
+        self.itens_atualizados = []
         self.falhar_com = None
 
     def registrar(self, dados, chave):
@@ -552,6 +554,18 @@ class AcoesManutencaoFalsas:
         self.finalizacoes.append((manutencao_id, status, data, km))
         return {"manutencao_id": manutencao_id}
 
+    def criar_item(self, dados):
+        if self.falhar_com:
+            raise self.falhar_com
+        self.itens_criados.append(dados)
+        return {"id": "i3", **dados}
+
+    def atualizar_item(self, item_id, dados):
+        if self.falhar_com:
+            raise self.falhar_com
+        self.itens_atualizados.append((item_id, dados))
+        return {"id": item_id, **dados}
+
 
 @pytest.fixture(autouse=True)
 def acoes_manutencao_falsas(monkeypatch):
@@ -560,6 +574,8 @@ def acoes_manutencao_falsas(monkeypatch):
     falsas = AcoesManutencaoFalsas()
     monkeypatch.setattr(acoes_manutencao, "registrar", falsas.registrar)
     monkeypatch.setattr(acoes_manutencao, "finalizar", falsas.finalizar)
+    monkeypatch.setattr(acoes_manutencao, "criar_item", falsas.criar_item)
+    monkeypatch.setattr(acoes_manutencao, "atualizar_item", falsas.atualizar_item)
     return falsas
 
 

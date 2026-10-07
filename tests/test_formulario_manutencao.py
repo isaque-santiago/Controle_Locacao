@@ -9,9 +9,11 @@ from src.domain.formulario_manutencao import (
     alterar_linhas,
     ler,
     ler_finalizacao,
+    ler_item_catalogo,
     previa,
     valores_finalizacao,
     valores_iniciais,
+    valores_item_catalogo,
 )
 from src.domain.formulario_moto import ErroDeCampos
 
@@ -75,3 +77,23 @@ def test_cancelamento_exige_confirmacao():
     assert ler_finalizacao(
         {"data": "2026-10-07", "km": "1500", "confirmar": "on"}, manutencao, moto, "cancelada"
     )["status"] == "cancelada"
+
+
+def test_item_catalogo_converte_zero_em_nulo_e_preserva_ativo():
+    assert valores_item_catalogo()["ativo"] is True
+    dados = ler_item_catalogo({"nome": " Kit de tração ", "intervalo_km": "5000",
+                               "intervalo_minimo_km": "3000", "intervalo_dias": "0", "ativo": "on"})
+    assert dados == {"nome": "Kit de tração", "intervalo_km": 5000, "intervalo_minimo_km": 3000,
+                     "intervalo_dias": None, "ativo": True}
+
+
+@pytest.mark.parametrize("valores,campo", [
+    ({"nome": "", "intervalo_km": "1000", "intervalo_minimo_km": "0", "intervalo_dias": "0"}, "nome"),
+    ({"nome": "X", "intervalo_km": "0", "intervalo_minimo_km": "0", "intervalo_dias": "0"}, "intervalo_km"),
+    ({"nome": "X", "intervalo_km": "0", "intervalo_minimo_km": "100", "intervalo_dias": "90"}, "intervalo_minimo_km"),
+    ({"nome": "X", "intervalo_km": "5000", "intervalo_minimo_km": "5000", "intervalo_dias": "0"}, "intervalo_minimo_km"),
+])
+def test_item_catalogo_rejeita_campos_invalidos(valores, campo):
+    with pytest.raises(ErroDeCampos) as capturado:
+        ler_item_catalogo(valores)
+    assert campo in capturado.value.erros
