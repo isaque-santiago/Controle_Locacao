@@ -471,8 +471,10 @@ def base_cobrancas(monkeypatch):
 
     base = BaseCobrancas()
     monkeypatch.setattr(dados_cobrancas, "hoje_br", lambda: date(2026, 10, 7))
-    monkeypatch.setattr(dados_cobrancas, "clientes", SimpleNamespace(listar=lambda: base.clientes))
-    monkeypatch.setattr(dados_cobrancas, "motos", SimpleNamespace(listar=lambda: base.motos))
+    monkeypatch.setattr(dados_cobrancas, "clientes", SimpleNamespace(
+        listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None)))
+    monkeypatch.setattr(dados_cobrancas, "motos", SimpleNamespace(
+        listar=lambda: base.motos, obter=lambda id_: next((m for m in base.motos if m["id"] == id_), None)))
     monkeypatch.setattr(dados_cobrancas, "cobrancas", SimpleNamespace(
         listar=lambda: base.cobrancas,
         configuracao_encargos=lambda: {"multa_atraso_valor": "15", "encargo_diario_valor": "7"},
@@ -480,6 +482,29 @@ def base_cobrancas(monkeypatch):
         historicos_pagamentos=lambda ids: {i: base.pagamentos.get(i, []) for i in ids},
     ))
     return base
+
+
+class AcoesCobrancasFalsas:
+    """Registra os pagamentos em vez de falar com o banco; `falhar_com` faz a próxima gravação levantar."""
+
+    def __init__(self):
+        self.pagamentos: list[tuple] = []
+        self.falhar_com: Exception | None = None
+
+    def registrar_pagamento(self, cobranca_id, data, principal, extras, forma, observacoes, chave_operacao):
+        if self.falhar_com is not None:
+            raise self.falhar_com
+        self.pagamentos.append((cobranca_id, data, principal, extras, forma, observacoes, chave_operacao))
+        return {}
+
+
+@pytest.fixture(autouse=True)
+def acoes_cobrancas_falsas(monkeypatch):
+    from src.web import acoes_cobrancas
+
+    falsas = AcoesCobrancasFalsas()
+    monkeypatch.setattr(acoes_cobrancas, "registrar_pagamento", falsas.registrar_pagamento)
+    return falsas
 
 
 @pytest.fixture

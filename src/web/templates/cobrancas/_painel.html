@@ -1,8 +1,9 @@
-{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao %}
+{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, botao %}
+{% macro pagar(c) %}<td class="c-acao">{{ botao("Pagar", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</td>{% endmacro %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
 {% if d.itens %}
 {% if aba == "atrasadas" %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Atraso", ""), ("Original", "num"), ("Encargos", "num"), ("Total", "num")], "Cobranças atrasadas") %}
+{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Atraso", ""), ("Original", "num"), ("Encargos", "num"), ("Total", "num"), ("Ações", "col-acoes")], "Cobranças atrasadas") %}
 {% for c in d.itens %}<tr>
 <td class="modelo">{{ c.cliente or "—" }}</td>
 <td data-rotulo="Moto">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
@@ -11,6 +12,7 @@
 <td class="num mono" data-rotulo="Original">{{ c.saldo|moeda }}</td>
 <td class="num mono" data-rotulo="Encargos">{{ c.encargos.encargos|moeda }}</td>
 <td class="num mono" data-rotulo="Total">{{ c.encargos.total|moeda }}</td>
+{{ pagar(c) }}
 </tr>{% endfor %}
 {% endcall %}
 {% elif aba == "pagas" %}
@@ -25,12 +27,13 @@
 </tr>{% endfor %}
 {% endcall %}
 {% else %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num")], "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias") %}
+{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num")] + ([("Ações", "col-acoes")] if aba == "hoje" else []), "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias") %}
 {% for c in d.itens %}<tr>
 <td class="modelo">{{ c.cliente or "—" }}{% if aba == "proximos" and c.numero == 1 %}<span class="sub">1ª parcela</span>{% endif %}</td>
 <td data-rotulo="Moto">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="num mono" data-rotulo="Valor">{{ c.saldo|moeda }}</td>
+{% if aba == "hoje" %}{{ pagar(c) }}{% endif %}
 </tr>{% endfor %}
 {% endcall %}
 {% endif %}

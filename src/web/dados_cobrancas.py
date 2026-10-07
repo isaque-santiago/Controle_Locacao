@@ -47,3 +47,22 @@ def carregar(aba, pagina):
         "itens": itens, "pagina": recorte, "contagem": {chave: len(lista) for chave, lista in por_aba.items()},
         "total_atraso": total_atraso, "clientes_atrasados": clientes_atrasados,
     }
+
+
+# -------------------------------------------------------------------- pagamento --
+
+def obter_para_pagamento(cobranca_id):
+    """Cobrança em aberto com cliente e placa; None se não existir ou já não estiver em aberto."""
+    c = next((x for x in cobrancas.listar() if x["id"] == cobranca_id), None)
+    if c is None or c["situacao"] not in _ABERTAS:
+        return None
+    cliente = clientes.obter(c["cliente_id"])
+    moto = motos.obter(c["moto_id"])
+    return {**c, "cliente": cliente["nome"] if cliente else None, "placa": moto["placa"] if moto else None}
+
+
+def encargos_em(cobranca, data):
+    """Multa, adicional diário e total da cobrança na `data` (None: sem encargos, só o saldo)."""
+    if data is None:
+        return {"dias_atraso": 0, "multa": 0, "adicional_diario": 0, "encargos": 0, "total": cobranca["saldo"]}
+    return cobrancas.calcular_encargos_cobranca(cobranca, data, cobrancas.configuracao_encargos())

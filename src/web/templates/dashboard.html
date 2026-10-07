@@ -56,7 +56,7 @@
           <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
           <td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>
           <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
-          <td class="acao"><a class="btn" href="/cobrancas" aria-label="Registrar pagamento de {{ c.cliente }}">Pagar</a></td>
+          <td class="acao"><a class="btn" href="/cobrancas/{{ c.id }}/pagar" aria-label="Registrar pagamento de {{ c.cliente }}">Pagar</a></td>
         </tr>
         {% endfor %}
       {% endcall %}

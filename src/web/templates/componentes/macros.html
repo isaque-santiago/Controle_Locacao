@@ -5,13 +5,14 @@
 <svg class="i {{ classe }}" aria-hidden="true" focusable="false"><use href="#i-{{ nome }}"/></svg>
 {%- endmacro %}
 
-{# Botão ou link com aparência de botão (href). variante: "", "primario", "perigo". #}
-{% macro botao(rotulo, href=None, tipo="button", variante="", icone_nome=None, bloco=False, extra="") -%}
+{# Botão ou link com aparência de botão (href). variante: "", "primario", "perigo". `aria` dá o nome acessível
+   (escapado aqui; nunca o monte dentro de `extra`, que entra sem escape). #}
+{% macro botao(rotulo, href=None, tipo="button", variante="", icone_nome=None, bloco=False, extra="", aria=None) -%}
 {%- set classes = "btn" ~ (" btn-primario" if variante == "primario" else "") ~ (" btn-perigo" if variante == "perigo" else "") ~ (" btn-bloco" if bloco else "") -%}
 {%- if href -%}
-<a class="{{ classes }}" href="{{ href }}" {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</a>
+<a class="{{ classes }}" href="{{ href }}"{% if aria %} aria-label="{{ aria }}"{% endif %} {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</a>
 {%- else -%}
-<button class="{{ classes }}" type="{{ tipo }}" {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</button>
+<button class="{{ classes }}" type="{{ tipo }}"{% if aria %} aria-label="{{ aria }}"{% endif %} {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</button>
 {%- endif -%}
 {%- endmacro %}
 

@@ -1,0 +1,9 @@
+{% from "componentes/macros.html" import campo, campo_lista, area_texto, placa %}
+{# Campos do pagamento (diálogo e página). Contexto: c, v, erros, enc, acao_previa, formas. #}
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(c.placa|placa_br) if c.placa }}<span><b>{{ c.cliente }}</b> · {{ c.tipo|tipo_cobranca }} · vencimento <span class="mono">{{ c.vencimento|data_br }}</span></span></div>
+<input type="hidden" name="chave_operacao" value="{{ v.chave_operacao }}">
+{{ campo("f-data-pg", "Data do pagamento", nome="data_pagamento", valor=v.data_pagamento, tipo="date", obrigatorio=True, erro=erros.data_pagamento, largo=True, extra='hx-post="' ~ acao_previa ~ '" hx-trigger="change delay:200ms" hx-target="#bloco-pagamento" hx-swap="outerHTML" hx-include="closest form"') }}
+{% include "cobrancas/_bloco_pagamento.html" %}
+{{ campo_lista("f-forma", "Forma de pagamento", formas, nome="forma", selecionado=v.forma, largo=True) }}
+{{ area_texto("f-obs-pg", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
