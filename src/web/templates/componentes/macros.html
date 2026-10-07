@@ -180,12 +180,14 @@
 {%- endmacro %}
 
 {# Paginação. URLs None desabilitam o botão. Com HTMX, passe alvo="#lista" para trocar só a lista. #}
-{% macro paginacao(inicio, fim, total, url_anterior=None, url_proxima=None, alvo=None) -%}
+{# Paginação. `alvo` ativa o HTMX (troca por innerHTML); com `troca` e URLs `parcial_*` o trecho vem de outra rota
+   (ex.: painel de aba, trocado por outerHTML) e o endereço da página continua sendo o href. #}
+{% macro paginacao(inicio, fim, total, url_anterior=None, url_proxima=None, alvo=None, troca="innerHTML", parcial_anterior=None, parcial_proxima=None) -%}
 <nav class="paginacao" aria-label="Paginação">
   <span>Mostrando {{ inicio }} a {{ fim }} de {{ total }}</span>
   <div>
-    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ url_anterior }}" hx-target="{{ alvo }}" hx-swap="innerHTML show:{{ alvo }}:top" hx-push-url="true"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
-    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ url_proxima }}" hx-target="{{ alvo }}" hx-swap="innerHTML show:{{ alvo }}:top" hx-push-url="true"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
+    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ parcial_anterior or url_anterior }}" hx-target="{{ alvo }}" hx-swap="{{ troca }} show:{{ alvo }}:top" hx-push-url="{{ url_anterior }}"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
+    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ parcial_proxima or url_proxima }}" hx-target="{{ alvo }}" hx-swap="{{ troca }} show:{{ alvo }}:top" hx-push-url="{{ url_proxima }}"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
   </div>
 </nav>
 {%- endmacro %}

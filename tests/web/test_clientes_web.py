@@ -1,5 +1,7 @@
 """Fase 3: lista, ficha e formulários de Clientes no app FastAPI."""
 
+from decimal import Decimal
+
 from tests.web.conftest import csrf_da_sessao, entrar
 
 HX = {"HX-Request": "true", "HX-Target": "resultado"}
@@ -118,3 +120,41 @@ def test_portal_do_cliente_exige_dono(cliente, base_clientes):
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get(f"/clientes/{base_clientes.id}/portal/trocas/{base_clientes.troca_id}/painel").status_code == 403
     assert cliente.post(f"/clientes/{base_clientes.id}/portal/acesso").status_code == 403
+
+
+def _muitas_cobrancas(base, quantidade):
+    base.cobrancas = [
+        {"id": f"p{i}", "vencimento": f"2026-{(i % 9) + 1:02d}-{(i % 27) + 1:02d}", "tipo": "locacao",
+         "valor": Decimal("100"), "saldo": Decimal("100"), "situacao": "aberta"}
+        for i in range(quantidade)
+    ]
+
+
+def test_pagamentos_pagina_de_dez_em_dez(cliente, base_clientes):
+    _muitas_cobrancas(base_clientes, 23)
+    entrar(cliente)
+    base = f"/clientes/{base_clientes.id}"
+    primeira = cliente.get(f"{base}?aba=pagamentos").text
+    assert "Mostrando 1 a 10 de 23" in primeira and primeira.count("<tr>") == 10 + 1
+    assert f'hx-get="{base}/abas/pagamentos?pagina=2"' in primeira and f'hx-push-url="{base}?aba=pagamentos&amp;pagina=2"' in primeira
+    ultima = cliente.get(f"{base}?aba=pagamentos&pagina=3").text
+    assert "Mostrando 21 a 23 de 23" in ultima and "pagina=2" in ultima and "pagina=4" not in ultima
+
+
+def test_pagamentos_parcial_e_pagina_invalida(cliente, base_clientes):
+    _muitas_cobrancas(base_clientes, 23)
+    entrar(cliente)
+    base = f"/clientes/{base_clientes.id}"
+    parcial = cliente.get(f"{base}/abas/pagamentos?pagina=2").text
+    assert "<html" not in parcial and "Mostrando 11 a 20 de 23" in parcial and 'id="painel-aba"' in parcial
+    assert "Mostrando 21 a 23 de 23" in cliente.get(f"{base}/abas/pagamentos?pagina=99").text
+    assert "Mostrando 1 a 10 de 23" in cliente.get(f"{base}/abas/pagamentos?pagina=abc").text
+
+
+def test_pagamentos_curtos_nao_mostram_paginacao_e_totais_ignoram_a_pagina(cliente, base_clientes):
+    entrar(cliente)
+    html = cliente.get(f"/clientes/{base_clientes.id}?aba=pagamentos").text
+    assert "Mostrando" not in html
+    _muitas_cobrancas(base_clientes, 23)
+    resumo = cliente.get(f"/clientes/{base_clientes.id}?pagina=3").text
+    assert "R$ 2.300,00" in resumo  # em aberto soma as 23 parcelas, não só as da página
