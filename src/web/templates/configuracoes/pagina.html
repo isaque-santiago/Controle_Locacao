@@ -14,7 +14,7 @@
       {{ campo("cfg-multa", "Multa de atraso (no vencimento)", nome="multa_atraso_valor", valor=v.multa_atraso_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.multa_atraso_valor, autocomplete="off") }}
       {{ campo("cfg-diario", "Adicional por dia de atraso", nome="encargo_diario_valor", valor=v.encargo_diario_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.encargo_diario_valor, autocomplete="off") }}
     </div>
-    <p class="mt-4 text-texto-2" id="cfg-exemplo">Exemplo com os valores salvos: locação de <span class="mono text-texto">{{ exemplo.saldo|moeda }}</span>, vencida há <span class="mono text-texto">{{ exemplo.dias_vencida }} dias</span> → multa <span class="mono text-texto">{{ exemplo.multa|moeda }}</span> + adicional <span class="mono text-texto">{{ exemplo.adicional_diario|moeda }}</span> = total <span class="mono font-semibold text-texto">{{ exemplo.total|moeda }}</span></p>
+    <p class="mt-4 text-texto-2" id="cfg-exemplo">Exemplo com os valores salvos: locação de <span class="mono text-texto">{{ exemplo.saldo|moeda }}</span>, vencida há <span class="mono text-texto">{{ exemplo.dias_vencida }} dias</span> → multa <span class="mono text-texto">{{ exemplo.multa|moeda }}</span> + adicional <span class="mono text-texto">{{ exemplo.adicional_diario|moeda }}</span> = encargos <span class="mono text-texto">{{ exemplo.encargos|moeda }}</span>; total a pagar <span class="mono font-semibold text-texto">{{ exemplo.total|moeda }}</span></p>
   </section>
   <section class="cartao mb-4" aria-labelledby="cfg-manutencao">
     <h2 id="cfg-manutencao">Alertas de manutenção</h2>

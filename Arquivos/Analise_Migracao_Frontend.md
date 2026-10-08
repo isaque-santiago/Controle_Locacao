@@ -4,7 +4,7 @@
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
-> proprietário). Documentos e Relatórios CONCLUÍDAS em 08/10/2026. Próxima página: Configurações (backup). Depois da Fase 3,
+> proprietário). Documentos, Relatórios e Configurações CONCLUÍDAS em 08/10/2026. Próxima página: Portal do Locatário (a última). Depois da Fase 3,
 > resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
@@ -353,7 +353,30 @@ abertura do comprovante; (B) novo e editar documento; (C) regularizar. Mais a ho
 - **Não verificado:** comparação lado a lado com o Streamlit, abrir os arquivos no Excel de verdade (só conferidos o tipo, o
   cabeçalho e as linhas), leitor de tela e aparelhos reais (Fase 4). Esta página não grava nada: nenhum dado de teste ficou.
 
-**Próxima: Configurações (backup)**, seguida do Portal do Locatário.
+**Andamento: Configurações concluída (08/10/2026).** Entregue de uma vez, com testes e commit, e homologada no banco de dev.
+
+- **Formulário** `/configuracoes`, página comum (sem diálogo), com os mesmos três cartões do Streamlit: encargos por atraso
+  (multa e adicional por dia, com exemplo de cálculo usando os valores salvos), alertas de manutenção (km, dias e multa de
+  troca de óleo) e alertas de documentos e CNH. Validação por campo com o digitado preservado; quantidades de 0 a 100.000;
+  dinheiro não negativo. O aviso de sucesso lista quais valores mudaram, ou diz que nenhum foi alterado. O exemplo de
+  encargos ganhou uma redação mais clara que a do Streamlit: "multa + adicional = encargos; total a pagar" (antes dizia
+  "= total", que já incluía o saldo da locação).
+- **Backup manual:** `POST /configuracoes/backup` (CSRF, só o dono, nunca por GET) responde com o ZIP
+  `backup-AAAA-MM-DD.zip` direto para baixar, sem cache; a página continua onde está. O serviço de backup (15 CSVs,
+  manifesto e LEIA-ME) foi reaproveitado sem mudança.
+- **Conferência no banco de desenvolvimento (08/10/2026):** a página abriu com os valores do banco (15,00, 7,00, 50,00, 300,
+  15, 30 e 30). Validação por campo (texto no lugar de dinheiro, 100001 e campo vazio) com foco no primeiro campo inválido.
+  Salvei multa de R$ 20,00 e CNH de 45 dias: o aviso citou só esses dois campos e o exemplo passou a R$ 555,00; em seguida
+  **restaurei** os valores originais. Backup: ZIP de 32 KB em cerca de 4 s, com as 15 tabelas, o manifesto e o LEIA-ME, tipo
+  e nome de arquivo certos e `Cache-Control: no-store`; o botão da página baixa o arquivo sem tirar a pessoa da página. Sem
+  rolagem horizontal e sem alvo menor que 44 px em 320, 390 e 1440 px.
+- **Diferença em relação ao Streamlit:** lá o backup fica na sessão ("Backup desta sessão: data") e o download é um segundo
+  botão; no app novo o clique já baixa o arquivo, e a página não guarda a data do último backup.
+- **Não verificado:** comparação lado a lado com o Streamlit, descompactar e abrir os CSVs no Excel, backup com o volume de
+  uma operação real (no dev são poucas linhas), leitor de tela e aparelhos reais (Fase 4). Nenhum dado de teste ficou: os
+  valores alterados foram restaurados.
+
+**Próxima: Portal do Locatário**, a última página da Fase 3.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

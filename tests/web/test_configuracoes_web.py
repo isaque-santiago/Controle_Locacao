@@ -17,7 +17,7 @@ def test_pagina_mostra_os_valores_salvos_e_o_exemplo_de_encargos(cliente, base_c
     assert "Encargos por atraso" in html and "Alertas de manutenção" in html and "Alertas de documentos e CNH" in html
     # locação de R$ 500, vencida há 5 dias: multa 15 + adicional 5 x 7 = 35, total 550
     assert "R$ 500,00" in html and "5 dias" in html and "multa <span class=\"mono text-texto\">R$ 15,00" in html
-    assert "adicional <span class=\"mono text-texto\">R$ 35,00" in html and "total <span class=\"mono font-semibold text-texto\">R$ 550,00" in html
+    assert "adicional <span class=\"mono text-texto\">R$ 35,00" in html and "encargos <span class=\"mono text-texto\">R$ 50,00" in html and "total a pagar <span class=\"mono font-semibold text-texto\">R$ 550,00" in html
     assert 'action="/configuracoes/backup"' in html and "15 tabelas" in html
 
 
