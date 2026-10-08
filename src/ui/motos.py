@@ -57,7 +57,7 @@ from src.ui.listas import (
     rodape_paginacao,
 )
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.formatadores import (
+from src.domain.formatadores import (
     formatar_data,
     formatar_moeda,
     formatar_moeda_compacta,

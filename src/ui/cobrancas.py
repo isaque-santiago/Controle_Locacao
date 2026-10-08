@@ -22,7 +22,7 @@ from src.ui import feedback
 from src.ui.formularios import campo_moeda, legenda_obrigatorios, linha_campos, rodape_formulario
 from src.ui.listas import abas, aba_ativa
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.formatadores import formatar_data, formatar_moeda
+from src.domain.formatadores import formatar_data, formatar_moeda
 
 _FORMAS = ["pix", "dinheiro", "cartao", "transferencia", "outro"]
 _FORMAS_ROTULO = {

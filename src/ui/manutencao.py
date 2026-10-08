@@ -32,7 +32,7 @@ from src.ui.formularios import (
     rotulo_obrigatorio,
 )
 from src.ui.listas import abas, aba_ativa, barra_filtros, paginar, rodape_paginacao
-from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
+from src.domain.formatadores import formatar_data, formatar_moeda, formatar_placa
 from src.ui.registros import campo, lista_registros, registro
 
 _SITUACAO_ROTULO = {"vencida": "Vencida", "proxima": "Próxima"}

@@ -47,7 +47,7 @@ from src.ui.listas import (
     rodape_paginacao,
 )
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa, mascarar_cpf
+from src.domain.formatadores import formatar_data, formatar_moeda, formatar_placa, mascarar_cpf
 from src.ui.vistorias import campos as campos_vistoria, preparar as preparar_vistoria
 
 _STATUS_ROTULO = {"ativo": "Ativo", "encerrado": "Encerrado", "cancelado": "Cancelado"}

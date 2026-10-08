@@ -12,7 +12,7 @@ import streamlit as st
 
 from src.domain.erros import classificar_erro
 from src.ui.feedback import exibir_falha, exibir_pendentes
-from src.ui.formatadores import formatar_placa
+from src.domain.formatadores import formatar_placa
 
 # Situação -> cor semântica. A cor de status é a única que "grita"; estados
 # neutros/operacionais (alugada, aberta) só recebem o selo cinza.

@@ -7,7 +7,7 @@ from pathlib import Path
 from decimal import Decimal
 import pytest
 from src.domain.valores import hoje_br
-from src.ui.formatadores import formatar_mes
+from src.domain.formatadores import formatar_mes
 from streamlit.testing.v1 import AppTest
 
 RAIZ = Path(__file__).resolve().parents[1]

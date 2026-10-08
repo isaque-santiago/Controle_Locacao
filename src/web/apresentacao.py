@@ -1,7 +1,7 @@
 """Textos e formatos de exibição do app web."""
 
 from src.domain.acesso_locatario import eh_email_de_locatario
-from src.ui.formatadores import (
+from src.domain.formatadores import (
     formatar_data,
     formatar_moeda,
     formatar_moeda_compacta,

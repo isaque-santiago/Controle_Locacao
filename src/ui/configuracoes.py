@@ -11,7 +11,7 @@ from src.domain.valores import hoje_br
 from src.services import configuracoes
 from src.ui import feedback
 from src.ui.componentes import cabecalho, cabecalho_pagina, proteger
-from src.ui.formatadores import formatar_moeda
+from src.domain.formatadores import formatar_moeda
 from src.ui.formularios import campo_inteiro, campo_moeda, linha_campos
 
 

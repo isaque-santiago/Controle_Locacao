@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +16,7 @@ def test_configuracao_aceita_variaveis_de_ambiente(monkeypatch):
 def test_configuracao_ausente_exibe_causa(monkeypatch):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
-    with patch("src.config.st.secrets", {}):
+    with patch("src.config._SEGREDOS_DEV", Path("/inexistente/secrets.toml")):
         with pytest.raises(RuntimeError, match="SUPABASE_URL"):
             config.get_supabase_url()
         with pytest.raises(RuntimeError, match="SUPABASE_ANON_KEY"):
@@ -23,7 +24,7 @@ def test_configuracao_ausente_exibe_causa(monkeypatch):
 
 
 def test_cookie_de_atividade_e_gravado_com_intervalo(monkeypatch):
-    from src import db
+    from src.ui import sessao_streamlit as db
 
     gravacoes = []
 

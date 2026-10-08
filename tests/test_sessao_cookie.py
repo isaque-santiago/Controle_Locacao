@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from src import db
+from src.ui import sessao_streamlit as db
 
 
 def test_le_tokens_dos_cookies_da_requisicao_sem_acionar_componente():
@@ -11,7 +11,7 @@ def test_le_tokens_dos_cookies_da_requisicao_sem_acionar_componente():
     }
 
     with patch.object(db.st, "context", contexto), patch(
-        "src.db._get_cookie_controller"
+        "src.ui.sessao_streamlit._get_cookie_controller"
     ) as controlador:
         assert db.get_refresh_token_cookie() == "refresh-valido"
         assert db.sessao_ativa_no_cookie() is True
@@ -23,7 +23,7 @@ def test_cookie_ausente_na_requisicao_nao_consulta_componente_assincrono():
     contexto.cookies = {}
 
     with patch.object(db.st, "context", contexto), patch(
-        "src.db._get_cookie_controller"
+        "src.ui.sessao_streamlit._get_cookie_controller"
     ) as controlador:
         assert db.get_refresh_token_cookie() is None
         assert db.sessao_ativa_no_cookie() is False
@@ -35,7 +35,7 @@ def test_usa_componente_em_versao_antiga_do_streamlit():
     controlador.get.side_effect = ["refresh-legado", "1"]
 
     with patch.object(db.st, "context", new=None), patch(
-        "src.db._get_cookie_controller", return_value=controlador
+        "src.ui.sessao_streamlit._get_cookie_controller", return_value=controlador
     ):
         assert db.get_refresh_token_cookie() == "refresh-legado"
         assert db.sessao_ativa_no_cookie() is True
@@ -45,7 +45,7 @@ def test_limpeza_remove_cookies_sem_depender_de_leitura_assincrona():
     controlador = MagicMock()
 
     with patch.object(db.st, "session_state", {}), patch(
-        "src.db._get_cookie_controller", return_value=controlador
+        "src.ui.sessao_streamlit._get_cookie_controller", return_value=controlador
     ):
         db.clear_session_tokens()
 
@@ -93,8 +93,8 @@ def test_refresh_token_dura_no_maximo_sete_dias():
     contexto.url = "http://localhost:8501/"
 
     with patch.object(db.st, "context", contexto), patch(
-        "src.db._get_cookie_controller", return_value=controlador
-    ), patch("src.db.get_client"):
+        "src.ui.sessao_streamlit._get_cookie_controller", return_value=controlador
+    ), patch("src.ui.sessao_streamlit.get_client"):
         db.set_session_tokens("acesso", "refresh")
 
     assert controlador.set.call_args.kwargs["max_age"] == 60 * 60 * 24 * 7
@@ -111,9 +111,9 @@ def test_regrava_cookie_quando_supabase_rotaciona_o_refresh_token():
     estado = {db._CHAVE_REFRESH_GRAVADO: "antigo"}
 
     with patch.object(db.st, "session_state", estado), patch(
-        "src.db._get_cookie_controller", return_value=controlador
-    ), patch("src.db.get_client", return_value=_cliente_com_refresh("novo")), patch(
-        "src.db._opcoes_cookie", return_value={}
+        "src.ui.sessao_streamlit._get_cookie_controller", return_value=controlador
+    ), patch("src.ui.sessao_streamlit.get_client", return_value=_cliente_com_refresh("novo")), patch(
+        "src.ui.sessao_streamlit._opcoes_cookie", return_value={}
     ):
         db.sincronizar_refresh_token_cookie()
 
@@ -126,8 +126,8 @@ def test_nao_regrava_cookie_quando_o_refresh_token_nao_mudou():
     estado = {db._CHAVE_REFRESH_GRAVADO: "igual"}
 
     with patch.object(db.st, "session_state", estado), patch(
-        "src.db._get_cookie_controller", return_value=controlador
-    ), patch("src.db.get_client", return_value=_cliente_com_refresh("igual")):
+        "src.ui.sessao_streamlit._get_cookie_controller", return_value=controlador
+    ), patch("src.ui.sessao_streamlit.get_client", return_value=_cliente_com_refresh("igual")):
         db.sincronizar_refresh_token_cookie()
 
     controlador.set.assert_not_called()

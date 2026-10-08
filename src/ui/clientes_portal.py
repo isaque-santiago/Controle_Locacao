@@ -6,7 +6,7 @@ from src.domain import mensagens
 from src.services import portal_locatario
 from src.ui import feedback
 from src.ui.componentes import proteger, selo_situacao, tabela_html
-from src.ui.formatadores import formatar_data
+from src.domain.formatadores import formatar_data
 
 _CHAVE_CREDENCIAIS = "portal_credenciais_geradas"
 

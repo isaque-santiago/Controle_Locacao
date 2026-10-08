@@ -86,7 +86,7 @@ def test_paginas_vazias_autenticadas(arquivo):
                     patch(f"src.services.{modulo}.{nome}", return_value=[])
                 )
         pilha.enter_context(
-            patch("src.services.portal_locatario.papel_atual", return_value="dono")
+            patch("src.ui.sessao_streamlit.papel_atual", return_value="dono")
         )
         pilha.enter_context(
             patch("src.services.portal_locatario.listar_trocas", return_value=[])

@@ -31,7 +31,7 @@ from src.ui.formularios import (
 )
 from src.ui.listas import barra_filtros, paginar, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.formatadores import formatar_data, formatar_moeda, formatar_placa
+from src.domain.formatadores import formatar_data, formatar_moeda, formatar_placa
 
 _TIPOS = {
     "ipva": "IPVA",

@@ -43,7 +43,7 @@ from src.ui.componentes import (
     vazio_lista,
 )
 from src.ui import feedback
-from src.ui.formatadores import formatar_data, formatar_placa
+from src.domain.formatadores import formatar_data, formatar_placa
 from src.ui.formularios import campo_inteiro, linha_campos, rodape_formulario
 from src.ui.listas import barra_filtros, lembrar_registro, paginar, restaurar_posicao, rodape_paginacao
 from src.ui.registros import campo, lista_registros, registro

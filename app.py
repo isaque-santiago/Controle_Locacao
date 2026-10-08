@@ -6,7 +6,7 @@ import streamlit as st
 
 from src.auth import require_login
 from src.domain.troca_oleo import PAPEL_DONO, PAPEL_LOCATARIO
-from src.services import portal_locatario
+from src.ui.sessao_streamlit import papel_atual
 from src.ui.tema import aplicar
 
 ICONE = Path(__file__).parent / "src" / "ui" / "assets" / "icone.png"
@@ -48,7 +48,7 @@ st.navigation([*PAGINAS_DONO, st.Page(ARQUIVO_PORTAL, title="Troca de óleo")], 
 aplicar()
 require_login()
 
-papel = portal_locatario.papel_atual()
+papel = papel_atual()
 if papel not in (PAPEL_DONO, PAPEL_LOCATARIO):
     st.error(
         "Este usuário não tem acesso ao sistema. Peça ao proprietário para criar o seu "

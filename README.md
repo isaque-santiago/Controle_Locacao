@@ -108,7 +108,9 @@ a suíte inteira passa (1168 testes, em 08/10/2026; os de Cobranças usam relóg
 `executar_web.py` (o servidor roda como processo filho, reiniciado a cada `.py` salvo em `src/`), e não do `--reload` do
 uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console (preview do Claude). Em produção nada vai a disco.
 
-**Próximo passo:** Fase 4 (E2E, homologação e desligamento do Streamlit).
+**Fase 4 em andamento** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
+Parte A concluída: o núcleo (`config`, `db`, `domain`, `services`, `repositories`) e o app web não dependem mais do Streamlit;
+o código exclusivo dele fica em `src/ui/sessao_streamlit.py` e some na remoção. Próxima: Parte B (suíte Playwright no app novo).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

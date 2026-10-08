@@ -3,15 +3,12 @@
 from decimal import Decimal
 from pathlib import PurePath
 
-import streamlit as st
 from postgrest.exceptions import APIError
 
-from src.domain.acesso_locatario import validar_nova_senha
 from src.domain.arquivos import validar_arquivo
 from src.domain.troca_oleo import avaliar_troca_oleo, validar_km_informado
 from src.repositories import portal_locatario
 
-_CHAVE_PAPEL = "papel_usuario"
 _CODIGO_REGRA_DE_NEGOCIO = "P0001"  # raise exception ... nas RPCs
 _EXTENSOES_PERMITIDAS = (".jpg", ".jpeg", ".png")
 _TIPOS = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
@@ -20,15 +17,6 @@ _TIPOS = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 def _como_regra_de_negocio(erro: APIError) -> ValueError:
     """As RPCs explicam o problema em pt-BR; o app mostra a mensagem como está."""
     return ValueError(erro.message)
-
-
-def papel_atual():
-    """Papel do usuário logado ('dono', 'locatario' ou None), guardado na sessão.
-
-    A sessão é apagada no logout, então trocar de usuário refaz a consulta."""
-    if _CHAVE_PAPEL not in st.session_state:
-        st.session_state[_CHAVE_PAPEL] = portal_locatario.meu_papel()
-    return st.session_state[_CHAVE_PAPEL]
 
 
 def dados_portal() -> dict:
@@ -74,13 +62,6 @@ def registrar_troca_oleo(
         if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
             raise _como_regra_de_negocio(erro) from erro
         raise
-
-
-def trocar_senha(nova: str, confirmacao: str) -> None:
-    """O locatário troca, se quiser, a senha gerada por uma própria."""
-    email = (st.session_state.get("usuario") or {}).get("email", "")
-    cpf = email.split("@")[0]
-    portal_locatario.alterar_senha(validar_nova_senha(nova, confirmacao, cpf))
 
 
 # ---- Somente o dono ----------------------------------------------------------

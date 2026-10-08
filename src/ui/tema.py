@@ -9,7 +9,7 @@ from pathlib import Path
 
 import streamlit as st
 
-from src.db import ler_tema_escuro_cookie
+from src.ui.sessao_streamlit import ler_tema_escuro_cookie
 from src.ui.acessibilidade import SCRIPT_A11Y
 from src.ui.feedback import SCRIPT_OCUPADO
 

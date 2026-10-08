@@ -10,6 +10,7 @@ from postgrest.exceptions import APIError
 from streamlit.testing.v1 import AppTest
 
 from src.services import portal_locatario
+from src.ui import portal_locatario as ui_portal
 
 RAIZ = Path(__file__).resolve().parents[1]
 REPO = "src.services.portal_locatario.portal_locatario"
@@ -98,7 +99,7 @@ class TestRegistrarTrocaOleo:
 
 def _abrir(arquivo, papel, dados=DADOS):
     with (
-        patch("src.services.portal_locatario.papel_atual", return_value=papel),
+        patch("src.ui.sessao_streamlit.papel_atual", return_value=papel),
         patch("src.services.portal_locatario.dados_portal", return_value=dados),
     ):
         app = AppTest.from_file(str(RAIZ / arquivo), default_timeout=20)
@@ -129,7 +130,7 @@ class TestTelas:
         app = _abrir("pages/11_Portal_Locatario.py", "locatario")
         app.text_input[0].set_value("6100")
         with (
-            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
             patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
             patch("src.services.portal_locatario.registrar_troca_oleo") as registrar,
         ):
@@ -141,7 +142,7 @@ class TestTelas:
         app = _abrir("pages/11_Portal_Locatario.py", "locatario")
         app.text_input[0].set_value("6100")
         with (
-            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
             patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
             patch("src.services.portal_locatario.registrar_troca_oleo"),
         ):
@@ -155,7 +156,7 @@ class TestTelas:
         foto = MagicMock()
         foto.name, foto.getvalue.return_value = "a.png", PNG
         with (
-            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
             patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
             patch("src.ui.portal_locatario.st.file_uploader", return_value=foto),
             patch(
@@ -167,7 +168,7 @@ class TestTelas:
             assert any("não pode ser menor" in e.value for e in app.error)
             assert app.text_input[0].value == "6100"
         with (
-            patch("src.services.portal_locatario.papel_atual", return_value="locatario"),
+            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
             patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
             patch("src.ui.portal_locatario.st.file_uploader", return_value=foto),
             patch("src.services.portal_locatario.registrar_troca_oleo", return_value={"excedeu": False}),
@@ -197,9 +198,9 @@ class TestAlterarSenha:
     def test_trocar_senha_valida_e_chama_o_auth(self):
         with (
             patch(f"{REPO}.alterar_senha") as alterar,
-            patch("src.services.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
+            patch("src.ui.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
         ):
-            portal_locatario.trocar_senha("moto2026x", "moto2026x")
+            ui_portal.trocar_senha("moto2026x", "moto2026x")
         alterar.assert_called_once_with("moto2026x")
 
     @pytest.mark.parametrize(
@@ -209,10 +210,10 @@ class TestAlterarSenha:
     def test_senha_fraca_ou_diferente_nao_chama_o_auth(self, nova, confirmacao):
         with (
             patch(f"{REPO}.alterar_senha") as alterar,
-            patch("src.services.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
+            patch("src.ui.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
         ):
             with pytest.raises(ValueError):
-                portal_locatario.trocar_senha(nova, confirmacao)
+                ui_portal.trocar_senha(nova, confirmacao)
         alterar.assert_not_called()
 
 

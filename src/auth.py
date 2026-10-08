@@ -5,9 +5,9 @@ from time import time
 from supabase_auth.errors import AuthApiError
 
 from src.domain.acesso_locatario import eh_email_de_locatario, identificador_para_email
-from src.db import (
+from src.db import get_client
+from src.ui.sessao_streamlit import (
     clear_session_tokens,
-    get_client,
     get_refresh_token_cookie,
     gravar_sessao_ja_autenticada,
     marcar_atividade_cookie,

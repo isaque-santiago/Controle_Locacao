@@ -23,7 +23,7 @@ from src.ui.componentes import (
     selo_situacao,
 )
 from src.ui.registros import campo, lista_registros, registro
-from src.ui.formatadores import formatar_data, formatar_moeda, formatar_moeda_compacta
+from src.domain.formatadores import formatar_data, formatar_moeda, formatar_moeda_compacta
 
 _DIAS = [
     "segunda-feira",

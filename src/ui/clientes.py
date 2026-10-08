@@ -52,7 +52,7 @@ from src.ui.listas import (
     restaurar_posicao,
     rodape_paginacao,
 )
-from src.ui.formatadores import formatar_data, formatar_moeda, mascarar_cpf
+from src.domain.formatadores import formatar_data, formatar_moeda, mascarar_cpf
 
 _STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
 _OPCOES_FILTRO = [("Todos", "Todos")] + [(chave, _STATUS_ROTULO[chave]) for chave in ("ativo", "bloqueado", "inativo")]
@@ -487,7 +487,7 @@ def _exibir_ficha(cliente_id):
 
 
 def formatar_placa_simples(moto):
-    from src.ui.formatadores import formatar_placa
+    from src.domain.formatadores import formatar_placa
 
     return formatar_placa(moto["placa"]) if moto else "—"
 

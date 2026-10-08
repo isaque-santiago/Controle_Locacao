@@ -20,7 +20,7 @@ from src.ui.componentes import (
 )
 from src.ui.formularios import linha_campos
 from src.ui.listas import abas, aba_ativa, barra_filtros
-from src.ui.formatadores import (
+from src.domain.formatadores import (
     formatar_data,
     formatar_mes,
     formatar_moeda,

@@ -18,7 +18,7 @@ from src.web.apresentacao import (
     tema_do_cookie,
 )
 from src.domain.entradas import formatar_telefone
-from src.ui.formatadores import mascarar_cpf
+from src.domain.formatadores import mascarar_cpf
 
 RAIZ = Path(__file__).resolve().parents[2]
 PASTA_ESTATICOS = RAIZ / "static"

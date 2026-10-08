@@ -433,6 +433,22 @@ Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regress�
 homologação e os aparelhos reais. **Esta fase absorve a Etapa 9 do plano de UI/UX** (decisão 2, opção b). Só então remover o Streamlit, `tema.py`, `acessibilidade.py`, o CSS
 dependente do DOM do Streamlit e as dependências.
 
+**Plano da Fase 4 aprovado em 08/10/2026** (branch `fase-4-e2e-e-desligamento`), em partes, cada uma com testes e commit:
+A) desacoplar o núcleo do Streamlit; B) adaptar a suíte Playwright ao app novo (o proprietário roda no terminal dele, com
+`E2E_EMAIL`/`E2E_SENHA`; a IA lê só `e2e/resultados/`); C) CI do app novo; D) revisão de segurança; E) homologação com o
+proprietário (banco de dev recriado antes; fluxos, leitor de tela, aparelhos e fotos reais); F) remover o Streamlit (sem apagar o
+`secrets.toml` do proprietário); deploy fica para a **Fase 5** (só o `Dockerfile` pode entrar no fim da Fase 4). Decisões: CSV
+dos relatórios sempre com duas casas; sem "adicionar fotos depois" em Vistorias; Streamlit pode ser congelado se a Parte A o
+atrapalhar.
+
+**Parte A concluída (08/10/2026): núcleo desacoplado.** `src/config.py` lê só variáveis de ambiente e, em dev, o
+`.streamlit/secrets.toml` com `tomllib` (sem Streamlit). `src/db.py` ficou só com o cliente por requisição; o que era do Streamlit
+(cookies, `session_state`, tema) foi para `src/ui/sessao_streamlit.py`, que se registra em `db.registrar_origem_alternativa` para o
+Streamlit seguir funcionando. `papel_atual` e `trocar_senha` saíram de `services/portal_locatario.py` (o app web não usa) e foram para
+a camada do Streamlit. `formatadores.py` (que o app web importava de `src/ui`) foi para `src/domain/formatadores.py`.
+`tests/test_desacoplamento_streamlit.py` garante que `domain`, `repositories`, `services`, `web`, `config` e `db` não importam o
+Streamlit e que `src.web.app` sobe sem carregá-lo. O Streamlit continua funcionando (testes de tela passam). Suíte: 1303 testes.
+
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 
 | Item | Destino |

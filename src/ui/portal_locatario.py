@@ -11,12 +11,14 @@ from html import escape
 import streamlit as st
 
 from src.domain import mensagens
+from src.domain.acesso_locatario import validar_nova_senha
 from src.domain.manutencao_regras import calcular_proxima_manutencao, calcular_situacao
 from src.domain.valores import hoje_br
+from src.repositories import portal_locatario as repositorio_portal
 from src.services import portal_locatario
 from src.ui import feedback
 from src.ui.componentes import cabecalho, cabecalho_pagina, chip_placa, proteger, selo_situacao
-from src.ui.formatadores import formatar_data, formatar_moeda
+from src.domain.formatadores import formatar_data, formatar_moeda
 
 _ROTULO_SITUACAO = {
     "em_dia": "Óleo em dia",
@@ -133,6 +135,13 @@ def _formulario(dados, contrato, previsto):
     st.rerun()
 
 
+def trocar_senha(nova: str, confirmacao: str) -> None:
+    """O locatário troca, se quiser, a senha gerada por uma própria."""
+    email = (st.session_state.get("usuario") or {}).get("email", "")
+    cpf = email.split("@")[0]
+    repositorio_portal.alterar_senha(validar_nova_senha(nova, confirmacao, cpf))
+
+
 def _alterar_senha():
     """Opcional: o locatário pode trocar a senha gerada por uma própria."""
     with st.expander("Alterar minha senha (opcional)"):
@@ -147,7 +156,7 @@ def _alterar_senha():
                 "Salvar nova senha", use_container_width=True, key="ocupa_trocar_senha"
             )
         if enviar:
-            portal_locatario.trocar_senha(nova, confirmacao)
+            trocar_senha(nova, confirmacao)
             st.session_state["trocar_senha_tentativa"] = tentativa + 1
             feedback.concluir(mensagens.senha_alterada())
 
