@@ -702,3 +702,49 @@ def base_vistorias(monkeypatch):
     monkeypatch.setattr(dados_vistorias, "motos", SimpleNamespace(
         listar=lambda: [base.moto], obter=lambda id_: base.moto if id_ == "m1" else None))
     return base
+
+
+class BaseDocumentos:
+    """Dados fictícios dos serviços usados por src/web/dados_documentos (datas relativas a hoje)."""
+
+    def __init__(self):
+        from datetime import timedelta
+
+        from src.domain.valores import hoje_br
+
+        hoje = hoje_br()
+        self.moto = {"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160", "status": "alugada", "km_atual": 12000}
+        self.outra = {"id": "m2", "placa": "QRS4T21", "marca": "Yamaha", "modelo": "Factor", "status": "disponivel", "km_atual": 5000}
+        self.inativa = {"id": "m3", "placa": "ZZZ9Z99", "marca": "Honda", "modelo": "Pop", "status": "inativa", "km_atual": 1}
+        self.alerta_dias = 30
+
+        def doc(id_, moto_id, tipo, dias, **extra):
+            return {"id": id_, "moto_id": moto_id, "tipo": tipo, "ano_referencia": 2026, "descricao": None,
+                    "vencimento": (hoje + timedelta(days=dias)).isoformat(), "valor": Decimal("150"), "regularizado": False,
+                    "arquivo_path": None, "observacoes": None, **extra}
+
+        self.hoje = hoje
+        self.documentos = [
+            doc("00000000-0000-0000-0000-0000000000e1", "m1", "ipva", -10, descricao="IPVA <b>2026</b>", arquivo_path="m1/e1/a.pdf"),
+            doc("00000000-0000-0000-0000-0000000000e2", "m1", "seguro", 10),
+            doc("00000000-0000-0000-0000-0000000000e3", "m2", "licenciamento", 200),
+            doc("00000000-0000-0000-0000-0000000000e4", "m2", "ipva", -400, regularizado=True, data_regularizacao="2025-01-01"),
+            doc("00000000-0000-0000-0000-0000000000e5", "m2", "outro", -3, valor=None),
+        ]
+        self.url_assinada = "https://projeto.supabase.co/storage/v1/object/sign/documentos/"
+
+
+@pytest.fixture(autouse=True)
+def base_documentos(monkeypatch):
+    from src.web import dados_documentos
+
+    base = BaseDocumentos()
+    frota = [base.moto, base.outra, base.inativa]
+    monkeypatch.setattr(dados_documentos, "motos", SimpleNamespace(listar=lambda: frota, obter=lambda id_: next((m for m in frota if m["id"] == id_), None)))
+    monkeypatch.setattr(dados_documentos, "configuracoes", SimpleNamespace(obter=lambda: {"alerta_documento_dias": base.alerta_dias}))
+    monkeypatch.setattr(dados_documentos, "documentos", SimpleNamespace(
+        listar_todos=lambda: base.documentos,
+        obter=lambda id_: next((d for d in base.documentos if d["id"] == id_), None),
+        url_comprovante=lambda caminho: base.url_assinada + caminho + "?token=x"))
+    return base
+
