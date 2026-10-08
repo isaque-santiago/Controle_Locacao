@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo(titulo, acao, "Salvar item", csrf_token, erro_geral) %}
+{% include "manutencao/_campos_catalogo.html" %}
+{% endcall %}

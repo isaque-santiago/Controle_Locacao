@@ -1,0 +1,11 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% block conteudo %}
+{% call cabecalho_pagina("Vistorias", "Entregas e devoluções registradas") %}
+{{ botao("Registrar vistoria", href="/vistorias/registrar", variante="primario", icone_nome="novo", extra='hx-get="/vistorias/registrar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+{% endcall %}
+<form id="filtros" role="search" action="/vistorias" method="get" hx-get="/vistorias" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
+  <div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca">Buscar vistorias</label><input class="entrada" id="busca" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="Buscar por cliente ou placa" autocomplete="off"></div></div>
+  <div id="resultado" tabindex="-1">{% include "vistorias/_resultado.html" %}</div>
+</form>
+{% endblock %}

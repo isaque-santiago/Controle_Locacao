@@ -1,0 +1,7 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, abas_remotas %}
+{% block conteudo %}
+{{ cabecalho_pagina("Relatórios", subtitulo) }}
+{{ abas_remotas("Seções de relatórios", abas_da_lista, aba) }}
+{% include "relatorios/_painel.html" %}
+{% endblock %}

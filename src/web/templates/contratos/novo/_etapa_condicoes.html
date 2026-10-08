@@ -1,0 +1,31 @@
+{% from "componentes/macros.html" import campo, campo_lista, caixa, aviso, placa %}
+<div class="contrato-layout">
+  <form class="cartao" id="form-condicoes" method="post" action="{{ base }}/condicoes">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {# Botão padrão do Enter: avançar (o "Voltar" vem depois na ordem do formulário) #}
+    <button class="so-leitor" type="submit" name="acao" value="avancar" tabindex="-1" aria-hidden="true">Avançar</button>
+    {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+    <div class="formulario">
+      {{ campo("c-inicio", "Data de início", nome="data_inicio", valor=v.data_inicio, tipo="date", obrigatorio=True, erro=erros.data_inicio) }}
+      {{ campo_lista("c-periodo", "Periodicidade", periodos_rotulo.items()|list, nome="periodicidade", selecionado=v.periodicidade) }}
+      {{ caixa("c-indeterminado", "Prazo indeterminado", nome="indeterminado", marcada=v.indeterminado, ajuda="O contrato segue aberto enquanto o cliente estiver com a moto e pagando, até ser encerrado. Desmarque só se houver data final combinada.") }}
+      {{ campo("c-fim", "Fim previsto", nome="data_fim_prevista", valor=v.data_fim_prevista, tipo="date", erro=erros.data_fim_prevista, ajuda="Vale só quando o prazo não é indeterminado.", largo=True) }}
+      {{ campo("c-valor", "Valor do período", nome="valor_periodo", valor=v.valor_periodo, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor_periodo, autocomplete="off") }}
+      {{ campo("c-caucao", "Caução", nome="caucao_valor", valor=v.caucao_valor, prefixo="R$", mono=True, inputmode="decimal", erro=erros.caucao_valor, ajuda="Devolvida ao encerrar o contrato, se não houver pendências.", autocomplete="off") }}
+    </div>
+    <p class="text-texto-2 text-[13px]">Km inicial: <span class="mono">{{ moto.km_atual|milhar }} km</span> (leitura atual da moto). <span aria-hidden="true">*</span> Campo obrigatório.</p>
+    <div class="rodape-acoes">
+      <button class="btn" type="submit" name="acao" value="voltar" formnovalidate>Voltar</button>
+      <button class="btn btn-primario" type="submit" name="acao" value="avancar">Avançar</button>
+    </div>
+  </form>
+  <aside class="cartao resumo" aria-label="Resumo do contrato">
+    <h2>Resumo</h2>
+    <dl>
+      <div><dt>Cliente</dt><dd>{{ cliente.nome }}</dd></div>
+      <div><dt>Moto</dt><dd>{{ placa(moto.placa|placa_br) }}</dd></div>
+      <div><dt>Km inicial</dt><dd class="mono">{{ moto.km_atual|milhar }} km</dd></div>
+    </dl>
+    <div class="flex flex-wrap gap-2 mt-3"><a class="btn" href="{{ base }}?etapa=1">Alterar cliente</a><a class="btn" href="{{ base }}?etapa=2">Alterar moto</a></div>
+  </aside>
+</div>

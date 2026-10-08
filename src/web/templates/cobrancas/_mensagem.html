@@ -1,0 +1,7 @@
+{% from "componentes/macros.html" import icone %}
+{# Conteúdo do diálogo #dlg-form: mensagem de cobrança com botão de copiar. #}
+<div>
+  <div class="dialogo-cab"><h2 id="dlg-form-titulo">Mensagem de cobrança</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
+  <div class="dialogo-corpo"><div class="formulario">{% include "cobrancas/_corpo_mensagem.html" %}</div></div>
+  <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>Fechar</button></div>
+</div>

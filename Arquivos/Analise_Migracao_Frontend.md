@@ -1,8 +1,11 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
-> uma por vez), INICIADA em 06/10/2026. Clientes está em homologação parcial: lista, cadastro, edição e três abas
-> funcionam, mas faltam a aba Portal e o cartão de contrato ativo no Resumo. Próxima página após esse aceite: Contratos.**
+> uma por vez) CONCLUÍDA em 08/10/2026; próxima: Fase 4 (E2E, homologação e desligamento do Streamlit). Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
+> incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
+> Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
+> proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. A falta de recarga
+> automática do app web foi resolvida em 08/10/2026 (sessões espelhadas em arquivo só em desenvolvimento).**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -169,20 +172,261 @@ Clientes → Contratos (assistente em 4 etapas) → Cobranças → Manutenção 
 Documentos → Relatórios (exportação) → Configurações (backup) → Portal do Locatário.
 O Streamlit continua funcionando em paralelo, no mesmo banco, até a última página migrar.
 
-**Andamento (06/10/2026): Clientes em homologação parcial.** O app novo já possui lista com filtro por status, busca por
-nome/CPF, paginação e resposta parcial HTMX; ficha com abas Resumo, Contratos e Pagamentos; cadastro e edição em
-diálogo, com validação por campo, CSRF, mensagens e dados preservados após erro. A rota usa as fronteiras
-`dados_clientes.py` e `acoes_clientes.py`, sem acesso direto ao banco, e tem testes web com serviços falsos.
-Conferência lado a lado realizada no banco de desenvolvimento em 06/10/2026: ambos mostraram 30 clientes após a
-criação do registro fictício `Teste Migração Fase 3 Editado` (24 ativos, 4 bloqueados e 2 inativos); busca por CPF,
-paginação, dados pessoais, contrato, valores financeiros, cadastro e edição bateram. O diálogo funcionou em 320 px,
-fechou com Esc e devolveu o foco. A conferência encontrou e corrigiu o corte de CPF/WhatsApp em 320 px e o rótulo
-técnico `multa_manutencao`. Não houve overflow global nem alvo interativo menor que 44 px.
+**Andamento: Clientes concluída (07/10/2026).** O app novo possui lista com filtro por status, busca por
+nome/CPF, paginação e resposta parcial HTMX; ficha com abas Resumo (com cartão de contrato ativo), Contratos,
+Pagamentos (paginados de 10 em 10, URL `?aba=pagamentos&pagina=N`) e Portal; cadastro e edição em diálogo, com
+validação por campo, CSRF, mensagens e dados preservados após erro. A rota usa as fronteiras `dados_clientes.py` e
+`acoes_clientes.py`, sem acesso direto ao banco, e tem testes web com serviços falsos (846 testes na suíte).
 
-**Pendências antes do aceite de Clientes:** migrar a quarta aba **Portal** (`src/ui/clientes_portal.py`) e recolocar
-no Resumo o cartão de contrato ativo existente no Streamlit. A aba Pagamentos funciona, porém a massa E2E gera uma
-lista muito longa; avaliar paginação durante esse fechamento. Só depois repetir a ficha lado a lado, registrar o
-aceite e iniciar Contratos (assistente de quatro etapas).
+Conferência lado a lado em 06/10/2026 no banco de desenvolvimento: 30 clientes (24 ativos, 4 bloqueados e 2
+inativos), busca por CPF, paginação, dados pessoais, contrato, valores financeiros, cadastro e edição bateram com o
+Streamlit; diálogo em 320 px, Esc e foco ok. Em 07/10/2026, no app novo: cartão de contrato ativo conferido; aba
+Portal exercitada de ponta a ponta no cliente fictício (criar acesso, fechar o aviso, gerar nova senha, remover
+acesso); paginação testada num cliente com 183 cobranças (avanço, Voltar do navegador, última página, teclado);
+sem rolagem horizontal e sem alvo menor que 44 px em 320, 390 e 1440 px; setas percorrem as abas. Decisão do
+proprietário: aceite **sem** repetir a comparação lado a lado dos itens novos (Resumo, Portal, Pagamentos
+paginados).
+
+Correções feitas no fechamento: o repositório do portal lia o JWT do dono da sessão do Streamlit (nulo no app
+novo) e agora usa o do cabeçalho do cliente por requisição; o foco voltava ao topo após a paginação por
+`outerHTML` e agora volta ao botão equivalente. **Não verificado:** fotos das trocas de óleo (o banco de dev não
+tem trocas; só testes automatizados), leitor de tela e aparelhos reais (ficam para a Fase 4).
+
+**Andamento: Contratos concluída (07/10/2026).** Entregue em três partes, cada uma com testes e commit:
+(A) lista e ficha somente leitura; (B) assistente de novo contrato em quatro etapas; (C) encerramento em diálogo.
+
+- **Lista e ficha:** abre nos contratos ativos; chips de situação com contagem, busca por cliente ou placa, paginação
+  e resposta parcial HTMX. Ficha com faixa de dados (valor, caução, km inicial, prazo, próxima cobrança) e abas
+  Cobranças (com "pago em"), Vistorias (entrega e devolução) e Manutenções (só as da vigência). O cartão de contrato
+  ativo da ficha do cliente abre esta ficha.
+- **Assistente:** Cliente → Moto → Condições → Confirmar, uma URL por etapa, sem depender de JavaScript. Decisão de
+  implementação: o rascunho fica **na sessão do servidor** (`sessao.rascunho_contrato`), inclusive texto inválido,
+  para voltar e revisar sem perder o progresso; some ao concluir, cancelar ou iniciar outro contrato. Regras mantidas
+  do Streamlit: só cliente ativo aluga, só moto disponível aparece, prazo indeterminado é o padrão, o km da vistoria
+  não pode ser menor que o da moto e vira o km inicial, a criação usa a RPC única. A vistoria de entrega não tem fotos
+  (como no Streamlit; elas entram na página Vistorias).
+- **Encerramento:** diálogo com data, vistoria de devolução, danos descontados da caução (descrição obrigatória) e
+  prévia de impacto recalculada pelo servidor; o aviso final diz quanto devolver e o excedente cobrado.
+- **Conferência no banco de desenvolvimento (07/10/2026):** contrato de teste criado pelo assistente (Carlos Eduardo
+  Lima, moto E2E-0A04): 5 parcelas semanais geradas, vistoria de entrega registrada, moto passou a Alugada; encerrado
+  pelo diálogo: parcelas futuras canceladas, a do dia mantida, vistoria de devolução registrada, moto Disponível de
+  novo. Validação por campo, prévia ao vivo (danos acima da caução geram aviso de cobrança de dano), foco no campo com
+  erro e Esc conferidos. Sem rolagem horizontal e sem alvo menor que 44 px em 320 px (lista, ficha, etapas 1 a 4 e
+  diálogo) e em 1440 px (etapa 3 com resumo ao lado).
+- **Correções do caminho:** tipo da cobrança com acento (Locação, Caução); links "Alterar cliente/moto" de 19 px
+  viraram botões de 44 px; foco no primeiro campo inválido em páginas recarregadas; macro `caixa` com erro; token do
+  dono no repositório do portal (Clientes).
+- **Não verificado:** comparação lado a lado com o Streamlit (não feita nesta página), contrato com caução recebida
+  encerrado de verdade (só a prévia foi vista, no contrato do João da Silva; o cálculo tem testes), leitor de
+  tela e aparelhos reais (Fase 4). Enter num campo de texto da etapa 4 cria o contrato, como nos formulários do
+  Streamlit.
+
+**Andamento: Cobranças concluída (07/10/2026).** Entregue em três partes, cada uma com testes e commit:
+(A) lista com abas, somente leitura; (B) registrar pagamento; (C) mensagem de cobrança com cópia.
+
+- **Lista:** abas Hoje, Atrasadas, Próximos 7 dias e Pagas com contagem, URL própria e painel por HTMX; resumo de atraso
+  no cabeçalho; encargos por cobrança atrasada (multa de R$ 15 já no vencimento + R$ 7 por dia, só locação);
+  paginação de 10 em 10 em todas as abas (o Streamlit cortava Pagas em 30; Atrasadas no banco de dev tem 49).
+  Pagas ordenam pelo pagamento mais recente, as demais pelo vencimento mais antigo.
+- **Pagamento:** diálogo (HTMX) e página sem JavaScript com o mesmo formulário; a página é o destino do "Pagar" do
+  Dashboard, que antes só levava à lista. Prévia de encargos recalculada pelo servidor ao mudar a data (valores voltam
+  ao sugerido, como no Streamlit). Principal > 0 e <= saldo; menos que o saldo deixa o restante em aberto.
+  `chave_operacao` torna o reenvio idempotente. Após pagar, volta à aba de origem com aviso de quitada ou saldo.
+- **Mensagem:** diálogo ou página com o texto de atraso ou de vencimento e botão de copiar (área de transferência, com
+  seleção do texto como alternativa).
+- **Conferência no banco de desenvolvimento (07/10/2026):** contagens (Hoje 2, Atrasadas 49, Próximos 9, Pagas 14) e
+  total em atraso (R$ 11.239.088,11, 4 clientes) batem com o Dashboard (card Hoje com 51 = 2 + 49); encargos conferidos à
+  mão (39 dias = R$ 15 + 39 x R$ 7 = R$ 288; caução sem encargos). Parcela de teste do Carlos Eduardo Lima (R$ 204,00):
+  pagamento parcial de R$ 100,00 + R$ 15,00 pelo diálogo (saldo R$ 104,00, continuou em Hoje) e pagamento final de
+  R$ 104,00 pela página (quitada: Hoje 2 -> 1, Pagas 14 -> 15, parcela "Paga" na ficha do contrato). Validação por campo
+  com foco, Esc com devolução de foco, paginação por teclado, Voltar do navegador, cópia da mensagem com aviso. Sem rolagem
+  horizontal e sem alvo menor que 44 px em 320 px (abas, diálogos e páginas) e 1440 px.
+- **Correções do caminho:** o macro `botao` ganhou `aria` (escapado); antes, o nome do cliente concatenado em `extra`
+  escapava as aspas dos atributos HTMX.
+- **Regra a decidir (não alterada):** o encargo é fixo e não considera o que já foi recebido; depois de um pagamento
+  parcial com encargos o formulário sugere os mesmos encargos de novo (igual ao Streamlit). Mudar isso é decisão de
+  regra de negócio.
+- **Não verificado:** comparação lado a lado com o Streamlit (dispensada pelo proprietário), o conteúdo da área de
+  transferência (o navegador bloqueia a leitura; só o aviso de sucesso foi visto), cobranças parceladas de outros tipos
+  (dano, multa de trânsito) em pagamento real, leitor de tela e aparelhos reais (Fase 4).
+
+**Andamento: Manutenção concluída (07/10/2026).** Entregue em quatro partes: abas somente leitura; registro com
+itens e custos; conclusão/cancelamento; cadastro e edição do catálogo. Alertas filtram vencidas e próximas; o
+Histórico tem busca, filtro e paginação. O registro aceita itens do plano e adicionais, calcula a prévia no servidor,
+preserva dados em erro e usa chave idempotente. Concluir atualiza km/plano pela RPC; cancelar exige confirmação e não
+reinicia o plano. O Catálogo valida intervalos e faixas de km.
+
+Homologação no banco de desenvolvimento (07/10/2026): 8 alertas vencidos; item fictício criado, editado e inativado;
+manutenção aberta de R$ 45,00 registrada e cancelada; outra aberta e concluída com 15.000 km. Diálogos, validação,
+Esc com devolução de foco e ausência de overflow/alvos menores que 44 px em 320, 390 e 1440 px foram conferidos.
+A homologação encontrou e corrigiu duas corridas HTMX: respostas antigas restauravam custos e a troca rápida de moto
+podia manter o km da seleção anterior. A prévia agora sincroniza por formulário e o servidor confirma a referência da
+moto antes de gravar. Suíte final: 981 testes. Itens fictícios de homologação permaneceram no banco, inativos ou
+cancelados/concluídos. Leitor de tela e aparelhos reais ficam para a Fase 4.
+
+**Andamento: Vistorias concluída (08/10/2026).** Entregue em três partes, cada uma com testes e commit: (A) lista e
+comparação somente leitura; (B) registrar vistoria com fotos; (D) homologação. A parte C (adicionar fotos a uma
+vistoria já existente) foi **dispensada pelo proprietário** em 08/10/2026 e fica como melhoria futura: hoje as fotos só
+entram no registro da vistoria.
+
+- **Lista** `/vistorias`: chips Todas/Entrega/Devolução com contagem, busca por cliente ou placa, paginação HTMX de
+  10 em 10 e botão "Comparar". **Comparação** `/vistorias/contrato/{id}`: faixa de dados (período, km rodados, avarias na
+  devolução), cartões de entrega e devolução com checklist, itens "alterado" destacados nos dois cartões e galeria de
+  fotos por URL assinada. O CSP libera em `img-src` só a origem do Supabase (lida de `SUPABASE_URL`).
+- **Registro** `/vistorias/registrar` em duas etapas (escolher o contrato que ainda não tem as duas vistorias; formulário
+  com o tipo que falta, data, km, combustível, checklist, itens adicionais `nome=estado`, avarias e fotos), em diálogo
+  HTMX e em página sem JavaScript, pelo botão da lista ou do cartão vazio da comparação. Fotos: até 10 por envio, JPG/PNG,
+  10 MB cada, validadas por campo antes de gravar (extensão, tamanho e assinatura do arquivo); o tipo de conteúdo vem da
+  extensão. A vistoria é registrada pela RPC e só então as fotos sobem: se alguma falhar, a vistoria fica salva e o aviso
+  conta as falhas. Após erro o navegador esquece os arquivos, e o formulário avisa para escolher as fotos de novo.
+- **Conferência no banco de desenvolvimento (08/10/2026):** 8 vistorias na lista (6 entregas e 2 devoluções, contagens
+  batendo); comparação do contrato EXA-6F66 com 300 km rodados. Devolução registrada pelo diálogo no contrato do Cliente
+  Exemplo 12 (E2E-0A05) com uma foto JPG e uma PNG reais: as fotos apareceram na galeria, carregadas do Storage sob o CSP,
+  e o resumo mostrou 45 km rodados e 1 avaria. Outra devolução no Cliente Exemplo 10 (E2E-0A02) com 10 fotos de 9 MB
+  (90 MB): gravada com as 10 fotos em cerca de 15 s, e a memória do servidor passou de 151 para 203 MB. Validação por campo
+  (data futura, km menor que o da moto, GIF recusado, 11 fotos recusadas) com foco no primeiro campo inválido; a página
+  sem JavaScript mostrou o erro de km com o foco no campo; um contrato com as duas vistorias redireciona para a
+  comparação com aviso. Sem rolagem horizontal e sem alvo menor que 44 px em 320 px (lista, comparação, escolha, página de
+  registro, diálogo nas duas etapas e com erro), 390 px (lista e comparação) e 1440 px (comparação em duas colunas).
+  Esc fecha o diálogo e devolve o foco ao botão "Registrar vistoria".
+- **Correção do caminho:** ao trocar da etapa 1 para a etapa 2 do diálogo o foco se perdia (o botão clicado saía da
+  página); `app.js` agora leva o foco ao primeiro campo da nova etapa.
+- **Dados de homologação deixados no banco de dev:** duas vistorias de devolução fictícias (Cliente Exemplo 12 / E2E-0A05,
+  com 2 fotos de teste, e Cliente Exemplo 10 / E2E-0A02, com 10 fotos de 9 MB que não são imagens válidas). Os contratos
+  continuam ativos.
+- **Não verificado:** comparação lado a lado com o Streamlit (não feita nesta página), foto com orientação EXIF de aparelho
+  real, leitor de tela e aparelhos reais (Fase 4). (Três testes de Cobranças que dependiam da data de hoje foram
+  corrigidos em 08/10/2026, com o relógio congelado nos três módulos.)
+
+**Andamento: Documentos concluída (08/10/2026).** Entregue em três partes, cada uma com testes e commit: (A) lista e
+abertura do comprovante; (B) novo e editar documento; (C) regularizar. Mais a homologação (D).
+
+- **Lista** `/documentos`: chips Todos/Vencido/A vencer/Em dia com contagem, busca por placa (com ou sem hífen), paginação
+  HTMX de 10 em 10, vencidos primeiro e regularizados por último; "Comprovante" abre o arquivo por link assinado na hora do
+  clique (`/documentos/{id}/comprovante` responde 303 para a URL de 5 minutos, em nova aba).
+- **Novo e editar** (`/documentos/novo`, `/documentos/{id}/editar`), em diálogo e em página sem JavaScript: moto (só as
+  ativas; na edição a moto fica travada), tipo, ano de referência (1900 a 2100), vencimento, valor, descrição, comprovante
+  opcional (PDF, PNG ou JPG, até 10 MB, validado por extensão, tamanho e assinatura antes de gravar) e observações. O
+  cadastro novo usa `chave_operacao`. Se o envio do comprovante falhar, o documento fica salvo e o aviso manda anexar pela
+  edição.
+- **Regularizar** (`/documentos/{id}/regularizar`): data, comprovante opcional e, para IPVA, licenciamento e seguro, a opção
+  (marcada) de cadastrar o documento do ano seguinte, que leva ao cadastro novo já preenchido com o vencimento em branco
+  (`/documentos/novo?moto=&tipo=&ano=`). O comprovante sobe antes de marcar como regularizado; se falhar, nada muda.
+- **Conferência no banco de desenvolvimento (08/10/2026):** 4 documentos (1 vencido, 1 a vencer, 2 em dia) com ordem e
+  contagens corretas. Cadastro fictício com PDF real (E2E-0A04, seguro 2026, R$ 1.234,56): aparece "A vencer" com
+  "Comprovante"; o link assinado respondeu 303 e o navegador recebeu o arquivo para download. Edição do valor (R$ 1.300,00)
+  mantendo o comprovante; regularização com PNG e o cadastro de 2027 aberto com moto, tipo e ano certos e vencimento em
+  branco. Validação por campo (ano, vencimento, valor e .exe recusados) com foco no primeiro campo inválido. Sem rolagem
+  horizontal e sem alvo menor que 44 px em 320 px (lista, os três diálogos e a página de cadastro com erro), 390 px e
+  1440 px; Esc fecha o diálogo e devolve o foco ao botão "Editar".
+- **Correção do caminho:** os botões Editar e Regularizar ficam dentro do formulário de filtros (`hx-push-url="true"`), e
+  o diálogo herdava o atributo e trocava o endereço da página para `/regularizar` ou `/editar`; agora têm
+  `hx-push-url="false"` (com teste). As listas de Contratos, Vistorias e Clientes não têm botões de diálogo dentro do
+  formulário de filtros e não sofrem disso.
+- **Dados de homologação deixados no banco de dev:** o documento "Teste de homologação: apólice fictícia" (seguro 2026 da
+  moto E2E-0A04, regularizado, com dois comprovantes enviados). O cadastro de 2027 foi aberto mas não salvo.
+- **Não verificado:** comparação lado a lado com o Streamlit, regularização de documento sem renovação anual em banco real
+  (só testes), leitor de tela e aparelhos reais (Fase 4).
+
+**Andamento: Relatórios concluída (08/10/2026).** Entregue de uma vez, com testes e commit, e homologada no banco de dev.
+
+- **Abas** com URL própria e painel por HTMX: Resultado por moto, Custo de manutenção (por modelo, o padrão, ou por moto),
+  Inadimplência e Fluxo de caixa. O período vai na URL (`de` e `ate`; padrão do dia 1º do mês até hoje) e o formulário fica
+  dentro do painel, para cada aba refazer os campos escondidos certos; data final antes da inicial mostra o aviso e não
+  calcula. A Inadimplência é a posição de hoje e ignora o período (o cabeçalho diz "Posição de hoje").
+- **Barras** em SVG com a largura em atributo (a CSP proíbe `style=` inline), mais um resumo em texto (total, maior e menor)
+  como alternativa às barras. Em celular as tabelas viram cartões.
+- **Exportação** `/relatorios/exportar?aba=&visao=&de=&ate=&formato=csv|xlsx`: refaz a montagem da aba, então o arquivo traz
+  os mesmos dados da tabela; nomes iguais aos do Streamlit (`relatorio_resultado_por_moto.csv` etc.); a proteção contra
+  fórmula no CSV foi mantida; botões escondidos sem dados (a rota devolve 404; 404 para formato inválido e 422 para período
+  invertido). `src/domain/relatorios.py` e os serviços de exportação foram reaproveitados sem mudança.
+- **Conferência no banco de desenvolvimento (08/10/2026):** Outubro/2026: recebido R$ 219,00 (o pagamento da homologação de
+  Cobranças), documentos R$ 1.510,50 (IPVA regularizado de R$ 210,50 e o seguro fictício de R$ 1.300,00) e líquido
+  R$ -1.291,50, igual ao resultado total das 31 motos. De 01/01 a 08/10: o líquido mensal somado (R$ 1.289,00) bate com o
+  resultado total do período. A Inadimplência bate com a página de Cobranças (50 parcelas, R$ 11.239.133,11, 4 clientes). Troca
+  de aba, de visão e de período pela URL, e o Voltar do navegador devolve a aba e o período. Cinco exportações (resultado, custo
+  por moto, custo por modelo, inadimplência e fluxo) com cabeçalhos e linhas corretos e tipos de arquivo certos. Sem rolagem
+  horizontal e sem alvo menor que 44 px nas quatro abas em 320, 390 e 1440 px.
+- **Observação herdada (não alterada):** o CSV mostra decimais sem zero à direita (`97,9`, `500,0`), porque o serviço de
+  exportação converte o `Decimal` em texto; o Excel abre como número. Se o proprietário preferir duas casas, é ajuste no
+  serviço, com efeito também no Streamlit.
+- **Não verificado:** comparação lado a lado com o Streamlit, abrir os arquivos no Excel de verdade (só conferidos o tipo, o
+  cabeçalho e as linhas), leitor de tela e aparelhos reais (Fase 4). Esta página não grava nada: nenhum dado de teste ficou.
+
+**Andamento: Configurações concluída (08/10/2026).** Entregue de uma vez, com testes e commit, e homologada no banco de dev.
+
+- **Formulário** `/configuracoes`, página comum (sem diálogo), com os mesmos três cartões do Streamlit: encargos por atraso
+  (multa e adicional por dia, com exemplo de cálculo usando os valores salvos), alertas de manutenção (km, dias e multa de
+  troca de óleo) e alertas de documentos e CNH. Validação por campo com o digitado preservado; quantidades de 0 a 100.000;
+  dinheiro não negativo. O aviso de sucesso lista quais valores mudaram, ou diz que nenhum foi alterado. O exemplo de
+  encargos ganhou uma redação mais clara que a do Streamlit: "multa + adicional = encargos; total a pagar" (antes dizia
+  "= total", que já incluía o saldo da locação).
+- **Backup manual:** `POST /configuracoes/backup` (CSRF, só o dono, nunca por GET) responde com o ZIP
+  `backup-AAAA-MM-DD.zip` direto para baixar, sem cache; a página continua onde está. O serviço de backup (15 CSVs,
+  manifesto e LEIA-ME) foi reaproveitado sem mudança.
+- **Conferência no banco de desenvolvimento (08/10/2026):** a página abriu com os valores do banco (15,00, 7,00, 50,00, 300,
+  15, 30 e 30). Validação por campo (texto no lugar de dinheiro, 100001 e campo vazio) com foco no primeiro campo inválido.
+  Salvei multa de R$ 20,00 e CNH de 45 dias: o aviso citou só esses dois campos e o exemplo passou a R$ 555,00; em seguida
+  **restaurei** os valores originais. Backup: ZIP de 32 KB em cerca de 4 s, com as 15 tabelas, o manifesto e o LEIA-ME, tipo
+  e nome de arquivo certos e `Cache-Control: no-store`; o botão da página baixa o arquivo sem tirar a pessoa da página. Sem
+  rolagem horizontal e sem alvo menor que 44 px em 320, 390 e 1440 px.
+- **Diferença em relação ao Streamlit:** lá o backup fica na sessão ("Backup desta sessão: data") e o download é um segundo
+  botão; no app novo o clique já baixa o arquivo, e a página não guarda a data do último backup.
+- **Não verificado:** comparação lado a lado com o Streamlit, descompactar e abrir os CSVs no Excel, backup com o volume de
+  uma operação real (no dev são poucas linhas), leitor de tela e aparelhos reais (Fase 4). Nenhum dado de teste ficou: os
+  valores alterados foram restaurados.
+
+**Andamento: Portal do Locatário concluída (08/10/2026), o que fecha a Fase 3.** Entregue de uma vez, com testes e commit, e
+homologada no banco de dev com um login de locatário real.
+
+- **Página** `/portal` (`rotas/portal.py`, `dados_portal.py`, `acoes_portal.py`, `domain/formulario_portal.py`): saudação, o
+  contrato ativo (placa, modelo, situação do óleo, hodômetro, última e próxima troca, quanto falta), o aviso da multa fixa,
+  o formulário "Reportar troca de óleo" (hodômetro, foto do painel e foto da nota fiscal, JPG ou PNG de até 10 MB, validados
+  por campo antes de qualquer envio ao Storage), o histórico das últimas trocas e "Alterar minha senha". Formulários comuns,
+  sem JavaScript obrigatório, pensados para o celular; com erro a página volta com a mensagem ao lado do campo e o hodômetro
+  preservado.
+- **Troca de senha:** o cliente Supabase por requisição não guarda sessão do GoTrue, então `auth.update_user` não serve;
+  `ServicoAutenticacao.alterar_senha` faz `PUT /auth/v1/user` com a anon key e o token do próprio usuário e traduz as recusas
+  (senha igual à atual, senha fraca, token vencido). A senha nunca volta na página nem vai para log.
+- **Segurança:** o contrato do formulário é sempre procurado entre os contratos que `rpc_portal_locatario` devolve para aquele
+  locatário (identificador alheio dá 404, e a RPC confere de novo); o dono recebe 403 nas rotas de gravação do portal e é
+  redirecionado quando abre `/portal`; o locatário recebe 403 em todas as telas e no backup do dono; todo POST exige CSRF.
+- **Conferência no banco de desenvolvimento (08/10/2026), logado como o locatário do cliente "Cliente Exemplo 10"
+  (E2E-0A02):** a página abriu com os dados reais (8.600 km, última troca em 8.500, próxima em 9.500, 900 km restantes, multa de
+  R$ 50,00). Erros por campo (hodômetro menor que o registrado, GIF no lugar da foto, nota fiscal ausente) com o foco no
+  hodômetro e o valor digitado preservado. Envio real de uma troca em 9.000 km com uma foto JPG e uma PNG geradas na hora: o
+  upload ao Storage com o token do locatário e a RPC funcionaram, o aviso foi "Troca de óleo registrada. Obrigado!", o
+  hodômetro passou a 9.000 km, a próxima troca a 10.000 km e o histórico ganhou a entrada de 08/10/2026 (sem multa, por estar
+  dentro do intervalo). Com a sessão do locatário, `/clientes`, `/motos`, `/relatorios`, `/configuracoes`, `/documentos` e o POST do
+  backup responderam 403. Sem rolagem horizontal e sem alvo menor que 44 px em 320, 390 e 1440 px (o link da marca no cabeçalho
+  tinha 37 px de altura e foi corrigido).
+- **Dado de homologação deixado no banco de dev:** uma troca de óleo fictícia (9.000 km, com duas imagens de teste) no contrato
+  de E2E-0A02, que também avançou o hodômetro da moto para 9.000 km. Nenhuma multa foi gerada.
+- **Não verificado:** a troca de senha de verdade (digitar senha é com o usuário; só os testes automáticos cobrem esse
+  caminho, inclusive as recusas do Supabase simuladas), troca de óleo acima do intervalo com multa em banco real (só testes),
+  fotos de câmera de celular de verdade (EXIF, tamanho), leitor de tela e aparelhos reais (Fase 4).
+
+## Fechamento da Fase 3 (08/10/2026)
+
+Todas as telas do app novo foram migradas: Clientes, Contratos, Cobranças, Manutenção, Vistorias (sem "adicionar fotos depois",
+dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Suíte: 1150 testes passando e 3 falhando na época (hoje, 1168 passando e nenhum falhando).
+**Pendências conhecidas para antes ou durante a Fase 4:**
+
+1. ~~**Três testes de Cobranças dependiam da data de hoje**~~ **Corrigido em 08/10/2026:** a fixture `base_cobrancas` congelava o
+   relógio só na camada de dados, mas as rotas de mensagem e de pagamento importam o próprio `hoje_br`; agora o relógio de
+   07/10/2026 vale nos três módulos. Suíte inteira verde: 1168 testes.
+2. ~~**Recarga automática do app web**~~ **Resolvida em 08/10/2026 (opção 1 escolhida pelo proprietário):** em desenvolvimento o
+   armazém espelha as sessões em `.sessoes_dev.json` (fora do git), então a recarga não derruba o login; produção segue só em memória.
+   O `--reload` do uvicorn não funcionava no preview (no Windows ele reinicia por Ctrl+C no console, que não chega sem
+   console), então `executar_web.py` ganhou a própria recarga (processo filho reiniciado a cada `.py` salvo). Testado: reinício
+   completo e recarga por edição, nos dois com o login mantido.
+3. **Comparação lado a lado com o Streamlit** não foi feita em Vistorias, Documentos, Relatórios, Configurações e Portal.
+4. **CSV de relatórios** mostra decimais sem zero final (`97,9`); decisão do proprietário se quer duas casas (afeta também o Streamlit).
+5. **Leitor de tela e aparelhos reais** em todas as páginas (já previsto na Fase 4), mais o upload de fotos de câmera real.
+6. **Dados fictícios de homologação** ficaram no banco de dev (vistorias com fotos, um documento e uma troca de óleo); o banco de dev
+   pode ser recriado quando se quiser limpar.
+
+**Próxima: Fase 4** (E2E, homologação e desligamento do Streamlit).
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

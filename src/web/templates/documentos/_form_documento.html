@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo(titulo, acao, "Salvar documento", csrf_token, erro_geral, multipart=True) %}
+{% include "documentos/_campos_documento.html" %}
+{% endcall %}

@@ -1,0 +1,9 @@
+{% from "componentes/macros.html" import icone %}
+{% set rotulo_busca = "Buscar cliente por nome ou CPF" %}
+{% include "contratos/novo/_busca.html" %}
+<div id="resultado" tabindex="-1">{% include "contratos/novo/_selecao.html" %}</div>
+<div class="rodape-acoes">
+  <form method="post" action="{{ base }}/cancelar"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn" type="submit">Cancelar</button></form>
+  {% if selecionado_id %}<a class="btn btn-primario" href="{{ base }}?etapa=2">Avançar</a>
+  {% else %}<span><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button><small id="dica-avancar" class="text-texto-2"> Selecione um cliente para continuar.</small></span>{% endif %}
+</div>

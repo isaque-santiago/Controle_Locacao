@@ -72,20 +72,29 @@ def _cliente_ou_404(cliente_id):
     return cliente
 
 
-def _contexto_aba(cliente, aba):
+def _contexto_aba(cliente, aba, pagina=1):
+    ficha_ = dados_clientes.carregar_ficha(cliente, aba, pagina)
+    p = ficha_["pagina_pagamentos"]
+    base = f"/clientes/{cliente['id']}"
+    pagina_url = lambda n: f"{base}?aba=pagamentos&pagina={n}"
+    parcial_url = lambda n: f"{base}/abas/pagamentos?pagina={n}"
     return {"cliente": cliente, "aba": aba, "status_rotulo": clientes_lista.STATUS_ROTULO,
+            "pag_anterior": pagina_url(p.pagina - 1) if p.tem_anterior else None,
+            "pag_proxima": pagina_url(p.pagina + 1) if p.tem_proxima else None,
+            "parcial_anterior": parcial_url(p.pagina - 1) if p.tem_anterior else None,
+            "parcial_proxima": parcial_url(p.pagina + 1) if p.tem_proxima else None,
             "abas_da_ficha": [(chave, rotulo, f"/clientes/{cliente['id']}/abas/{chave}", f"/clientes/{cliente['id']}?aba={chave}") for chave, rotulo in clientes_lista.ABAS_FICHA],
-            "a": dados_clientes.carregar_ficha(cliente, aba)}
+            "a": ficha_}
 
 
 @router.get("/clientes/{cliente_id}")
-def ficha(request: Request, cliente_id: str, aba: str | None = None, _: Sessao = Depends(exigir_dono)):
+def ficha(request: Request, cliente_id: str, aba: str | None = None, pagina: str | None = None, _: Sessao = Depends(exigir_dono)):
     cliente = _cliente_ou_404(cliente_id)
-    return renderizar(request, "clientes/ficha.html", {"titulo": cliente["nome"], **_contexto_aba(cliente, clientes_lista.aba_valida(aba))})
+    return renderizar(request, "clientes/ficha.html", {"titulo": cliente["nome"], **_contexto_aba(cliente, clientes_lista.aba_valida(aba), _inteiro(pagina, 1))})
 
 
 @router.get("/clientes/{cliente_id}/abas/{aba}")
-def aba(request: Request, cliente_id: str, aba: str, _: Sessao = Depends(exigir_dono)):
+def aba(request: Request, cliente_id: str, aba: str, pagina: str | None = None, _: Sessao = Depends(exigir_dono)):
     if aba not in dict(clientes_lista.ABAS_FICHA):
         raise HTTPException(status_code=404)
-    return renderizar(request, "clientes/_resposta_aba.html", _contexto_aba(_cliente_ou_404(cliente_id), aba))
+    return renderizar(request, "clientes/_resposta_aba.html", _contexto_aba(_cliente_ou_404(cliente_id), aba, _inteiro(pagina, 1)))

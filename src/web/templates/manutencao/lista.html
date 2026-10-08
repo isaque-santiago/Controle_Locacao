@@ -1,0 +1,9 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, abas_remotas, botao %}
+{% block conteudo %}
+{% call cabecalho_pagina("Manutenção", d.vencidas ~ " vencida(s) · " ~ d.proximas ~ " próxima(s)") %}
+{{ botao("Registrar manutenção", href="/manutencao/registrar", variante="primario", icone_nome="novo", extra='hx-get="/manutencao/registrar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+{% endcall %}
+{{ abas_remotas("Seções de manutenção", abas_da_lista, aba) }}
+{% include "manutencao/_painel.html" %}
+{% endblock %}

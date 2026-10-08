@@ -1,0 +1,19 @@
+{% from "componentes/macros.html" import placa, selo, tabela, paginacao, estado_vazio, botao %}
+<input type="hidden" name="situacao" value="{{ situacao }}">
+<nav class="chips" aria-label="Filtrar por situação">{% for chave, rotulo, quantidade, url in chips %}<a class="chip" href="{{ url }}" hx-get="{{ url }}" hx-target="#resultado" hx-push-url="true"{% if chave == situacao %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
+<p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+{% if d.itens %}
+{% call tabela([("Moto", ""), ("Tipo", ""), ("Referência", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Documentos da frota") %}
+{% for item in d.itens %}{% set doc = item.documento %}{% set tipo = tipos.get(doc.tipo, doc.tipo) %}<tr>
+<td>{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td data-rotulo="Tipo">{{ tipo }}</td>
+<td class="text-texto-2" data-rotulo="Referência">{{ doc.descricao or doc.ano_referencia or "—" }}</td>
+<td class="mono" data-rotulo="Vencimento">{{ doc.vencimento|data_br }}</td>
+<td class="num mono" data-rotulo="Valor">{% if doc.valor is not none %}{{ doc.valor|moeda }}{% else %}—{% endif %}</td>
+<td data-rotulo="Situação">{{ selo(item.rotulo, tom[item.situacao]) }}</td>
+<td class="c-acao"><div class="flex flex-wrap items-center gap-2">{% if doc.arquivo_path %}<a class="btn" href="/documentos/{{ doc.id }}/comprovante" target="_blank" rel="noopener noreferrer" aria-label="Ver o comprovante do {{ tipo }} (abre em nova aba)">Comprovante</a>{% else %}<span class="text-texto-3">Sem comprovante</span>{% endif %} {{ botao("Editar", href="/documentos/" ~ doc.id ~ "/editar", aria="Editar o documento " ~ tipo ~ " da moto " ~ (item.placa|placa_br), extra='hx-get="/documentos/' ~ doc.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML" hx-push-url="false"') }}{% if not doc.regularizado and item.moto %}{{ botao("Regularizar", href="/documentos/" ~ doc.id ~ "/regularizar", aria="Marcar o documento " ~ tipo ~ " da moto " ~ (item.placa|placa_br) ~ " como regularizado", extra='hx-get="/documentos/' ~ doc.id ~ '/regularizar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML" hx-push-url="false"') }}{% endif %}</div></td></tr>{% endfor %}
+{% endcall %}
+{{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}
+{% if d.pagina.total > opcoes_por_pagina[0] %}<div class="campo por-pagina"><label for="por_pagina">Documentos por página</label><select class="entrada" id="por_pagina" name="por_pagina" hx-get="/documentos" hx-include="#filtros" hx-target="#resultado" hx-push-url="true" hx-trigger="change">{% for n in opcoes_por_pagina %}<option value="{{ n }}"{% if n == por_pagina %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>{% endif %}
+{% elif filtrando %}{% call estado_vazio("Nenhum documento encontrado", "Nenhum documento atende à busca ou ao filtro escolhido.", "0") %}{{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}{% endcall %}
+{% else %}{% call estado_vazio("Nenhum documento cadastrado", "IPVA, licenciamento, seguro e demais documentos da frota aparecem aqui.", "0") %}{{ botao("Novo documento", href="/documentos/novo", variante="primario") }}{% endcall %}{% endif %}

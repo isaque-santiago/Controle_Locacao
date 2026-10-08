@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% from "componentes/macros.html" import icone, cabecalho_pagina, estado_vazio %}
-{# Portal do locatário: cabeçalho simples, sem o menu do dono. #}
+{% from "componentes/macros.html" import icone, cabecalho_pagina, estado_vazio, aviso, selo, placa, campo %}
+{# Portal do locatário: cabeçalho simples, sem o menu do dono. Formulários comuns, pensados para o celular. #}
 
 {% block corpo %}
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
@@ -13,8 +13,76 @@
   </form>
 </header>
 <main id="conteudo" tabindex="-1">
-  <div id="avisos" aria-live="polite"></div>
-  {{ cabecalho_pagina("Portal do locatário", "Seu contrato, suas cobranças e a troca de óleo da moto.") }}
-  {{ estado_vazio("Portal em migração", "O portal segue no sistema atual até a sua fase da migração.", "·") }}
+  <div id="avisos" aria-live="polite">{% for a in avisos %}{{ aviso(a.tipo, a.texto) }}{% endfor %}</div>
+  {{ cabecalho_pagina("Olá, " ~ d.primeiro_nome, "Registre aqui a troca de óleo da sua moto.") }}
+
+  {% if not d.contratos %}
+  {{ estado_vazio("Você não tem contrato ativo no momento", "Quando houver um contrato ativo no seu nome, a sua moto aparece aqui.", "0") }}
+  {% endif %}
+
+  {% for c in d.contratos %}
+  {% set com_erro = alvo == c.contrato_id %}
+  <section class="cartao mb-4" aria-labelledby="moto-{{ c.contrato_id }}">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <h2 id="moto-{{ c.contrato_id }}" class="flex flex-wrap items-center gap-3">{{ placa(c.placa|placa_br) }}<span class="text-texto-2 font-normal">{{ c.modelo }}</span></h2>
+      {{ selo(c.rotulo_situacao, c.tom) }}
+    </div>
+    <dl class="dl">
+      <div><dt>Hodômetro registrado</dt><dd class="mono">{{ c.km_atual|milhar }} km</dd></div>
+      <div><dt>Última troca de óleo</dt><dd class="mono">{% if c.ultima_km is not none %}{{ c.ultima_km|milhar }} km{% else %}—{% endif %}</dd></div>
+      <div><dt>Próxima troca em</dt><dd class="mono">{% if c.proxima_km is not none %}{{ c.proxima_km|milhar }} km{% else %}—{% endif %}</dd></div>
+      <div><dt>Faltam</dt><dd class="mono">{% if c.faltam_km is not none %}{{ c.faltam_km|milhar }} km{% else %}—{% endif %}</dd></div>
+    </dl>
+  </section>
+
+  {% if not c.plano_configurado %}
+  <div class="mb-4">{{ aviso("atencao", "O plano de troca de óleo desta moto ainda não foi configurado. Fale com o proprietário.") }}</div>
+  {% else %}
+  <form class="cartao mb-4" id="troca-{{ c.contrato_id }}" method="post" action="/portal/troca-oleo/{{ c.contrato_id }}" enctype="multipart/form-data" novalidate aria-labelledby="titulo-troca-{{ c.contrato_id }}">
+    <h2 id="titulo-troca-{{ c.contrato_id }}">Reportar troca de óleo</h2>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if com_erro and erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+    {% if c.avisa_multa %}<p class="text-texto-2 my-3">A troca deve ser feita até <strong class="mono text-texto">{{ c.proxima_km|milhar }} km</strong>. Se passar disso, é cobrada uma multa fixa de <strong class="mono text-texto">{{ c.multa|moeda }}</strong>.</p>{% endif %}
+    <div class="formulario">
+      {{ campo("km-" ~ c.contrato_id, "Hodômetro atual (km)", nome="km", valor=km_digitado if com_erro else "", mono=True, inputmode="numeric", obrigatorio=True, erro=erros.km if com_erro else "", ajuda="Ex.: 12500. Não pode ser menor que " ~ (c.km_atual|milhar) ~ " km.", autocomplete="off", largo=True) }}
+      <div class="campo largo{{ ' com-erro' if com_erro and erros.foto else '' }}">
+        <label for="foto-{{ c.contrato_id }}">Foto do painel (mostrando o hodômetro) <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
+        <input class="entrada" id="foto-{{ c.contrato_id }}" name="foto" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required{% if com_erro and erros.foto %} aria-invalid="true"{% endif %} aria-describedby="foto-{{ c.contrato_id }}-ajuda{{ ' foto-' ~ c.contrato_id ~ '-erro' if com_erro and erros.foto }}">
+        <small id="foto-{{ c.contrato_id }}-ajuda">JPG ou PNG, de até 10 MB.{% if com_erro and erros %} O navegador não guarda as fotos depois de um erro: escolha-as de novo.{% endif %}</small>
+        {% if com_erro and erros.foto %}<small class="msg-erro" id="foto-{{ c.contrato_id }}-erro">{{ erros.foto }}</small>{% endif %}
+      </div>
+      <div class="campo largo{{ ' com-erro' if com_erro and erros.nota else '' }}">
+        <label for="nota-{{ c.contrato_id }}">Foto da nota fiscal do óleo <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
+        <input class="entrada" id="nota-{{ c.contrato_id }}" name="nota" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" required{% if com_erro and erros.nota %} aria-invalid="true"{% endif %} aria-describedby="nota-{{ c.contrato_id }}-ajuda{{ ' nota-' ~ c.contrato_id ~ '-erro' if com_erro and erros.nota }}">
+        <small id="nota-{{ c.contrato_id }}-ajuda">JPG ou PNG, de até 10 MB.</small>
+        {% if com_erro and erros.nota %}<small class="msg-erro" id="nota-{{ c.contrato_id }}-erro">{{ erros.nota }}</small>{% endif %}
+      </div>
+    </div>
+    <div class="rodape-acoes"><button class="btn btn-primario w-full" type="submit">Enviar troca de óleo</button></div>
+  </form>
+  {% endif %}
+
+  {% if c.trocas %}
+  <details class="cartao mb-4">
+    <summary class="font-semibold cursor-pointer min-h-[44px] flex items-center">Últimas trocas reportadas</summary>
+    <ul class="mt-3">
+      {% for t in c.trocas %}<li class="py-2 border-t border-linha">{{ t.criado_em|data_br }} — <span class="mono">{{ t.km|milhar }} km</span>{% if t.multada %} · multa aplicada{% endif %}</li>{% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+  {% endfor %}
+
+  <details class="cartao"{% if alvo == "senha" %} open{% endif %}>
+    <summary class="font-semibold cursor-pointer min-h-[44px] flex items-center">Alterar minha senha (opcional)</summary>
+    <form class="mt-3" id="trocar-senha" method="post" action="/portal/senha" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if alvo == "senha" and erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+      <div class="formulario">
+        {{ campo("senha-nova", "Nova senha", nome="nova", valor="", tipo="password", obrigatorio=True, erro=erros.nova if alvo == "senha" else "", autocomplete="new-password", largo=True) }}
+        {{ campo("senha-confirmacao", "Repita a nova senha", nome="confirmacao", valor="", tipo="password", obrigatorio=True, erro=erros.confirmacao if alvo == "senha" else "", ajuda="Mínimo de " ~ tamanho_minimo_senha ~ " caracteres, misturando letras e números; não use o seu CPF.", autocomplete="new-password", largo=True) }}
+      </div>
+      <div class="rodape-acoes"><button class="btn w-full" type="submit">Salvar nova senha</button></div>
+    </form>
+  </details>
 </main>
 {% endblock %}

@@ -1,0 +1,37 @@
+{% from "componentes/macros.html" import cartao, tabela, selo, aviso, botao, estado_vazio %}
+{% set base = "/clientes/" ~ cliente.id %}
+{% if erro_portal %}{{ aviso("erro", erro_portal) }}{% endif %}
+{% call cartao("Acesso ao portal do locatário") %}
+{% if credenciais %}
+{{ aviso("atencao", "Anote a senha agora: ela não é gravada no sistema e some quando você fechar este aviso ou sair da página. Entregue ao locatário o CPF e a senha; ele pode trocá-la no portal se quiser.") }}
+<dl class="grade-dados">
+  <div><dt>Login (CPF)</dt><dd class="mono">{{ cliente.cpf|cpf_mascarado }}</dd></div>
+  <div><dt>E-mail de acesso</dt><dd class="mono" data-credencial>{{ credenciais.email }}</dd></div>
+  <div><dt>Senha</dt><dd class="mono" data-credencial>{{ credenciais.senha }}</dd></div>
+</dl>
+<div class="acoes">{{ botao("Fechar", extra='hx-get="' ~ base ~ '/abas/portal" hx-target="#painel-aba" hx-swap="outerHTML"') }}</div>
+{% elif not cliente.auth_user_id %}
+<p>Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma senha individual gerada aqui.</p>
+<div class="acoes">{{ botao("Criar acesso", variante="primario", extra='hx-post="' ~ base ~ '/portal/acesso" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
+{% else %}
+{{ aviso("sucesso", "Acesso ativo ao portal do locatário.") }}
+<div class="acoes">
+  {{ botao("Gerar nova senha", extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar."') }}
+  {{ botao("Remover acesso", variante="perigo", extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal. Confirmar?"') }}
+</div>
+{% endif %}
+{% endcall %}
+<h2 class="rotulo">Trocas de óleo reportadas</h2>
+{% if a.trocas %}
+{% call tabela([("Data", ""), ("Hodômetro", "num"), ("Acima do previsto", "num"), ("Multa", ""), ("Fotos", "")], "Trocas de óleo reportadas pelo locatário") %}
+{% for t in a.trocas %}<tr>
+  <td class="topo mono">{{ t.criado_em|data_br }}</td>
+  <td class="num mono" data-rotulo="Hodômetro">{{ t.km|milhar }} km</td>
+  <td class="num mono" data-rotulo="Acima do previsto">{% if t.km_excedente %}{{ t.km_excedente|milhar }} km{% else %}—{% endif %}</td>
+  <td data-rotulo="Multa">{% if t.cobranca_id %}{{ selo("Cobrada", "perigo") }}{% else %}—{% endif %}</td>
+  <td data-rotulo="Fotos"><a href="{{ base }}/portal/trocas/{{ t.id }}/painel" target="_blank" rel="noopener">Foto do painel</a> · <a href="{{ base }}/portal/trocas/{{ t.id }}/nota" target="_blank" rel="noopener">Nota fiscal</a></td>
+</tr>{% endfor %}
+{% endcall %}
+{% else %}
+{{ estado_vazio("Nenhuma troca reportada", "As trocas de óleo informadas pelo locatário aparecem aqui.") }}
+{% endif %}

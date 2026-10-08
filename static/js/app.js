@@ -20,6 +20,22 @@
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
 
+  // ---- Copiar texto: data-copiar="id-do-campo" copia o valor; data-copiar-aviso="id" recebe o resultado ----
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('[data-copiar]');
+    if (!botao) return;
+    var campo = document.getElementById(botao.getAttribute('data-copiar'));
+    var aviso = document.getElementById(botao.getAttribute('data-copiar-aviso'));
+    if (!campo) return;
+    function avisar(texto) { if (aviso) aviso.textContent = texto; }
+    function selecionar() { campo.focus(); campo.select(); avisar('Texto selecionado: use Ctrl+C para copiar.'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(campo.value).then(function () { avisar('Mensagem copiada.'); }, selecionar);
+    } else {
+      selecionar();
+    }
+  });
+
   // ---- Abas: clique e setas, Home e End ----
   // Abas com data-remoto carregam o painel pelo HTMX (um painel só): o JS não esconde painéis e,
   // ao navegar por setas, só move o foco; Enter ou Espaço (clique) é que abre a aba.
@@ -86,7 +102,7 @@
     var dentro = ativo && ativo !== document.body && alvo && alvo.contains(ativo) && alvo !== ativo;
     var grupo = dentro ? ativo.closest('nav') : null;
     focoPorId = ativo && ativo !== document.body && ativo.id ? ativo.id : null;
-    focoAntes = dentro ? { id: ativo.id, href: ativo.getAttribute('href'), texto: (ativo.textContent || '').trim(), grupo: grupo ? grupo.className : '' } : null;
+    focoAntes = dentro ? { alvoId: alvo.id, id: ativo.id, href: ativo.getAttribute('href'), texto: (ativo.textContent || '').trim(), grupo: grupo ? grupo.className : '' } : null;
   });
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (focoPorId && (!document.activeElement || document.activeElement === document.body)) {
@@ -96,6 +112,8 @@
     focoPorId = null;
     if (!focoAntes) return;
     var alvo = e.detail.target;
+    // Troca por outerHTML: o alvo antigo saiu do DOM, o equivalente novo tem o mesmo id
+    if (!alvo.isConnected && focoAntes.alvoId) alvo = document.getElementById(focoAntes.alvoId) || alvo;
     var igual = null;
     if (focoAntes.id) igual = document.getElementById(focoAntes.id);
     if (!igual && focoAntes.href) {
@@ -138,8 +156,23 @@
   // Formulário devolvido com erro: leva o foco ao primeiro campo inválido
   document.body.addEventListener('htmx:afterSettle', function () {
     var invalido = document.querySelector('#form-dialogo [aria-invalid="true"]');
-    if (invalido) invalido.focus();
+    if (invalido) {
+      invalido.focus();
+      return;
+    }
+    // Diálogo que troca de etapa (ex.: escolher o contrato -> formulário): o botão clicado saiu da página
+    // e o foco se perderia; leva-o ao primeiro campo da nova etapa.
+    var dialogo = document.getElementById('dlg-form');
+    var formulario = document.getElementById('form-dialogo');
+    if (dialogo && dialogo.open && formulario && !dialogo.contains(document.activeElement)) {
+      var primeiro = formulario.querySelector('input:not([type="hidden"]):not([type="checkbox"]), select, textarea');
+      if (primeiro) primeiro.focus();
+    }
   });
+
+  // Página inteira devolvida com erro de formulário (assistente de contrato, sem HTMX): foco no primeiro campo inválido
+  var invalidoNaPagina = document.querySelector('main form [aria-invalid="true"]');
+  if (invalidoNaPagina) invalidoNaPagina.focus();
 
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {

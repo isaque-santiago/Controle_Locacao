@@ -1,0 +1,12 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/manutencao", "Voltar para manutenção") }}
+{{ cabecalho_pagina("Registrar manutenção", "Informe o serviço, os custos e os itens realizados.") }}
+<form class="cartao" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">{% include "manutencao/_campos_registro.html" %}</div>
+  <div class="rodape-acoes"><a class="btn" href="/manutencao">Cancelar</a><button class="btn btn-primario" type="submit">Salvar manutenção</button></div>
+</form>
+{% endblock %}

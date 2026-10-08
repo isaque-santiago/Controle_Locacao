@@ -3,9 +3,10 @@
 from decimal import Decimal
 
 from src.domain import clientes_lista
+from src.domain.paginacao import OPCOES_POR_PAGINA, calcular_pagina
 from src.domain.cnh_regras import situacao_cnh
 from src.domain.valores import hoje_br
-from src.services import clientes, cobrancas, configuracoes, contratos, motos
+from src.services import clientes, cobrancas, configuracoes, contratos, motos, portal_locatario
 
 
 def carregar_lista(status, busca, pagina, por_pagina):
@@ -34,7 +35,11 @@ def obter_cliente(cliente_id):
     return clientes.obter(cliente_id)
 
 
-def carregar_ficha(cliente, aba):
+def listar_trocas(cliente_id):
+    return portal_locatario.listar_trocas(cliente_id)
+
+
+def carregar_ficha(cliente, aba, pagina=1):
     todos_contratos = [c for c in contratos.listar() if c["cliente_id"] == cliente["id"]]
     frota = {m["id"]: m for m in motos.listar()}
     contratos_com_moto = [{**c, "moto": frota.get(c["moto_id"])} for c in sorted(todos_contratos, key=lambda x: x["data_inicio"], reverse=True)]
@@ -47,5 +52,18 @@ def carregar_ficha(cliente, aba):
     pago = sum((Decimal(str(p["valor"])) + Decimal(str(p.get("multa_juros") or 0)) for ps in historicos.values() for p in ps), Decimal(0))
     em_aberto = sum((Decimal(str(c["saldo"])) for c in parcelas if c["situacao"] == "aberta"), Decimal(0))
     atrasado = sum((Decimal(str(c["saldo"])) for c in parcelas if c["situacao"] == "atrasada"), Decimal(0))
-    return {"contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
+    ativo = next((c for c in contratos_com_moto if c["status"] == "ativo"), None)
+    contrato_ativo = None
+    if ativo:
+        abertas = sorted(
+            (p["vencimento"] for p in cobrancas.listar_por_contrato(ativo["id"]) if p["situacao"] == "aberta" and p["tipo"] == "locacao"),
+        )
+        contrato_ativo = {**ativo, "proxima_cobranca": abertas[0] if abertas else None}
+    trocas = []
+    if aba == "portal":
+        trocas = sorted(listar_trocas(cliente["id"]), key=lambda t: t["criado_em"], reverse=True)
+    todas = sorted(parcelas, key=lambda x: x["vencimento"], reverse=True)
+    recorte = calcular_pagina(len(todas), pagina, OPCOES_POR_PAGINA[0])
+    return {"pagina_pagamentos": recorte, "parcelas_da_pagina": todas[recorte.inicio:recorte.fim],
+            "contrato_ativo": contrato_ativo, "trocas": trocas, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
             "historicos": historicos, "pago": pago, "em_aberto": em_aberto, "atrasado": atrasado}

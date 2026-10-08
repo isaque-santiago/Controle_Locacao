@@ -4,15 +4,30 @@ O cookie leva só um identificador aleatório; os tokens do Supabase ficam aqui,
 servidor. Consequências assumidas (decisão 1 da Fase 1):
 - reiniciar o processo (ou fazer deploy) encerra todas as sessões;
 - o app precisa rodar com UM único worker, senão cada worker teria suas sessões.
+
+Só em DESENVOLVIMENTO o armazém pode espelhar as sessões num arquivo local (`arquivo=`), para a recarga automática do
+servidor, a cada edição de `.py`, não derrubar o login. Em produção o arquivo nunca é configurado e nada vai a disco.
 """
 
+import json
+import logging
+import os
 import secrets
 from dataclasses import dataclass, field
+from pathlib import Path
 from threading import Lock
 from time import time
 from typing import Callable
 
+logger = logging.getLogger(__name__)
+
 LIMITE_INATIVIDADE_SEGUNDOS = 1800
+# A atividade (prazo de inatividade) só é regravada no arquivo de tempos em tempos; o resto é gravado na hora.
+INTERVALO_SALVAR_ATIVIDADE_SEGUNDOS = 30
+# O que vai para o arquivo: o suficiente para a sessão continuar valendo. O cliente Supabase é refeito a partir do token.
+CAMPOS_PERSISTIDOS = (
+    "id", "usuario_id", "email", "papel", "access_token", "refresh_token", "expira_em", "ultima_atividade", "csrf_token",
+)
 # Renova o access token um pouco antes de vencer, para a requisição não falhar no meio.
 MARGEM_RENOVACAO_SEGUNDOS = 60
 
@@ -34,6 +49,8 @@ class Sessao:
     cliente: object | None = field(default=None, repr=False)
     # Confirmações a mostrar na próxima página (uma só vez), como "Moto cadastrada."
     avisos: list = field(default_factory=list, repr=False)
+    # Rascunho do assistente de novo contrato (cliente, moto, condições e textos digitados); some ao concluir.
+    rascunho_contrato: dict = field(default_factory=dict, repr=False)
 
     def access_token_vencendo(self, agora: float) -> bool:
         return self.expira_em - agora <= MARGEM_RENOVACAO_SEGUNDOS
@@ -44,11 +61,16 @@ class ArmazemSessoes:
         self,
         limite_inatividade: int = LIMITE_INATIVIDADE_SEGUNDOS,
         relogio: Callable[[], float] = time,
+        arquivo: Path | str | None = None,
     ):
         self._sessoes: dict[str, Sessao] = {}
         self._trava = Lock()
         self._limite = limite_inatividade
         self._relogio = relogio
+        self._arquivo = Path(arquivo) if arquivo else None
+        self._ultimo_salvamento = 0.0
+        if self._arquivo:
+            self._carregar()
 
     def criar(
         self,
@@ -74,6 +96,7 @@ class ArmazemSessoes:
         with self._trava:
             self._limpar_expiradas_sem_trava()
             self._sessoes[sessao.id] = sessao
+            self._salvar_sem_trava()
         return sessao
 
     def obter(self, sessao_id: str | None) -> Sessao | None:
@@ -89,6 +112,8 @@ class ArmazemSessoes:
                 del self._sessoes[sessao_id]
                 return None
             sessao.ultima_atividade = agora
+            if agora - self._ultimo_salvamento >= INTERVALO_SALVAR_ATIVIDADE_SEGUNDOS:
+                self._salvar_sem_trava()
             return sessao
 
     def encerrar(self, sessao_id: str | None) -> Sessao | None:
@@ -96,7 +121,15 @@ class ArmazemSessoes:
         if not sessao_id:
             return None
         with self._trava:
-            return self._sessoes.pop(sessao_id, None)
+            sessao = self._sessoes.pop(sessao_id, None)
+            self._salvar_sem_trava()
+            return sessao
+
+    def salvar(self) -> None:
+        """Grava as sessões no arquivo (sem efeito sem arquivo). Chamado quando os tokens são renovados: o refresh
+        token é de uso único, e perder o novo faria o login cair no próximo reinício."""
+        with self._trava:
+            self._salvar_sem_trava()
 
     def quantidade(self) -> int:
         with self._trava:
@@ -111,3 +144,36 @@ class ArmazemSessoes:
         ]
         for id_ in vencidas:
             del self._sessoes[id_]
+
+    # ---- espelho em arquivo (só em desenvolvimento) ----
+
+    def _salvar_sem_trava(self) -> None:
+        if not self._arquivo:
+            return
+        self._ultimo_salvamento = self._relogio()
+        dados = [{campo: getattr(s, campo) for campo in CAMPOS_PERSISTIDOS} for s in self._sessoes.values()]
+        temporario = self._arquivo.with_name(self._arquivo.name + ".tmp")
+        try:
+            temporario.write_text(json.dumps(dados), encoding="utf-8")
+            try:
+                os.chmod(temporario, 0o600)
+            except OSError:
+                pass
+            os.replace(temporario, self._arquivo)
+        except OSError:
+            logger.warning("Não foi possível gravar o arquivo de sessões de desenvolvimento.", exc_info=True)
+
+    def _carregar(self) -> None:
+        """Lê as sessões ainda dentro do prazo de inatividade. Arquivo ausente ou ilegível vale como "sem sessões"."""
+        try:
+            dados = json.loads(self._arquivo.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        agora = self._relogio()
+        for item in dados if isinstance(dados, list) else []:
+            try:
+                sessao = Sessao(**{campo: item[campo] for campo in CAMPOS_PERSISTIDOS})
+            except (KeyError, TypeError):
+                continue
+            if agora - sessao.ultima_atividade <= self._limite:
+                self._sessoes[sessao.id] = sessao

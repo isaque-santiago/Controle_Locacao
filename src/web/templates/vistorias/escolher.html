@@ -1,0 +1,10 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina %}
+{% block conteudo %}
+{{ voltar("/vistorias", "Voltar para vistorias") }}
+{{ cabecalho_pagina("Registrar vistoria", "Primeiro, escolha o contrato.") }}
+<form class="cartao" method="get" action="/vistorias/registrar">
+  <div class="formulario">{% include "vistorias/_campos_escolher.html" %}</div>
+  <div class="rodape-acoes"><a class="btn" href="/vistorias">Cancelar</a>{% if contratos %}<button class="btn btn-primario" type="submit">Continuar</button>{% endif %}</div>
+</form>
+{% endblock %}

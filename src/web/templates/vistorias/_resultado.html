@@ -1,0 +1,20 @@
+{% from "componentes/macros.html" import placa, tabela, paginacao, estado_vazio, botao %}
+<input type="hidden" name="tipo" value="{{ tipo }}">
+<nav class="chips" aria-label="Filtrar por tipo">{% for chave, rotulo, quantidade, url in chips %}<a class="chip" href="{{ url }}" hx-get="{{ url }}" hx-target="#resultado" hx-push-url="true"{% if chave == tipo %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
+<p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+{% if d.itens %}
+{% call tabela([("Cliente", ""), ("Moto", ""), ("Data", ""), ("Tipo", ""), ("Km", "num"), ("Combustível", ""), ("Avarias", ""), ("Ações", "col-acoes")], "Vistorias") %}
+{% for item in d.itens %}{% set v = item.vistoria %}<tr>
+<td class="modelo">{{ item.cliente_nome }}</td>
+<td data-rotulo="Moto">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td class="mono" data-rotulo="Data">{{ v.data|data_br }}</td>
+<td data-rotulo="Tipo">{{ tipo_rotulo[v.tipo] }}</td>
+<td class="num mono" data-rotulo="Km">{{ v.km|milhar }} km</td>
+<td data-rotulo="Combustível">{{ (v.nivel_combustivel or "—")|capitalize }}</td>
+<td data-rotulo="Avarias">{% if item.avarias %}<span class="text-perigo">{{ item.avarias }}</span>{% else %}<span class="text-texto-2">Nenhuma</span>{% endif %}</td>
+<td class="c-acao">{% if item.contrato_id %}<a class="btn" href="/vistorias/contrato/{{ item.contrato_id }}" aria-label="Comparar as vistorias de {{ item.cliente_nome }}">Comparar</a>{% endif %}</td></tr>{% endfor %}
+{% endcall %}
+{{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}
+{% if d.pagina.total > opcoes_por_pagina[0] %}<div class="campo por-pagina"><label for="por_pagina">Vistorias por página</label><select class="entrada" id="por_pagina" name="por_pagina" hx-get="/vistorias" hx-include="#filtros" hx-target="#resultado" hx-push-url="true" hx-trigger="change">{% for n in opcoes_por_pagina %}<option value="{{ n }}"{% if n == por_pagina %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>{% endif %}
+{% elif filtrando %}{% call estado_vazio("Nenhuma vistoria encontrada", "Nenhuma vistoria atende à busca ou ao filtro escolhido.", "0") %}{{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma vistoria registrada", "As vistorias de entrega e de devolução aparecem aqui assim que forem registradas.", "0") }}{% endif %}

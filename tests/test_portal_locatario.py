@@ -275,3 +275,17 @@ class TestRepositorioAcesso:
         assert opcoes["headers"] == {"Authorization": "Bearer jwt-do-dono"}
         assert opcoes["body"] == {"acao": "criar", "cliente_id": "cli1"}
         assert opcoes["responseType"] == "json"
+
+    def test_no_app_web_usa_o_jwt_do_cabecalho_do_cliente(self):
+        from unittest.mock import MagicMock
+
+        from src.repositories import portal_locatario as repositorio
+
+        cliente = MagicMock()
+        cliente.auth.get_session.return_value = None
+        cliente.options.headers = {"Authorization": "Bearer jwt-da-requisicao"}
+        cliente.functions.invoke.return_value = {"ok": True}
+        with patch.object(repositorio, "get_client", return_value=cliente):
+            repositorio.gerenciar_acesso("criar", "cli1")
+        opcoes = cliente.functions.invoke.call_args.kwargs["invoke_options"]
+        assert opcoes["headers"] == {"Authorization": "Bearer jwt-da-requisicao"}

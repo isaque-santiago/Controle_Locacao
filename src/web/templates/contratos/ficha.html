@@ -1,0 +1,22 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas, botao %}
+{% block conteudo %}
+{{ voltar("/contratos", "Voltar para contratos") }}
+<header class="cabecalho">
+  <div class="cabecalho-texto">
+    <h1>{{ cliente.nome }}</h1>
+    <p>{{ selo(status_rotulo[contrato.status] ~ " · desde " ~ (contrato.data_inicio|data_br) ~ (" · " ~ contrato.periodicidade if contrato.status == "ativo" else ""), "ok" if contrato.status == "ativo" else ("perigo" if contrato.status == "cancelado" else "neutro")) }}</p>
+    <p class="mt-3">{{ moto.marca }} {{ moto.modelo }} {{ placa(moto.placa|placa_br) }}</p>
+  </div>
+  <div class="acoes">{{ botao("Ver cliente", href="/clientes/" ~ cliente.id) }}{% if contrato.status == "ativo" %}{{ botao("Encerrar contrato", variante="perigo", extra='hx-get="/contratos/' ~ contrato.id ~ '/encerrar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endif %}</div>
+</header>
+<dl class="grade kpis">
+  {{ kpi("Valor / período", contrato.valor_periodo|moeda) }}
+  {{ kpi("Caução", contrato.caucao_valor|moeda) }}
+  {{ kpi("Km inicial", (contrato.km_inicial|milhar) ~ " km") }}
+  {{ kpi("Prazo", (a.prazo|data_br) if a.prazo else "Indeterminado") }}
+  {{ kpi("Próxima cobrança", a.proxima_cobranca|data_br) }}
+</dl>
+{{ abas_remotas("Seções do contrato", abas_da_ficha, aba) }}
+{% include "contratos/_painel.html" %}
+{% endblock %}

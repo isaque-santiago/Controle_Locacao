@@ -5,13 +5,14 @@
 <svg class="i {{ classe }}" aria-hidden="true" focusable="false"><use href="#i-{{ nome }}"/></svg>
 {%- endmacro %}
 
-{# Botão ou link com aparência de botão (href). variante: "", "primario", "perigo". #}
-{% macro botao(rotulo, href=None, tipo="button", variante="", icone_nome=None, bloco=False, extra="") -%}
+{# Botão ou link com aparência de botão (href). variante: "", "primario", "perigo". `aria` dá o nome acessível
+   (escapado aqui; nunca o monte dentro de `extra`, que entra sem escape). #}
+{% macro botao(rotulo, href=None, tipo="button", variante="", icone_nome=None, bloco=False, extra="", aria=None) -%}
 {%- set classes = "btn" ~ (" btn-primario" if variante == "primario" else "") ~ (" btn-perigo" if variante == "perigo" else "") ~ (" btn-bloco" if bloco else "") -%}
 {%- if href -%}
-<a class="{{ classes }}" href="{{ href }}" {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</a>
+<a class="{{ classes }}" href="{{ href }}"{% if aria %} aria-label="{{ aria }}"{% endif %} {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</a>
 {%- else -%}
-<button class="{{ classes }}" type="{{ tipo }}" {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</button>
+<button class="{{ classes }}" type="{{ tipo }}"{% if aria %} aria-label="{{ aria }}"{% endif %} {{ extra|safe }}>{% if icone_nome %}{{ icone(icone_nome) }}{% endif %}{{ rotulo }}</button>
 {%- endif -%}
 {%- endmacro %}
 
@@ -55,25 +56,27 @@
 </div>
 {%- endmacro %}
 
-{# Caixa de seleção com rótulo ao lado. #}
-{% macro caixa(id, rotulo, nome=None, marcada=False, ajuda="", largo=True) -%}
-<div class="campo caixa{{ ' largo' if largo else '' }}">
-  <label for="{{ id }}"><input type="checkbox" id="{{ id }}" name="{{ nome or id }}"{{ ' checked' if marcada else '' }}{% if ajuda %} aria-describedby="{{ id }}-ajuda"{% endif %}> {{ rotulo }}</label>
+{# Caixa de seleção com rótulo ao lado. Com `erro`, o campo fica inválido e a mensagem é lida junto com ele. #}
+{% macro caixa(id, rotulo, nome=None, marcada=False, ajuda="", largo=True, erro="") -%}
+{%- set descricao = (id ~ "-ajuda " if ajuda else "") ~ (id ~ "-erro" if erro else "") -%}
+<div class="campo caixa{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
+  <label for="{{ id }}"><input type="checkbox" id="{{ id }}" name="{{ nome or id }}"{{ ' checked' if marcada else '' }}{% if erro %} aria-invalid="true"{% endif %}{% if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %}> {{ rotulo }}</label>
   {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
 </div>
 {%- endmacro %}
 
 {# Formulário do diálogo `#dlg-form`, enviado pelo HTMX: com erro, a resposta troca este mesmo formulário (outerHTML) e
    o diálogo continua aberto; com sucesso, a resposta traz HX-Redirect. Os campos vêm do bloco {% call %}. #}
-{% macro form_dialogo(titulo, acao, rotulo_enviar, csrf_token="", erro_geral="") -%}
-<form id="form-dialogo" method="post" action="{{ acao }}" hx-post="{{ acao }}" hx-target="#form-dialogo" hx-swap="outerHTML" novalidate>
+{% macro form_dialogo(titulo, acao, rotulo_enviar, csrf_token="", erro_geral="", perigo=False, rotulo_cancelar="Cancelar", multipart=False) -%}
+<form id="form-dialogo" method="post" action="{{ acao }}" hx-post="{{ acao }}" hx-target="#form-dialogo" hx-swap="outerHTML"{% if multipart %} enctype="multipart/form-data" hx-encoding="multipart/form-data"{% endif %} novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div class="dialogo-cab"><h2 id="dlg-form-titulo">{{ titulo }}</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
   <div class="dialogo-corpo">
     {% if erro_geral %}<div class="mb-4">{{ aviso('erro', erro_geral) }}</div>{% endif %}
     <div class="formulario">{{ caller() }}</div>
   </div>
-  <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit">{{ rotulo_enviar }}</button></div>
+  <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>{{ rotulo_cancelar }}</button><button class="btn {{ 'btn-perigo' if perigo else 'btn-primario' }}" type="submit">{{ rotulo_enviar }}</button></div>
 </form>
 {%- endmacro %}
 
@@ -180,12 +183,14 @@
 {%- endmacro %}
 
 {# Paginação. URLs None desabilitam o botão. Com HTMX, passe alvo="#lista" para trocar só a lista. #}
-{% macro paginacao(inicio, fim, total, url_anterior=None, url_proxima=None, alvo=None) -%}
+{# Paginação. `alvo` ativa o HTMX (troca por innerHTML); com `troca` e URLs `parcial_*` o trecho vem de outra rota
+   (ex.: painel de aba, trocado por outerHTML) e o endereço da página continua sendo o href. #}
+{% macro paginacao(inicio, fim, total, url_anterior=None, url_proxima=None, alvo=None, troca="innerHTML", parcial_anterior=None, parcial_proxima=None) -%}
 <nav class="paginacao" aria-label="Paginação">
   <span>Mostrando {{ inicio }} a {{ fim }} de {{ total }}</span>
   <div>
-    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ url_anterior }}" hx-target="{{ alvo }}" hx-swap="innerHTML show:{{ alvo }}:top" hx-push-url="true"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
-    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ url_proxima }}" hx-target="{{ alvo }}" hx-swap="innerHTML show:{{ alvo }}:top" hx-push-url="true"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
+    {% if url_anterior %}<a class="btn" href="{{ url_anterior }}"{% if alvo %} hx-get="{{ parcial_anterior or url_anterior }}" hx-target="{{ alvo }}" hx-swap="{{ troca }} show:{{ alvo }}:top" hx-push-url="{{ url_anterior }}"{% endif %}>Anterior</a>{% else %}<button class="btn" type="button" disabled>Anterior</button>{% endif %}
+    {% if url_proxima %}<a class="btn" href="{{ url_proxima }}"{% if alvo %} hx-get="{{ parcial_proxima or url_proxima }}" hx-target="{{ alvo }}" hx-swap="{{ troca }} show:{{ alvo }}:top" hx-push-url="{{ url_proxima }}"{% endif %}>Próxima</a>{% else %}<button class="btn" type="button" disabled>Próxima</button>{% endif %}
   </div>
 </nav>
 {%- endmacro %}

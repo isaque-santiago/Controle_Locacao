@@ -37,9 +37,10 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 [Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
-Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 iniciada (06/10/2026):** Clientes
-(`/clientes`, `/clientes/{id}`) está em homologação parcial no banco de desenvolvimento. As demais
-telas continuam mostrando "Em migração".
+Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 (demais páginas) concluída (08/10/2026):** Clientes (`/clientes`, `/clientes/{id}`), Contratos
+(`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`), Manutenção (`/manutencao`), Vistorias
+(`/vistorias`), Documentos (`/documentos`), Relatórios (`/relatorios`), Configurações (`/configuracoes`) e Portal do
+Locatário (`/portal`). Todas as telas do app novo estão migradas; o Streamlit só sai na Fase 4.
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -57,12 +58,57 @@ telas continuam mostrando "Em migração".
 - **Cache** de leituras (`repositories/consultas.py`): por usuário e por dia, 60 s; sem usuário identificado não
   há cache. O limite de "gerar cobranças uma vez por hora" também é por usuário.
 
-**Continuidade da Fase 3.** Clientes reaproveita os mesmos padrões de lista, abas e diálogo em
-`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A conferência manual confirmou contagens, busca,
-cadastro, edição, responsividade e três abas, mas ainda faltam a aba Portal e o cartão de contrato ativo no Resumo;
-considere também paginar a lista extensa da aba Pagamentos. Após corrigir e repetir o aceite, a próxima página é
-Contratos, preservando no assistente as quatro etapas e o rascunho ao voltar. Não marque Clientes nem a Fase 3 como
-concluída antes desse fechamento.
+**Fase 3, andamento: Clientes concluída (07/10/2026).** Lista, ficha com quatro abas (Resumo com cartão de
+contrato ativo, Contratos, Pagamentos paginados de 10 em 10 e Portal), cadastro e edição em diálogo, em
+`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A aba Portal cria o acesso do locatário, gera nova
+senha e remove o acesso; a senha só existe na resposta do POST (sem sessão, URL ou cache, `Cache-Control: no-store`)
+e as fotos das trocas abrem por redirecionamento para URL assinada de 5 minutos. Foi aceita sem a comparação lado a
+lado com o Streamlit nos passos finais (decisão do proprietário).
+
+**Fase 3, andamento: Contratos concluída (07/10/2026).** Lista (abre nos ativos; filtro por situação, busca por
+cliente ou placa, paginação) e ficha com faixa de dados e abas Cobranças, Vistorias e Manutenções
+(`rotas/contratos.py`, `templates/contratos/`). **Novo contrato** é um assistente de quatro etapas (Cliente, Moto,
+Condições, Confirmar) em `rotas/contratos_novo.py`: cada etapa tem URL própria (`/contratos/novo?etapa=N`), funciona
+sem JavaScript e o rascunho (escolhas e texto digitado, mesmo inválido) fica em `sessao.rascunho_contrato`, então dá
+para voltar e revisar; a criação usa a RPC única de contrato com vistoria de entrega. **Encerrar contrato**
+(`rotas/contratos_encerramento.py`) abre um diálogo com a vistoria de devolução, danos descontados da caução e uma
+prévia (caução a devolver, excedente cobrado, cobranças canceladas) recalculada pelo servidor ao mudar a data ou os
+danos. Regras puras em `src/domain/contratos_lista.py`, `formulario_contrato.py` e `encerramento.py`. Fotos da
+vistoria continuam sendo anexadas na página Vistorias (como no Streamlit).
+
+**Fase 3, andamento: Cobranças concluída (07/10/2026).** Abas Hoje, Atrasadas, Próximos 7 dias e Pagas com contagem
+e URL própria (`?aba=`), resumo de atraso no cabeçalho, encargos por cobrança atrasada e paginação de 10 em 10
+(`rotas/cobrancas.py`, `templates/cobrancas/`; regras puras em `src/domain/cobrancas_lista.py`). **Registrar pagamento**
+(`rotas/cobrancas_pagamento.py`) abre em diálogo pelo HTMX e também como página sem JavaScript (é para onde o "Pagar" do
+Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a data muda, a validação é por campo
+(`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
+mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
+texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
+**Fase 3, andamento: Manutenção concluída (07/10/2026).** Abas Alertas, Histórico e Catálogo; filtros, busca e
+paginação; registro com itens do plano, peças adicionais, prévia de custos e idempotência; conclusão e cancelamento
+de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
+por campo. Homologada no banco de desenvolvimento e em 320, 390 e 1440 px; 981 testes passaram.
+
+**Fase 3, andamento: Vistorias concluída (08/10/2026).** Lista (filtro por tipo, busca, paginação) e comparação entrega x
+devolução com checklist e galeria de fotos por URL assinada (o CSP libera em `img-src` só a origem do Supabase); registro em
+duas etapas, em diálogo e em página sem JavaScript, com até 10 fotos de 10 MB (validadas por extensão, tamanho e formato
+antes de gravar). Adicionar fotos depois do registro ficou de fora por decisão do proprietário.
+**Documentos:** lista com situação, busca por placa e comprovante por link assinado na hora do clique; novo, editar e
+regularizar (com comprovante opcional e o cadastro do ano seguinte). **Relatórios:** quatro abas com período na URL, barras
+em SVG e exportação CSV e Excel dos mesmos dados da tabela. **Configurações:** encargos, alertas e backup manual (ZIP
+baixado por POST, só o dono). **Portal do Locatário** (`rotas/portal.py`): o locatário vê só o contrato ativo dele,
+reporta a troca de óleo com a foto do painel e a da nota fiscal e troca a própria senha (`ServicoAutenticacao.alterar_senha`,
+PUT em `/auth/v1/user` com o token dele). O contrato do formulário é sempre procurado entre os que a RPC devolve para o
+locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de desenvolvimento e em 320, 390 e 1440 px;
+a suíte inteira passa (1168 testes, em 08/10/2026; os de Cobranças usam relógio congelado em 07/10/2026).
+
+**Recarga automática resolvida (08/10/2026):** em desenvolvimento o armazém de sessões espelha as sessões no arquivo
+`.sessoes_dev.json` (ignorado pelo git; só `executar_web.py` o configura, por `LOCACAO_SESSOES_ARQUIVO`, e só vale com
+`LOCACAO_AMBIENTE=dev`), então salvar um `.py` reinicia o servidor sem derrubar o login. A recarga é do próprio
+`executar_web.py` (o servidor roda como processo filho, reiniciado a cada `.py` salvo em `src/`), e não do `--reload` do
+uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console (preview do Claude). Em produção nada vai a disco.
+
+**Próximo passo:** Fase 4 (E2E, homologação e desligamento do Streamlit).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
@@ -71,9 +117,9 @@ Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as 
 .venv\Scripts\python.exe executar_web.py
 ```
 
-Abre em `http://localhost:8000`. O servidor recarrega ao salvar um `.py`, e como as sessões ficam na memória isso
-**derruba o login**; para conferir telas no navegador use `executar_web.py --sem-recarga` (no preview, a
-configuração `locacao-web-estavel`) e reinicie à mão depois de editar. Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
+Abre em `http://localhost:8000`. O servidor reinicia ao salvar um `.py` de `src/` e o login continua valendo (as sessões de
+desenvolvimento ficam também em `.sessoes_dev.json`, que contém tokens: não compartilhe nem versione; apagá-lo encerra as
+sessões). `executar_web.py --sem-recarga` sobe sem recarga automática (no preview, a configuração `locacao-web-estavel`). Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
 script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
 
 Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macros dos componentes em

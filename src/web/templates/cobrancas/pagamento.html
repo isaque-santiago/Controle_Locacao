@@ -1,0 +1,17 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/cobrancas", "Voltar para cobranças") }}
+{{ cabecalho_pagina("Registrar pagamento", "Confira os valores e confirme o recebimento.") }}
+<form class="cartao" id="form-pagamento" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    {% include "cobrancas/_campos_pagamento.html" %}
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="/cobrancas">Cancelar</a>
+    <button class="btn btn-primario" type="submit">Confirmar pagamento</button>
+  </div>
+</form>
+{% endblock %}

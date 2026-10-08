@@ -19,9 +19,28 @@ from src.web.limitador import LimitadorTentativas
 from src.web.rotas import autenticacao as rotas_autenticacao
 from src.web.rotas import componentes as rotas_componentes
 from src.web.rotas import clientes as rotas_clientes
+from src.web.rotas import cobrancas as rotas_cobrancas
+from src.web.rotas import cobrancas_mensagem as rotas_cobrancas_mensagem
+from src.web.rotas import cobrancas_pagamento as rotas_cobrancas_pagamento
 from src.web.rotas import clientes_formularios as rotas_clientes_formularios
+from src.web.rotas import clientes_portal as rotas_clientes_portal
+from src.web.rotas import contratos as rotas_contratos
+from src.web.rotas import contratos_encerramento as rotas_contratos_encerramento
+from src.web.rotas import contratos_novo as rotas_contratos_novo
 from src.web.rotas import motos as rotas_motos
 from src.web.rotas import motos_formularios as rotas_motos_formularios
+from src.web.rotas import manutencao as rotas_manutencao
+from src.web.rotas import manutencao_registro as rotas_manutencao_registro
+from src.web.rotas import manutencao_finalizacao as rotas_manutencao_finalizacao
+from src.web.rotas import manutencao_catalogo as rotas_manutencao_catalogo
+from src.web.rotas import documentos as rotas_documentos
+from src.web.rotas import configuracoes as rotas_configuracoes
+from src.web.rotas import portal as rotas_portal
+from src.web.rotas import relatorios as rotas_relatorios
+from src.web.rotas import documentos_formularios as rotas_documentos_formularios
+from src.web.rotas import documentos_regularizacao as rotas_documentos_regularizacao
+from src.web.rotas import vistorias as rotas_vistorias
+from src.web.rotas import vistorias_registro as rotas_vistorias_registro
 from src.web.rotas import paginas as rotas_paginas
 from src.web.seguranca import CabecalhosSeguranca
 from src.web.sessao import ArmazemSessoes
@@ -39,6 +58,12 @@ def ambiente_de_desenvolvimento() -> bool:
     return os.getenv("LOCACAO_AMBIENTE", "").lower() == "dev"
 
 
+def arquivo_de_sessoes(desenvolvimento: bool) -> str | None:
+    """Arquivo onde o armazém espelha as sessões. Só existe em desenvolvimento e quando o `executar_web.py` (ou quem
+    sobe o servidor) o pede por `LOCACAO_SESSOES_ARQUIVO`; em produção as sessões ficam só na memória."""
+    return (os.getenv("LOCACAO_SESSOES_ARQUIVO") or None) if desenvolvimento else None
+
+
 def criar_app(
     servico=None,
     armazem: ArmazemSessoes | None = None,
@@ -50,7 +75,8 @@ def criar_app(
 
     app.state.relogio = relogio
     app.state.servico = servico or ServicoAutenticacao()
-    app.state.armazem = armazem or ArmazemSessoes(relogio=relogio)
+    em_desenvolvimento = desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento()
+    app.state.armazem = armazem or ArmazemSessoes(relogio=relogio, arquivo=arquivo_de_sessoes(em_desenvolvimento))
     app.state.limitador_ip = LimitadorTentativas(
         FALHAS_POR_IP, JANELA_LIMITE_SEGUNDOS, relogio
     )
@@ -63,7 +89,28 @@ def criar_app(
 
     app.include_router(rotas_paginas.router)
     app.include_router(rotas_clientes_formularios.router)
+    app.include_router(rotas_clientes_portal.router)
     app.include_router(rotas_clientes.router)
+    # O assistente antes da ficha: /contratos/novo não pode cair em /contratos/{contrato_id}
+    app.include_router(rotas_cobrancas_mensagem.router)
+    app.include_router(rotas_cobrancas_pagamento.router)
+    app.include_router(rotas_cobrancas.router)
+    app.include_router(rotas_contratos_novo.router)
+    app.include_router(rotas_contratos_encerramento.router)
+    app.include_router(rotas_contratos.router)
+    app.include_router(rotas_manutencao_registro.router)
+    app.include_router(rotas_manutencao_catalogo.router)
+    app.include_router(rotas_manutencao.router)
+    # As abas estáticas precisam vir antes de /manutencao/{id}/{acao}.
+    app.include_router(rotas_manutencao_finalizacao.router)
+    app.include_router(rotas_documentos_formularios.router)
+    app.include_router(rotas_documentos_regularizacao.router)
+    app.include_router(rotas_documentos.router)
+    app.include_router(rotas_relatorios.router)
+    app.include_router(rotas_configuracoes.router)
+    app.include_router(rotas_portal.router)
+    app.include_router(rotas_vistorias_registro.router)
+    app.include_router(rotas_vistorias.router)
     # Formulários antes da ficha: /motos/nova não pode cair em /motos/{moto_id}
     app.include_router(rotas_motos_formularios.router)
     app.include_router(rotas_motos.router)

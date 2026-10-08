@@ -1,0 +1,15 @@
+{% from "componentes/macros.html" import cartao, selo, botao %}
+{% if k.dados %}{% set r = k.dados.vistoria %}
+{% call cartao(k.titulo, "vist-cartao") %}
+<dl class="dl"><div><dt>Data</dt><dd class="mono">{{ r.data|data_br }}</dd></div><div><dt>Km</dt><dd class="mono">{{ r.km|milhar }} km</dd></div><div><dt>Combustível</dt><dd>{{ (r.nivel_combustivel or "—")|capitalize }}</dd></div><div><dt>Avarias</dt><dd>{% if k.dados.avarias %}<span class="text-perigo">{{ k.dados.avarias }}</span>{% else %}Nenhuma{% endif %}</dd></div></dl>
+<h3 class="vist-secao">Checklist</h3>
+{% if k.dados.itens %}<ul class="vist-checklist">{% for i in k.dados.itens %}{% set e = estado_item.get(i.estado, (i.estado, "neutro")) %}<li class="vist-item{{ ' alterado' if i.alterado }}"><span>{{ i.rotulo }}</span><span>{{ selo(e[0], e[1]) }}{% if i.alterado %} <span class="vist-aviso">alterado</span>{% endif %}</span></li>{% endfor %}</ul>
+{% else %}<p class="text-texto-2">Checklist não preenchido.</p>{% endif %}
+<h3 class="vist-secao">Fotos</h3>
+{% if k.dados.fotos %}<ul class="galeria">{% for f in k.dados.fotos %}<li>{% if f.url %}<a class="galeria-foto" href="{{ f.url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ f.legenda }} (abre em nova aba)"><img src="{{ f.url }}" alt="{{ f.legenda }}" loading="lazy" decoding="async"></a>{% else %}<div class="galeria-foto vazia">Foto indisponível</div>{% endif %}</li>{% endfor %}</ul>
+{% else %}<p class="text-texto-2">Nenhuma foto anexada.</p>{% endif %}
+{% endcall %}
+{% else %}
+{% call cartao(k.titulo, "tracejado") %}<p class="text-texto-2">Ainda não realizada{% if k.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>
+{{ botao("Registrar vistoria de " ~ (k.titulo|lower), href="/vistorias/registrar?contrato=" ~ c.contrato.id, extra='hx-get="/vistorias/registrar?contrato=' ~ c.contrato.id ~ '" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endcall %}
+{% endif %}
