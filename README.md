@@ -110,7 +110,7 @@ uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console 
 
 **Fase 4 em andamento** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
 Parte A concluída: o núcleo (`config`, `db`, `domain`, `services`, `repositories`) e o app web não dependem mais do Streamlit;
-o código exclusivo dele fica em `src/ui/sessao_streamlit.py` e some na remoção. Próxima: Parte B (suíte Playwright no app novo).
+o código exclusivo dele fica em `src/ui/sessao_streamlit.py` e some na remoção. Parte B em andamento: a suíte Playwright (`e2e/`) foi reescrita para o app novo; ver `e2e/README.md`.
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

@@ -1,4 +1,4 @@
-"""Funções de apoio: esperar o Streamlit, entrar no sistema e medir a página."""
+"""Funções de apoio: esperar o app (FastAPI + HTMX), entrar no sistema e medir a página."""
 
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeout
@@ -11,19 +11,19 @@ SELETOR_INTERATIVOS = (
     '[role="switch"], [role="combobox"], [role="link"], [tabindex]:not([tabindex="-1"])'
 )
 
+# Classes que o HTMX põe enquanto uma requisição ou troca de conteúdo está em andamento.
+_JS_HTMX_PARADO = "() => !document.querySelector('.htmx-request, .htmx-swapping, .htmx-settling, .htmx-added')"
+
 
 # --------------------------------------------------------------------------
-# Streamlit
+# Espera e navegação
 # --------------------------------------------------------------------------
 def aguardar_app(page: Page, timeout: int = 30_000) -> None:
-    """Espera o Streamlit terminar a execução (sem o indicador 'Running')."""
-    page.wait_for_selector('[data-testid="stApp"]', timeout=timeout)
+    """Espera a página carregar e o HTMX terminar qualquer troca de conteúdo."""
+    page.wait_for_load_state("load", timeout=timeout)
     for _ in range(2):
-        page.wait_for_function(
-            "() => !document.querySelector('[data-testid=\"stStatusWidget\"]')",
-            timeout=timeout,
-        )
-        page.wait_for_timeout(350)
+        page.wait_for_function(_JS_HTMX_PARADO, timeout=timeout)
+        page.wait_for_timeout(150)
     try:
         page.evaluate("document.fonts.ready.then(() => true)")
     except Exception:
@@ -31,45 +31,38 @@ def aguardar_app(page: Page, timeout: int = 30_000) -> None:
 
 
 def tem_formulario_login(page: Page) -> bool:
-    return page.get_by_role("button", name="Entrar no painel").count() > 0
+    return page.locator('form[action="/login"]').count() > 0
 
 
 def abrir_login(page: Page) -> None:
-    page.goto(base_url() + "/")
+    page.goto(base_url() + "/login")
     aguardar_app(page)
-    # O WebKit às vezes termina a execução antes de pintar o formulário: espera o botão (sem exigir que exista,
-    # pois com sessão ativa a tela de acesso nem aparece).
-    try:
-        page.get_by_role("button", name="Entrar no painel").wait_for(state="visible", timeout=6_000)
-    except PlaywrightTimeout:
-        pass
 
 
 def entrar(page: Page, email: str, senha: str) -> None:
     """Login pelo formulário. As credenciais vêm do ambiente e não são registradas."""
     abrir_login(page)
     if not tem_formulario_login(page):
-        return
-    page.get_by_label("E-mail").fill(email)
+        return  # já havia sessão ativa: o app redirecionou
+    page.get_by_label("E-mail ou CPF").fill(email)
     page.get_by_label("Senha", exact=True).fill(senha)
-    page.get_by_role("button", name="Entrar no painel").click()
-    # Não espera o botão "desanexar": durante o rerun do Streamlit o React pode manter
-    # brevemente o nó antigo e o novo no DOM ao mesmo tempo (mesmo texto/testid), o que
-    # deixa get_by_role ambíguo por uma fração de segundo. O sinal confiável de que
-    # logou é a barra lateral autenticada (botão "Sair").
-    page.get_by_role("button", name="Sair").wait_for(state="visible", timeout=30_000)
+    page.get_by_role("button", name="Entrar", exact=True).click()
+    try:
+        page.wait_for_url(lambda url: "/login" not in url, timeout=30_000)
+    except PlaywrightTimeout:
+        # Mostra só a mensagem do app (nunca o que foi digitado).
+        aviso = page.locator("form[action='/login'] [role='alert'], form[action='/login'] .aviso").first
+        motivo = aviso.inner_text().strip()[:120] if aviso.count() else "sem mensagem"
+        raise RuntimeError(f"O login não foi concluído ({motivo}).") from None
     aguardar_app(page)
-    # Dá tempo ao componente que grava o cookie de sessão antes das próximas navegações.
-    page.wait_for_timeout(1_200)
 
 
 def ir_para(page: Page, pagina: Pagina) -> bool:
-    """Abre a página pela URL; a sessão é restaurada pelo cookie.
+    """Abre a página pela URL; a sessão vale pelo cookie.
 
-    Se o app devolver a tela de acesso (a restauração por cookie falhou), entra de novo e
-    repete a navegação. Devolve True quando foi preciso reautenticar, para o teste registrar
-    o achado sem perder o restante da varredura."""
-    destino = f"{base_url()}/{pagina.caminho}"
+    Se o app devolver a tela de acesso (sessão expirada ou perdida), entra de novo e repete a navegação.
+    Devolve True quando foi preciso reautenticar, para o teste registrar o achado sem perder a varredura."""
+    destino = base_url() + pagina.caminho
     page.goto(destino)
     aguardar_app(page)
     if not tem_formulario_login(page):
@@ -84,8 +77,8 @@ def ir_para(page: Page, pagina: Pagina) -> bool:
 
 
 def textos_de_excecao(page: Page) -> list[str]:
-    """Exceções do Streamlit renderizadas na página."""
-    return page.locator('[data-testid="stException"]').all_inner_texts()
+    """Páginas de erro do app (404, 403, 500…), que usam o cartão `acesso-erro`."""
+    return page.locator(".acesso-erro").all_inner_texts()
 
 
 # --------------------------------------------------------------------------
@@ -97,11 +90,10 @@ const descrever = (el) => {
   let atual = el;
   for (let i = 0; atual && atual.nodeType === 1 && i < 4; i++) {
     let s = atual.tagName.toLowerCase();
-    const tid = atual.getAttribute('data-testid');
-    if (tid) s += '[' + tid + ']';
+    if (atual.id) s += '#' + atual.id;
     else if (atual.classList.length) s += '.' + Array.from(atual.classList).slice(0, 2).join('.');
     partes.unshift(s);
-    if (tid) break;
+    if (atual.id) break;
     atual = atual.parentElement;
   }
   return partes.join(' > ');
@@ -118,22 +110,18 @@ const visivel = (el) => {
   for (let p = el; p; p = p.parentElement) {
     if (p.getAttribute && p.getAttribute('aria-hidden') === 'true') return false;
     if (getComputedStyle(p).display === 'none') return false;
+    // Diálogo fechado não aparece (o navegador o esconde sem display:none em alguns casos).
+    if (p.tagName === 'DIALOG' && !p.open) return false;
   }
   return true;
 };
-// Elemento dentro de contêiner que rola na horizontal (rolagem legítima e localizada).
+// Elemento dentro de contêiner que rola na horizontal (rolagem legítima e localizada: chips, abas, tabelas).
 const emRolagemHorizontal = (el) => {
   for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
     const ox = getComputedStyle(p).overflowX;
     if ((ox === 'auto' || ox === 'scroll') && p.scrollWidth > p.clientWidth + 1) return true;
   }
   return false;
-};
-// Barra lateral recolhida fica fora da tela por transformação: não é problema de layout.
-const emBarraRecolhida = (el) => {
-  const sb = el.closest('[data-testid="stSidebar"]');
-  // O app remove aria-expanded da barra (atributo inválido no <section>) e guarda o estado em data-expandida.
-  return !!sb && (sb.getAttribute('data-expandida') || sb.getAttribute('aria-expanded')) === 'false';
 };
 """
 
@@ -143,7 +131,7 @@ _JS_OVERFLOW = (
     + r"""
   const vw = document.documentElement.clientWidth;
   const doc = document.documentElement;
-  const alvos = ['[data-testid="stMain"]', '[data-testid="stAppViewContainer"]', '[data-testid="stMainBlockContainer"]'];
+  const alvos = ['.app', '.coluna', 'main'];
   const contenedores = [];
   for (const sel of alvos) {
     const el = document.querySelector(sel);
@@ -154,7 +142,7 @@ _JS_OVERFLOW = (
   const culpados = [];
   if (doc.scrollWidth > doc.clientWidth + 1 || contenedores.length) {
     for (const el of document.querySelectorAll('body *')) {
-      if (!visivel(el) || emRolagemHorizontal(el) || emBarraRecolhida(el)) continue;
+      if (!visivel(el) || emRolagemHorizontal(el)) continue;
       const r = el.getBoundingClientRect();
       if (r.right > vw + 1 || r.left < -1) {
         culpados.push({ el: descrever(el), direita: Math.round(r.right), esquerda: Math.round(r.left), texto: rotulo(el) });
@@ -180,7 +168,7 @@ _JS_INTERATIVOS = (
   const pequenos = [];
   const vistos = new Set();
   for (const el of document.querySelectorAll(seletor)) {
-    if (!visivel(el) || emBarraRecolhida(el)) continue;
+    if (!visivel(el)) continue;
     if (el.disabled && el.tagName !== 'BUTTON') continue;
     const r = el.getBoundingClientRect();
     const info = { el: descrever(el), rotulo: rotulo(el), tag: el.tagName.toLowerCase(), papel: el.getAttribute('role') || '' };
@@ -188,20 +176,14 @@ _JS_INTERATIVOS = (
       fora.push({ ...info, esquerda: Math.round(r.left), direita: Math.round(r.right) });
       continue;
     }
-    // Links dentro de texto corrido são isentos do alvo mínimo.
-    if (el.tagName === 'A' && el.parentElement && ['P', 'LI', 'TD', 'SPAN'].includes(el.parentElement.tagName)) continue;
-    // Botão auxiliar de 1 px do react-aria ("Descartar"): fora da ordem de tabulação, não é alvo de toque.
-    if (el.tagName === 'BUTTON' && el.getAttribute('tabindex') === '-1' && el.style.width === '1px') continue;
+    // Link do pular-para-o-conteúdo só aparece com o foco; os de texto corrido são isentos do alvo mínimo.
+    if (el.classList.contains('pular')) continue;
+    if (el.tagName === 'A' && el.parentElement && ['P', 'LI', 'TD', 'SPAN', 'DD'].includes(el.parentElement.tagName)
+        && !el.closest('.nav-lista, .folha-lista, .barra-inferior')) continue;
     // Entradas escondidas por trás de rótulo estilizado (upload) medem o botão visível, não o <input>.
     if (el.tagName === 'INPUT' && el.type === 'file' && getComputedStyle(el).opacity === '0') continue;
-    // Campos de texto/seleção: o alvo é a caixa estilizada do Streamlit, não o <input> interno.
-    // Radio/checkbox medem o rótulo que os contém; data e seleção medem o grupo (dia/mês/ano ou caixa de seleção).
-    const composto = '[data-testid="stTextInputRootElement"], [data-testid="stNumberInputContainer"], [data-testid="stTextAreaRootElement"], [data-baseweb="select"], [data-testid="stDateInputField"], .react-aria-ComboBox';
-    const caixa = (el.tagName === 'INPUT' && ['checkbox', 'radio'].includes(el.type))
-      ? (el.closest('label') || el)
-      : (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.getAttribute('role') === 'spinbutton')
-        ? (el.closest(composto) || el)
-        : el;
+    // Radio/checkbox medem o rótulo que os contém.
+    const caixa = (el.tagName === 'INPUT' && ['checkbox', 'radio'].includes(el.type)) ? (el.closest('label') || el) : el;
     const rc = caixa.getBoundingClientRect();
     if (rc.width < alvoMin - 0.5 || rc.height < alvoMin - 0.5) {
       const chave = info.el + '|' + info.rotulo;
@@ -220,7 +202,7 @@ _JS_DIALOGO = (
     + r"""
   const vw = document.documentElement.clientWidth;
   const vh = document.documentElement.clientHeight;
-  const d = document.querySelector('[role="dialog"]');
+  const d = document.querySelector('dialog[open]');
   if (!d) return null;
   const r = d.getBoundingClientRect();
   const botoes = [];
@@ -229,11 +211,9 @@ _JS_DIALOGO = (
     const rb = b.getBoundingClientRect();
     botoes.push({ rotulo: rotulo(b), esquerda: Math.round(rb.left), direita: Math.round(rb.right) });
   }
-  // A rolagem pode estar no diálogo, em um descendente ou no contêiner (overlay) que o envolve.
+  // A rolagem pode estar no diálogo ou em um descendente (o corpo do diálogo).
   let rola = false;
-  const candidatos = [d, ...d.querySelectorAll('*')];
-  for (let p = d.parentElement; p && p !== document.documentElement; p = p.parentElement) candidatos.push(p);
-  for (const el of candidatos) {
+  for (const el of [d, ...d.querySelectorAll('*')]) {
     if (el.scrollHeight > el.clientHeight + 1 && ['auto', 'scroll'].includes(getComputedStyle(el).overflowY)) { rola = true; break; }
   }
   return {
@@ -255,8 +235,6 @@ _JS_FOCO = (
     window.__yFoco = null;
     window.__regiaoFoco = null;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-    const principal = document.querySelector('[data-testid="stMain"]');
-    if (principal) principal.scrollTo(0, 0);
     window.scrollTo(0, 0);
     document.body.setAttribute('tabindex', '-1');
     document.body.focus();
@@ -286,20 +264,15 @@ _JS_FOCO = (
   const vw = document.documentElement.clientWidth;
   const vh = document.documentElement.clientHeight;
   const dentro = r.width > 0 && r.height > 0 && r.left >= -1 && r.right <= vw + 1 && r.top >= -1 && r.bottom <= vh + 1;
-  // Indicador: contorno ou sombra no próprio elemento ou em até 3 ancestrais (o Streamlit
-  // desenha o foco no contêiner do campo, não no <input> interno).
+  // Indicador: contorno ou sombra no próprio elemento ou em até 3 ancestrais (o campo desenha o foco na caixa).
   let indicador = false;
   for (let p = el, i = 0; p && i < 4 && !indicador; p = p.parentElement, i++) {
     const cs = getComputedStyle(p);
     const contorno = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 && !/rgba\(\s*0,\s*0,\s*0,\s*0\s*\)|transparent/.test(cs.outlineColor);
     if (contorno || cs.boxShadow !== 'none') indicador = true;
   }
-  // Campo de data (react-aria): o segmento focado ganha fundo escuro e a borda do campo muda para âmbar
-  // (conferido nas capturas); a medição por contorno/sombra não enxerga isso.
-  if (el.closest('[data-testid="stDateInputField"]')) indicador = true;
-  const principal = document.querySelector('[data-testid="stMain"]');
-  const regiao = el.closest('[data-testid="stSidebar"]') ? 'barra' : (el.closest('[role="dialog"]') ? 'dialogo' : 'principal');
-  const y = r.top + (regiao === 'principal' && principal ? principal.scrollTop : 0);
+  const regiao = el.closest('dialog') ? 'dialogo' : (el.closest('.lateral, .barra-inferior, .topo-movel') ? 'barra' : 'principal');
+  const y = r.top + (regiao === 'principal' ? window.scrollY : 0);
   let regressao = 0;
   if (window.__regiaoFoco === regiao && window.__yFoco !== null && y < window.__yFoco - 200) {
     regressao = Math.round(window.__yFoco - y);
@@ -308,7 +281,7 @@ _JS_FOCO = (
   window.__yFoco = y;
   // Último elemento tabulável da página: o Firefox mantém nele o foco ao sair da página (o Chromium volta ao
   // <body>), então "o foco não avança" ali é o fim do documento, não uma armadilha.
-  const tabulaveis = Array.from(document.querySelectorAll(SELETOR)).filter(e => visivel(e) && !e.disabled && !emBarraRecolhida(e));
+  const tabulaveis = Array.from(document.querySelectorAll(SELETOR)).filter(e => visivel(e) && !e.disabled);
   const ultimo = tabulaveis.length === 0 || tabulaveis[tabulaveis.length - 1] === el || !tabulaveis.some(e => e !== el && (el.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING));
   return {
     ultimo,
@@ -326,10 +299,9 @@ _JS_TEXTO_CORTADO = (
     "() => {"
     + _JS_COMUM
     + r"""
-  const ignorar = '[data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stMainBlockContainer"]';
   const achados = [];
   for (const el of document.querySelectorAll('body *')) {
-    if (el.matches(ignorar) || !visivel(el) || emBarraRecolhida(el)) continue;
+    if (!visivel(el)) continue;
     const cs = getComputedStyle(el);
     const corta = (v) => v === 'hidden' || v === 'clip';
     if (!corta(cs.overflowX) && !corta(cs.overflowY)) continue;
@@ -374,7 +346,7 @@ def medir_dialogo(page: Page) -> dict | None:
 
 def esperar_dialogo(page: Page, timeout: int = 8_000) -> bool:
     try:
-        page.wait_for_selector('[role="dialog"]', timeout=timeout)
+        page.wait_for_selector("dialog[open]", timeout=timeout)
         aguardar_app(page)
         return True
     except PlaywrightTimeout:
@@ -382,11 +354,11 @@ def esperar_dialogo(page: Page, timeout: int = 8_000) -> bool:
 
 
 def fechar_dialogo(page: Page) -> None:
-    """Fecha sem salvar (Esc). Nenhum fluxo da Etapa 0 grava dados."""
-    if page.locator('[role="dialog"]').count():
+    """Fecha sem salvar (Esc)."""
+    if page.locator("dialog[open]").count():
         page.keyboard.press("Escape")
         try:
-            page.wait_for_selector('[role="dialog"]', state="detached", timeout=4_000)
+            page.wait_for_selector("dialog[open]", state="detached", timeout=4_000)
         except PlaywrightTimeout:
             pass
         aguardar_app(page)

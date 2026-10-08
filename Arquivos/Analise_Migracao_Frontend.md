@@ -449,6 +449,18 @@ a camada do Streamlit. `formatadores.py` (que o app web importava de `src/ui`) f
 `tests/test_desacoplamento_streamlit.py` garante que `domain`, `repositories`, `services`, `web`, `config` e `db` não importam o
 Streamlit e que `src.web.app` sobe sem carregá-lo. O Streamlit continua funcionando (testes de tela passam). Suíte: 1303 testes.
 
+**Parte B em andamento (08/10/2026): suíte Playwright no app novo.** Reescritos `e2e/config.py`, `ajudas.py`, `verificacoes.py`,
+`conftest.py`, `test_paginas.py`, `test_fluxos.py` e o novo `roteiro.py`: login pelo formulário novo, espera do HTMX, medições
+sem o DOM do Streamlit (`dialog[open]`, `.lateral`, rolagem do documento), tema pelo cookie `tema`, captura de página inteira,
+respostas 5xx como achado e referências visuais novas em `e2e/referencia/web/`. Os fluxos 4 a 10 agora **gravam** (contrato
+criado e encerrado, pagamento parcial e quitação, manutenção aberta e concluída, documento com comprovante e regularização,
+vistoria com fotos, exportações CSV/Excel abertas, configuração alterada e restaurada, backup); rodam uma vez por perfil
+Chromium (desktop e celular), largura de referência, tema claro. **Verificado:** a tela de acesso nos quatro perfis (10
+cenários cada, axe e teclado), que revelou dois defeitos reais, já corrigidos em `app.css`: na faixa de 720 a 1099 px o link da
+marca ficava sem nome acessível (axe `link-name`) e em qualquer largura tinha 37 px de altura. **Não verificado:** tudo o que
+exige login (páginas, fluxos, homologação, regressão visual): o proprietário roda no terminal dele (D1) e a IA lê
+`e2e/resultados/`.
+
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 
 | Item | Destino |

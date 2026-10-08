@@ -11,7 +11,7 @@ from PIL import Image, ImageChops
 
 PASTA_E2E = Path(__file__).parent
 PASTA_ATUAL = PASTA_E2E / "capturas_atuais"
-PASTA_REFERENCIA = PASTA_E2E / "referencia" / sys.platform
+PASTA_REFERENCIA = PASTA_E2E / "referencia" / "web" / sys.platform
 PASTA_DIFERENCAS = PASTA_E2E / "resultados" / "diferencas"
 
 # Diferença de canal (0–255) abaixo da qual o pixel conta como igual (serrilhado de fontes).

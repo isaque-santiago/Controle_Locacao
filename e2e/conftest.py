@@ -200,13 +200,17 @@ def _contextos_autenticados(playwright_sessao: Playwright, request):
     faria até 40 logins por execução da matriz e estoura esse limite. Em vez disso, cada
     perfil (chromium-desktop, chromium-movel, firefox, webkit) loga uma única vez; a
     largura e o tema mudam depois, no mesmo contexto (viewport, emulação de tema e o
-    cookie tema_escuro), com um reload — o app já suporta isso (é o mesmo mecanismo do
-    F5, preservado pelo cookie de refresh token)."""
+    cookie `tema`), com um reload: a sessão do app vive no cookie de sessão do contexto."""
     cache: dict[str, tuple[Browser, "playwright.sync_api.BrowserContext", Page]] = {}
     yield cache
     for browser, contexto, _pagina in cache.values():
         contexto.close()
         browser.close()
+
+
+def _cookie_tema(cenario: Cenario) -> dict:
+    """O servidor lê o cookie `tema` ("escuro" ou "claro") e já envia o tema certo na página."""
+    return {"name": "tema", "value": cenario.tema, "url": base_url()}
 
 
 def _novo_contexto(playwright: Playwright, navegador: Browser, cenario: Cenario):
@@ -223,17 +227,18 @@ def _novo_contexto(playwright: Playwright, navegador: Browser, cenario: Cenario)
         opcoes["locale"] = "pt-BR"
     contexto = navegador.new_context(**opcoes)
     contexto.set_default_timeout(20_000)
-    # O tema do app não segue prefers-color-scheme (config.toml fixa base=light): a
-    # escolha vem do cookie "tema_escuro" (1 = escuro, 0 = claro), lido também no login.
-    contexto.add_cookies(
-        [{"name": "tema_escuro", "value": "1" if cenario.tema == "escuro" else "0", "url": base_url()}]
-    )
+    contexto.add_cookies([_cookie_tema(cenario)])
     return contexto
 
 
 def _pagina_com_console(contexto) -> Page:
     page = contexto.new_page()
     page.erros_console = []  # type: ignore[attr-defined]
+    page.falhas_http = []  # type: ignore[attr-defined]
+    page.on(
+        "response",
+        lambda r: page.falhas_http.append(f"{r.status} {urlparse(r.url).path}") if r.status >= 500 else None,
+    )
     page.on("pageerror", lambda e: page.erros_console.append(f"pageerror: {e}"))
     page.on(
         "console",
@@ -285,13 +290,24 @@ def pagina_logada(playwright_sessao: Playwright, _contextos_autenticados, cenari
     if isinstance(guardado, Exception):
         pytest.fail(f"login do perfil {cenario.perfil} já tinha falhado nesta execução: {guardado}")
     _browser, contexto, page = guardado
-    # O app não segue prefers-color-scheme (config.toml fixa base=light): o tema vem do
-    # cookie tema_escuro, lido no carregamento da página.
-    contexto.add_cookies(
-        [{"name": "tema_escuro", "value": "1" if cenario.tema == "escuro" else "0", "url": base_url()}]
-    )
+    contexto.add_cookies([_cookie_tema(cenario)])
     page.emulate_media(color_scheme="dark" if cenario.tema == "escuro" else "light")
     page.set_viewport_size({"width": cenario.largura, "height": cenario.altura})
     page.reload()
     aguardar_app(page)
     yield page
+
+
+@pytest.fixture
+def pagina_nova_sessao(playwright_sessao, navegador, cenario):
+    """Página com um login próprio (para testar o logout sem derrubar a sessão compartilhada do perfil)."""
+    from e2e.ajudas import entrar
+
+    cred = credenciais()
+    if cred is None:
+        pytest.skip("sem credenciais de teste")
+    contexto = _novo_contexto(playwright_sessao, navegador, cenario)
+    page = _pagina_com_console(contexto)
+    entrar(page, *cred)
+    yield page
+    contexto.close()

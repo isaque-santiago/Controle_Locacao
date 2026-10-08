@@ -406,6 +406,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .acesso-caixa {width: min(26rem, 100%); display: grid; gap: var(--e5);}
 .acesso .marca, .acesso .marca strong {color: var(--texto); padding: 0;}
 .acesso .marca span.sub {color: var(--texto-3);}
+/* Na tela de acesso a marca mostra sempre o nome (o trilho de 720–1099 px esconde o texto só no painel) e tem alvo de toque. */
+.acesso .marca {min-height: var(--alvo); align-items: center; justify-content: flex-start;}
+.acesso .marca > div {display: block;}
 .acesso .cartao {display: grid; gap: var(--e4);}
 .acesso h1 {font-size: 26px;}
 .acesso-erro .adesivo {width: 64px; height: 64px; font-size: 22px; color: var(--texto-3);}
