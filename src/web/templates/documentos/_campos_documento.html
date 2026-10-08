@@ -1,0 +1,25 @@
+{% from "componentes/macros.html" import campo, campo_lista, area_texto, placa %}
+{# Campos do documento (diálogo e página). Contexto: v, erros, editando, registro, motos, tipos, tem_comprovante. #}
+<input type="hidden" name="chave_operacao" value="{{ v.chave_operacao }}">
+{% if editando %}
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(registro.moto.placa|placa_br) }}<span>{{ registro.moto.marca }} {{ registro.moto.modelo }}</span></div>
+{% elif motos %}
+{{ campo_lista("d-moto", "Moto", motos, nome="moto_id", selecionado=v.moto_id, largo=True) }}
+{% if erros.moto_id %}<small class="msg-erro largo" role="alert">{{ erros.moto_id }}</small>{% endif %}
+{% else %}
+<p class="largo text-texto-2">Cadastre uma moto antes de registrar documentos.</p>
+{% endif %}
+{{ campo_lista("d-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, largo=True) }}
+{% if erros.tipo %}<small class="msg-erro largo" role="alert">{{ erros.tipo }}</small>{% endif %}
+{{ campo("d-ano", "Ano de referência", nome="ano_referencia", valor=v.ano_referencia, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.ano_referencia, autocomplete="off") }}
+{{ campo("d-venc", "Vencimento", nome="vencimento", valor=v.vencimento, tipo="date", obrigatorio=True, erro=erros.vencimento) }}
+{{ campo("d-valor", "Valor", nome="valor", valor=v.valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor, autocomplete="off", largo=True) }}
+{{ campo("d-desc", "Descrição", nome="descricao", valor=v.descricao, largo=True, ajuda="Opcional. Ex.: apólice 221004") }}
+<div class="campo largo{{ ' com-erro' if erros.comprovante else '' }}">
+  <label for="d-comprovante">Comprovante (opcional)</label>
+  <input class="entrada" id="d-comprovante" name="comprovante" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"{% if erros.comprovante %} aria-invalid="true"{% endif %} aria-describedby="d-comprovante-ajuda{{ ' d-comprovante-erro' if erros.comprovante }}">
+  <small id="d-comprovante-ajuda">PDF, PNG ou JPG, de até 10 MB.{% if tem_comprovante %} Já existe um comprovante anexado; enviar outro arquivo o substitui.{% endif %}{% if erros %} O navegador não guarda o arquivo depois de um erro: escolha-o de novo.{% endif %}</small>
+  {% if erros.comprovante %}<small class="msg-erro" id="d-comprovante-erro">{{ erros.comprovante }}</small>{% endif %}
+</div>
+{{ area_texto("d-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>

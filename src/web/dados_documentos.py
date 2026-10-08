@@ -27,3 +27,17 @@ def url_comprovante(documento_id):
     if not documento or not documento.get("arquivo_path"):
         return None
     return documentos.url_comprovante(documento["arquivo_path"])
+
+
+def motos_do_cadastro(moto_atual=None):
+    """Motos que aceitam documento: as ativas na frota e, na edição, a moto do próprio documento."""
+    return [m for m in motos.listar() if m["status"] != "inativa" or m["id"] == moto_atual]
+
+
+def obter_documento(documento_id):
+    """O documento com a moto, ou None se algum dos dois não existir."""
+    documento = documentos.obter(documento_id)
+    moto = motos.obter(documento["moto_id"]) if documento else None
+    if documento is None or moto is None:
+        return None
+    return {"documento": documento, "moto": moto}

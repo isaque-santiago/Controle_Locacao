@@ -1,7 +1,9 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, icone %}
+{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
 {% block conteudo %}
-{{ cabecalho_pagina("Documentos", vencidos ~ " vencido(s) · " ~ a_vencer ~ " a vencer") }}
+{% call cabecalho_pagina("Documentos", vencidos ~ " vencido(s) · " ~ a_vencer ~ " a vencer") %}
+{{ botao("Novo documento", href="/documentos/novo", variante="primario", icone_nome="novo", extra='hx-get="/documentos/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+{% endcall %}
 <form id="filtros" role="search" action="/documentos" method="get" hx-get="/documentos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
   <div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca">Buscar documentos</label><input class="entrada" id="busca" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="Buscar por placa" autocomplete="off"></div></div>
   <div id="resultado" tabindex="-1">{% include "documentos/_resultado.html" %}</div>
