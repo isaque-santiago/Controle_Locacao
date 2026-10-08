@@ -34,6 +34,7 @@ from src.web.rotas import manutencao_registro as rotas_manutencao_registro
 from src.web.rotas import manutencao_finalizacao as rotas_manutencao_finalizacao
 from src.web.rotas import manutencao_catalogo as rotas_manutencao_catalogo
 from src.web.rotas import vistorias as rotas_vistorias
+from src.web.rotas import vistorias_registro as rotas_vistorias_registro
 from src.web.rotas import paginas as rotas_paginas
 from src.web.seguranca import CabecalhosSeguranca
 from src.web.sessao import ArmazemSessoes
@@ -89,6 +90,7 @@ def criar_app(
     app.include_router(rotas_manutencao.router)
     # As abas estáticas precisam vir antes de /manutencao/{id}/{acao}.
     app.include_router(rotas_manutencao_finalizacao.router)
+    app.include_router(rotas_vistorias_registro.router)
     app.include_router(rotas_vistorias.router)
     # Formulários antes da ficha: /motos/nova não pode cair em /motos/{moto_id}
     app.include_router(rotas_motos_formularios.router)

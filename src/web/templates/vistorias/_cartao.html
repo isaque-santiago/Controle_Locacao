@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import cartao, selo %}
+{% from "componentes/macros.html" import cartao, selo, botao %}
 {% if k.dados %}{% set r = k.dados.vistoria %}
 {% call cartao(k.titulo, "vist-cartao") %}
 <dl class="dl"><div><dt>Data</dt><dd class="mono">{{ r.data|data_br }}</dd></div><div><dt>Km</dt><dd class="mono">{{ r.km|milhar }} km</dd></div><div><dt>Combustível</dt><dd>{{ (r.nivel_combustivel or "—")|capitalize }}</dd></div><div><dt>Avarias</dt><dd>{% if k.dados.avarias %}<span class="text-perigo">{{ k.dados.avarias }}</span>{% else %}Nenhuma{% endif %}</dd></div></dl>
@@ -10,5 +10,6 @@
 {% else %}<p class="text-texto-2">Nenhuma foto anexada.</p>{% endif %}
 {% endcall %}
 {% else %}
-{% call cartao(k.titulo, "tracejado") %}<p class="text-texto-2">Ainda não realizada{% if k.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>{% endcall %}
+{% call cartao(k.titulo, "tracejado") %}<p class="text-texto-2">Ainda não realizada{% if k.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>
+{{ botao("Registrar vistoria de " ~ (k.titulo|lower), href="/vistorias/registrar?contrato=" ~ c.contrato.id, extra='hx-get="/vistorias/registrar?contrato=' ~ c.contrato.id ~ '" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endcall %}
 {% endif %}

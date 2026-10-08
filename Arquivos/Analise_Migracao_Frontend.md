@@ -269,7 +269,13 @@ A parte A entrega `/vistorias` (chips Todas/Entrega/Devolução com contagem, bu
 HTMX) e `/vistorias/contrato/{id}` (faixa de dados, cartões de entrega e devolução com checklist, itens alterados
 e galeria por URL assinada). O CSP passou a liberar em `img-src` a origem do Supabase (lida de `SUPABASE_URL`), só
 para as fotos. Decisões do proprietário: até 10 fotos por envio, de até 10 MB; itens adicionais continuam no formato
-`nome=estado`. **Não verificado ainda:** conferência no navegador contra o banco de dev (parte D).
+`nome=estado`. **Parte B (08/10/2026):** `/vistorias/registrar` em duas etapas (escolher o contrato que ainda não tem as duas
+vistorias; formulário com tipo que falta, data, km, combustível, checklist, itens adicionais, avarias e fotos), em
+diálogo HTMX e em página sem JavaScript, pelo botão da lista ou do cartão vazio da comparação. As fotos (até 10, JPG/PNG,
+10 MB) são validadas por campo antes de gravar (extensão, tamanho e assinatura do arquivo); o tipo de conteúdo vem da
+extensão. A vistoria é registrada pela RPC e só então as fotos são enviadas: se alguma falhar, a vistoria fica salva e o
+aviso conta as falhas. Após erro o navegador não guarda os arquivos, e o formulário avisa para escolher as fotos de novo.
+**Não verificado ainda:** conferência no navegador contra o banco de dev, com foto real (parte D).
 Aviso: 3 testes de Cobranças (`test_cobrancas_mensagem_web`, `test_cobrancas_pagamento_web`) falham por dependerem
 da data de hoje (esperam "17 dias de atraso"); já falhavam antes desta parte.
 

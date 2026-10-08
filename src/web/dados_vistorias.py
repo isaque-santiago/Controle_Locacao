@@ -10,8 +10,10 @@ from src.domain.vistorias import (
     km_rodados,
     resumo_avarias,
     rotulo_item,
+    tipos_faltantes,
 )
 from src.services import clientes, contratos, motos, vistorias
+from src.web.apresentacao import formatar_placa
 
 
 def carregar_lista(tipo, busca, pagina, por_pagina):
@@ -74,3 +76,32 @@ def obter_comparacao(contrato_id):
             for tipo, registro in (("entrega", entrega), ("devolucao", devolucao))
         ],
     }
+
+
+def contratos_pendentes():
+    """Contratos que ainda não têm as duas vistorias, como (id, rótulo), os ativos primeiro."""
+    feitas = {}
+    for v in vistorias.listar():
+        feitas.setdefault(v["contrato_id"], []).append(v)
+    nomes = {c["id"]: c["nome"] for c in clientes.listar()}
+    frota = {m["id"]: m for m in motos.listar()}
+    pendentes = [c for c in contratos.listar() if c["moto_id"] in frota and tipos_faltantes(feitas.get(c["id"], []))]
+    pendentes.sort(key=lambda c: (c.get("status") != "ativo", str(c["data_inicio"])))
+    return [
+        (c["id"], f"{nomes.get(c['cliente_id'], '—')} → {formatar_placa(frota[c['moto_id']]['placa'])}"
+                  f" · {frota[c['moto_id']].get('marca', '')} {frota[c['moto_id']].get('modelo', '')} ({c['status']})")
+        for c in pendentes
+    ]
+
+
+def obter_para_registro(contrato_id):
+    """Contrato com cliente, moto e os tipos de vistoria que faltam; None se algum dos três não existir."""
+    contrato = next((c for c in contratos.listar() if c["id"] == contrato_id), None)
+    if contrato is None:
+        return None
+    cliente = clientes.obter(contrato["cliente_id"])
+    moto = motos.obter(contrato["moto_id"])
+    if cliente is None or moto is None:
+        return None
+    return {"contrato": contrato, "cliente": cliente, "moto": moto,
+            "faltantes": tipos_faltantes(vistorias.listar_por_contrato(contrato_id))}

@@ -653,11 +653,14 @@ CONTRATO_VISTORIAS = "00000000-0000-0000-0000-0000000000d1"
 class BaseVistorias:
     def __init__(self):
         self.cliente = {"id": "c1", "nome": "Maria <b>Silva</b>"}
-        self.moto = {"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160"}
+        self.moto = {"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160", "km_atual": 12000}
+        self.contrato_sem_vistorias = "00000000-0000-0000-0000-0000000000d3"
         self.contratos = [
-            {"id": CONTRATO_VISTORIAS, "cliente_id": "c1", "moto_id": "m1", "data_inicio": "2026-08-01", "data_encerramento": None},
+            {"id": CONTRATO_VISTORIAS, "cliente_id": "c1", "moto_id": "m1", "data_inicio": "2026-08-01", "data_encerramento": None, "status": "ativo"},
             {"id": "00000000-0000-0000-0000-0000000000d2", "cliente_id": "c1", "moto_id": "m1",
-             "data_inicio": "2026-01-01", "data_encerramento": "2026-06-30"},
+             "data_inicio": "2026-01-01", "data_encerramento": "2026-06-30", "status": "encerrado"},
+            {"id": self.contrato_sem_vistorias, "cliente_id": "c1", "moto_id": "m1", "status": "ativo",
+             "data_inicio": "2026-09-01", "data_encerramento": None},
         ]
         self.entrega = {"id": "v1", "contrato_id": CONTRATO_VISTORIAS, "tipo": "entrega", "data": "2026-08-01", "km": 10500,
                         "nivel_combustivel": "cheio", "avarias": None,
@@ -691,6 +694,7 @@ def base_vistorias(monkeypatch):
 
     monkeypatch.setattr(dados_vistorias, "vistorias", SimpleNamespace(
         listar=lambda: base.registradas, comparar_entrega_devolucao=comparar,
+        listar_por_contrato=lambda id_: [v for v in base.registradas if v["contrato_id"] == id_],
         url_foto=lambda caminho: _url({"storage_path": caminho})))
     monkeypatch.setattr(dados_vistorias, "contratos", SimpleNamespace(listar=lambda: base.contratos))
     monkeypatch.setattr(dados_vistorias, "clientes", SimpleNamespace(

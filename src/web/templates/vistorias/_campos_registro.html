@@ -1,0 +1,15 @@
+{% from "componentes/macros.html" import campo, campo_lista, placa %}
+{# Etapa 2 do registro (diálogo e página). Contexto: c (contrato, cliente, moto, faltantes), v, erros, alterar_hx, ajuda_km, itens_checklist, estados, niveis, tipos. #}
+<input type="hidden" name="contrato" value="{{ c.contrato.id }}">
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(c.moto.placa|placa_br) }}<span><b>{{ c.cliente.nome }}</b> · {{ c.moto.marca }} {{ c.moto.modelo }}</span><a class="btn" href="/vistorias/registrar"{{ alterar_hx|safe }}>Alterar contrato</a></div>
+{{ campo_lista("v-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, largo=True) }}
+{% if erros.tipo %}<small class="msg-erro largo" role="alert">{{ erros.tipo }}</small>{% endif %}
+{{ campo("v-data", "Data", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True, extra='min="' ~ c.contrato.data_inicio[:10] ~ '" max="' ~ hoje ~ '"') }}
+{% include "contratos/_campos_vistoria.html" %}
+<div class="campo largo{{ ' com-erro' if erros.fotos else '' }}">
+  <label for="v-fotos">Fotos</label>
+  <input class="entrada" id="v-fotos" name="fotos" type="file" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png"{% if erros.fotos %} aria-invalid="true"{% endif %} aria-describedby="v-fotos-ajuda{{ ' v-fotos-erro' if erros.fotos }}">
+  <small id="v-fotos-ajuda">Até {{ limite_fotos }} fotos JPG ou PNG, de até 10 MB cada.{% if erros %} O navegador não guarda os arquivos depois de um erro: escolha as fotos de novo.{% endif %}</small>
+  {% if erros.fotos %}<small class="msg-erro" id="v-fotos-erro">{{ erros.fotos }}</small>{% endif %}
+</div>
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>

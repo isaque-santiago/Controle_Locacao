@@ -68,8 +68,8 @@
 
 {# Formulário do diálogo `#dlg-form`, enviado pelo HTMX: com erro, a resposta troca este mesmo formulário (outerHTML) e
    o diálogo continua aberto; com sucesso, a resposta traz HX-Redirect. Os campos vêm do bloco {% call %}. #}
-{% macro form_dialogo(titulo, acao, rotulo_enviar, csrf_token="", erro_geral="", perigo=False, rotulo_cancelar="Cancelar") -%}
-<form id="form-dialogo" method="post" action="{{ acao }}" hx-post="{{ acao }}" hx-target="#form-dialogo" hx-swap="outerHTML" novalidate>
+{% macro form_dialogo(titulo, acao, rotulo_enviar, csrf_token="", erro_geral="", perigo=False, rotulo_cancelar="Cancelar", multipart=False) -%}
+<form id="form-dialogo" method="post" action="{{ acao }}" hx-post="{{ acao }}" hx-target="#form-dialogo" hx-swap="outerHTML"{% if multipart %} enctype="multipart/form-data" hx-encoding="multipart/form-data"{% endif %} novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div class="dialogo-cab"><h2 id="dlg-form-titulo">{{ titulo }}</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
   <div class="dialogo-corpo">
