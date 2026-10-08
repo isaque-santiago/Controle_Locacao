@@ -37,9 +37,10 @@ O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisõe
 [Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
 rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
-Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 em andamento (iniciada em 06/10/2026):** Clientes
-(`/clientes`, `/clientes/{id}`), Contratos (`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`)
-e Manutenção (`/manutencao`) concluídos; as demais telas continuam mostrando "Em migração".
+Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 (demais páginas) concluída (08/10/2026):** Clientes (`/clientes`, `/clientes/{id}`), Contratos
+(`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`), Manutenção (`/manutencao`), Vistorias
+(`/vistorias`), Documentos (`/documentos`), Relatórios (`/relatorios`), Configurações (`/configuracoes`) e Portal do
+Locatário (`/portal`). Todas as telas do app novo estão migradas; o Streamlit só sai na Fase 4.
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -88,8 +89,22 @@ paginação; registro com itens do plano, peças adicionais, prévia de custos e
 de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
 por campo. Homologada no banco de desenvolvimento e em 320, 390 e 1440 px; 981 testes passaram.
 
-**Próxima página: Vistorias (com fotos).** Depois da Fase 3, resolver a falta de recarga automática do app web (hoje o preview usa
-`locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor; templates e CSS recarregam, o Python não).
+**Fase 3, andamento: Vistorias concluída (08/10/2026).** Lista (filtro por tipo, busca, paginação) e comparação entrega x
+devolução com checklist e galeria de fotos por URL assinada (o CSP libera em `img-src` só a origem do Supabase); registro em
+duas etapas, em diálogo e em página sem JavaScript, com até 10 fotos de 10 MB (validadas por extensão, tamanho e formato
+antes de gravar). Adicionar fotos depois do registro ficou de fora por decisão do proprietário.
+**Documentos:** lista com situação, busca por placa e comprovante por link assinado na hora do clique; novo, editar e
+regularizar (com comprovante opcional e o cadastro do ano seguinte). **Relatórios:** quatro abas com período na URL, barras
+em SVG e exportação CSV e Excel dos mesmos dados da tabela. **Configurações:** encargos, alertas e backup manual (ZIP
+baixado por POST, só o dono). **Portal do Locatário** (`rotas/portal.py`): o locatário vê só o contrato ativo dele,
+reporta a troca de óleo com a foto do painel e a da nota fiscal e troca a própria senha (`ServicoAutenticacao.alterar_senha`,
+PUT em `/auth/v1/user` com o token dele). O contrato do formulário é sempre procurado entre os que a RPC devolve para o
+locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de desenvolvimento e em 320, 390 e 1440 px;
+1150 testes passaram (3 testes de Cobranças dependem da data de hoje e falham desde antes; ver o documento de migração).
+
+**Próximo passo:** Fase 4 (E2E, homologação e desligamento do Streamlit). Antes dela, resolver a falta de recarga automática do
+app web (hoje o preview usa `locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor; templates e CSS
+recarregam, o Python não).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

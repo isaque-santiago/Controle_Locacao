@@ -1,10 +1,10 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
-> uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
+> uma por vez) CONCLUÍDA em 08/10/2026; próxima: Fase 4 (E2E, homologação e desligamento do Streamlit). Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
-> proprietário). Documentos, Relatórios e Configurações CONCLUÍDAS em 08/10/2026. Próxima página: Portal do Locatário (a última). Depois da Fase 3,
+> proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. Antes da Fase 4,
 > resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
@@ -376,7 +376,52 @@ abertura do comprovante; (B) novo e editar documento; (C) regularizar. Mais a ho
   uma operação real (no dev são poucas linhas), leitor de tela e aparelhos reais (Fase 4). Nenhum dado de teste ficou: os
   valores alterados foram restaurados.
 
-**Próxima: Portal do Locatário**, a última página da Fase 3.
+**Andamento: Portal do Locatário concluída (08/10/2026), o que fecha a Fase 3.** Entregue de uma vez, com testes e commit, e
+homologada no banco de dev com um login de locatário real.
+
+- **Página** `/portal` (`rotas/portal.py`, `dados_portal.py`, `acoes_portal.py`, `domain/formulario_portal.py`): saudação, o
+  contrato ativo (placa, modelo, situação do óleo, hodômetro, última e próxima troca, quanto falta), o aviso da multa fixa,
+  o formulário "Reportar troca de óleo" (hodômetro, foto do painel e foto da nota fiscal, JPG ou PNG de até 10 MB, validados
+  por campo antes de qualquer envio ao Storage), o histórico das últimas trocas e "Alterar minha senha". Formulários comuns,
+  sem JavaScript obrigatório, pensados para o celular; com erro a página volta com a mensagem ao lado do campo e o hodômetro
+  preservado.
+- **Troca de senha:** o cliente Supabase por requisição não guarda sessão do GoTrue, então `auth.update_user` não serve;
+  `ServicoAutenticacao.alterar_senha` faz `PUT /auth/v1/user` com a anon key e o token do próprio usuário e traduz as recusas
+  (senha igual à atual, senha fraca, token vencido). A senha nunca volta na página nem vai para log.
+- **Segurança:** o contrato do formulário é sempre procurado entre os contratos que `rpc_portal_locatario` devolve para aquele
+  locatário (identificador alheio dá 404, e a RPC confere de novo); o dono recebe 403 nas rotas de gravação do portal e é
+  redirecionado quando abre `/portal`; o locatário recebe 403 em todas as telas e no backup do dono; todo POST exige CSRF.
+- **Conferência no banco de desenvolvimento (08/10/2026), logado como o locatário do cliente "Cliente Exemplo 10"
+  (E2E-0A02):** a página abriu com os dados reais (8.600 km, última troca em 8.500, próxima em 9.500, 900 km restantes, multa de
+  R$ 50,00). Erros por campo (hodômetro menor que o registrado, GIF no lugar da foto, nota fiscal ausente) com o foco no
+  hodômetro e o valor digitado preservado. Envio real de uma troca em 9.000 km com uma foto JPG e uma PNG geradas na hora: o
+  upload ao Storage com o token do locatário e a RPC funcionaram, o aviso foi "Troca de óleo registrada. Obrigado!", o
+  hodômetro passou a 9.000 km, a próxima troca a 10.000 km e o histórico ganhou a entrada de 08/10/2026 (sem multa, por estar
+  dentro do intervalo). Com a sessão do locatário, `/clientes`, `/motos`, `/relatorios`, `/configuracoes`, `/documentos` e o POST do
+  backup responderam 403. Sem rolagem horizontal e sem alvo menor que 44 px em 320, 390 e 1440 px (o link da marca no cabeçalho
+  tinha 37 px de altura e foi corrigido).
+- **Dado de homologação deixado no banco de dev:** uma troca de óleo fictícia (9.000 km, com duas imagens de teste) no contrato
+  de E2E-0A02, que também avançou o hodômetro da moto para 9.000 km. Nenhuma multa foi gerada.
+- **Não verificado:** a troca de senha de verdade (digitar senha é com o usuário; só os testes automáticos cobrem esse
+  caminho, inclusive as recusas do Supabase simuladas), troca de óleo acima do intervalo com multa em banco real (só testes),
+  fotos de câmera de celular de verdade (EXIF, tamanho), leitor de tela e aparelhos reais (Fase 4).
+
+## Fechamento da Fase 3 (08/10/2026)
+
+Todas as telas do app novo foram migradas: Clientes, Contratos, Cobranças, Manutenção, Vistorias (sem "adicionar fotos depois",
+dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Suíte: 1150 testes passando e 3 falhando.
+**Pendências conhecidas para antes ou durante a Fase 4:**
+
+1. **Três testes de Cobranças dependem da data de hoje** (`test_cobrancas_mensagem_web` duas vezes e `test_cobrancas_pagamento_web`
+   esperam "17 dias de atraso"): falhavam antes das últimas páginas e se resolvem congelando a data nos testes.
+2. **Recarga automática do app web** (pendência combinada): hoje as sessões ficam na memória e cada edição de `.py` derruba o login.
+3. **Comparação lado a lado com o Streamlit** não foi feita em Vistorias, Documentos, Relatórios, Configurações e Portal.
+4. **CSV de relatórios** mostra decimais sem zero final (`97,9`); decisão do proprietário se quer duas casas (afeta também o Streamlit).
+5. **Leitor de tela e aparelhos reais** em todas as páginas (já previsto na Fase 4), mais o upload de fotos de câmera real.
+6. **Dados fictícios de homologação** ficaram no banco de dev (vistorias com fotos, um documento e uma troca de óleo); o banco de dev
+   pode ser recriado quando se quiser limpar.
+
+**Próxima: Fase 4** (E2E, homologação e desligamento do Streamlit).
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

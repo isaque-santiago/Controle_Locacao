@@ -455,3 +455,4 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .resumo-relatorio {margin: 0 0 var(--e4); color: var(--texto-2);}
 .resumo-relatorio strong {color: var(--texto); font-weight: 600;}
 @media (max-width: 719px) {.barra-periodo .campo {max-width: none;} .barra-periodo .btn {flex: 1 1 100%;}}
+.portal-topo .marca {min-height: var(--alvo); align-items: center;}
