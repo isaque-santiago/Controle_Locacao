@@ -800,3 +800,39 @@ def base_relatorios(monkeypatch):
         exportar_csv=servico.exportar_csv, exportar_excel=servico.exportar_excel))
     return base
 
+
+class BaseConfiguracoes:
+    """Dados fictícios dos serviços usados por src/web/dados_configuracoes e acoes_configuracoes."""
+
+    def __init__(self):
+        self.config = {
+            "id": 1, "multa_atraso_valor": Decimal("15.00"), "encargo_diario_valor": Decimal("7.00"),
+            "multa_troca_oleo_valor": Decimal("0"), "alerta_manutencao_km": 300, "alerta_manutencao_dias": 15,
+            "alerta_documento_dias": 30, "alerta_cnh_dias": 30,
+        }
+        self.gravados = []
+        self.backups = 0
+        self.falhar_com = None
+
+
+@pytest.fixture(autouse=True)
+def base_configuracoes(monkeypatch):
+    from src.web import acoes_configuracoes, dados_configuracoes
+
+    base = BaseConfiguracoes()
+
+    def atualizar(dados):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.gravados.append(dados)
+        base.config = {**base.config, **dados}
+        return base.config
+
+    def backup():
+        base.backups += 1
+        return b"PK\x03\x04conteudo-do-backup"
+
+    monkeypatch.setattr(dados_configuracoes, "configuracoes", SimpleNamespace(obter=lambda: base.config, backup=backup))
+    monkeypatch.setattr(acoes_configuracoes, "configuracoes", SimpleNamespace(atualizar=atualizar))
+    return base
+

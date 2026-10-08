@@ -1,0 +1,47 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, campo, botao, aviso %}
+{% block conteudo %}
+{% call cabecalho_pagina("Configurações", "Parâmetros do sistema") %}
+{{ botao("Salvar alterações", tipo="submit", variante="primario", extra='form="form-config"') }}
+{% endcall %}
+<form id="form-config" method="post" action="/configuracoes" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}<div class="mb-4">{{ aviso("erro", erro_geral) }}</div>{% endif %}
+  <section class="cartao mb-4" aria-labelledby="cfg-encargos">
+    <h2 id="cfg-encargos">Encargos por atraso</h2>
+    <p class="text-texto-2 mb-4">Valores fixos cobrados das locações em atraso, sem carência: a multa já no dia do vencimento e o adicional a cada dia depois dele.</p>
+    <div class="formulario">
+      {{ campo("cfg-multa", "Multa de atraso (no vencimento)", nome="multa_atraso_valor", valor=v.multa_atraso_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.multa_atraso_valor, autocomplete="off") }}
+      {{ campo("cfg-diario", "Adicional por dia de atraso", nome="encargo_diario_valor", valor=v.encargo_diario_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.encargo_diario_valor, autocomplete="off") }}
+    </div>
+    <p class="mt-4 text-texto-2" id="cfg-exemplo">Exemplo com os valores salvos: locação de <span class="mono text-texto">{{ exemplo.saldo|moeda }}</span>, vencida há <span class="mono text-texto">{{ exemplo.dias_vencida }} dias</span> → multa <span class="mono text-texto">{{ exemplo.multa|moeda }}</span> + adicional <span class="mono text-texto">{{ exemplo.adicional_diario|moeda }}</span> = total <span class="mono font-semibold text-texto">{{ exemplo.total|moeda }}</span></p>
+  </section>
+  <section class="cartao mb-4" aria-labelledby="cfg-manutencao">
+    <h2 id="cfg-manutencao">Alertas de manutenção</h2>
+    <p class="text-texto-2 mb-4">Quando um item entra em situação "próxima" antes de vencer.</p>
+    <div class="formulario">
+      {{ campo("cfg-alerta-km", "Avisar antes (km)", nome="alerta_manutencao_km", valor=v.alerta_manutencao_km, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_manutencao_km, autocomplete="off") }}
+      {{ campo("cfg-alerta-dias", "Avisar antes (dias)", nome="alerta_manutencao_dias", valor=v.alerta_manutencao_dias, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_manutencao_dias, autocomplete="off") }}
+      {{ campo("cfg-oleo", "Multa por troca de óleo fora do intervalo", nome="multa_troca_oleo_valor", valor=v.multa_troca_oleo_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.multa_troca_oleo_valor, ajuda="Valor fixo cobrado do locatário quando ele reporta a troca de óleo depois do intervalo do plano. Deixe 0,00 para não cobrar multa.", autocomplete="off", largo=True) }}
+    </div>
+  </section>
+  <section class="cartao mb-4" aria-labelledby="cfg-documentos">
+    <h2 id="cfg-documentos">Alertas de documentos e CNH</h2>
+    <p class="text-texto-2 mb-4">Dias antes do vencimento para marcar como "a vencer".</p>
+    <div class="formulario">
+      {{ campo("cfg-doc", "Documentos da moto (dias)", nome="alerta_documento_dias", valor=v.alerta_documento_dias, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_documento_dias, autocomplete="off") }}
+      {{ campo("cfg-cnh", "CNH do cliente (dias)", nome="alerta_cnh_dias", valor=v.alerta_cnh_dias, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_cnh_dias, autocomplete="off") }}
+    </div>
+  </section>
+  <p class="text-texto-2 text-[13px] mb-4"><span aria-hidden="true">*</span> Campo obrigatório. Quantidades vão de 0 a {{ limite|milhar }}.</p>
+  <div class="rodape-acoes mb-6"><button class="btn btn-primario" type="submit">Salvar alterações</button></div>
+</form>
+<section class="cartao" aria-labelledby="cfg-backup">
+  <h2 id="cfg-backup">Backup manual</h2>
+  <p class="text-texto-2 mb-4">Gera um ZIP com um CSV de cada uma das 15 tabelas. Contém dados pessoais; guarde em local privado. Fotos e comprovantes devem ser copiados separadamente do Storage. Evite outras alterações durante a geração, que pode levar alguns segundos. Recomendado semanalmente.</p>
+  <form method="post" action="/configuracoes/backup">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn" type="submit">Gerar e baixar backup</button>
+  </form>
+</section>
+{% endblock %}

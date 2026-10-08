@@ -50,6 +50,7 @@ _JA_MIGRADAS = {
     navegacao.MANUTENCAO,
     navegacao.DOCUMENTOS,
     navegacao.RELATORIOS,
+    navegacao.CONFIGURACOES,
     navegacao.VISTORIAS,
 }
 for _item in navegacao.TODOS:
