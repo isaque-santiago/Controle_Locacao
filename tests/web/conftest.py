@@ -49,6 +49,8 @@ class ServicoFalso:
         self.entradas = 0
         self.renovacoes = 0
         self.saidas: list[str] = []
+        self.senhas: list[tuple[str, str]] = []
+        self.senha_recusada = None
         self.renovacao_recusada = False
         self._emitidos = 0
         self._papel_do_token: dict[str, str | None] = {}
@@ -84,6 +86,11 @@ class ServicoFalso:
 
     def papel(self, cliente):
         return self._papel_do_token[cliente.access_token]
+
+    def alterar_senha(self, access_token, nova):
+        if self.senha_recusada:
+            raise self.senha_recusada
+        self.senhas.append((access_token, nova))
 
     def sair(self, access_token):
         self.saidas.append(access_token)
@@ -834,5 +841,47 @@ def base_configuracoes(monkeypatch):
 
     monkeypatch.setattr(dados_configuracoes, "configuracoes", SimpleNamespace(obter=lambda: base.config, backup=backup))
     monkeypatch.setattr(acoes_configuracoes, "configuracoes", SimpleNamespace(atualizar=atualizar))
+    return base
+
+
+CONTRATO_PORTAL = "00000000-0000-0000-0000-0000000000f1"
+CONTRATO_PORTAL_SEM_PLANO = "00000000-0000-0000-0000-0000000000f2"
+
+
+class BasePortal:
+    """Dados fictícios do portal (RPC rpc_portal_locatario) e das gravações da troca de óleo."""
+
+    def __init__(self):
+        self.dados = {
+            "cliente_id": "00000000-0000-0000-0000-0000000000c9", "nome": "Ana <b>Souza</b> Lima",
+            "alerta_km": 300, "alerta_dias": 15, "multa_valor": Decimal("50"),
+            "contratos": [
+                {"contrato_id": CONTRATO_PORTAL, "placa": "BRA2E19", "modelo": "CG <i>160</i>", "km_atual": 12000,
+                 "ultima_km": 11000, "ultima_data": "2026-09-01", "intervalo_km": 1500, "intervalo_dias": 90,
+                 "trocas": [{"criado_em": "2026-09-01T10:00:00+00:00", "km": 11000, "multada": False},
+                            {"criado_em": "2026-06-01T10:00:00+00:00", "km": 9400, "multada": True}]},
+                {"contrato_id": CONTRATO_PORTAL_SEM_PLANO, "placa": "QRS4T21", "modelo": "Factor", "km_atual": 5000,
+                 "ultima_km": None, "ultima_data": None, "intervalo_km": None, "intervalo_dias": None, "trocas": []},
+            ],
+        }
+        self.registros = []
+        self.resultado = {"excedeu": False, "multa_valor": None}
+        self.falhar_com = None
+
+
+@pytest.fixture(autouse=True)
+def base_portal(monkeypatch):
+    from src.web import acoes_portal, dados_portal
+
+    base = BasePortal()
+
+    def registrar(cliente_id, contrato, km_texto, foto, nota, multa):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.registros.append((cliente_id, contrato["contrato_id"], km_texto, foto, nota, multa))
+        return base.resultado
+
+    monkeypatch.setattr(dados_portal, "portal_locatario", SimpleNamespace(dados_portal=lambda: base.dados))
+    monkeypatch.setattr(acoes_portal, "portal_locatario", SimpleNamespace(registrar_troca_oleo=registrar))
     return base
 

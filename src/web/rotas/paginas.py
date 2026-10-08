@@ -1,9 +1,9 @@
-"""Páginas: saúde, Dashboard do dono, portal do locatário e telas em migração."""
+"""Páginas: saúde, Dashboard do dono e telas em migração (o portal do locatário fica em rotas/portal.py)."""
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 
-from src.services.autenticacao import PAPEL_DONO, PAPEL_LOCATARIO
+from src.services.autenticacao import PAPEL_LOCATARIO
 from src.web import dados_painel, navegacao
 from src.web.dependencias import exigir_dono, exigir_sessao
 from src.web.sessao import Sessao
@@ -23,13 +23,6 @@ def inicio(request: Request, sessao: Sessao = Depends(exigir_sessao)):
     if sessao.papel == PAPEL_LOCATARIO:
         return RedirectResponse("/portal", status_code=303)
     return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar()})
-
-
-@router.get("/portal")
-def portal(request: Request, sessao: Sessao = Depends(exigir_sessao)):
-    if sessao.papel == PAPEL_DONO:
-        return RedirectResponse("/", status_code=303)
-    return renderizar(request, "portal.html", {"titulo": "Portal do locatário"})
 
 
 def _registrar_em_migracao(item: navegacao.ItemNavegacao) -> None:

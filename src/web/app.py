@@ -35,6 +35,7 @@ from src.web.rotas import manutencao_finalizacao as rotas_manutencao_finalizacao
 from src.web.rotas import manutencao_catalogo as rotas_manutencao_catalogo
 from src.web.rotas import documentos as rotas_documentos
 from src.web.rotas import configuracoes as rotas_configuracoes
+from src.web.rotas import portal as rotas_portal
 from src.web.rotas import relatorios as rotas_relatorios
 from src.web.rotas import documentos_formularios as rotas_documentos_formularios
 from src.web.rotas import documentos_regularizacao as rotas_documentos_regularizacao
@@ -100,6 +101,7 @@ def criar_app(
     app.include_router(rotas_documentos.router)
     app.include_router(rotas_relatorios.router)
     app.include_router(rotas_configuracoes.router)
+    app.include_router(rotas_portal.router)
     app.include_router(rotas_vistorias_registro.router)
     app.include_router(rotas_vistorias.router)
     # Formulários antes da ficha: /motos/nova não pode cair em /motos/{moto_id}
