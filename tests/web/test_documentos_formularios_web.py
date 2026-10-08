@@ -170,5 +170,7 @@ def test_lista_oferece_novo_e_editar(cliente, base_documentos):
     entrar(cliente)
     html = cliente.get("/documentos").text
     assert 'hx-get="/documentos/novo"' in html and f'hx-get="/documentos/{E1}/editar"' in html
+    # Os botões ficam dentro do formulário de filtros (hx-push-url="true"): sem o "false" o diálogo trocaria o endereço da página.
+    assert html.count('hx-target="#dlg-form-conteudo" hx-swap="innerHTML" hx-push-url="false"') == html.count('>Editar<') + html.count('>Regularizar<')
     base_documentos.documentos.clear()
     assert 'href="/documentos/novo"' in cliente.get("/documentos").text

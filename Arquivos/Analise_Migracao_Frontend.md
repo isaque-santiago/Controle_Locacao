@@ -4,7 +4,7 @@
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
-> proprietário). Próxima página: Documentos. Depois da Fase 3,
+> proprietário). Documentos CONCLUÍDA em 08/10/2026. Próxima página: Relatórios. Depois da Fase 3,
 > resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
@@ -298,7 +298,37 @@ entram no registro da vistoria.
   real, leitor de tela e aparelhos reais (Fase 4). Três testes de Cobranças falham por dependerem da data de hoje (esperam
   "17 dias de atraso"); já falhavam antes e ficam para ajuste à parte.
 
-**Próxima: Documentos**, seguida de Relatórios, Configurações e Portal do Locatário.
+**Andamento: Documentos concluída (08/10/2026).** Entregue em três partes, cada uma com testes e commit: (A) lista e
+abertura do comprovante; (B) novo e editar documento; (C) regularizar. Mais a homologação (D).
+
+- **Lista** `/documentos`: chips Todos/Vencido/A vencer/Em dia com contagem, busca por placa (com ou sem hífen), paginação
+  HTMX de 10 em 10, vencidos primeiro e regularizados por último; "Comprovante" abre o arquivo por link assinado na hora do
+  clique (`/documentos/{id}/comprovante` responde 303 para a URL de 5 minutos, em nova aba).
+- **Novo e editar** (`/documentos/novo`, `/documentos/{id}/editar`), em diálogo e em página sem JavaScript: moto (só as
+  ativas; na edição a moto fica travada), tipo, ano de referência (1900 a 2100), vencimento, valor, descrição, comprovante
+  opcional (PDF, PNG ou JPG, até 10 MB, validado por extensão, tamanho e assinatura antes de gravar) e observações. O
+  cadastro novo usa `chave_operacao`. Se o envio do comprovante falhar, o documento fica salvo e o aviso manda anexar pela
+  edição.
+- **Regularizar** (`/documentos/{id}/regularizar`): data, comprovante opcional e, para IPVA, licenciamento e seguro, a opção
+  (marcada) de cadastrar o documento do ano seguinte, que leva ao cadastro novo já preenchido com o vencimento em branco
+  (`/documentos/novo?moto=&tipo=&ano=`). O comprovante sobe antes de marcar como regularizado; se falhar, nada muda.
+- **Conferência no banco de desenvolvimento (08/10/2026):** 4 documentos (1 vencido, 1 a vencer, 2 em dia) com ordem e
+  contagens corretas. Cadastro fictício com PDF real (E2E-0A04, seguro 2026, R$ 1.234,56): aparece "A vencer" com
+  "Comprovante"; o link assinado respondeu 303 e o navegador recebeu o arquivo para download. Edição do valor (R$ 1.300,00)
+  mantendo o comprovante; regularização com PNG e o cadastro de 2027 aberto com moto, tipo e ano certos e vencimento em
+  branco. Validação por campo (ano, vencimento, valor e .exe recusados) com foco no primeiro campo inválido. Sem rolagem
+  horizontal e sem alvo menor que 44 px em 320 px (lista, os três diálogos e a página de cadastro com erro), 390 px e
+  1440 px; Esc fecha o diálogo e devolve o foco ao botão "Editar".
+- **Correção do caminho:** os botões Editar e Regularizar ficam dentro do formulário de filtros (`hx-push-url="true"`), e
+  o diálogo herdava o atributo e trocava o endereço da página para `/regularizar` ou `/editar`; agora têm
+  `hx-push-url="false"` (com teste). As listas de Contratos, Vistorias e Clientes não têm botões de diálogo dentro do
+  formulário de filtros e não sofrem disso.
+- **Dados de homologação deixados no banco de dev:** o documento "Teste de homologação: apólice fictícia" (seguro 2026 da
+  moto E2E-0A04, regularizado, com dois comprovantes enviados). O cadastro de 2027 foi aberto mas não salvo.
+- **Não verificado:** comparação lado a lado com o Streamlit, regularização de documento sem renovação anual em banco real
+  (só testes), leitor de tela e aparelhos reais (Fase 4).
+
+**Próxima: Relatórios**, seguida de Configurações e Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de
