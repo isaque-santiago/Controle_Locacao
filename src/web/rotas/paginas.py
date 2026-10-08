@@ -48,6 +48,7 @@ _JA_MIGRADAS = {
     navegacao.CONTRATOS,
     navegacao.COBRANCAS,
     navegacao.MANUTENCAO,
+    navegacao.VISTORIAS,
 }
 for _item in navegacao.TODOS:
     if _item not in _JA_MIGRADAS:

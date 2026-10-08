@@ -1,0 +1,22 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, placa, kpi %}
+{% block conteudo %}
+{% set contrato = c.contrato %}
+{{ voltar("/vistorias", "Voltar para vistorias") }}
+<header class="cabecalho">
+  <div class="cabecalho-texto">
+    <h1>{{ c.cliente.nome }}</h1>
+    <p>{{ c.moto.marca }} {{ c.moto.modelo }} {{ placa(c.moto.placa|placa_br) }}</p>
+  </div>
+  <div class="acoes"><a class="btn" href="/contratos/{{ contrato.id }}">Ver contrato</a></div>
+</header>
+<dl class="grade kpis kpis-3">
+  {{ kpi("Contrato", (contrato.data_inicio|data_br) ~ " – " ~ ((contrato.data_encerramento|data_br) if contrato.data_encerramento else "em andamento")) }}
+  {{ kpi("Km rodados", ((c.km_rodados|milhar) ~ " km") if c.km_rodados is not none else "—") }}
+  {{ kpi("Avarias na devolução", "—" if c.avarias_devolucao is none else ("Nenhuma" if c.avarias_devolucao == 0 else c.avarias_devolucao ~ " registrada(s)"), atencao=(c.avarias_devolucao or 0) > 0) }}
+</dl>
+<div class="grade cols-2">
+{% for k in c.cartoes %}<div>{% include "vistorias/_cartao.html" %}</div>{% endfor %}
+</div>
+{% if c.tem_alterados %}<p class="text-texto-2 text-[13px]">Itens marcados como “alterado” (fundo amarelo) mudaram entre a entrega e a devolução.</p>{% endif %}
+{% endblock %}

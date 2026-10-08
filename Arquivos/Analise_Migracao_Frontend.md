@@ -263,7 +263,17 @@ podia manter o km da seleção anterior. A prévia agora sincroniza por formulá
 moto antes de gravar. Suíte final: 981 testes. Itens fictícios de homologação permaneceram no banco, inativos ou
 cancelados/concluídos. Leitor de tela e aparelhos reais ficam para a Fase 4.
 
-**Próxima: Vistorias (com fotos)**, seguida de Documentos, Relatórios, Configurações e Portal do Locatário.
+**Andamento: Vistorias (em curso, parte A entregue em 08/10/2026).** Plano em quatro partes: (A) lista e comparação
+somente leitura; (B) registrar vistoria com fotos; (C) adicionar fotos a uma vistoria existente; (D) homologação.
+A parte A entrega `/vistorias` (chips Todas/Entrega/Devolução com contagem, busca por cliente ou placa, paginação
+HTMX) e `/vistorias/contrato/{id}` (faixa de dados, cartões de entrega e devolução com checklist, itens alterados
+e galeria por URL assinada). O CSP passou a liberar em `img-src` a origem do Supabase (lida de `SUPABASE_URL`), só
+para as fotos. Decisões do proprietário: até 10 fotos por envio, de até 10 MB; itens adicionais continuam no formato
+`nome=estado`. **Não verificado ainda:** conferência no navegador contra o banco de dev (parte D).
+Aviso: 3 testes de Cobranças (`test_cobrancas_mensagem_web`, `test_cobrancas_pagamento_web`) falham por dependerem
+da data de hoje (esperam "17 dias de atraso"); já falhavam antes desta parte.
+
+**Próxima: terminar Vistorias (partes B a D)**, seguida de Documentos, Relatórios, Configurações e Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

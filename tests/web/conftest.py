@@ -645,3 +645,56 @@ def entrar(cliente, identificador="dono@exemplo.com", senha="senha-dono", proxim
 
 def csrf_da_sessao(cliente) -> str:
     return extrair_csrf(cliente.get("/").text)
+
+
+CONTRATO_VISTORIAS = "00000000-0000-0000-0000-0000000000d1"
+
+
+class BaseVistorias:
+    def __init__(self):
+        self.cliente = {"id": "c1", "nome": "Maria <b>Silva</b>"}
+        self.moto = {"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160"}
+        self.contratos = [
+            {"id": CONTRATO_VISTORIAS, "cliente_id": "c1", "moto_id": "m1", "data_inicio": "2026-08-01", "data_encerramento": None},
+            {"id": "00000000-0000-0000-0000-0000000000d2", "cliente_id": "c1", "moto_id": "m1",
+             "data_inicio": "2026-01-01", "data_encerramento": "2026-06-30"},
+        ]
+        self.entrega = {"id": "v1", "contrato_id": CONTRATO_VISTORIAS, "tipo": "entrega", "data": "2026-08-01", "km": 10500,
+                        "nivel_combustivel": "cheio", "avarias": None,
+                        "checklist": {"farol_dianteiro": "ok", "freio_dianteiro": "ok", "Rack <i>extra</i>": "ok"},
+                        "fotos": [{"storage_path": "v1/a.jpg", "legenda": "Lado <direito>"}, {"storage_path": "v1/quebrada.jpg"}]}
+        self.devolucao = {"id": "v2", "contrato_id": CONTRATO_VISTORIAS, "tipo": "devolucao", "data": "2026-09-01", "km": 11000,
+                          "nivel_combustivel": "1/2", "avarias": None,
+                          "checklist": {"farol_dianteiro": "ok", "freio_dianteiro": "avaria", "Rack <i>extra</i>": "ausente"},
+                          "fotos": []}
+        self.antiga = {"id": "v3", "contrato_id": "00000000-0000-0000-0000-0000000000d2", "tipo": "entrega",
+                       "data": "2026-01-01", "km": 8000, "nivel_combustivel": "1/4", "avarias": "Risco no tanque",
+                       "checklist": {}, "fotos": []}
+        self.registradas = [self.entrega, self.devolucao, self.antiga]
+
+
+def _url(foto):
+    if "quebrada" in foto["storage_path"]:
+        raise RuntimeError("falha ao assinar")
+    return "https://projeto.supabase.co/assinada/" + foto["storage_path"] + "?token=x"
+
+
+@pytest.fixture(autouse=True)
+def base_vistorias(monkeypatch):
+    from src.web import dados_vistorias
+
+    base = BaseVistorias()
+
+    def comparar(contrato_id):
+        por_tipo = {v["tipo"]: v for v in base.registradas if v["contrato_id"] == contrato_id}
+        return {"entrega": por_tipo.get("entrega"), "devolucao": por_tipo.get("devolucao"), "diferencas": None}
+
+    monkeypatch.setattr(dados_vistorias, "vistorias", SimpleNamespace(
+        listar=lambda: base.registradas, comparar_entrega_devolucao=comparar,
+        url_foto=lambda caminho: _url({"storage_path": caminho})))
+    monkeypatch.setattr(dados_vistorias, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    monkeypatch.setattr(dados_vistorias, "clientes", SimpleNamespace(
+        listar=lambda: [base.cliente], obter=lambda id_: base.cliente if id_ == "c1" else None))
+    monkeypatch.setattr(dados_vistorias, "motos", SimpleNamespace(
+        listar=lambda: [base.moto], obter=lambda id_: base.moto if id_ == "m1" else None))
+    return base
