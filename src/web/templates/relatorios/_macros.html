@@ -1,0 +1,13 @@
+{# Barra proporcional: SVG com a largura em atributo (a CSP não aceita style= inline). Decorativa: o número vem ao lado. #}
+{% macro barra(largura, tom) -%}
+<svg class="barra-rel" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect class="barra-rel-fundo" width="100" height="6" rx="3"/>{% if largura %}<rect class="barra-rel-{{ tom }}" width="{{ largura }}" height="6" rx="3"/>{% endif %}</svg>
+{%- endmacro %}
+
+{# Resumo em texto das barras: total, maior e menor da série. #}
+{% macro resumo(r) -%}
+{% if r %}<p class="resumo-relatorio" role="note">{{ r.total_rotulo }}: <strong>{{ r.total|moeda }}</strong> em {{ r.quantidade }} {{ r.unidade }}.{% if r.quantidade > 1 %} {{ r.rotulo_maior }}: <strong>{{ r.maior[0] }}</strong> ({{ r.maior[1]|moeda }}). {{ r.rotulo_menor }}: <strong>{{ r.menor[0] }}</strong> ({{ r.menor[1]|moeda }}).{% endif %}</p>{% endif %}
+{%- endmacro %}
+
+{% macro liquido(valor) -%}
+<span class="mono font-semibold {{ 'text-sucesso' if valor >= 0 else 'text-perigo' }}">{{ valor|moeda }}</span>
+{%- endmacro %}

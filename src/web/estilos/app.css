@@ -443,3 +443,15 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .galeria-foto.vazia {font-size: 12.5px; color: var(--texto-3); text-align: center; padding: var(--e2);}
 @media (max-width: 1099px) {.cols-2 {grid-template-columns: minmax(0, 1fr);}}
 @media (max-width: 719px) {.kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}}
+
+/* ---------- Relatórios ---------- */
+.barra-periodo {display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e3); margin-bottom: var(--e4);}
+.barra-periodo .campo {flex: 1 1 150px; max-width: 220px;}
+.barra-rel {display: block; width: 100px; height: 6px;}
+.barra-rel-fundo {fill: var(--seg-vazio);}
+.barra-rel-ok {fill: var(--sucesso);}
+.barra-rel-perigo {fill: var(--perigo);}
+.barra-rel-neutro {fill: var(--seg-cheio);}
+.resumo-relatorio {margin: 0 0 var(--e4); color: var(--texto-2);}
+.resumo-relatorio strong {color: var(--texto); font-weight: 600;}
+@media (max-width: 719px) {.barra-periodo .campo {max-width: none;} .barra-periodo .btn {flex: 1 1 100%;}}

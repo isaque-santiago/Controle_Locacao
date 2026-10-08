@@ -748,3 +748,55 @@ def base_documentos(monkeypatch):
         url_comprovante=lambda caminho: base.url_assinada + caminho + "?token=x"))
     return base
 
+
+class BaseRelatorios:
+    """Dados fictícios do serviço usado por src/web/dados_relatorios."""
+
+    def __init__(self):
+        from src.domain.valores import hoje_br
+
+        self.hoje = hoje_br()
+        self.consultas = []
+        self.resultado = [
+            {"moto_id": "m1", "placa": "BRA2E19", "modelo": "CG 160", "receita_recebida": Decimal("1000"),
+             "custo_manutencao": Decimal("100"), "custo_documentos": Decimal("50"), "resultado": Decimal("850"),
+             "km_rodados": 500, "custo_por_km": Decimal("0.20")},
+            {"moto_id": "m2", "placa": "QRS4T21", "modelo": "Factor <i>150</i>", "receita_recebida": Decimal("200"),
+             "custo_manutencao": Decimal("300"), "custo_documentos": Decimal("0"), "resultado": Decimal("-100"),
+             "km_rodados": 0, "custo_por_km": None},
+        ]
+        self.fluxo = [
+            {"mes": "2026-09", "receita_recebida": Decimal("900"), "custo_manutencao": Decimal("100"),
+             "custo_documentos": Decimal("0"), "resultado": Decimal("800")},
+            {"mes": self.hoje.isoformat()[:7], "receita_recebida": Decimal("300"), "custo_manutencao": Decimal("300"),
+             "custo_documentos": Decimal("50"), "resultado": Decimal("-50")},
+        ]
+        self.inadimplencia = {
+            "linhas": [
+                {"cliente": "Maria <b>Silva</b>", "placa": "BRA2E19", "vencimento": "2026-09-01", "dias_atraso": 37,
+                 "saldo": Decimal("280"), "total_com_encargos": Decimal("554")},
+                {"cliente": "Pedro", "placa": "", "vencimento": "2026-10-01", "dias_atraso": 7,
+                 "saldo": Decimal("100"), "total_com_encargos": Decimal("164")},
+            ],
+            "total_atraso": Decimal("380"), "clientes": 2, "percentual_carteira": Decimal("13.6"),
+        }
+
+
+@pytest.fixture(autouse=True)
+def base_relatorios(monkeypatch):
+    from src.services import relatorios as servico
+    from src.web import dados_relatorios
+
+    base = BaseRelatorios()
+
+    def resultado_por_moto(inicio, fim):
+        if fim < inicio:
+            raise ValueError("A data final deve ser igual ou posterior à inicial.")
+        base.consultas.append((inicio, fim))
+        return {"resultado": base.resultado, "fluxo": base.fluxo}
+
+    monkeypatch.setattr(dados_relatorios, "relatorios", SimpleNamespace(
+        resultado_por_moto=resultado_por_moto, inadimplencia=lambda hoje: base.inadimplencia,
+        exportar_csv=servico.exportar_csv, exportar_excel=servico.exportar_excel))
+    return base
+

@@ -1,0 +1,90 @@
+{% from "componentes/macros.html" import tabela, placa, estado_vazio, aviso, kpi, campo %}
+{% from "relatorios/_macros.html" import barra, resumo, liquido %}
+<div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
+{% if aba != "inadimplencia" %}
+{# O formulário fica no painel: cada aba o refaz com os campos escondidos (aba e visão) certos. #}
+<form class="barra-periodo" method="get" action="/relatorios" aria-label="Período do relatório">
+  <input type="hidden" name="aba" value="{{ aba }}">
+  {% if aba == "custo" %}<input type="hidden" name="visao" value="{{ visao }}">{% endif %}
+  {{ campo("rel-de", "De", nome="de", valor=de, tipo="date", obrigatorio=True) }}
+  {{ campo("rel-ate", "Até", nome="ate", valor=ate, tipo="date", obrigatorio=True) }}
+  <button class="btn btn-primario" type="submit">Aplicar período</button>
+</form>
+{% endif %}
+{% if erro_periodo %}
+{{ aviso("erro", erro_periodo) }}
+{% else %}
+{% if exportar %}<div class="flex flex-wrap justify-end gap-2 mb-4">{% for rotulo, url in exportar %}<a class="btn" href="{{ url }}" download>{{ rotulo }}</a>{% endfor %}</div>{% endif %}
+{% if aba == "custo" %}
+<nav class="chips" aria-label="Visão do custo de manutenção">{% for chave, rotulo, url, parcial in visoes %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == visao %} aria-current="true"{% endif %}>{{ rotulo }}</a>{% endfor %}</nav>
+{% endif %}
+{% if aba == "inadimplencia" %}
+<p class="text-texto-2 mb-4">Posição atual de cobranças em atraso, independente do período selecionado.</p>
+<dl class="grade kpis kpis-3">
+  {{ kpi("Total em atraso", d.total_atraso|moeda, atencao=d.total_atraso > 0) }}
+  {{ kpi("% da carteira do mês", d.percentual) }}
+  {{ kpi("Clientes atrasados", d.clientes) }}
+</dl>
+{% if d.linhas %}
+{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Dias em atraso", "num"), ("Valor + encargos", "num")], "Inadimplência") %}
+{% for l in d.linhas %}<tr>
+<td class="modelo">{{ l.cliente }}</td>
+<td data-rotulo="Moto">{% if l.placa %}{{ placa(l.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td class="mono" data-rotulo="Vencimento">{{ l.vencimento|data_br }}</td>
+<td class="num mono text-perigo" data-rotulo="Dias em atraso">{{ l.dias_atraso }} dia(s)</td>
+<td class="num mono" data-rotulo="Valor + encargos">{{ l.total_com_encargos|moeda }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma cobrança em atraso", "Quando houver parcelas vencidas e não pagas, elas aparecem aqui.", "0") }}{% endif %}
+{% elif d.linhas %}
+{{ resumo(d.resumo) }}
+{% if aba == "resultado" %}
+{% call tabela([("Moto", ""), ("Receita recebida", "num"), ("Manutenção", "num"), ("Documentos", "num"), ("Resultado", "num"), ("", "")], "Resultado por moto") %}
+{% for r in d.linhas %}<tr>
+<td>{{ placa(r.placa|placa_br) }}</td>
+<td class="num mono" data-rotulo="Receita recebida">{{ r.receita_recebida|moeda }}</td>
+<td class="num mono" data-rotulo="Manutenção">{{ r.custo_manutencao|moeda }}</td>
+<td class="num mono" data-rotulo="Documentos">{{ r.custo_documentos|moeda }}</td>
+<td class="num" data-rotulo="Resultado">{{ liquido(r.resultado) }}</td>
+<td class="c-barra">{{ barra(r.largura, r.tom) }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% elif aba == "custo" and visao == "modelo" %}
+{% call tabela([("Modelo", ""), ("Motos", "num"), ("Custo total", "num"), ("Custo médio / moto", "num"), ("", "")], "Custo de manutenção por modelo") %}
+{% for g in d.linhas %}<tr>
+<td class="modelo">{{ g.modelo }}</td>
+<td class="num mono" data-rotulo="Motos">{{ g.motos }}</td>
+<td class="num mono" data-rotulo="Custo total">{{ g.custo_total|moeda }}</td>
+<td class="num mono" data-rotulo="Custo médio / moto">{{ g.custo_medio|moeda }}</td>
+<td class="c-barra">{{ barra(g.largura, g.tom) }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% elif aba == "custo" %}
+{% call tabela([("Moto", ""), ("Modelo", ""), ("Custo de manutenção", "num"), ("Km rodados", "num"), ("Custo / km", "num"), ("", "")], "Custo de manutenção por moto") %}
+{% for r in d.linhas %}<tr>
+<td>{{ placa(r.placa|placa_br) }}</td>
+<td data-rotulo="Modelo">{{ r.modelo }}</td>
+<td class="num mono" data-rotulo="Custo de manutenção">{{ r.custo_manutencao|moeda }}</td>
+<td class="num mono" data-rotulo="Km rodados">{% if r.km_rodados %}{{ r.km_rodados|milhar }} km{% else %}—{% endif %}</td>
+<td class="num mono" data-rotulo="Custo / km">{% if r.custo_por_km is not none %}{{ r.custo_por_km|moeda }}{% else %}—{% endif %}</td>
+<td class="c-barra">{{ barra(r.largura, r.tom) }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% else %}
+{% call tabela([("Mês", ""), ("Recebido", "num"), ("Manutenção", "num"), ("Documentos", "num"), ("Líquido", "num"), ("", "")], "Fluxo de caixa por mês") %}
+{% for m in d.linhas %}<tr>
+<td class="modelo">{{ m.rotulo_mes }}{% if m.parcial %} <span class="text-texto-3 font-normal">(parcial)</span>{% endif %}</td>
+<td class="num mono" data-rotulo="Recebido">{{ m.receita_recebida|moeda }}</td>
+<td class="num mono" data-rotulo="Manutenção">{{ m.custo_manutencao|moeda }}</td>
+<td class="num mono" data-rotulo="Documentos">{{ m.custo_documentos|moeda }}</td>
+<td class="num" data-rotulo="Líquido">{{ liquido(m.resultado) }}</td>
+<td class="c-barra">{{ barra(m.largura, m.tom) }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% endif %}
+{% else %}
+{{ estado_vazio("Nada neste período", "Não há dados para o período escolhido. Ajuste as datas e aplique de novo.", "0") }}
+{% endif %}
+<p class="text-texto-2 text-[13px] mt-4">Cauções não compõem receita, exceto a parte retida para cobrir danos, contada no encerramento do contrato. Manutenções são contabilizadas pela entrada, documentos pela regularização. Custo/km usa as leituras disponíveis no período; sem distância registrada, fica em branco.</p>
+{% endif %}
+</div>
