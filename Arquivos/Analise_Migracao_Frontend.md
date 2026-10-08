@@ -470,6 +470,19 @@ do texto vazio e aparece logo depois de cada rodada do axe-core, então foi trat
 próxima rodada); (6) fluxos 4 (sem cliente livre), 8 (comparação) e 10 (botão "Salvar alterações" duplicado) tinham
 problema no roteiro de teste, ajustados. Os fluxos 5, 6, 7 e 9 gravaram sem recusa de formulário.
 
+**Segunda e terceira rodadas (desktop 1440 px, claro; 14 de 15 passaram na última).** Bug real do app encontrado e corrigido: os
+links "Exportar CSV/Excel" das abas Custo, Inadimplência e Fluxo omitiam a aba e baixavam sempre o Resultado por moto (teste de
+regressão incluído). O erro de console de CSP vinha do `htmx.min.js` (copia o atributo `style` ao acomodar trocas); `style` saiu de
+`attributesToSettle` (confirmar na próxima rodada). Os fluxos 4 a 10 gravaram sem recusa; no fluxo 8 não havia contrato sem
+vistoria, então o registro com fotos ficou sem exercitar nesse banco. **Aberto:** um teste falhou na última rodada e o nome não foi
+informado.
+
+**Parte C concluída (08/10/2026): CI do app novo.** `.github/workflows/ci.yml` sobe `uvicorn --factory src.web.app:criar_app`
+(1 worker) e espera o `/saude`; os jobs `navegador-login` (quatro perfis, sem credenciais, `--e2e-estrito`) e
+`navegador-autenticado` (manual, segredos de dev, um perfil por vez porque os fluxos gravam no mesmo banco) usam o app novo.
+Conferido localmente: o comando de subida em modo de produção (sem `LOCACAO_AMBIENTE=dev`), `/saude` e a tela de acesso em
+Chromium desktop e celular e WebKit (18 testes). **Não verificado:** a execução no GitHub Actions (exige `push`).
+
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 
 | Item | Destino |
