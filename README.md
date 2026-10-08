@@ -104,7 +104,9 @@ locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de 
 
 **Recarga automática resolvida (08/10/2026):** em desenvolvimento o armazém de sessões espelha as sessões no arquivo
 `.sessoes_dev.json` (ignorado pelo git; só `executar_web.py` o configura, por `LOCACAO_SESSOES_ARQUIVO`, e só vale com
-`LOCACAO_AMBIENTE=dev`), então salvar um `.py` recarrega o servidor sem derrubar o login. Em produção nada vai a disco.
+`LOCACAO_AMBIENTE=dev`), então salvar um `.py` reinicia o servidor sem derrubar o login. A recarga é do próprio
+`executar_web.py` (o servidor roda como processo filho, reiniciado a cada `.py` salvo em `src/`), e não do `--reload` do
+uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console (preview do Claude). Em produção nada vai a disco.
 
 **Próximo passo:** Fase 4 (E2E, homologação e desligamento do Streamlit).
 
@@ -115,7 +117,7 @@ Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as 
 .venv\Scripts\python.exe executar_web.py
 ```
 
-Abre em `http://localhost:8000`. O servidor recarrega ao salvar um `.py` e o login continua valendo (as sessões de
+Abre em `http://localhost:8000`. O servidor reinicia ao salvar um `.py` de `src/` e o login continua valendo (as sessões de
 desenvolvimento ficam também em `.sessoes_dev.json`, que contém tokens: não compartilhe nem versione; apagá-lo encerra as
 sessões). `executar_web.py --sem-recarga` sobe sem recarga automática (no preview, a configuração `locacao-web-estavel`). Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
 script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.

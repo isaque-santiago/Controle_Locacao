@@ -416,6 +416,9 @@ dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Su
    esperam "17 dias de atraso"): falhavam antes das últimas páginas e se resolvem congelando a data nos testes.
 2. ~~**Recarga automática do app web**~~ **Resolvida em 08/10/2026 (opção 1 escolhida pelo proprietário):** em desenvolvimento o
    armazém espelha as sessões em `.sessoes_dev.json` (fora do git), então a recarga não derruba o login; produção segue só em memória.
+   O `--reload` do uvicorn não funcionava no preview (no Windows ele reinicia por Ctrl+C no console, que não chega sem
+   console), então `executar_web.py` ganhou a própria recarga (processo filho reiniciado a cada `.py` salvo). Testado: reinício
+   completo e recarga por edição, nos dois com o login mantido.
 3. **Comparação lado a lado com o Streamlit** não foi feita em Vistorias, Documentos, Relatórios, Configurações e Portal.
 4. **CSV de relatórios** mostra decimais sem zero final (`97,9`); decisão do proprietário se quer duas casas (afeta também o Streamlit).
 5. **Leitor de tela e aparelhos reais** em todas as páginas (já previsto na Fase 4), mais o upload de fotos de câmera real.
