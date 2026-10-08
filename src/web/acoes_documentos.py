@@ -21,3 +21,8 @@ def anexar_comprovante(documento_id, moto_id, arquivo):
     return documentos.anexar_comprovante(
         documento_id, moto_id, arquivo.filename, arquivo.file.read(), TIPOS_CONTEUDO.get(extensao, "application/octet-stream")
     )
+
+
+def regularizar_documento(documento_id, data_regularizacao):
+    """Marca como regularizado; devolve também a sugestão do documento do ano seguinte, quando houver."""
+    return documentos.regularizar(documento_id, data_regularizacao)

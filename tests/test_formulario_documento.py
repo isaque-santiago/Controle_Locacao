@@ -56,6 +56,17 @@ def test_moto_fixa_invalida_e_varios_erros_juntos():
     assert set(erro.value.erros) == {"moto_id", "tipo", "valor"}
 
 
+def test_regularizacao_le_a_data_e_a_escolha_do_proximo():
+    assert f.regularizacao_inicial(HOJE) == {"data": "2026-10-08", "criar_proximo": True}
+    assert f.texto_da_regularizacao({"data": " 2026-10-01 "}) == {"data": "2026-10-01", "criar_proximo": False}
+    assert f.ler_regularizacao({"data": "2026-10-01", "criar_proximo": "on"}) == {"data": date(2026, 10, 1), "criar_proximo": True}
+    assert f.ler_regularizacao({"data": "2026-10-01"})["criar_proximo"] is False
+    for data in ("", "01/10/2026"):
+        with pytest.raises(ErroDeCampos) as erro:
+            f.ler_regularizacao({"data": data})
+        assert "data" in erro.value.erros
+
+
 PDF = b"%PDF-1.7" + b"0" * 8
 
 

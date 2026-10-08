@@ -68,3 +68,21 @@ def validar_comprovante(nome: str, tamanho: int, cabecalho: bytes) -> None:
         validar_arquivo(nome, cabecalho if tamanho > 0 else b"", EXTENSOES_COMPROVANTE)
     except ValueError as erro:
         raise ErroDeCampos({"comprovante": f"Comprovante: {erro}"}) from None
+
+
+def regularizacao_inicial(hoje: date) -> dict:
+    """Texto inicial do diálogo de regularização: hoje, e o cadastro do ano seguinte já marcado."""
+    return {"data": hoje.isoformat(), "criar_proximo": True}
+
+
+def texto_da_regularizacao(entrada: dict) -> dict:
+    return {"data": _texto(entrada, "data"), "criar_proximo": bool(entrada.get("criar_proximo"))}
+
+
+def ler_regularizacao(entrada: dict) -> dict:
+    """Data da regularização (obrigatória) e se o dono quer cadastrar em seguida o documento do ano seguinte."""
+    erros: dict[str, str] = {}
+    data = _coletar(erros, "data", _data_iso, _texto(entrada, "data"), "Data de regularização", True)
+    if erros:
+        raise ErroDeCampos(erros)
+    return {"data": date.fromisoformat(data), "criar_proximo": bool(entrada.get("criar_proximo"))}
