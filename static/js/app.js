@@ -156,7 +156,18 @@
   // Formulário devolvido com erro: leva o foco ao primeiro campo inválido
   document.body.addEventListener('htmx:afterSettle', function () {
     var invalido = document.querySelector('#form-dialogo [aria-invalid="true"]');
-    if (invalido) invalido.focus();
+    if (invalido) {
+      invalido.focus();
+      return;
+    }
+    // Diálogo que troca de etapa (ex.: escolher o contrato -> formulário): o botão clicado saiu da página
+    // e o foco se perderia; leva-o ao primeiro campo da nova etapa.
+    var dialogo = document.getElementById('dlg-form');
+    var formulario = document.getElementById('form-dialogo');
+    if (dialogo && dialogo.open && formulario && !dialogo.contains(document.activeElement)) {
+      var primeiro = formulario.querySelector('input:not([type="hidden"]):not([type="checkbox"]), select, textarea');
+      if (primeiro) primeiro.focus();
+    }
   });
 
   // Página inteira devolvida com erro de formulário (assistente de contrato, sem HTMX): foco no primeiro campo inválido

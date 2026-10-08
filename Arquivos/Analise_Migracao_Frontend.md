@@ -3,7 +3,8 @@
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
-> Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Próxima página: Vistorias (com fotos). Depois da Fase 3,
+> Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
+> proprietário). Próxima página: Documentos. Depois da Fase 3,
 > resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
@@ -263,23 +264,41 @@ podia manter o km da seleção anterior. A prévia agora sincroniza por formulá
 moto antes de gravar. Suíte final: 981 testes. Itens fictícios de homologação permaneceram no banco, inativos ou
 cancelados/concluídos. Leitor de tela e aparelhos reais ficam para a Fase 4.
 
-**Andamento: Vistorias (em curso, parte A entregue em 08/10/2026).** Plano em quatro partes: (A) lista e comparação
-somente leitura; (B) registrar vistoria com fotos; (C) adicionar fotos a uma vistoria existente; (D) homologação.
-A parte A entrega `/vistorias` (chips Todas/Entrega/Devolução com contagem, busca por cliente ou placa, paginação
-HTMX) e `/vistorias/contrato/{id}` (faixa de dados, cartões de entrega e devolução com checklist, itens alterados
-e galeria por URL assinada). O CSP passou a liberar em `img-src` a origem do Supabase (lida de `SUPABASE_URL`), só
-para as fotos. Decisões do proprietário: até 10 fotos por envio, de até 10 MB; itens adicionais continuam no formato
-`nome=estado`. **Parte B (08/10/2026):** `/vistorias/registrar` em duas etapas (escolher o contrato que ainda não tem as duas
-vistorias; formulário com tipo que falta, data, km, combustível, checklist, itens adicionais, avarias e fotos), em
-diálogo HTMX e em página sem JavaScript, pelo botão da lista ou do cartão vazio da comparação. As fotos (até 10, JPG/PNG,
-10 MB) são validadas por campo antes de gravar (extensão, tamanho e assinatura do arquivo); o tipo de conteúdo vem da
-extensão. A vistoria é registrada pela RPC e só então as fotos são enviadas: se alguma falhar, a vistoria fica salva e o
-aviso conta as falhas. Após erro o navegador não guarda os arquivos, e o formulário avisa para escolher as fotos de novo.
-**Não verificado ainda:** conferência no navegador contra o banco de dev, com foto real (parte D).
-Aviso: 3 testes de Cobranças (`test_cobrancas_mensagem_web`, `test_cobrancas_pagamento_web`) falham por dependerem
-da data de hoje (esperam "17 dias de atraso"); já falhavam antes desta parte.
+**Andamento: Vistorias concluída (08/10/2026).** Entregue em três partes, cada uma com testes e commit: (A) lista e
+comparação somente leitura; (B) registrar vistoria com fotos; (D) homologação. A parte C (adicionar fotos a uma
+vistoria já existente) foi **dispensada pelo proprietário** em 08/10/2026 e fica como melhoria futura: hoje as fotos só
+entram no registro da vistoria.
 
-**Próxima: terminar Vistorias (partes B a D)**, seguida de Documentos, Relatórios, Configurações e Portal do Locatário.
+- **Lista** `/vistorias`: chips Todas/Entrega/Devolução com contagem, busca por cliente ou placa, paginação HTMX de
+  10 em 10 e botão "Comparar". **Comparação** `/vistorias/contrato/{id}`: faixa de dados (período, km rodados, avarias na
+  devolução), cartões de entrega e devolução com checklist, itens "alterado" destacados nos dois cartões e galeria de
+  fotos por URL assinada. O CSP libera em `img-src` só a origem do Supabase (lida de `SUPABASE_URL`).
+- **Registro** `/vistorias/registrar` em duas etapas (escolher o contrato que ainda não tem as duas vistorias; formulário
+  com o tipo que falta, data, km, combustível, checklist, itens adicionais `nome=estado`, avarias e fotos), em diálogo
+  HTMX e em página sem JavaScript, pelo botão da lista ou do cartão vazio da comparação. Fotos: até 10 por envio, JPG/PNG,
+  10 MB cada, validadas por campo antes de gravar (extensão, tamanho e assinatura do arquivo); o tipo de conteúdo vem da
+  extensão. A vistoria é registrada pela RPC e só então as fotos sobem: se alguma falhar, a vistoria fica salva e o aviso
+  conta as falhas. Após erro o navegador esquece os arquivos, e o formulário avisa para escolher as fotos de novo.
+- **Conferência no banco de desenvolvimento (08/10/2026):** 8 vistorias na lista (6 entregas e 2 devoluções, contagens
+  batendo); comparação do contrato EXA-6F66 com 300 km rodados. Devolução registrada pelo diálogo no contrato do Cliente
+  Exemplo 12 (E2E-0A05) com uma foto JPG e uma PNG reais: as fotos apareceram na galeria, carregadas do Storage sob o CSP,
+  e o resumo mostrou 45 km rodados e 1 avaria. Outra devolução no Cliente Exemplo 10 (E2E-0A02) com 10 fotos de 9 MB
+  (90 MB): gravada com as 10 fotos em cerca de 15 s, e a memória do servidor passou de 151 para 203 MB. Validação por campo
+  (data futura, km menor que o da moto, GIF recusado, 11 fotos recusadas) com foco no primeiro campo inválido; a página
+  sem JavaScript mostrou o erro de km com o foco no campo; um contrato com as duas vistorias redireciona para a
+  comparação com aviso. Sem rolagem horizontal e sem alvo menor que 44 px em 320 px (lista, comparação, escolha, página de
+  registro, diálogo nas duas etapas e com erro), 390 px (lista e comparação) e 1440 px (comparação em duas colunas).
+  Esc fecha o diálogo e devolve o foco ao botão "Registrar vistoria".
+- **Correção do caminho:** ao trocar da etapa 1 para a etapa 2 do diálogo o foco se perdia (o botão clicado saía da
+  página); `app.js` agora leva o foco ao primeiro campo da nova etapa.
+- **Dados de homologação deixados no banco de dev:** duas vistorias de devolução fictícias (Cliente Exemplo 12 / E2E-0A05,
+  com 2 fotos de teste, e Cliente Exemplo 10 / E2E-0A02, com 10 fotos de 9 MB que não são imagens válidas). Os contratos
+  continuam ativos.
+- **Não verificado:** comparação lado a lado com o Streamlit (não feita nesta página), foto com orientação EXIF de aparelho
+  real, leitor de tela e aparelhos reais (Fase 4). Três testes de Cobranças falham por dependerem da data de hoje (esperam
+  "17 dias de atraso"); já falhavam antes e ficam para ajuste à parte.
+
+**Próxima: Documentos**, seguida de Relatórios, Configurações e Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de
