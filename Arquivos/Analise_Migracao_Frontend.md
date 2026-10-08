@@ -295,8 +295,8 @@ entram no registro da vistoria.
   com 2 fotos de teste, e Cliente Exemplo 10 / E2E-0A02, com 10 fotos de 9 MB que não são imagens válidas). Os contratos
   continuam ativos.
 - **Não verificado:** comparação lado a lado com o Streamlit (não feita nesta página), foto com orientação EXIF de aparelho
-  real, leitor de tela e aparelhos reais (Fase 4). Três testes de Cobranças falham por dependerem da data de hoje (esperam
-  "17 dias de atraso"); já falhavam antes e ficam para ajuste à parte.
+  real, leitor de tela e aparelhos reais (Fase 4). (Três testes de Cobranças que dependiam da data de hoje foram
+  corrigidos em 08/10/2026, com o relógio congelado nos três módulos.)
 
 **Andamento: Documentos concluída (08/10/2026).** Entregue em três partes, cada uma com testes e commit: (A) lista e
 abertura do comprovante; (B) novo e editar documento; (C) regularizar. Mais a homologação (D).
@@ -409,11 +409,12 @@ homologada no banco de dev com um login de locatário real.
 ## Fechamento da Fase 3 (08/10/2026)
 
 Todas as telas do app novo foram migradas: Clientes, Contratos, Cobranças, Manutenção, Vistorias (sem "adicionar fotos depois",
-dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Suíte: 1150 testes passando e 3 falhando.
+dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Suíte: 1150 testes passando e 3 falhando na época (hoje, 1168 passando e nenhum falhando).
 **Pendências conhecidas para antes ou durante a Fase 4:**
 
-1. **Três testes de Cobranças dependem da data de hoje** (`test_cobrancas_mensagem_web` duas vezes e `test_cobrancas_pagamento_web`
-   esperam "17 dias de atraso"): falhavam antes das últimas páginas e se resolvem congelando a data nos testes.
+1. ~~**Três testes de Cobranças dependiam da data de hoje**~~ **Corrigido em 08/10/2026:** a fixture `base_cobrancas` congelava o
+   relógio só na camada de dados, mas as rotas de mensagem e de pagamento importam o próprio `hoje_br`; agora o relógio de
+   07/10/2026 vale nos três módulos. Suíte inteira verde: 1168 testes.
 2. ~~**Recarga automática do app web**~~ **Resolvida em 08/10/2026 (opção 1 escolhida pelo proprietário):** em desenvolvimento o
    armazém espelha as sessões em `.sessoes_dev.json` (fora do git), então a recarga não derruba o login; produção segue só em memória.
    O `--reload` do uvicorn não funcionava no preview (no Windows ele reinicia por Ctrl+C no console, que não chega sem
