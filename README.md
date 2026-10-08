@@ -100,7 +100,7 @@ baixado por POST, só o dono). **Portal do Locatário** (`rotas/portal.py`): o l
 reporta a troca de óleo com a foto do painel e a da nota fiscal e troca a própria senha (`ServicoAutenticacao.alterar_senha`,
 PUT em `/auth/v1/user` com o token dele). O contrato do formulário é sempre procurado entre os que a RPC devolve para o
 locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de desenvolvimento e em 320, 390 e 1440 px;
-1150 testes passaram (3 testes de Cobranças dependem da data de hoje e falham desde antes; ver o documento de migração).
+a suíte inteira passa (1168 testes, em 08/10/2026; os de Cobranças usam relógio congelado em 07/10/2026).
 
 **Recarga automática resolvida (08/10/2026):** em desenvolvimento o armazém de sessões espelha as sessões no arquivo
 `.sessoes_dev.json` (ignorado pelo git; só `executar_web.py` o configura, por `LOCACAO_SESSOES_ARQUIVO`, e só vale com

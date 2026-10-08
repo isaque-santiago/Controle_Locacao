@@ -476,8 +476,13 @@ def base_cobrancas(monkeypatch):
     from src.services.cobrancas import calcular_encargos_cobranca
     from src.web import dados_cobrancas
 
+    from src.web.rotas import cobrancas_mensagem, cobrancas_pagamento
+
     base = BaseCobrancas()
-    monkeypatch.setattr(dados_cobrancas, "hoje_br", lambda: date(2026, 10, 7))
+    # "Hoje" é 07/10/2026 em todo o fluxo de Cobranças (lista, mensagem e pagamento): as rotas importam o próprio
+    # `hoje_br`, então o relógio congelado precisa valer em cada módulo, e não só na camada de dados.
+    for modulo in (dados_cobrancas, cobrancas_mensagem, cobrancas_pagamento):
+        monkeypatch.setattr(modulo, "hoje_br", lambda: date(2026, 10, 7))
     monkeypatch.setattr(dados_cobrancas, "clientes", SimpleNamespace(
         listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None)))
     monkeypatch.setattr(dados_cobrancas, "motos", SimpleNamespace(
