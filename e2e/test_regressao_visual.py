@@ -1,7 +1,11 @@
 """Regressão visual da tela de acesso e das páginas autenticadas contra a referência aprovada.
 
 Primeira execução (ou `--atualizar-referencia`): grava a referência. Depois: compara e reprova se
-mais de `--tolerancia-visual` % dos pixels mudarem. Veja e2e/visual.py."""
+mais de `--tolerancia-visual` % dos pixels mudarem. Veja e2e/visual.py.
+
+ATENÇÃO: as telas mostram os dados do banco de desenvolvimento, e os fluxos 4 a 10 os alteram (pagamentos, contratos,
+documentos…). Grave a referência e compare SEMPRE com o banco no mesmo estado: depois de recriar o banco de dev e antes de
+rodar os fluxos (`-k visual`). Os testes de visual têm "visual" no nome para os outros comandos poderem excluí-los."""
 
 import pytest
 
@@ -28,7 +32,7 @@ def test_visual_login(pagina_anonima, cenario, request):
 
 
 @pytest.mark.autenticado
-def test_visual_paginas(pagina_logada, cenario, request):
+def test_visual_das_telas(pagina_logada, cenario, request):
     falhas = []
     for pagina in PAGINAS:
         ir_para(pagina_logada, pagina)

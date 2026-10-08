@@ -84,6 +84,9 @@ reaproveitado (largura e tema mudam no mesmo contexto). O tema vem do cookie `te
 
 ## Regressão visual
 
+As telas mostram dados do banco de dev, e os fluxos 4 a 10 os alteram: grave a referência e compare com o banco no mesmo estado (por exemplo, logo
+depois de recriar o banco de dev, antes dos fluxos), com `-k visual`. Os fluxos e as páginas rodam com `-k "not visual"`.
+
 A primeira execução grava a referência; `--atualizar-referencia` a substitui; `--tolerancia-visual 0.3` é o percentual de
 pixels aceito. As referências do Streamlit (`e2e/referencia/<sistema>/`) deixaram de valer e podem ser apagadas.
 
