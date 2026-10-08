@@ -1,5 +1,9 @@
 """Fase 3: Relatórios (quatro abas, período na URL e exportação em CSV e Excel)."""
 
+import re
+
+import pytest
+
 from datetime import date
 from io import BytesIO
 
@@ -93,6 +97,17 @@ def test_exportar_csv_traz_os_dados_da_tabela(cliente, base_relatorios):
     assert linhas[0] == "Placa;Modelo;Receita recebida;Manutenção;Documentos;Resultado;Km rodados;Custo por km"
     assert linhas[1].startswith("BRA-2E19;CG 160;1000,00;100,00;50,00;850,00;500;0,20") and linhas[2].startswith("QRS-4T21;")
     assert base_relatorios.consultas[-1] == (date(2026, 10, 1), date(2026, 10, 8))
+
+
+@pytest.mark.parametrize("consulta,esperado", [
+    ("aba=resultado", "aba=resultado"), ("aba=fluxo", "aba=fluxo"), ("aba=inadimplencia", "aba=inadimplencia"),
+    ("aba=custo", "aba=custo"), ("aba=custo&visao=moto", "visao=moto"),
+])
+def test_links_de_exportacao_levam_a_aba_e_a_visao_da_tela(cliente, base_relatorios, consulta, esperado):
+    entrar(cliente)
+    html = cliente.get(f"/relatorios?{consulta}").text.replace("&amp;", "&")
+    links = re.findall(r'href="(/relatorios/exportar\?[^"]+)"', html)
+    assert links and all(esperado in link for link in links)
 
 
 def test_exportar_excel_e_nomes_de_arquivo_de_cada_aba(cliente, base_relatorios):

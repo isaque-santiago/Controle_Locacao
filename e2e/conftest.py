@@ -234,6 +234,12 @@ def _novo_contexto(playwright: Playwright, navegador: Browser, cenario: Cenario)
     return contexto
 
 
+def _onde(mensagem) -> str:
+    """Arquivo e linha de onde veio a mensagem do console (ajuda a achar a origem de um erro)."""
+    local = mensagem.location or {}
+    return f"{urlparse(local.get('url', '')).path}:{local.get('lineNumber', '?')}"
+
+
 def _pagina_com_console(contexto) -> Page:
     page = contexto.new_page()
     page.erros_console = []  # type: ignore[attr-defined]
@@ -245,7 +251,7 @@ def _pagina_com_console(contexto) -> Page:
     page.on("pageerror", lambda e: page.erros_console.append(f"pageerror: {e}"))
     page.on(
         "console",
-        lambda m: page.erros_console.append(f"console.{m.type}: {m.text}") if m.type == "error" else None,
+        lambda m: page.erros_console.append(f"console.{m.type}: {m.text[:160]} @ {_onde(m)}") if m.type == "error" else None,
     )
     return page
 

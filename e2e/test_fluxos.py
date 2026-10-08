@@ -101,7 +101,7 @@ def _escolher_na_tabela(c: Contexto, etapa: str, evitar: str | None) -> bool:
     if evitar:
         linhas = linhas.filter(has_not_text=re.compile(evitar))
     for i in range(linhas.count()):
-        botao = linhas.nth(i).get_by_role("button", name=re.compile("^Selecionar$"))
+        botao = linhas.nth(i).get_by_role("button", name=re.compile("^Escolher "))
         if botao.count() and botao.first.is_enabled():
             botao.first.click()
             aguardar_app(c.page)

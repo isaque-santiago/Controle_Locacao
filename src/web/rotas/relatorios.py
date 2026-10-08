@@ -27,7 +27,8 @@ _FORMATOS = {
 
 def _url(base, aba, visao, de, ate, **extra):
     parametros = {}
-    if base == "/relatorios" and aba != lista.ABAS[0][0]:
+    # A exportação precisa sempre da aba (sem ela o servidor assume a primeira); a página só a leva fora da padrão.
+    if base == "/relatorios/exportar" or (base == "/relatorios" and aba != lista.ABAS[0][0]):
         parametros["aba"] = aba
     if aba == "custo" and visao != lista.VISOES_CUSTO[0][0]:
         parametros["visao"] = visao
