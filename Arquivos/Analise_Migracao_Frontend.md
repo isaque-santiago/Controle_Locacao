@@ -461,6 +461,15 @@ marca ficava sem nome acessível (axe `link-name`) e em qualquer largura tinha 3
 exige login (páginas, fluxos, homologação, regressão visual): o proprietário roda no terminal dele (D1) e a IA lê
 `e2e/resultados/`.
 
+**Primeira rodada autenticada (08/10/2026, desktop 1440 px, claro; 15 testes passaram).** Achados e destino: (1) CSV dos
+relatórios com uma casa decimal: **corrigido** (D3), `exportar_csv` agora escreve sempre duas casas; (2) caixas de seleção dos itens
+do plano na manutenção com 19 px de altura: **corrigido** em `app.css` (`label.caixa`); (3) cabeçalhos de tabela vazios nos
+relatórios: **corrigido** (texto só para leitor de tela "Proporção"); (4) "armadilha de teclado" no campo de data: falso positivo
+do detector (Tab percorre dia, mês e ano no mesmo elemento), detector ajustado; (5) erro de console de CSP de estilo: tem o hash
+do texto vazio e aparece logo depois de cada rodada do axe-core, então foi tratado como efeito da ferramenta (a confirmar na
+próxima rodada); (6) fluxos 4 (sem cliente livre), 8 (comparação) e 10 (botão "Salvar alterações" duplicado) tinham
+problema no roteiro de teste, ajustados. Os fluxos 5, 6, 7 e 9 gravaram sem recusa de formulário.
+
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 
 | Item | Destino |

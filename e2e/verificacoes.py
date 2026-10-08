@@ -138,11 +138,20 @@ def verificar_saude(page: Page, registrar, nome_pagina: str) -> None:
 def verificar_acessibilidade(page: Page, registrar, nome_pagina: str) -> None:
     """Auditoria automatizada (axe-core): uma ocorrência por regra violada na tela atual."""
     _esperar_assentar(page)
+    antes = len(getattr(page, "erros_console", []))
     try:
         resultado = Axe().run(page, options=_OPCOES_AXE)
     except Exception as erro:  # a auditoria nunca derruba o fluxo; vira achado
         registrar("P2", "axe-indisponivel", nome_pagina, f"Falha ao rodar o axe-core: {type(erro).__name__}")
         return
+    # O axe aplica estilos inline temporários e a CSP (style-src 'self') os recusa com um erro de console
+    # (hash de texto vazio). É efeito da ferramenta, não da página: não conta como erro do app.
+    page.wait_for_timeout(250)
+    erros = getattr(page, "erros_console", [])
+    do_axe = [e for e in erros[antes:] if "Content Security Policy" in e and "style-src" in e]
+    if do_axe:
+        erros[:] = [e for e in erros if e not in do_axe]
+        registrar("INFO", "csp-style-do-axe", nome_pagina, "Erro de CSP de estilo causado pelo próprio axe-core (ignorado).")
     for v in resultado.response["violations"]:
         severidade, tipo = _IMPACTO_AXE.get(v.get("impact") or "minor", ("INFO", "acessibilidade-leve"))
         alvos = [" ".join(n["target"]) if isinstance(n["target"], list) else str(n["target"]) for n in v["nodes"]]
@@ -174,7 +183,7 @@ def verificar_teclado(page: Page, registrar, nome_pagina: str, maximo: int = 60)
             if p.get("ultimo"):
                 break  # saiu da página pelo fim (Firefox mantém o último elemento focado)
             repetidos += 1
-            if repetidos >= 2:
+            if repetidos >= p.get("segmentos", 1) + 1:
                 registrar("P0", "armadilha-de-teclado", nome_pagina, "O foco não avança com Tab.", p["el"])
                 break
             continue

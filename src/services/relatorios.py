@@ -2,7 +2,7 @@
 
 import csv
 from io import StringIO, BytesIO
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from openpyxl import Workbook
 from src.domain.relatorios import analisar_inadimplencia, consolidar
 from src.repositories import clientes, cobrancas, configuracoes, motos, relatorios
@@ -36,6 +36,11 @@ def inadimplencia(hoje):
     )
 
 
+def _dinheiro(valor: Decimal) -> str:
+    """Duas casas decimais e vírgula (97,90), nunca 97,9."""
+    return str(valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)).replace(".", ",")
+
+
 def _seguro(valor):
     if isinstance(valor, str) and valor.lstrip().startswith(("=", "+", "-", "@")):
         return "'" + valor
@@ -51,7 +56,7 @@ def exportar_csv(linhas):
             escritor.writerow(
                 {
                     k: (
-                        str(v).replace(".", ",")
+                        _dinheiro(v)
                         if isinstance(v, Decimal)
                         else _seguro(v)
                     )

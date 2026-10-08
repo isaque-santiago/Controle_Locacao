@@ -44,8 +44,8 @@ def entrar(page: Page, email: str, senha: str) -> None:
     abrir_login(page)
     if not tem_formulario_login(page):
         return  # já havia sessão ativa: o app redirecionou
-    page.get_by_label("E-mail ou CPF").fill(email)
-    page.get_by_label("Senha", exact=True).fill(senha)
+    page.locator("form[action='/login'] input[name=identificador]").fill(email)
+    page.locator("form[action='/login'] input[name=senha]").fill(senha)
     page.get_by_role("button", name="Entrar", exact=True).click()
     try:
         page.wait_for_url(lambda url: "/login" not in url, timeout=30_000)
@@ -291,6 +291,8 @@ _JS_FOCO = (
     el: descrever(el),
     rotulo: rotuloAcessivel().slice(0, 50),
     indicador, dentro, regressao,
+    // Campo de data nativo: Tab percorre dia, mês e ano no MESMO elemento.
+    segmentos: el.tagName === 'INPUT' && ['date', 'time', 'datetime-local', 'month', 'week'].includes(el.type) ? 5 : 1,
   };
 }"""
 )

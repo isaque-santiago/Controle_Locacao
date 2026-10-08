@@ -95,6 +95,16 @@ def test_exportacao_preserva_acentos_valores_e_neutraliza_formulas():
     assert livro.active["B2"].value == 1234.56
 
 
+@pytest.mark.parametrize(
+    "valor,esperado",
+    [(Decimal("97.9"), "97,90"), (Decimal("500.0"), "500,00"), (Decimal("500"), "500,00"), (Decimal("0.205"), "0,21"),
+     (Decimal("1234.5"), "1234,50"), (Decimal("-3.1"), "-3,10")],
+)
+def test_csv_mostra_sempre_duas_casas_decimais(valor, esperado):
+    corpo = exportar_csv([{"valor": valor}]).decode("utf-8-sig").splitlines()
+    assert corpo == ["valor", esperado]
+
+
 def test_backup_contem_todas_tabelas(monkeypatch):
     monkeypatch.setattr(
         configuracoes,

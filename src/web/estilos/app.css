@@ -419,6 +419,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
 .campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
 .campo.caixa input[type="checkbox"] {width: 22px; height: 22px; accent-color: var(--btn);}
+/* Caixas soltas em grade (itens do plano na manutenção): o rótulo inteiro é o alvo de toque. */
+label.caixa {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
+label.caixa input[type="checkbox"] {width: 22px; height: 22px; flex: none; accent-color: var(--btn);}
 form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .campo.com-erro .entrada {border-color: var(--perigo);}
 .campo .msg-erro {color: var(--perigo-texto); font-size: 12.5px;}

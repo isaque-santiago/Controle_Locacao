@@ -203,7 +203,10 @@ def _contextos_autenticados(playwright_sessao: Playwright, request):
     cookie `tema`), com um reload: a sessão do app vive no cookie de sessão do contexto."""
     cache: dict[str, tuple[Browser, "playwright.sync_api.BrowserContext", Page]] = {}
     yield cache
-    for browser, contexto, _pagina in cache.values():
+    for guardado in cache.values():
+        if isinstance(guardado, Exception):
+            continue  # login que falhou: contexto e navegador já foram fechados
+        browser, contexto, _pagina = guardado
         contexto.close()
         browser.close()
 

@@ -91,7 +91,7 @@ def test_exportar_csv_traz_os_dados_da_tabela(cliente, base_relatorios):
     texto = resposta.content.decode("utf-8-sig")
     linhas = texto.splitlines()
     assert linhas[0] == "Placa;Modelo;Receita recebida;Manutenção;Documentos;Resultado;Km rodados;Custo por km"
-    assert linhas[1].startswith("BRA-2E19;CG 160;1000;100;50;850;500;0,20") and linhas[2].startswith("QRS-4T21;")
+    assert linhas[1].startswith("BRA-2E19;CG 160;1000,00;100,00;50,00;850,00;500;0,20") and linhas[2].startswith("QRS-4T21;")
     assert base_relatorios.consultas[-1] == (date(2026, 10, 1), date(2026, 10, 8))
 
 

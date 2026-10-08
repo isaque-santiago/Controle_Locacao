@@ -117,8 +117,8 @@ def fluxo_contrato(c: Contexto) -> None:
         return
     # Etapa 1: cliente
     c.medir("Contratos (assistente 1/4)", "contratos-assistente-1")
-    if not _escolher_na_tabela(c, "1", r"Já aluga|não pode alugar"):
-        return
+    if not _escolher_na_tabela(c, "1", r"Já aluga|não pode alugar") and not _escolher_na_tabela(c, "1", r"não pode alugar"):
+        return  # sem cliente livre usa um que já aluga outra moto (o app permite; o aviso é só informativo)
     c.clicar("link", "Avançar", "Contratos (assistente 1/4)")
     # Etapa 2: moto
     c.medir("Contratos (assistente 2/4)", "contratos-assistente-2")
@@ -281,7 +281,9 @@ def fluxo_vistoria(c: Contexto) -> None:
     else:
         c.info("Vistorias", "Todos os contratos já têm as duas vistorias; só a comparação foi exercitada.")
         fechar_dialogo(c.page)
-    if c.clicar("link", re.compile(r"^Comparar as vistorias", re.I), "Vistorias"):
+    if "/vistorias/contrato/" in c.page.url:
+        c.medir("Vistorias (comparação)", "vistorias-comparacao")  # o registro já leva à comparação
+    elif c.clicar("link", re.compile(r"^Comparar as vistorias", re.I), "Vistorias"):
         c.medir("Vistorias (comparação)", "vistorias-comparacao")
 
 
@@ -290,8 +292,11 @@ def fluxo_relatorios(c: Contexto, pasta_downloads) -> None:
     abas = c.page.get_by_role("tab").locator("visible=true")
     nomes = [abas.nth(i).inner_text().strip() for i in range(abas.count())]
     for nome in nomes:
-        c.page.get_by_role("tab", name=nome).first.click()
+        aba = c.page.get_by_role("tab", name=nome).first
+        aba.click()
         aguardar_app(c.page)
+        if aba.get_attribute("aria-selected") != "true":
+            c.reg("P1", "aba-nao-selecionou", f"Relatórios · aba {nome}", "Depois do clique a aba não ficou selecionada.")
         c.medir(f"Relatórios · aba {nome}", f"relatorios-{nome}")
         if c.page.locator("#rel-de").count():
             c.page.locator("#rel-de").fill(hoje().replace(day=1).isoformat())
@@ -302,8 +307,10 @@ def fluxo_relatorios(c: Contexto, pasta_downloads) -> None:
             link = c.page.get_by_role("link", name=formato).locator("visible=true")
             if not link.count():
                 continue
+            href = link.first.get_attribute("href")
             with c.page.expect_download() as baixando:
                 link.first.click()
+            c.reg("INFO", "exportacao", nome, f"{formato}: {href} → {baixando.value.suggested_filename}")
             destino = pasta_downloads / baixando.value.suggested_filename
             baixando.value.save_as(destino)
             conferir_arquivo(c, nome, destino)
@@ -337,13 +344,13 @@ def fluxo_configuracoes(c: Contexto, pasta_downloads) -> None:
     novo = str(int(original or "30") + 1)
     c.preencher("#cfg-doc", novo)
     try:
-        avisos = c.enviar_formulario(c.page.get_by_role("button", name="Salvar alterações"), "Configurações (salvar)")
+        avisos = c.enviar_formulario(c.page.locator("button[form=form-config]").first, "Configurações (salvar)")
         c.reg("INFO", "aviso-de-sucesso", "Configurações", "Aviso depois de salvar: " + " / ".join(avisos)[:160])
         if c.page.locator("#cfg-doc").input_value() != novo:
             c.reg("P0", "configuracao-nao-salvou", "Configurações", "O valor salvo não voltou na página.")
     finally:
         c.preencher("#cfg-doc", original)
-        c.enviar_formulario(c.page.get_by_role("button", name="Salvar alterações"), "Configurações (restaurar)")
+        c.enviar_formulario(c.page.locator("button[form=form-config]").first, "Configurações (restaurar)")
     with c.page.expect_download() as baixando:
         c.page.get_by_role("button", name=re.compile("Gerar e baixar backup")).click()
     arquivo = pasta_downloads / baixando.value.suggested_filename
