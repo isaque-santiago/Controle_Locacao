@@ -4,7 +4,7 @@
 > uma por vez), INICIADA em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
-> proprietário). Documentos CONCLUÍDA em 08/10/2026. Próxima página: Relatórios. Depois da Fase 3,
+> proprietário). Documentos e Relatórios CONCLUÍDAS em 08/10/2026. Próxima página: Configurações (backup). Depois da Fase 3,
 > resolver a falta de recarga automática do app web.**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
@@ -328,7 +328,32 @@ abertura do comprovante; (B) novo e editar documento; (C) regularizar. Mais a ho
 - **Não verificado:** comparação lado a lado com o Streamlit, regularização de documento sem renovação anual em banco real
   (só testes), leitor de tela e aparelhos reais (Fase 4).
 
-**Próxima: Relatórios**, seguida de Configurações e Portal do Locatário.
+**Andamento: Relatórios concluída (08/10/2026).** Entregue de uma vez, com testes e commit, e homologada no banco de dev.
+
+- **Abas** com URL própria e painel por HTMX: Resultado por moto, Custo de manutenção (por modelo, o padrão, ou por moto),
+  Inadimplência e Fluxo de caixa. O período vai na URL (`de` e `ate`; padrão do dia 1º do mês até hoje) e o formulário fica
+  dentro do painel, para cada aba refazer os campos escondidos certos; data final antes da inicial mostra o aviso e não
+  calcula. A Inadimplência é a posição de hoje e ignora o período (o cabeçalho diz "Posição de hoje").
+- **Barras** em SVG com a largura em atributo (a CSP proíbe `style=` inline), mais um resumo em texto (total, maior e menor)
+  como alternativa às barras. Em celular as tabelas viram cartões.
+- **Exportação** `/relatorios/exportar?aba=&visao=&de=&ate=&formato=csv|xlsx`: refaz a montagem da aba, então o arquivo traz
+  os mesmos dados da tabela; nomes iguais aos do Streamlit (`relatorio_resultado_por_moto.csv` etc.); a proteção contra
+  fórmula no CSV foi mantida; botões escondidos sem dados (a rota devolve 404; 404 para formato inválido e 422 para período
+  invertido). `src/domain/relatorios.py` e os serviços de exportação foram reaproveitados sem mudança.
+- **Conferência no banco de desenvolvimento (08/10/2026):** Outubro/2026: recebido R$ 219,00 (o pagamento da homologação de
+  Cobranças), documentos R$ 1.510,50 (IPVA regularizado de R$ 210,50 e o seguro fictício de R$ 1.300,00) e líquido
+  R$ -1.291,50, igual ao resultado total das 31 motos. De 01/01 a 08/10: o líquido mensal somado (R$ 1.289,00) bate com o
+  resultado total do período. A Inadimplência bate com a página de Cobranças (50 parcelas, R$ 11.239.133,11, 4 clientes). Troca
+  de aba, de visão e de período pela URL, e o Voltar do navegador devolve a aba e o período. Cinco exportações (resultado, custo
+  por moto, custo por modelo, inadimplência e fluxo) com cabeçalhos e linhas corretos e tipos de arquivo certos. Sem rolagem
+  horizontal e sem alvo menor que 44 px nas quatro abas em 320, 390 e 1440 px.
+- **Observação herdada (não alterada):** o CSV mostra decimais sem zero à direita (`97,9`, `500,0`), porque o serviço de
+  exportação converte o `Decimal` em texto; o Excel abre como número. Se o proprietário preferir duas casas, é ajuste no
+  serviço, com efeito também no Streamlit.
+- **Não verificado:** comparação lado a lado com o Streamlit, abrir os arquivos no Excel de verdade (só conferidos o tipo, o
+  cabeçalho e as linhas), leitor de tela e aparelhos reais (Fase 4). Esta página não grava nada: nenhum dado de teste ficou.
+
+**Próxima: Configurações (backup)**, seguida do Portal do Locatário.
 
 **Fase 4 — E2E, homologação e desligamento**
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de

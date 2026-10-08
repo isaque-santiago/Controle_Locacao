@@ -70,6 +70,7 @@ def test_inadimplencia_ignora_o_periodo_e_mostra_os_indicadores(cliente, base_re
     assert "R$ 380,00" in html and "13,6%" in html and "Maria &lt;b&gt;Silva&lt;/b&gt;" in html and "37 dia(s)" in html
     assert "R$ 554,00" in html and "BRA-2E19" in html and 'name="de"' not in html
     assert base_relatorios.consultas == []  # a posição de hoje não consulta o período
+    assert "Posição de hoje" in html and "01/01/2026 a 02/01/2026" not in html
     base_relatorios.inadimplencia = {"linhas": [], "total_atraso": 0, "clientes": 0, "percentual_carteira": None}
     vazio = cliente.get("/relatorios?aba=inadimplencia").text
     assert "Nenhuma cobrança em atraso" in vazio and "—" in vazio and "Exportar" not in vazio

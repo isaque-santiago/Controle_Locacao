@@ -49,7 +49,8 @@ def _contexto(aba, visao, de, ate):
     d = None if erro else dados_relatorios.carregar(aba, visao, inicio, fim, hoje)
     contexto = {
         "titulo": "Relatórios", "aba": aba, "visao": visao, "d": d, "erro_periodo": erro, "de": de_iso, "ate": ate_iso,
-        "subtitulo": dados_relatorios.periodo_texto(inicio, fim) if not erro else "",
+        # A inadimplência é a posição de hoje: o período do cabeçalho não se aplica a ela.
+        "subtitulo": "Posição de hoje" if aba == "inadimplencia" else ("" if erro else dados_relatorios.periodo_texto(inicio, fim)),
         "abas_da_lista": [(chave, rotulo, _url(f"/relatorios/abas/{chave}", chave, visao, de_url, ate_url),
                            _url("/relatorios", chave, visao, de_url, ate_url)) for chave, rotulo in lista.ABAS],
         "visoes": [(chave, rotulo, _url("/relatorios", "custo", chave, de_url, ate_url),
