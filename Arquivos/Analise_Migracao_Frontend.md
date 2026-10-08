@@ -4,8 +4,8 @@
 > uma por vez) CONCLUÍDA em 08/10/2026; próxima: Fase 4 (E2E, homologação e desligamento do Streamlit). Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
-> proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. Antes da Fase 4,
-> resolver a falta de recarga automática do app web.**
+> proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. A falta de recarga
+> automática do app web foi resolvida em 08/10/2026 (sessões espelhadas em arquivo só em desenvolvimento).**
 > Decisões da Fase 1 (06/10/2026): sessão **na memória do servidor** (reiniciar ou fazer deploy desloga todos; rodar com
 > **1 único worker**), sem "lembrar de mim", CSS do Tailwind compilado e **versionado** em `static/css/app.css`
 > (Tailwind CLI standalone em `tools/`, fora do git), htmx em `static/js/htmx.min.js`. Detalhes no README.
@@ -414,7 +414,8 @@ dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Su
 
 1. **Três testes de Cobranças dependem da data de hoje** (`test_cobrancas_mensagem_web` duas vezes e `test_cobrancas_pagamento_web`
    esperam "17 dias de atraso"): falhavam antes das últimas páginas e se resolvem congelando a data nos testes.
-2. **Recarga automática do app web** (pendência combinada): hoje as sessões ficam na memória e cada edição de `.py` derruba o login.
+2. ~~**Recarga automática do app web**~~ **Resolvida em 08/10/2026 (opção 1 escolhida pelo proprietário):** em desenvolvimento o
+   armazém espelha as sessões em `.sessoes_dev.json` (fora do git), então a recarga não derruba o login; produção segue só em memória.
 3. **Comparação lado a lado com o Streamlit** não foi feita em Vistorias, Documentos, Relatórios, Configurações e Portal.
 4. **CSV de relatórios** mostra decimais sem zero final (`97,9`); decisão do proprietário se quer duas casas (afeta também o Streamlit).
 5. **Leitor de tela e aparelhos reais** em todas as páginas (já previsto na Fase 4), mais o upload de fotos de câmera real.

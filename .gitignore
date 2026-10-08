@@ -15,3 +15,6 @@ e2e/capturas_atuais/
 e2e/referencia/
 
 tools/tailwindcss*
+
+# Sessões do app web em desenvolvimento (contêm tokens do Supabase)
+.sessoes_dev.json*

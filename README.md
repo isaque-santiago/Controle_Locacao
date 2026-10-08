@@ -102,9 +102,11 @@ PUT em `/auth/v1/user` com o token dele). O contrato do formulário é sempre pr
 locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de desenvolvimento e em 320, 390 e 1440 px;
 1150 testes passaram (3 testes de Cobranças dependem da data de hoje e falham desde antes; ver o documento de migração).
 
-**Próximo passo:** Fase 4 (E2E, homologação e desligamento do Streamlit). Antes dela, resolver a falta de recarga automática do
-app web (hoje o preview usa `locacao-web-estavel`, sem recarga, porque a sessão fica na memória do servidor; templates e CSS
-recarregam, o Python não).
+**Recarga automática resolvida (08/10/2026):** em desenvolvimento o armazém de sessões espelha as sessões no arquivo
+`.sessoes_dev.json` (ignorado pelo git; só `executar_web.py` o configura, por `LOCACAO_SESSOES_ARQUIVO`, e só vale com
+`LOCACAO_AMBIENTE=dev`), então salvar um `.py` recarrega o servidor sem derrubar o login. Em produção nada vai a disco.
+
+**Próximo passo:** Fase 4 (E2E, homologação e desligamento do Streamlit).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
@@ -113,9 +115,9 @@ Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as 
 .venv\Scripts\python.exe executar_web.py
 ```
 
-Abre em `http://localhost:8000`. O servidor recarrega ao salvar um `.py`, e como as sessões ficam na memória isso
-**derruba o login**; para conferir telas no navegador use `executar_web.py --sem-recarga` (no preview, a
-configuração `locacao-web-estavel`) e reinicie à mão depois de editar. Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
+Abre em `http://localhost:8000`. O servidor recarrega ao salvar um `.py` e o login continua valendo (as sessões de
+desenvolvimento ficam também em `.sessoes_dev.json`, que contém tokens: não compartilhe nem versione; apagá-lo encerra as
+sessões). `executar_web.py --sem-recarga` sobe sem recarga automática (no preview, a configuração `locacao-web-estavel`). Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
 script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
 
 Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macros dos componentes em

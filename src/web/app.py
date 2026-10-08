@@ -58,6 +58,12 @@ def ambiente_de_desenvolvimento() -> bool:
     return os.getenv("LOCACAO_AMBIENTE", "").lower() == "dev"
 
 
+def arquivo_de_sessoes(desenvolvimento: bool) -> str | None:
+    """Arquivo onde o armazém espelha as sessões. Só existe em desenvolvimento e quando o `executar_web.py` (ou quem
+    sobe o servidor) o pede por `LOCACAO_SESSOES_ARQUIVO`; em produção as sessões ficam só na memória."""
+    return (os.getenv("LOCACAO_SESSOES_ARQUIVO") or None) if desenvolvimento else None
+
+
 def criar_app(
     servico=None,
     armazem: ArmazemSessoes | None = None,
@@ -69,7 +75,8 @@ def criar_app(
 
     app.state.relogio = relogio
     app.state.servico = servico or ServicoAutenticacao()
-    app.state.armazem = armazem or ArmazemSessoes(relogio=relogio)
+    em_desenvolvimento = desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento()
+    app.state.armazem = armazem or ArmazemSessoes(relogio=relogio, arquivo=arquivo_de_sessoes(em_desenvolvimento))
     app.state.limitador_ip = LimitadorTentativas(
         FALHAS_POR_IP, JANELA_LIMITE_SEGUNDOS, relogio
     )

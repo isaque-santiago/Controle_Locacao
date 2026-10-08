@@ -53,6 +53,7 @@ def _garantir_tokens_validos(app_state, sessao: Sessao) -> None:
             sessao.refresh_token = novos.refresh_token
             sessao.expira_em = novos.expira_em
             sessao.cliente = None
+            app_state.armazem.salvar()
         if sessao.cliente is None:
             sessao.cliente = app_state.servico.cliente(sessao.access_token)
 
