@@ -56,6 +56,62 @@ def tokens_iguais(esperado: str | None, recebido: str | None) -> bool:
     return secrets.compare_digest(esperado.encode(), recebido.encode())
 
 
+# Tamanho máximo do corpo da requisição: formulários comuns são pequenos; só o envio de arquivos (multipart) é grande
+# (até 10 fotos de 10 MB numa vistoria). Barrar cedo evita que um usuário encha a memória do servidor.
+LIMITE_CORPO_FORMULARIO = 1 * 1024 * 1024
+LIMITE_CORPO_ARQUIVOS = 105 * 1024 * 1024
+
+
+class LimiteDeCorpo:
+    """Middleware ASGI: responde 413 quando o corpo passa do limite (pelo Content-Length ou contando o que chega)."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or scope["method"] in ("GET", "HEAD", "OPTIONS"):
+            return await self.app(scope, receive, send)
+        cabecalhos = {k.lower(): v for k, v in scope["headers"]}
+        arquivos = cabecalhos.get(b"content-type", b"").lower().startswith(b"multipart/form-data")
+        limite = LIMITE_CORPO_ARQUIVOS if arquivos else LIMITE_CORPO_FORMULARIO
+        declarado = cabecalhos.get(b"content-length", b"")
+        if declarado.isdigit() and int(declarado) > limite:
+            return await self._recusar(send)
+
+        recebidos = 0
+        estourou = False
+
+        async def contar():
+            nonlocal recebidos, estourou
+            mensagem = await receive()
+            if mensagem["type"] == "http.request":
+                recebidos += len(mensagem.get("body", b""))
+                if recebidos > limite:
+                    estourou = True
+                    return {"type": "http.request", "body": b"", "more_body": False}
+            return mensagem
+
+        respondeu = False
+
+        async def enviar(mensagem):
+            nonlocal respondeu
+            if estourou and not respondeu and mensagem["type"] == "http.response.start":
+                respondeu = True
+                return await self._recusar(send)
+            if respondeu:
+                return None
+            return await send(mensagem)
+
+        await self.app(scope, contar, enviar)
+
+    @staticmethod
+    async def _recusar(send):
+        corpo = "Arquivo ou formulário grande demais.".encode()
+        await send({"type": "http.response.start", "status": 413,
+                    "headers": [(b"content-type", b"text/plain; charset=utf-8"), (b"content-length", str(len(corpo)).encode())]})
+        await send({"type": "http.response.body", "body": corpo})
+
+
 class CabecalhosSeguranca(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         resposta = await call_next(request)

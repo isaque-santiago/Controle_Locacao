@@ -496,6 +496,13 @@ O registro de vistoria com fotos (fluxo 8) não foi exercitado porque todos os c
 Conferido localmente: o comando de subida em modo de produção (sem `LOCACAO_AMBIENTE=dev`), `/saude` e a tela de acesso em
 Chromium desktop e celular e WebKit (18 testes). **Não verificado:** a execução no GitHub Actions (exige `push`).
 
+**Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
+CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
+(1 MB nos formulários, 105 MB no envio de arquivos, resposta 413) e vida máxima de 12 h da sessão. Duas garantias viraram teste
+permanente (`tests/web/test_seguranca_rotas.py`): toda rota exige sessão e toda mutação exige CSRF. Requisitos para a Fase 5:
+`--proxy-headers` com `--forwarded-allow-ips` do proxy, 1 worker, `LOCACAO_AMBIENTE` diferente de `dev`. Decisões do proprietário
+pendentes: bloqueio por tentativas contra o dono e remoção do EXIF das fotos.
+
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 
 | Item | Destino |

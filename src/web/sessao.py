@@ -22,6 +22,8 @@ from typing import Callable
 logger = logging.getLogger(__name__)
 
 LIMITE_INATIVIDADE_SEGUNDOS = 1800
+# Vida máxima de uma sessão, mesmo com uso contínuo: obriga a entrar de novo e limita o estrago de um cookie roubado.
+LIMITE_VIDA_SEGUNDOS = 12 * 3600
 # A atividade (prazo de inatividade) só é regravada no arquivo de tempos em tempos; o resto é gravado na hora.
 INTERVALO_SALVAR_ATIVIDADE_SEGUNDOS = 30
 # O que vai para o arquivo: o suficiente para a sessão continuar valendo. O cliente Supabase é refeito a partir do token.
@@ -43,6 +45,7 @@ class Sessao:
     expira_em: float
     ultima_atividade: float
     csrf_token: str = field(default_factory=lambda: secrets.token_urlsafe(32))
+    criada_em: float = 0.0  # 0 = desconhecida (arquivo de desenvolvimento antigo): só vale a inatividade
     # Serializa a renovação dos tokens: o refresh token é de uso único e várias
     # requisições HTMX da mesma sessão podem chegar ao mesmo tempo.
     trava: Lock = field(default_factory=Lock, repr=False)
@@ -92,6 +95,7 @@ class ArmazemSessoes:
             refresh_token=refresh_token,
             expira_em=expira_em,
             ultima_atividade=self._relogio(),
+            criada_em=self._relogio(),
         )
         with self._trava:
             self._limpar_expiradas_sem_trava()
@@ -108,7 +112,7 @@ class ArmazemSessoes:
             sessao = self._sessoes.get(sessao_id)
             if sessao is None:
                 return None
-            if agora - sessao.ultima_atividade > self._limite:
+            if self._vencida(sessao, agora):
                 del self._sessoes[sessao_id]
                 return None
             sessao.ultima_atividade = agora
@@ -135,12 +139,18 @@ class ArmazemSessoes:
         with self._trava:
             return len(self._sessoes)
 
+    def _vencida(self, sessao: Sessao, agora: float) -> bool:
+        """Inativa por tempo demais ou mais velha que o limite de vida."""
+        if agora - sessao.ultima_atividade > self._limite:
+            return True
+        return bool(sessao.criada_em) and agora - sessao.criada_em > LIMITE_VIDA_SEGUNDOS
+
     def _limpar_expiradas_sem_trava(self) -> None:
         agora = self._relogio()
         vencidas = [
             id_
             for id_, s in self._sessoes.items()
-            if agora - s.ultima_atividade > self._limite
+            if self._vencida(s, agora)
         ]
         for id_ in vencidas:
             del self._sessoes[id_]
@@ -151,7 +161,10 @@ class ArmazemSessoes:
         if not self._arquivo:
             return
         self._ultimo_salvamento = self._relogio()
-        dados = [{campo: getattr(s, campo) for campo in CAMPOS_PERSISTIDOS} for s in self._sessoes.values()]
+        dados = [
+            {**{campo: getattr(s, campo) for campo in CAMPOS_PERSISTIDOS}, "criada_em": s.criada_em}
+            for s in self._sessoes.values()
+        ]
         temporario = self._arquivo.with_name(self._arquivo.name + ".tmp")
         try:
             temporario.write_text(json.dumps(dados), encoding="utf-8")
@@ -175,5 +188,6 @@ class ArmazemSessoes:
                 sessao = Sessao(**{campo: item[campo] for campo in CAMPOS_PERSISTIDOS})
             except (KeyError, TypeError):
                 continue
-            if agora - sessao.ultima_atividade <= self._limite:
+            sessao.criada_em = float(item.get("criada_em") or 0.0)
+            if not self._vencida(sessao, agora):
                 self._sessoes[sessao.id] = sessao
