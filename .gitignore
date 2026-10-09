@@ -18,3 +18,4 @@ tools/tailwindcss*
 
 # Sessões do app web em desenvolvimento (contêm tokens do Supabase)
 .sessoes_dev.json*
+resultado*.txt
