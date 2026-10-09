@@ -197,7 +197,7 @@ def verificar_teclado(page: Page, registrar, nome_pagina: str, maximo: int = 60)
         if not p["dentro"]:
             # Parcialmente visível (o WebKit deixa o campo rente à borda inferior) é P2: conferir em iPhone/iPad reais.
             severidade = "P2" if p.get("parcial") else "P1"
-            registrar(severidade, "foco-fora-da-janela", nome_pagina, "Elemento focado fora da área visível.", f"{p['el']} «{p['rotulo']}»")
+            registrar(severidade, "foco-fora-da-janela", nome_pagina, "Elemento focado fora da área visível.", f"{p['el']} «{p['rotulo']}»", detalhe="esq, dir, topo, base, larg, alt = " + ", ".join(map(str, p.get("caixa", []))))
         if not p["rotulo"] and "main#conteudo" not in p["el"]:  # a região principal é um marco, não um controle
             registrar("P1", "foco-sem-nome", nome_pagina, "Elemento focável sem nome acessível.", p["el"])
         if p["regressao"]:

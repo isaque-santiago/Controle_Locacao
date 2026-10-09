@@ -291,6 +291,7 @@ _JS_FOCO = (
     el: descrever(el),
     rotulo: rotuloAcessivel().slice(0, 50),
     indicador, dentro, regressao,
+    caixa: [Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.bottom), vw, vh],
     // Campo de data nativo: Tab percorre dia, mês e ano no MESMO elemento.
     segmentos: el.tagName === 'INPUT' && ['date', 'time', 'datetime-local', 'month', 'week'].includes(el.type) ? 5 : 1,
   };
