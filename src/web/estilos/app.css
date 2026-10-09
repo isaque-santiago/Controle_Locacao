@@ -100,6 +100,8 @@
 /* ---------- Base ---------- */
 *, *::before, *::after {box-sizing: border-box;}
 html {-webkit-text-size-adjust: 100%;}
+/* No celular a barra inferior é fixa: o que recebe foco por teclado não pode ficar atrás dela. */
+@media (max-width: 719px) {html {scroll-padding-bottom: calc(var(--alvo) + 40px + env(safe-area-inset-bottom, 0px));}}
 body {margin: 0; background: var(--fundo); color: var(--texto); font: 400 14.5px/1.5 var(--fonte-ui);}
 h1, h2, h3, p {margin: 0;}
 h1, h2, h3 {font-family: var(--fonte-titulo); font-weight: 700; letter-spacing: .005em; line-height: 1.15; font-size: revert;}
