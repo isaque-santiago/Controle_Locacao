@@ -279,9 +279,10 @@ table.dados {width: 100%; border-collapse: collapse;}
 @container (max-width: 959px) {
   .dados thead {display: none;}
   .dados, .dados tbody {display: block;}
-  .dados tbody tr {display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2) var(--e4); padding: var(--e4); border-top: 1px solid var(--linha);}
+  .dados tbody tr {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e2) var(--e4); padding: var(--e4); border-top: 1px solid var(--linha);}
   .dados tbody tr:first-child {border-top: 0;}
-  .dados td {display: block; padding: 0; border: 0;}
+  .dados td {display: block; padding: 0; border: 0; min-width: 0; overflow-wrap: anywhere;}
+  .dados td .mono, .dados td.mono {white-space: normal;}
   .dados td[data-rotulo]::before {content: attr(data-rotulo); display: block; font-size: 12px; color: var(--texto-3); margin-bottom: 1px;}
   .dados td.topo {grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--e3);}
   .dados td.topo::before {display: none;}

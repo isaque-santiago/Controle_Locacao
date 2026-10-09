@@ -311,10 +311,13 @@ def pagina_logada(playwright_sessao: Playwright, _contextos_autenticados, cenari
 def pagina_nova_sessao(playwright_sessao, navegador, cenario):
     """Página com um login próprio (para testar o logout sem derrubar a sessão compartilhada do perfil)."""
     from e2e.ajudas import entrar
+    from e2e.roteiro import grava_neste_cenario
 
     cred = credenciais()
     if cred is None:
         pytest.skip("sem credenciais de teste")
+    if not grava_neste_cenario(cenario):
+        pytest.skip("um login extra por perfil basta (evita logins desnecessários)")
     contexto = _novo_contexto(playwright_sessao, navegador, cenario)
     page = _pagina_com_console(contexto)
     entrar(page, *cred)
