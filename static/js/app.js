@@ -92,6 +92,12 @@
     document.cookie = 'tema=' + proximo + '; path=/; max-age=' + (proximo ? 31536000 : 0) + '; SameSite=Lax' + seguro;
   });
 
+  // ---- Foco por teclado em faixas com rolagem horizontal (chips, abas): garante que o item focado apareça inteiro ----
+  document.addEventListener('focusin', function (e) {
+    var item = e.target.closest && e.target.closest('.chips > *, .abas > *');
+    if (item && item.scrollIntoView) item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+
   // ---- Troca parcial do HTMX: se o elemento focado vai ser substituído (chip, paginação, seletor),
   // devolve o foco ao equivalente na lista nova; sem equivalente, ao próprio trecho trocado ----
   var focoAntes = null;
