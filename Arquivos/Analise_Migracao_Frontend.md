@@ -477,6 +477,19 @@ regressão incluído). O erro de console de CSP vinha do `htmx.min.js` (copia o 
 vistoria, então o registro com fotos ficou sem exercitar nesse banco. **Aberto:** um teste falhou na última rodada e o nome não foi
 informado.
 
+**Parte B concluída (09/10/2026).** Rodadas com `--e2e-estrito` e login real, todas sem P0 nem P1: desktop nas cinco larguras e dois
+temas (páginas, fluxos 1 a 10 no 1440 px claro, homologação: zoom, reflow, paisagem, texto 200%, espaçamento WCAG, teclado, rede e
+CPU reduzidas), celular emulado (54 testes, fluxos que gravam no 390 px), Firefox (66) e WebKit (66). Defeitos reais do app achados
+e corrigidos nesta parte: nome da marca perdido no trilho (axe `link-name`) e alvo de 37 px na tela de acesso; botões «Abrir a
+ficha» cortados a 1024 px (tabelas viram cartões até 959 px de caixa, com rolagem horizontal de segurança); cartões de tabela
+estourando a 390 px; links de exportação dos relatórios sem a aba; CSV com uma casa decimal; caixas de seleção de 19 px na
+manutenção; cabeçalhos de tabela vazios; chips e abas focados por teclado cortados na faixa de rolagem; foco atrás da barra
+inferior no celular; `style` copiado pelo htmx contra a CSP. Falsos positivos ajustados no detector: campo de data nativo (Tab
+percorre dia, mês e ano), CSS das variantes (agora pelo CSSOM) e a folha injetada pelo screenshot do WebKit.
+**Pendente (não bloqueia):** P2 de foco parcialmente abaixo da dobra a 1024 px (Configurações) e a 390 px no Firefox; a regressão
+visual só tem sentido com o banco recriado (referência gravada antes dos fluxos); WebKit emulado não substitui iPhone real.
+O registro de vistoria com fotos (fluxo 8) não foi exercitado porque todos os contratos do banco de dev já tinham as duas vistorias.
+
 **Parte C concluída (08/10/2026): CI do app novo.** `.github/workflows/ci.yml` sobe `uvicorn --factory src.web.app:criar_app`
 (1 worker) e espera o `/saude`; os jobs `navegador-login` (quatro perfis, sem credenciais, `--e2e-estrito`) e
 `navegador-autenticado` (manual, segredos de dev, um perfil por vez porque os fluxos gravam no mesmo banco) usam o app novo.

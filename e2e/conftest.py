@@ -249,9 +249,11 @@ def _pagina_com_console(contexto) -> Page:
         lambda r: page.falhas_http.append(f"{r.status} {urlparse(r.url).path}") if r.status >= 500 else None,
     )
     page.on("pageerror", lambda e: page.erros_console.append(f"pageerror: {e}"))
+    # O WebKit, ao tirar foto de página inteira, injeta uma folha de estilo que a CSP do app (style-src 'self') recusa e
+    # escreve isso no console. Conferido na tela de acesso: o erro aparece só com o screenshot, nunca pelo app.
     page.on(
         "console",
-        lambda m: page.erros_console.append(f"console.{m.type}: {m.text[:160]} @ {_onde(m)}") if m.type == "error" else None,
+        lambda m: None if "Refused to apply a stylesheet because" in m.text else page.erros_console.append(f"console.{m.type}: {m.text[:160]} @ {_onde(m)}") if m.type == "error" else None,
     )
     return page
 
