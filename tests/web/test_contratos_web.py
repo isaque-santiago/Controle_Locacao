@@ -48,6 +48,7 @@ def test_ficha_abas_vistorias_e_manutencoes(cliente, base_contratos):
     base = f"/contratos/{base_contratos.id}"
     vistorias = cliente.get(f"{base}?aba=vistorias").text
     assert "Entrega" in vistorias and "Cheio" in vistorias and "freio dianteiro, espelho retrovisor" in vistorias
+    assert 'class="cartao vistoria-resumo"' in vistorias and 'class="vistoria-dados"' in vistorias
     assert "Ainda não realizada — será registrada no encerramento do contrato" in vistorias
     manutencoes = cliente.get(f"{base}/abas/manutencoes").text
     assert "<html" not in manutencoes and "Óleo &lt;i&gt;e filtro&lt;/i&gt;" in manutencoes

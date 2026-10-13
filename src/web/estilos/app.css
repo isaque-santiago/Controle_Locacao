@@ -441,6 +441,14 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .cols-2 {grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start;}
 .kpis.kpis-3 {grid-template-columns: repeat(3, minmax(0, 1fr));}
 .cartao.tracejado {border-style: dashed; background: transparent;}
+.vistoria-resumo {padding-bottom: var(--e4);}
+.vistoria-resumo > h2 {margin-bottom: var(--e3);}
+.vistoria-dados {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--linha-sutil);}
+.vistoria-dados > div {min-width: 0; padding: var(--e3) var(--e4); border-bottom: 1px solid var(--linha-sutil);}
+.vistoria-dados > div:nth-child(odd) {padding-left: 0; border-right: 1px solid var(--linha-sutil);}
+.vistoria-dados > div:nth-child(even) {padding-right: 0;}
+.vistoria-dados dt {color: var(--texto-3); font-size: 12.5px;}
+.vistoria-dados dd {margin: var(--e1) 0 0; font-size: 15px; font-weight: 500; overflow-wrap: anywhere;}
 .vist-cartao .dl {margin-bottom: var(--e5);}
 .vist-secao {font-size: 13px; font-weight: 600; color: var(--texto-2); margin: var(--e4) 0 var(--e2);}
 .vist-checklist {list-style: none; margin: 0; padding: 0;}
@@ -453,7 +461,11 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .galeria-foto img {width: 100%; height: 100%; object-fit: contain;}
 .galeria-foto.vazia {font-size: 12.5px; color: var(--texto-3); text-align: center; padding: var(--e2);}
 @media (max-width: 1099px) {.cols-2 {grid-template-columns: minmax(0, 1fr);}}
-@media (max-width: 719px) {.kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}}
+@media (max-width: 719px) {
+  .kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}
+  .vistoria-dados {grid-template-columns: minmax(0, 1fr);}
+  .vistoria-dados > div {padding: var(--e3) 0; border-right: 0 !important;}
+}
 
 /* ---------- Relatórios ---------- */
 .barra-periodo {display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e3); margin-bottom: var(--e4);}

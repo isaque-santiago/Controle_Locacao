@@ -15,8 +15,8 @@
 {% elif aba == "vistorias" %}
 <div class="grade cols-2">
 {% for v in a.vistorias %}{% set r = v.registro %}
-{% call cartao(v.titulo) %}
-{% if r %}<dl class="grade-dados"><div><dt>Data</dt><dd class="mono">{{ r.data|data_br }}</dd></div><div><dt>Km</dt><dd class="mono">{{ r.km|milhar }} km</dd></div><div><dt>Combustível</dt><dd>{{ (r.nivel_combustivel or "—")|capitalize }}</dd></div><div><dt>Avarias</dt><dd>{{ v.avarias }}</dd></div></dl>
+{% call cartao(v.titulo, "vistoria-resumo") %}
+{% if r %}<dl class="vistoria-dados"><div><dt>Data</dt><dd class="mono">{{ r.data|data_br }}</dd></div><div><dt>Km</dt><dd class="mono">{{ r.km|milhar }} km</dd></div><div><dt>Combustível</dt><dd>{{ (r.nivel_combustivel or "—")|capitalize }}</dd></div><div><dt>Avarias</dt><dd>{{ v.avarias }}</dd></div></dl>
 {% else %}<p class="text-texto-2">Ainda não realizada{% if v.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>{% endif %}
 {% endcall %}
 {% endfor %}
