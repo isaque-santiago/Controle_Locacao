@@ -1,18 +1,13 @@
-"""Portal do locatário (Fase 7): serviço e telas, com o banco isolado por mocks."""
+"""Portal do locatário (Fase 7): serviço e repositório, com o banco isolado por mocks."""
 
 from decimal import Decimal
-from pathlib import Path
-from time import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 from postgrest.exceptions import APIError
-from streamlit.testing.v1 import AppTest
 
 from src.services import portal_locatario
-from src.ui import portal_locatario as ui_portal
 
-RAIZ = Path(__file__).resolve().parents[1]
 REPO = "src.services.portal_locatario.portal_locatario"
 
 def _png_valido() -> bytes:
@@ -107,126 +102,6 @@ class TestRegistrarTrocaOleo:
                 _registrar()
 
 
-def _abrir(arquivo, papel, dados=DADOS):
-    with (
-        patch("src.ui.sessao_streamlit.papel_atual", return_value=papel),
-        patch("src.services.portal_locatario.dados_portal", return_value=dados),
-    ):
-        app = AppTest.from_file(str(RAIZ / arquivo), default_timeout=20)
-        app.session_state["usuario"] = {"id": "u1", "email": "maria@example.com"}
-        app.session_state["ultima_atividade"] = time()
-        app.session_state["papel_usuario"] = papel
-        return app.run()
-
-
-class TestTelas:
-    def test_portal_mostra_moto_formulario_e_multa(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
-        assert not app.exception and not app.error
-        html = " ".join(m.value for m in app.markdown)
-        assert "Olá, Maria" in html
-        assert "ABC" in html
-        assert any(t.label == "Hodômetro atual (km)" for t in app.text_input)
-        avisos = " ".join(i.value for i in app.info)
-        assert "R$ 50,00" in avisos
-        assert "6.000 km" in avisos
-
-    def test_portal_sem_contrato_ativo(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario", {**DADOS, "contratos": []})
-        assert not app.exception
-        assert [i.value for i in app.info] == ["Você não tem contrato ativo no momento."]
-
-    def test_envio_sem_fotos_e_recusado(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
-        app.text_input[0].set_value("6100")
-        with (
-            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
-            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
-            patch("src.services.portal_locatario.registrar_troca_oleo") as registrar,
-        ):
-            app.button[0].click().run()
-        registrar.assert_not_called()
-        assert [e.value for e in app.error] == ["Anexe a foto do painel e a foto da nota fiscal."]
-
-    def test_envio_recusado_nao_apaga_o_hodometro_digitado(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
-        app.text_input[0].set_value("6100")
-        with (
-            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
-            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
-            patch("src.services.portal_locatario.registrar_troca_oleo"),
-        ):
-            app.button[0].click().run()
-        assert app.error  # fotos faltando
-        assert app.text_input[0].value == "6100"
-
-    def test_envio_com_erro_do_servico_mantem_o_formulario_e_com_sucesso_limpa(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
-        app.text_input[0].set_value("6100")
-        foto = MagicMock()
-        foto.name, foto.getvalue.return_value = "a.png", PNG
-        with (
-            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
-            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
-            patch("src.ui.portal_locatario.st.file_uploader", return_value=foto),
-            patch(
-                "src.services.portal_locatario.registrar_troca_oleo",
-                side_effect=ValueError("O hodômetro não pode ser menor que o último registrado (5900 km)."),
-            ),
-        ):
-            app.button[0].click().run()
-            assert any("não pode ser menor" in e.value for e in app.error)
-            assert app.text_input[0].value == "6100"
-        with (
-            patch("src.ui.sessao_streamlit.papel_atual", return_value="locatario"),
-            patch("src.services.portal_locatario.dados_portal", return_value=DADOS),
-            patch("src.ui.portal_locatario.st.file_uploader", return_value=foto),
-            patch("src.services.portal_locatario.registrar_troca_oleo", return_value={"excedeu": False}),
-        ):
-            app.button[0].click().run()
-        assert app.text_input[0].value == ""
-
-    def test_usuario_sem_papel_nao_ve_nenhuma_tela(self):
-        app = _abrir("app.py", None)
-        assert not app.exception
-        assert "não tem acesso ao sistema" in app.error[0].value
-        assert not app.title  # nem o Dashboard do dono foi executado
-
-    def test_locatario_no_app_ve_so_o_portal(self):
-        app = _abrir("app.py", "locatario")
-        assert not app.exception and not app.error
-        assert "Olá, Maria" in " ".join(m.value for m in app.markdown)
-
-
-class TestAlterarSenha:
-    def test_portal_oferece_troca_de_senha_opcional_sem_bloquear_a_troca_de_oleo(self):
-        app = _abrir("pages/11_Portal_Locatario.py", "locatario")
-        assert not app.exception and not app.error
-        assert [e.label for e in app.expander][-1] == "Alterar minha senha (opcional)"
-        assert any(t.label == "Hodômetro atual (km)" for t in app.text_input)
-
-    def test_trocar_senha_valida_e_chama_o_auth(self):
-        with (
-            patch(f"{REPO}.alterar_senha") as alterar,
-            patch("src.ui.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
-        ):
-            ui_portal.trocar_senha("moto2026x", "moto2026x")
-        alterar.assert_called_once_with("moto2026x")
-
-    @pytest.mark.parametrize(
-        "nova,confirmacao",
-        [("moto2026x", "outra1234"), ("curta1", "curta1"), ("12345678", "12345678"), ("a52998224725", "a52998224725")],
-    )
-    def test_senha_fraca_ou_diferente_nao_chama_o_auth(self, nova, confirmacao):
-        with (
-            patch(f"{REPO}.alterar_senha") as alterar,
-            patch("src.ui.portal_locatario.st.session_state", {"usuario": {"email": "52998224725@portal.example.com"}}),
-        ):
-            with pytest.raises(ValueError):
-                ui_portal.trocar_senha(nova, confirmacao)
-        alterar.assert_not_called()
-
-
 class TestAcessoDoLocatario:
     def test_criar_devolve_email_e_senha_da_funcao(self):
         resposta = {"ok": True, "email": "52998224725@portal.example.com", "senha": "Abc23def45"}
@@ -256,16 +131,6 @@ class TestAcessoDoLocatario:
         with patch(f"{REPO}.gerenciar_acesso", return_value=resposta):
             with pytest.raises(ValueError, match=mensagem):
                 portal_locatario.criar_acesso("cli1")
-
-
-class TestLoginPorCpf:
-    def test_cpf_digitado_vira_email_interno_no_login(self):
-        app = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=20).run()
-        app.text_input[0].set_value("529.982.247-25")
-        app.text_input[1].set_value("senha-qualquer")
-        with patch("src.auth.login") as login:
-            next(b for b in app.button if b.label == "Entrar no painel").click().run()
-        login.assert_called_once_with("52998224725@portal.example.com", "senha-qualquer")
 
 
 class TestRepositorioAcesso:

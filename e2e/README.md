@@ -88,7 +88,7 @@ As telas mostram dados do banco de dev, e os fluxos 4 a 10 os alteram: grave a r
 depois de recriar o banco de dev, antes dos fluxos), com `-k visual`. Os fluxos e as páginas rodam com `-k "not visual"`.
 
 A primeira execução grava a referência; `--atualizar-referencia` a substitui; `--tolerancia-visual 0.3` é o percentual de
-pixels aceito. As referências do Streamlit (`e2e/referencia/<sistema>/`) deixaram de valer e podem ser apagadas.
+pixels aceito. As referências do Streamlit (`e2e/referencia/<sistema>/`) deixaram de valer e podem ser apagadas (o Streamlit foi removido).
 
 ## Limites conhecidos
 

@@ -1,6 +1,7 @@
 """Contraste mínimo de 4,5:1 (WCAG 1.4.3) dos pares texto/fundo definidos pelos tokens do design system.
 
-Lê as variáveis CSS de estilos.css (tema claro) e estilos_escuro.css (sobrepõe o claro) e confere
+Lê as variáveis CSS de src/web/estilos/app.css (bloco `:root` = tema claro; `:root[data-tema="escuro"]`
+sobrepõe o claro) e confere
 os pares que o app realmente usa. A auditoria no navegador (axe-core, Etapa 9) cobre o que é
 renderizado; este teste pega a regressão de token antes de abrir o navegador."""
 
@@ -9,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-PASTA = Path(__file__).resolve().parents[1] / "src" / "ui"
+CSS = Path(__file__).resolve().parents[1] / "src" / "web" / "estilos" / "app.css"
 _VAR = re.compile(r"--([a-z0-9-]+)\s*:\s*([^;]+);")
 _HEX = re.compile(r"^#([0-9a-fA-F]{6})$")
 _RGBA = re.compile(r"^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$")
@@ -17,9 +18,12 @@ _RGBA = re.compile(r"^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\
 MINIMO = 4.5
 
 
-def _tokens(arquivo: str) -> dict[str, str]:
-    texto = (PASTA / arquivo).read_text(encoding="utf-8")
-    return {nome: valor.strip() for nome, valor in _VAR.findall(texto)}
+def _tokens(seletor: str) -> dict[str, str]:
+    """Variáveis do primeiro bloco que começa em `seletor {`."""
+    texto = CSS.read_text(encoding="utf-8")
+    inicio = texto.index(seletor + " {")
+    bloco = texto[inicio : texto.index("}", inicio)]
+    return {nome: valor.strip() for nome, valor in _VAR.findall(bloco)}
 
 
 def _cor(valor: str) -> tuple[float, float, float, float]:
@@ -54,9 +58,9 @@ def contraste(texto: tuple, fundo: tuple) -> float:
 
 @pytest.fixture(scope="module", params=["claro", "escuro"])
 def tema(request):
-    tokens = _tokens("estilos.css")
+    tokens = _tokens(":root")
     if request.param == "escuro":
-        tokens = {**tokens, **_tokens("estilos_escuro.css")}
+        tokens = {**tokens, **_tokens(':root[data-tema="escuro"]')}
     return request.param, tokens
 
 
@@ -93,5 +97,5 @@ def test_selos_de_estado_tem_contraste(tema, estado):
 
 def test_botao_primario(tema):
     nome, t = tema
-    razao = contraste(_cor(t["btn-primario-texto"]), _cor(t["btn-primario"]))
+    razao = contraste(_cor(t["btn-texto"]), _cor(t["btn"]))
     assert razao >= MINIMO, f"{nome}: texto do botão primário = {razao:.2f}:1"

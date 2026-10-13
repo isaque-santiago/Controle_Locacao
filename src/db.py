@@ -1,6 +1,5 @@
 """Fábrica do cliente Supabase (com sessão do usuário, para valer o RLS)."""
 
-from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
 
@@ -17,21 +16,6 @@ _CLIENTE_REQUISICAO: ContextVar[Client | None] = ContextVar(
 _USUARIO_REQUISICAO: ContextVar[str | None] = ContextVar(
     "usuario_requisicao", default=None
 )
-
-# Ganchos do frontend antigo (Streamlit), registrados por `src/ui/sessao_streamlit.py`.
-# Somem junto com ele; o app web nunca os registra.
-_CLIENTE_ALTERNATIVO: Callable[[], Client] | None = None
-_USUARIO_ALTERNATIVO: Callable[[], str | None] | None = None
-
-
-def registrar_origem_alternativa(
-    cliente: Callable[[], Client], usuario_id: Callable[[], str | None]
-) -> None:
-    """Registra de onde vêm o cliente e o usuário quando não há requisição web."""
-    global _CLIENTE_ALTERNATIVO, _USUARIO_ALTERNATIVO
-    _CLIENTE_ALTERNATIVO = cliente
-    _USUARIO_ALTERNATIVO = usuario_id
-
 
 def criar_cliente_anonimo() -> Client:
     """Cliente novo, sem usuário (anon key), para entrar ou renovar a sessão.
@@ -78,8 +62,6 @@ def usuario_id_atual() -> str | None:
     da_requisicao = _USUARIO_REQUISICAO.get()
     if da_requisicao:
         return da_requisicao
-    if _USUARIO_ALTERNATIVO is not None:
-        return _USUARIO_ALTERNATIVO()
     return None
 
 
@@ -98,6 +80,4 @@ def get_client() -> Client:
     cliente_da_requisicao = _CLIENTE_REQUISICAO.get()
     if cliente_da_requisicao is not None:
         return cliente_da_requisicao
-    if _CLIENTE_ALTERNATIVO is not None:
-        return _CLIENTE_ALTERNATIVO()
     raise RuntimeError("Não há cliente Supabase no contexto atual.")

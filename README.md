@@ -6,13 +6,13 @@ Ver plano completo em [Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação
 
 ## Stack
 
-Python 3.11+, Streamlit, Supabase (PostgreSQL + Auth + Storage), Plotly, pytest.
+Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + Storage), pytest.
 
 ## Setup
 
 1. Crie um projeto no Supabase. As migrations em `supabase/migrations/` seguem o formato `AAAAMMDDHHMMSS_descricao.sql` (exigido pela integração Supabase ↔ GitHub, que aplica cada push automaticamente); ao adicionar uma nova, use um timestamp maior que o da última. `supabase/seed.sql` **não** é aplicado por essa integração — rode-o manualmente no SQL Editor após a primeira aplicação das migrations.
 2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users) e troque o UUID dentro de `is_dono()` na migration `20260922000000_restringe_rls_ao_dono.sql` **antes de aplicá-la** — a RLS libera o acesso somente a esse usuário; com um UUID errado, ninguém consegue ler nem gravar dados.
-3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
+3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` (só em desenvolvimento; o nome do arquivo é herdado do antigo app) e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Em produção use variáveis de ambiente.
 4. Instale as dependências:
 
 ```bash
@@ -22,8 +22,10 @@ pip install -r requirements.txt
 5. Rode o app:
 
 ```bash
-streamlit run app.py
+python executar_web.py
 ```
+
+Abre em `http://localhost:8000` (detalhes na seção abaixo).
 
 ## Testes
 
@@ -31,16 +33,15 @@ streamlit run app.py
 pytest
 ```
 
-## Frontend novo (FastAPI + Jinja2 + HTMX + Tailwind), em migração
+## Frontend (FastAPI + Jinja2 + HTMX + Tailwind)
 
-O Streamlit está sendo substituído por um app FastAPI. Plano, fases e decisões em
-[Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). Até a Fase 4 os dois
-rodam em paralelo, no mesmo banco. **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
+O Streamlit foi removido (Fase 4, parte F). Plano, fases e decisões em
+[Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
 papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
 Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 (demais páginas) concluída (08/10/2026):** Clientes (`/clientes`, `/clientes/{id}`), Contratos
 (`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`), Manutenção (`/manutencao`), Vistorias
 (`/vistorias`), Documentos (`/documentos`), Relatórios (`/relatorios`), Configurações (`/configuracoes`) e Portal do
-Locatário (`/portal`). Todas as telas do app novo estão migradas; o Streamlit só sai na Fase 4.
+Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fase 4.
 
 **Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
@@ -108,9 +109,11 @@ a suíte inteira passa (1168 testes, em 08/10/2026; os de Cobranças usam relóg
 `executar_web.py` (o servidor roda como processo filho, reiniciado a cada `.py` salvo em `src/`), e não do `--reload` do
 uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console (preview do Claude). Em produção nada vai a disco.
 
-**Fase 4 em andamento** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
-Parte A concluída: o núcleo (`config`, `db`, `domain`, `services`, `repositories`) e o app web não dependem mais do Streamlit;
-o código exclusivo dele fica em `src/ui/sessao_streamlit.py` e some na remoção. Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`) e C (CI do app novo) concluídas; D (revisão de segurança: `Arquivos/Revisao_Seguranca.md`) concluída. E (homologação com o proprietário) em andamento: comparação lado a lado com o Streamlit, regressão visual (32 casos) e os 10 fluxos no desktop feitos; faltam teclado/zoom, celular (POCO M6 Pro) e fotos de câmera reais (`Arquivos/Roteiro_Homologacao_Manual.md`). Depois, F (remover o Streamlit), só com a aprovação do proprietário.
+**Fase 4 concluída** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
+Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`), C (CI do app novo), D (revisão de segurança:
+`Arquivos/Revisao_Seguranca.md`), E (homologação com o proprietário: `Arquivos/Roteiro_Homologacao_Manual.md`) e F (remoção do Streamlit:
+`app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
+`plotly` e `watchdog`). Falta o deploy (Fase 5).
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
@@ -446,21 +449,12 @@ Configurações > "Multa por troca de óleo fora do intervalo". Valor 0,00 (padr
 multa. O app ainda não tem tela para cancelar cobrança: se a foto não confirmar o km, a
 multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
 
-## Publicação no Streamlit Community Cloud
+## Publicação
 
-1. Envie o código revisado ao repositório GitHub conectado à sua conta.
-2. Em [Streamlit Community Cloud](https://share.streamlit.io), escolha **Create app**,
-   selecione o repositório, a branch desejada e o arquivo principal `app.py`.
-3. Em configurações avançadas, selecione Python 3.11 ou superior e configure os
-   segredos conforme `.streamlit/secrets.toml.example`. Use `SUPABASE_URL` e
-   `SUPABASE_ANON_KEY`; não use a chave `service_role`.
-4. Confirme que as migrations foram aplicadas, o cadastro público do Supabase foi
-   desativado e o usuário do dono foi criado. Os buckets devem continuar privados.
-5. Publique. Em janela anônima, todas as páginas devem exibir somente o login.
-6. Entre com o usuário do dono e execute o roteiro abaixo. Registre a URL e os
-   resultados da homologação antes de considerar a implantação concluída.
-
-Referência: [guia oficial de deploy](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy).
+O deploy do app FastAPI é a Fase 5. Requisitos já definidos na revisão de segurança (`Arquivos/Revisao_Seguranca.md`):
+`uvicorn --factory src.web.app:criar_app` com `--proxy-headers` e `--forwarded-allow-ips` do proxy, **1 worker**, `LOCACAO_AMBIENTE`
+diferente de `dev`, `SUPABASE_URL` e `SUPABASE_ANON_KEY` por variável de ambiente (nunca a chave `service_role`). Antes de publicar:
+migrations aplicadas, cadastro público do Supabase desativado, usuário do dono criado e buckets privados.
 
 ## Roteiro manual de aceite
 
@@ -517,30 +511,10 @@ registrada. Os cálculos financeiros usam `Decimal`; as células do Excel são n
 
 ## Estilização do painel
 
-A interface segue um design system em camadas: **tokens → `estilos.css` → componentes → páginas**.
-
-- `src/ui/estilos.css` é o design system: tokens (`:root` com cores, espaçamento 4–48px, raios 6/8/10/14/18px, sombras, tipografia) e, na ordem, base, tipografia, layout, barra lateral, cartões, KPI, botões, campos, tabelas, selos, alertas, modais, estados vazios, login e responsivo.
-- `src/ui/estilos_escuro.css` só redefine os tokens e ajusta os widgets nativos do Streamlit; regras novas devem usar `var(--…)`, nunca cores fixas.
-- `src/ui/tema.py` carrega os dois arquivos e decide o modo (claro, escuro ou o do sistema).
-- `src/ui/componentes.py` monta o HTML com classes do design system: `cabecalho_pagina`, `kpi`/`kpi_grade`, `cartao_html`, `selo_situacao`, `chip_placa`, `item_alerta`, `estado_vazio`/`mostrar_vazio`, `tabela_html`, barras de ocupação e proporção.
-
-Botões: primário (grafite no claro, amarelo no escuro), secundário, terciário e destrutivo (contorno vermelho; use a chave `perigo_*` no `st.button`). Estados de status usam sempre bolinha + texto, sem depender só da cor.
-
-Ações por linha usam `botao_acao(alvo, acao, chave, ajuda=...)` (`componentes.py`): ícone Material + texto real (nome acessível), alvo de 44 × 44 px (`--alvo-min`), com o texto sempre visível (nenhuma ação depende só de ícone ou dica). O vocabulário fica em `ACOES` (Abrir, Editar, Pagar, Concluir, Cancelar, Regularizar, Comprovante, Atualizar km, Comparar); não use glifos como `→ ✓ ✎ ›` em rótulos. O retorno das fichas é `botao_voltar("motos", chave)`. Detalhes em `Arquivos/Design_UI.md`.
-
-Listas e abas seguem um padrão único em `src/ui/listas.py`: `barra_filtros(prefixo, opcoes, padrao, contagens=..., busca="Buscar por ...")` (pílulas que quebram de linha + busca + `.resumo(n)` com resultados, filtros ativos e "Limpar filtros"), `paginar`/`rodape_paginacao` (Anterior, informação da página, Próxima e itens por página; aritmética em `src/domain/paginacao.py`) e `abas`/`aba_ativa` (abas nativas que quebram de linha, lembram a aba ativa e só executam a aba aberta). Filtro, busca, página e aba sobrevivem a abrir uma ficha e voltar. O menu do dono é agrupado por área (Operação, Cadastros, Frota, Gestão, Sistema) em `app.py`, sem mudar as rotas. Nenhuma página monta pílulas, abas ou paginação na mão (`tests/test_listas_ui.py`).
-
-Listas interativas (com ações) são cartões de `src/ui/registros.py`, e dados somente leitura são `tabela_html`. Cada registro é `with registro(prefixo, id, titulo, [campo("Vencimento", html), ...], selo=...) as acoes:` dentro de `with lista_registros(prefixo, acoes=N):`; as ações são `botao_acao(acoes, ...)`. O significado vem de classes (`.registro__id`, `.registro__campo`, `<dl>` com `<dt>` rótulo e `<dd>` valor) e de chaves (`lista_`, `reg_`, `regacoes_`), nunca da posição da coluna, então mudar a ordem de um campo no Python não troca o rótulo. A quebra em telas estreitas usa container query (largura da lista, não da janela): ≤ 1000 px as ações ficam ao lado da identidade e os dados abaixo; ≤ 560 px tudo empilha, com as ações logo abaixo da identidade. Não use `st.columns` para montar linhas de lista, nem `st.dataframe`/`st.data_editor` (canvas, sem tema nem celular); as peças e serviços extras de Manutenção são linhas de campos com `Remover`. `tabela_html(cabecalhos, linhas, legenda="...")` tem `<th scope="col">`, papéis ARIA explícitos (valem quando o CSS vira cartões no celular) e nome para leitor de tela; cabeçalho `""` marca coluna decorativa. Protegido por `tests/test_registros_ui.py`.
-
-Formulários usam os campos tipados de `src/ui/formularios.py` e as regras de entrada de `src/domain/entradas.py` (funções puras, `tests/test_entradas.py`). `campo_moeda` mostra o prefixo `R$` e o valor no padrão `1.234,56`; `campo_percentual` e `campo_inteiro(sufixo="%"|"km"|"dias")` desenham a unidade dentro da moldura do campo (CSS pela chave do container, sem alterar o valor digitado); `campo_cpf`, `campo_telefone` e `campo_placa` pedem teclado numérico quando cabe, mostram a máscara (`000.000.000-00`, `(11) 91234-5678`, `ABC-1D23`) e usam a validação do navegador (`validate=`), que mostra o erro ao lado do campo sem apagar nada. A validação de verdade continua no servidor: `decimal_campo(texto, "Rótulo")` e `inteiro_campo` levantam erros que dizem o campo e como corrigir (aceitam `1.234,56`, `1234,56`, `1234.56` e `1.500`). Campos de dinheiro **fora de `st.form`** usam `ao_vivo=True`: o navegador não envia um valor inválido, então o servidor ficaria com o anterior enquanto a tela mostra outro. Obrigatórios levam `*` no rótulo e `legenda_obrigatorios()`.
-
-Linhas de campos usam `with linha_campos([1, 1], "chave") as (a, b):` (cada campo mantém ~12 rem; abaixo disso a linha quebra e empilha na ordem de leitura) e todo rodapé é `rodape_formulario("Salvar", "chave", formulario=..., desabilitado=..., motivo=..., perigo=...)`: Cancelar e a ação principal à direita, a principal por último; em contêiner estreito (≤ 22 rem, vale também dentro de diálogos) empilham em largura total. Dentro de `st.form` os valores só chegam ao enviar, então o motivo vem da validação do envio; fora de formulário o botão fica desabilitado **e o motivo aparece escrito acima dele** (`Descrição: informe o serviço realizado.`). Ações destrutivas (encerrar contrato, cancelar manutenção) listam o que será alterado (`src/domain/encerramento.py` espelha a RPC e lista as cobranças canceladas), exigem marcar a confirmação e oferecem o botão neutro de voltar. O assistente de Novo contrato tem `indicador_etapas` (lista ordenada com `aria-current`; no celular só a etapa atual mostra o rótulo e a linha “Etapa N de 4” cobre o resto), resumo de cliente e moto com `Alterar` e rascunho das condições (`contrato_rascunho`): voltar ou alterar etapas anteriores não perde o que foi digitado. Nenhum formulário é esvaziado após erro (no portal, o formulário só é recriado depois de um envio bem-sucedido). Protegido por `tests/test_formularios_ui.py`.
-
-Todas as páginas montam o cabeçalho com `cabecalho_pagina(titulo, sub=..., acao={"rotulo": "Nova moto", "chave": "motos_nova"})`: a ação primária (no máximo uma, botão do Streamlit com ícone) fica à direita do título no desktop e, quando o cabeçalho estreita, vai para depois da descrição em largura total; a função devolve `True` quando o botão é clicado (`"formulario": True` dentro de `st.form`). Listas vazias usam `vazio_lista(...)`, que informa o motivo (filtro/busca ou ainda sem cadastros) e o próximo passo.
-
-Feedback, carregamento e recuperação (Etapa 7 do plano de UI/UX): nenhuma tela usa mais `Alterações salvas.`. Cada operação confirma o que mudou (`Moto ABC-1D23 cadastrada.`, `Pagamento de R$ 450,00 registrado. Cobrança quitada.`, `Contrato de Maria encerrado. A moto ABC-1D23 está disponível.`), com os textos em `src/domain/mensagens.py` (funções puras). `feedback.concluir(aviso)` (`src/ui/feedback.py`) guarda a mensagem e reexecuta a página: confirmação simples vira **toast** (embaixo e centralizado, inteiro, sem cobrir a ação do cabeçalho e deixando passar o clique) e o que pede atenção ou próximo passo (contrato criado, foto que falhou) vira **alerta** que fica na tela. Falhas passam por `src/domain/erros.py` (`classificar_erro`) e `proteger()` mostra cada categoria com ícone e ação próprios: validação (corrigir o campo), sessão expirada (`Entrar novamente`), sem permissão, indisponibilidade do serviço (`Tentar novamente` nas consultas; em formulários o que foi digitado continua nos campos). Ao confirmar, o botão do rodapé (e os de chave `ocupa_*`) vira `Salvando…` no instante do clique e não aceita outro clique até a execução terminar (script em `feedback.py`, estilo `button[data-ocupado]`). A proteção de verdade contra duplicidade é a **chave de operação**: cada envio leva um uuid (`feedback.chave_operacao(nome, conteúdo)`; a mesma chave vale enquanto o conteúdo for o mesmo) e o banco recusa a segunda gravação (pagamentos, manutenções, documentos e leituras de km; motos, clientes, contratos e vistorias já têm chave natural). Uploads (fotos, comprovantes) mostram `st.spinner`. Protegido por `tests/test_feedback_ui.py`, `tests/test_erros.py`, `tests/test_mensagens.py` e `tests/test_operacoes.py`.
-
-Fichas e painéis (Etapa 6 do plano de UI/UX): Moto, Cliente, Contrato e a comparação de vistorias usam `cabecalho_ficha(ficha_identidade(...), acoes)` e `faixa_dados([...])` (`src/ui/componentes.py`); painéis lado a lado são `with paineis("chave") as (principal, lateral):` e empilham quando o contêiner perde largura (também o par Hoje/Alertas do Dashboard). KPIs encolhem o valor com a largura do cartão. Ao voltar de uma ficha, a lista mantém página, filtro e busca e traz o registro de origem à vista (`lembrar_registro`/`restaurar_posicao` em `src/ui/listas.py`). Cada aba de Relatórios tem um resumo em texto (`destaques`, `src/domain/relatorios.py`) além das barras. Protegido por `tests/test_fichas_ui.py`.
+Os tokens (cores, espaçamento, tipografia, modo escuro) e as regras ficam em `src/web/estilos/app.css`; `static/css/app.css` é o arquivo
+gerado por `python scripts/construir_css.py` (Tailwind), então edite só o de `src/web/estilos`. Fontes locais em `static/fontes`. Regras
+novas devem usar `var(--…)`, nunca cores fixas. O contraste mínimo de 4,5:1 dos tokens nos dois temas é protegido por
+`tests/test_contraste_tokens.py`. Os componentes são macros Jinja em `src/web/templates/`.
 
 ## Testes de navegador (UI/UX)
 

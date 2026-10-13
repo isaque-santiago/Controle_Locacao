@@ -5,5 +5,5 @@
 playwright==1.63.0
 # Auditoria de acessibilidade (traz o axe-core embutido).
 axe-playwright-python==0.1.8
-# Comparação de imagens da regressão visual (já vem com o Streamlit; fixada aqui por clareza).
+# Comparação de imagens da regressão visual .
 pillow>=10

@@ -1,7 +1,7 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
-> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
-> uma por vez) CONCLUÍDA em 08/10/2026; próxima: Fase 4 (E2E, homologação e desligamento do Streamlit). Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
+> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 4 (E2E, homologação e
+> desligamento do Streamlit) CONCLUÍDA em 13/10/2026; próxima: Fase 5 (deploy). Fase 3 (demais páginas, uma por vez) CONCLUÍDA em 08/10/2026. Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
 > proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. A falta de recarga
@@ -534,6 +534,15 @@ CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois
 permanente (`tests/web/test_seguranca_rotas.py`): toda rota exige sessão e toda mutação exige CSRF. Requisitos para a Fase 5:
 `--proxy-headers` com `--forwarded-allow-ips` do proxy, 1 worker, `LOCACAO_AMBIENTE` diferente de `dev`. Decisões do proprietário
 pendentes: bloqueio por tentativas contra o dono e remoção do EXIF das fotos.
+
+**Parte F concluída (13/10/2026): Streamlit removido**, a pedido explícito do proprietário. Saíram `app.py`, `pages/`, `src/ui/` (inclui `tema.py`,
+`acessibilidade.py`, `sessao_streamlit.py` e os dois CSS dependentes do DOM do Streamlit), `src/auth.py`, 17 arquivos de teste de tela e as partes de
+tela de três arquivos de teste mistos (`test_portal_locatario`, `test_configuracoes`, `test_config_auth`; ficaram os testes de serviço, repositório e
+domínio), a configuração `controle-locacao` do `launch.json`, o gancho `registrar_origem_alternativa` de `src/db.py`, o código morto das rotas «em
+migração» e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`, `plotly` e `watchdog` (nenhuma era usada pelo app novo).
+`tests/test_contraste_tokens.py` passou a ler os tokens de `src/web/estilos/app.css`. `tests/test_sem_streamlit.py` impede a volta do import.
+O `.streamlit/secrets.toml` do proprietário não foi tocado (o app novo ainda o lê em dev; só o nome da pasta é herdado). Suíte `pytest`: 1104 passaram
+(a queda de 1340 vem dos testes de tela removidos). **Não verificado:** subir o app e navegar depois da remoção, e a suíte e2e (rodam no terminal do proprietário).
 
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 

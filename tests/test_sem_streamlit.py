@@ -1,4 +1,4 @@
-"""O núcleo e o app web não podem depender do Streamlit (ele será removido na Fase 4)."""
+"""O Streamlit foi removido (Fase 4, parte F): nada do projeto pode voltar a importá-lo."""
 
 import subprocess
 import sys
@@ -34,11 +34,9 @@ def test_app_web_sobe_sem_carregar_o_streamlit():
     assert resultado.returncode == 0, resultado.stderr
 
 
-def test_get_client_sem_requisicao_nem_frontend_antigo_avisa(monkeypatch):
+def test_get_client_sem_requisicao_avisa():
     from src import db
 
-    monkeypatch.setattr(db, "_CLIENTE_ALTERNATIVO", None)
-    monkeypatch.setattr(db, "_USUARIO_ALTERNATIVO", None)
     with pytest.raises(RuntimeError, match="cliente Supabase"):
         db.get_client()
     assert db.usuario_id_atual() is None
