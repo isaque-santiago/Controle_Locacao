@@ -375,6 +375,17 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 @media (max-width: 719px) {
   .kpis {gap: var(--e3);}
   .kpi dd {font-size: clamp(18px, 5.4vw, 22px);}
+  .moto-lista-cards .tabela-caixa {background: transparent; border: 0; border-radius: 0; overflow: visible;}
+  .moto-lista-cards .dados tbody {display: grid; gap: var(--e3);}
+  .moto-lista-cards .dados tbody tr,
+  .moto-lista-cards .dados tbody tr:first-child {padding: var(--e4); border: 1px solid var(--linha); border-left: 3px solid var(--marca); border-radius: var(--raio-lg); background: var(--superficie); gap: var(--e3) var(--e4);}
+  .moto-lista-cards .dados tbody tr:hover {background: var(--superficie);}
+  .moto-lista-cards .dados td.topo {font-size: 15px; font-weight: 600; line-height: 1.35;}
+  .moto-lista-cards .dados td[data-rotulo]::before {margin-bottom: var(--e1); color: var(--texto-3); font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase;}
+  .moto-lista-cards .dados td.moto-card-destaque {color: var(--texto); font-weight: 600;}
+  .moto-lista-cards .dados td.acao {padding-top: var(--e3); border-top: 1px solid var(--linha-sutil); margin-top: 0;}
+  .moto-lista-cards .dados td.acao:empty {display: none;}
+  .moto-lista-cards .dados td.acao .btn {width: 100%;}
   .formulario {grid-template-columns: 1fr;}
   .passo span {display: none;} .passo.atual span {display: block;}
   .passos {grid-template-columns: repeat(4, 1fr);}
