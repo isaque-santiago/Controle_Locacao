@@ -36,19 +36,19 @@ como melhoria futura); EXIF das fotos já tratado no servidor (ver E6).
 Em cada fluxo confira: nenhum botão fora da tela, mensagem de sucesso que diz o que mudou, nenhuma rolagem horizontal da
 página e que o clique duplo não grava duas vezes (a IA já testa o duplo clique do pagamento por automação).
 
-- [ ] **1. Entrar e navegar:** login; abrir as 10 páginas pelo menu (no celular, pela barra inferior e pelo botão «Mais»); sair.
-- [ ] **2. Dashboard e alertas:** cartões e alertas; abrir um item de alerta e voltar.
-- [ ] **3. Buscar, filtrar, paginar e abrir:** em Motos e Clientes, buscar, filtrar pelos chips, trocar de página, abrir a
+- [x] **1. Entrar e navegar** (desktop, 13/10/2026, relato do proprietário; sem evidência de console): login; abrir as 10 páginas pelo menu (no celular, pela barra inferior e pelo botão «Mais»); sair.
+- [x] **2. Dashboard e alertas** (desktop, 13/10/2026, relato do proprietário): cartões e alertas; abrir um item de alerta e voltar.
+- [x] **3. Buscar, filtrar, paginar e abrir** (desktop, 13/10/2026, relato do proprietário): em Motos e Clientes, buscar, filtrar pelos chips, trocar de página, abrir a
   ficha e voltar (a lista mantém busca, filtro e página).
-- [ ] **4. Contrato completo:** novo contrato pelo assistente (cliente, moto, condições, vistoria de entrega); revisar a
+- [x] **4. Contrato completo** (desktop, 13/10/2026, relato do proprietário): novo contrato pelo assistente (cliente, moto, condições, vistoria de entrega); revisar a
   prévia da agenda; criar; abrir a ficha; encerrar com vistoria de devolução.
-- [ ] **5. Pagamento:** em Cobranças, «Pagar» numa cobrança: pagamento parcial e depois a quitação; saldo e situação mudam e o
+- [x] **5. Pagamento** (desktop, 13/10/2026, relato do proprietário): em Cobranças, «Pagar» numa cobrança: pagamento parcial e depois a quitação; saldo e situação mudam e o
   aviso mostra o valor.
-- [ ] **6. Manutenção:** registrar uma manutenção, concluí-la e conferir o plano da moto.
-- [ ] **7. Documento:** cadastrar documento com vencimento e comprovante (foto ou PDF); regularizar.
-- [ ] **8. Vistorias:** registrar vistoria de entrega e de devolução **com fotos**; abrir; comparar as duas.
-- [ ] **9. Relatórios:** trocar o período, percorrer as quatro abas, exportar CSV e Excel e **abrir os arquivos** (no Excel).
-- [ ] **10. Configurações e backup:** alterar um parâmetro e salvar (depois restaurar o valor); gerar e baixar o backup.
+- [x] **6. Manutenção** (desktop, 13/10/2026, relato do proprietário): registrar uma manutenção, concluí-la e conferir o plano da moto.
+- [x] **7. Documento** (desktop, 13/10/2026, relato do proprietário): cadastrar documento com vencimento e comprovante (foto ou PDF); regularizar.
+- [x] **8. Vistorias** (desktop, 13/10/2026, relato do proprietário): registrar vistoria de entrega e de devolução **com fotos**; abrir; comparar as duas.
+- [x] **9. Relatórios** (desktop, 13/10/2026, relato do proprietário; arquivos abertos no Excel): trocar o período, percorrer as quatro abas, exportar CSV e Excel e **abrir os arquivos** (no Excel).
+- [x] **10. Configurações e backup** (desktop, 13/10/2026, relato do proprietário): alterar um parâmetro e salvar (depois restaurar o valor); gerar e baixar o backup.
 
 ## 4. Teclado e zoom (desktop)
 
