@@ -6,6 +6,7 @@ from pathlib import PurePath
 from postgrest.exceptions import APIError
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.troca_oleo import avaliar_troca_oleo, validar_km_informado
 from src.repositories import portal_locatario
 
@@ -42,6 +43,8 @@ def registrar_troca_oleo(
     )
     for nome, conteudo in (foto, nota):
         validar_arquivo(nome, conteudo, _EXTENSOES_PERMITIDAS)
+    # Fotos de câmera trazem GPS e dados do aparelho: só a data e a orientação seguem para o Storage.
+    foto, nota = ((nome, remover_dados_pessoais(nome, conteudo)) for nome, conteudo in (foto, nota))
 
     try:
         caminhos = [

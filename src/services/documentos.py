@@ -3,6 +3,7 @@
 from datetime import date
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.documentos import sugerir_proximo_documento
 from src.repositories import documentos_moto
 
@@ -37,6 +38,7 @@ def anexar_comprovante(
     documento_id: str, moto_id: str, nome_arquivo: str, conteudo: bytes, content_type: str
 ) -> dict:
     validar_arquivo(nome_arquivo, conteudo, _EXTENSOES_PERMITIDAS)
+    conteudo = remover_dados_pessoais(nome_arquivo, conteudo)
     caminho = documentos_moto.upload_comprovante(
         moto_id, documento_id, nome_arquivo, conteudo, content_type
     )

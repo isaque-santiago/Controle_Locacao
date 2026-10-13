@@ -6,6 +6,7 @@ from typing import Optional
 from postgrest.exceptions import APIError
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.vistorias import checklist_inicial, comparar_checklists
 from src.repositories import vistoria_fotos, vistorias
 
@@ -75,6 +76,7 @@ def anexar_foto(
     legenda: Optional[str] = None,
 ) -> dict:
     validar_arquivo(nome_arquivo, conteudo, _EXTENSOES_PERMITIDAS)
+    conteudo = remover_dados_pessoais(nome_arquivo, conteudo)
     caminho = vistoria_fotos.upload_foto(vistoria_id, nome_arquivo, conteudo, content_type)
     return vistoria_fotos.criar(
         {"vistoria_id": vistoria_id, "storage_path": caminho, "legenda": legenda}

@@ -9,7 +9,7 @@ Supabase (continua sendo a proteção final dos dados) nem do servidor/Coolify (
 
 | Item | Situação |
 |---|---|
-| Login: limite de tentativas | OK. 5 falhas por e-mail/CPF e 20 por IP em 15 min, resposta 429 com `Retry-After`; a mensagem de erro é a mesma para usuário inexistente e senha errada. |
+| Login: limite de tentativas | OK. 10 falhas por e-mail/CPF (subiu de 5 em 13/10/2026, decisão do proprietário) e 20 por IP em 15 min, resposta 429 com `Retry-After`; a mensagem de erro é a mesma para usuário inexistente e senha errada. |
 | Cookies | OK. Sessão `httponly`, `samesite=lax`, `secure` em HTTPS, id novo a cada login (sem fixação de sessão). |
 | CSRF | OK e agora **garantido por teste**: toda rota POST/PUT/PATCH/DELETE exige o token (formulário ou `X-CSRF-Token`); o login usa double submit com cookie. |
 | Autorização | OK e **garantida por teste**: todas as rotas, exceto `/login` e `/saude`, exigem sessão; rotas do dono e do locatário não se misturam. |
@@ -33,9 +33,10 @@ Supabase (continua sendo a proteção final dos dados) nem do servidor/Coolify (
 ## Riscos aceitos e recomendações (não corrigidos)
 
 - **Bloqueio por tentativas de login** pode ser usado contra o dono: quem souber o e-mail dele pode errar 5 vezes e travá-lo
-  por 15 min. É a troca comum de proteção contra adivinhação; a alternativa é só limitar por IP. Decisão do proprietário.
-- **Fotos de câmera:** os arquivos vão ao Storage como foram enviados, com os metadados EXIF (inclusive localização, se o
-  celular gravar). Remover o EXIF é recomendável para as fotos do portal do locatário; depende do teste com aparelhos reais.
+  por 15 min. É a troca comum de proteção contra adivinhação; a alternativa é só limitar por IP. Decisão do proprietário: manter (13/10/2026).
+- **Fotos de câmera — corrigido em 13/10/2026:** vistorias, comprovantes e fotos do portal passam por `src/domain/privacidade_imagem.py`
+  antes do Storage: saem GPS, marca, modelo, números de série, miniatura, XMP e comentários; ficam só a data e a orientação. JPEG e PNG
+  não são recodificados (os pixels seguem idênticos); arquivo corrompido é recusado. PDF segue sem alteração (metadados do PDF não são limpos).
 - **Sessões na memória:** reiniciar o servidor desloga todos (decisão da Fase 1).
 - **Cookie `sessao`** sem prefixo `__Host-`: ganho pequeno, fica como melhoria futura.
 - Não há verificação de dependências (CVE) nem atualização automática de imagens; incluir na rotina da VPS.

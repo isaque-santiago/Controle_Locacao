@@ -15,7 +15,17 @@ from src.ui import portal_locatario as ui_portal
 RAIZ = Path(__file__).resolve().parents[1]
 REPO = "src.services.portal_locatario.portal_locatario"
 
-PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 32
+def _png_valido() -> bytes:
+    import io
+
+    from PIL import Image
+
+    saida = io.BytesIO()
+    Image.new("RGB", (4, 4), (9, 9, 9)).save(saida, "PNG")
+    return saida.getvalue()
+
+
+PNG = _png_valido()
 CONTRATO = {
     "contrato_id": "ct1",
     "placa": "ABC1D23",

@@ -496,6 +496,13 @@ O registro de vistoria com fotos (fluxo 8) não foi exercitado porque todos os c
 Conferido localmente: o comando de subida em modo de produção (sem `LOCACAO_AMBIENTE=dev`), `/saude` e a tela de acesso em
 Chromium desktop e celular e WebKit (18 testes). **Não verificado:** a execução no GitHub Actions (exige `push`).
 
+**Parte E iniciada (13/10/2026).** Decisões do proprietário: manter o bloqueio de login e subir o limite por e-mail de 5 para 10; remover da
+foto só GPS e dados do aparelho (ficam data e orientação); homologar só no Android (Xiaomi POCO M6 Pro, Chrome) e **sem** leitor de tela.
+Feito na preparação: `privacidade_imagem.py` ligado a vistorias, documentos e portal (com testes), `executar_web.py --rede` para abrir o app
+no celular, teste de clique duplo no pagamento (e2e), `Roteiro_Homologacao_Manual.md` reescrito para o app novo e o SQL `recriar_banco_dev.sql`
+(com trava que só roda no banco com o UUID de dev), gerado fora do repositório. Pendentes (com o proprietário): recriar o banco de dev, gravar a
+referência visual, comparação lado a lado com o Streamlit, os 10 fluxos à mão, fotos de câmera reais e o portal do locatário no celular.
+
 **Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
 CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
 (1 MB nos formulários, 105 MB no envio de arquivos, resposta 413) e vida máxima de 12 h da sessão. Duas garantias viraram teste

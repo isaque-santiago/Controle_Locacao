@@ -17,6 +17,7 @@ from e2e.ajudas import aguardar_app, fechar_dialogo
 from e2e.roteiro import (
     MARCA,
     Contexto,
+    esperar_ate,
     FormularioRecusado,
     grava_neste_cenario,
     hoje,
@@ -401,3 +402,55 @@ def test_fluxo(nome_fluxo, pagina_logada, cenario, registrar, coletor, request, 
         bloqueantes = achados_bloqueantes(coletor, cenario, fluxo=nome_fluxo)
         assert not bloqueantes, [f"{a.pagina}: {a.descricao}" for a in bloqueantes]
 
+
+
+def _saldo_do_dialogo(c: Contexto):
+    """Valor do campo «Valor original (saldo)» do diálogo de pagamento aberto, em Decimal."""
+    from decimal import Decimal
+
+    texto = c.page.locator("dialog[open] dt:has-text('Valor original') + dd").first.inner_text()
+    return Decimal(re.sub(r"[^\d,]", "", texto).replace(",", "."))
+
+
+def test_clique_duplo_no_pagamento_nao_grava_duas_vezes(pagina_logada, cenario, registrar, coletor, request):
+    """Roteiro de homologação: «o clique duplo não grava duas vezes» (a chave da operação deve barrar a segunda)."""
+    from decimal import Decimal
+
+    if not grava_neste_cenario(cenario):
+        pytest.skip("fluxo que grava: roda uma vez por perfil Chromium")
+    reg = registrar(cenario, fluxo="homologacao-clique-duplo")
+    c = Contexto(pagina_logada, cenario, reg, False)
+    try:
+        c.visitar("Cobranças")
+        c.clicar("tab", re.compile("atrasad", re.I), "Cobranças")
+        botoes = c.page.locator("a, button").filter(has_text="Pagar").locator("visible=true")
+        if not botoes.count():
+            c.info("Cobranças", "Sem cobrança com «Pagar» para testar o clique duplo.")
+            return
+        nome = botoes.first.get_attribute("aria-label") or ""
+        botoes.first.click()
+        c.page.wait_for_selector("dialog[open] #f-principal")
+        aguardar_app(c.page)
+        antes = _saldo_do_dialogo(c)
+        c.preencher("#f-principal", "1,00")
+        c.preencher("#f-extras", "0,00")
+        c.page.locator("dialog[open] .dialogo-rodape button[type=submit]").dblclick()
+        esperar_ate(c.page, "() => !document.querySelector('dialog[open]')", timeout_ms=15_000)
+        aguardar_app(c.page)
+        alvo = c.page.locator(f'[aria-label="{nome}"]').locator("visible=true")
+        alvo.first.click()
+        c.page.wait_for_selector("dialog[open] #f-principal")
+        aguardar_app(c.page)
+        depois = _saldo_do_dialogo(c)
+        if antes - depois != Decimal("1.00"):
+            reg("P0", "clique-duplo-gravou-duas-vezes", "Cobranças",
+                f"O saldo caiu {antes - depois} com um clique duplo em R$ 1,00 (esperado 1,00).")
+        else:
+            reg("INFO", "clique-duplo", "Cobranças", "Clique duplo no pagamento de R$ 1,00 gravou uma só vez.")
+    except Exception as erro:
+        reg("P0", "fluxo-interrompido", "homologacao-clique-duplo", f"{type(erro).__name__}: {str(erro)[:200]}")
+    finally:
+        fechar_dialogo(pagina_logada)
+    if request.config.getoption("--e2e-estrito"):
+        bloqueantes = achados_bloqueantes(coletor, cenario, fluxo="homologacao-clique-duplo")
+        assert not bloqueantes, [f"{a.pagina}: {a.descricao}" for a in bloqueantes]

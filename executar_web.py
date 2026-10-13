@@ -6,6 +6,10 @@ Em desenvolvimento a rota /componentes fica disponível (LOCACAO_AMBIENTE=dev).
 
     .venv\Scripts\python.exe executar_web.py --sem-recarga
 
+Para abrir o app no celular, na mesma rede Wi-Fi (e liberar a porta no firewall só durante o teste):
+
+    .venv\Scripts\python.exe executar_web.py --rede
+
 As sessões ficam na memória do processo, mas aqui, só em desenvolvimento, elas também são espelhadas no arquivo
 `.sessoes_dev.json` (fora do git; guarda tokens do Supabase), então a recarga automática ao salvar um .py NÃO derruba o
 login. O `--sem-recarga` continua existindo para quando se quer o servidor parado. Apagar o arquivo encerra as sessões.
@@ -88,12 +92,30 @@ def servir_com_recarga() -> None:
             _parar(servidor)
 
 
+def _endereco_na_rede() -> str:
+    """IP deste computador na rede local (para abrir o app no celular); vazio se não der para descobrir."""
+    import socket
+
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sonda:
+            sonda.connect(("10.255.255.255", 1))  # não envia nada: só escolhe a interface de saída
+            return sonda.getsockname()[0]
+    except OSError:
+        return ""
+
+
 def servir() -> None:
-    uvicorn.run("src.web.app:criar_app", factory=True, host="127.0.0.1", port=int(os.getenv("PORT", "8000")))
+    host = os.getenv("LOCACAO_HOST", "127.0.0.1")
+    porta = int(os.getenv("PORT", "8000"))
+    if host != "127.0.0.1" and not os.getenv("LOCACAO_HOST_AVISADO"):
+        print(f"Acesso pela rede local: http://{_endereco_na_rede() or '<IP do computador>'}:{porta}", flush=True)
+    uvicorn.run("src.web.app:criar_app", factory=True, host=host, port=porta)
 
 
 if __name__ == "__main__":
     os.environ.setdefault("LOCACAO_AMBIENTE", "dev")
+    if "--rede" in sys.argv:  # aceita acessos de outros aparelhos da rede (celular); libere a porta no firewall só durante o teste
+        os.environ["LOCACAO_HOST"] = "0.0.0.0"
     # As sessões sobrevivem à recarga do servidor (só em desenvolvimento): arquivo local, fora do git.
     os.environ.setdefault("LOCACAO_SESSOES_ARQUIVO", str(RAIZ / ".sessoes_dev.json"))
     if "--sem-recarga" in sys.argv:

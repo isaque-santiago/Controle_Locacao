@@ -48,8 +48,8 @@ from src.web.templates import PASTA_ESTATICOS
 
 logger = logging.getLogger(__name__)
 
-# 5 falhas por e-mail/CPF e 20 por IP (IP de operadora pode ser compartilhado) em 15 min.
-FALHAS_POR_IDENTIFICADOR = 5
+# 10 falhas por e-mail/CPF e 20 por IP (IP de operadora pode ser compartilhado) em 15 min.
+FALHAS_POR_IDENTIFICADOR = 10
 FALHAS_POR_IP = 20
 JANELA_LIMITE_SEGUNDOS = 900
 
