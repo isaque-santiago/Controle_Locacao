@@ -58,13 +58,13 @@ página e que o clique duplo não grava duas vezes (a IA já testa o duplo cliqu
 
 ## 5. Celular (Android, Chrome)
 
-- [ ] Retrato e paisagem em todos os fluxos; o teclado virtual aberto não cobre o botão de confirmar.
-- [ ] Alvos de toque confortáveis (sem acertar o vizinho) nas listas, nos chips e nos diálogos.
-- [ ] Conexão ruim (modo avião por 5 s e volta): a mensagem de falha é compreensível e dá para tentar de novo.
-- [ ] **Fotos de câmera de verdade** (tirar na hora, sem usar a galeria) em: vistoria (entrega e devolução), comprovante de
+- [x] (13/10/2026, POCO M6 Pro, relato do proprietário) Retrato e paisagem em todos os fluxos; o teclado virtual aberto não cobre o botão de confirmar.
+- [x] (13/10/2026, POCO M6 Pro, relato do proprietário) Alvos de toque confortáveis (sem acertar o vizinho) nas listas, nos chips e nos diálogos.
+- [x] (13/10/2026, POCO M6 Pro, relato do proprietário) Conexão ruim (modo avião por 5 s e volta): a mensagem de falha é compreensível e dá para tentar de novo.
+- [x] (13/10/2026, POCO M6 Pro, relato do proprietário) **Fotos de câmera de verdade** (tirar na hora, sem usar a galeria) em: vistoria (entrega e devolução), comprovante de
   documento e portal do locatário. Anote para cada uma: se o envio terminou, quanto tempo levou, se a foto aparece de pé
   (orientação) e se o tamanho passou do limite de 10 MB (a mensagem de erro deve explicar).
-- [ ] **Portal do locatário** (CPF e senha de locatário): ver o contrato e a situação do óleo; reportar uma troca de óleo com a
+- [x] (13/10/2026, POCO M6 Pro, relato do proprietário) **Portal do locatário** (CPF e senha de locatário): ver o contrato e a situação do óleo; reportar uma troca de óleo com a
   foto do painel e a da nota fiscal; trocar a senha.
 
 ## 6. Privacidade das fotos (a IA confere)
@@ -77,4 +77,4 @@ na pasta Downloads do computador e avise a IA com o nome dos arquivos: ela confe
 
 | Data | Aparelho / navegador | Fluxos 1–10 | Teclado e zoom | Celular e fotos | Problemas encontrados |
 |---|---|---|---|---|---|
-| | | | | | |
+| 13/10/2026 | Desktop (aba embutida/Chrome) e POCO M6 Pro (Chrome, Android) | 1–10 feitos no desktop e no celular (relato do proprietário); clique duplo no pagamento por automação | Teclado e zoom 200%/400% só por automação (aceito) | Fotos de câmera e Portal feitos; metadados ainda por conferir | Nenhum relatado. Celular: bloqueio do firewall do Windows (regras de bloqueio do python.exe) resolvido fora do app |
