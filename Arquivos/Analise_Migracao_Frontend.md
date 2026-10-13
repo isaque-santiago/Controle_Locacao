@@ -526,6 +526,8 @@ em relação ao banco recriado e precisam ser regravadas se esses cenários fore
 
 **Parte E, situação em 13/10/2026.** Feitos: comparação lado a lado (inclui o Portal), regressão visual, teste de clique duplo no pagamento (gravou uma só vez) e os 10 fluxos no desktop (relato do proprietário). Suíte `pytest`: 1339 passaram. **Pendentes, dependem do proprietário e do aparelho:** teclado e zoom a 200%/400%, os fluxos no POCO M6 Pro, fotos de câmera reais e conferência dos metadados. **Decisão do proprietário (13/10/2026):** manter o cartão «Total em atraso» da Inadimplência como está (sem os encargos), igual ao Streamlit. A Parte F só começa com a aprovação explícita.
 
+**Parte E, fechamento (13/10/2026).** Fluxos no desktop e no POCO M6 Pro, teclado/zoom (só automação, aceito) e fotos de câmera feitos. Conferência de privacidade: 3 fotos guardadas pelo app, sem GPS, aparelho nem XMP (só data, fuso e orientação 0). Achado corrigido: blocos de fabricante (APP3/APP4 `XIAOMI_CUSTOMIZE`/`ALGO_COMMON`) sobreviviam à limpeza; `privacidade_imagem.py` agora descarta APP2–APP15 salvo ICC e Adobe, com teste. Suíte `pytest`: 1340 passaram. Cartão «Total em atraso»: mantido como está. **Parte F (remover o Streamlit) aguarda a aprovação explícita do proprietário.** Fotos enviadas antes da correção continuam com os blocos no banco de dev.
+
 **Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
 CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
 (1 MB nos formulários, 105 MB no envio de arquivos, resposta 413) e vida máxima de 12 h da sessão. Duas garantias viraram teste
