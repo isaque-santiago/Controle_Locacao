@@ -23,9 +23,9 @@
   <section class="cartao" aria-labelledby="t-km">
     <div class="cartao-cab"><h2 id="t-km">Quilometragem</h2></div>
     {% if a.leituras %}
-    <ul class="grid gap-3 list-none p-0 m-0">
+    <ul class="quilometragem-lista">
       {% for h in a.leituras %}
-      <li><span class="mono block">{{ h.km|milhar }} km</span><span class="text-texto-2 text-[13px]">{{ h.data|data_br }} · {{ h.origem }}</span></li>
+      <li class="quilometragem-item"><span class="mono">{{ h.km|milhar }} km</span><span class="quilometragem-detalhe">{{ h.data|data_br }} · {{ h.origem }}</span></li>
       {% endfor %}
     </ul>
     {% else %}
