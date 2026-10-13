@@ -503,6 +503,14 @@ no celular, teste de clique duplo no pagamento (e2e), `Roteiro_Homologacao_Manua
 (com trava que só roda no banco com o UUID de dev), gerado fora do repositório. Pendentes (com o proprietário): recriar o banco de dev, gravar a
 referência visual, comparação lado a lado com o Streamlit, os 10 fluxos à mão, fotos de câmera reais e o portal do locatário no celular.
 
+**Comparação lado a lado com o Streamlit (13/10/2026), banco de dev recriado, dono logado nas duas aplicações.** Vistorias (lista de 4 e
+comparação de Carlos Eduardo Lima), Documentos (4 documentos), Relatórios (as quatro abas, período 01/10 a 13/10) e Configurações (os sete
+valores: 15,00 | 7,00 | 300 | 15 | 50,00 | 30 | 30) mostram **os mesmos dados**. Diferenças, todas de interface: o Streamlit oferece «Adicionar fotos»
+na comparação (dispensado pelo proprietário na Fase 3); o Streamlit mostra o botão «Comprovante» mesmo sem arquivo, e o app novo diz «Sem
+comprovante»; o exemplo de encargos usa «= encargos; total a pagar» (explicado na Fase 3); o backup baixa direto em vez de ficar na sessão.
+Observação herdada, igual nos dois: na Inadimplência o cartão «Total em atraso» (R$ 560,00) é menor que a soma da coluna «Valor + encargos»
+(R$ 442,00 + R$ 344,00); o cartão não inclui os encargos. Falta o Portal do Locatário (precisa de login de locatário).
+
 **Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
 CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
 (1 MB nos formulários, 105 MB no envio de arquivos, resposta 413) e vida máxima de 12 h da sessão. Duas garantias viraram teste
