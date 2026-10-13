@@ -518,6 +518,12 @@ troca de senha não testados aqui, ficam para o item das fotos no celular). Mesm
 dois, então o app novo é o que diz a verdade); o app novo marca «(obrigatório)» e dá a dica do hodômetro mínimo; o Streamlit capitaliza os
 rótulos dos cartões.
 
+**Regressão visual (13/10/2026).** Referências regravadas com o banco de dev recriado (`--atualizar-referencia`; a flag `--capturas` só salva
+imagens e não grava referência). Comparação seguinte: 32 casos (desktop e móvel) sem diferenças acima do limite. Houve uma rodada em que o
+login do perfil desktop travou 20 s no clique em «Entrar» (timeout, sem relação com o visual; causa não identificada, não repetiu); o desktop
+rodado de novo isolado passou (20 de 20). As referências de outras larguras/temas (130 imagens de 02/10 e 08/10) ficaram desatualizadas
+em relação ao banco recriado e precisam ser regravadas se esses cenários forem usados.
+
 **Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
 CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
 (1 MB nos formulários, 105 MB no envio de arquivos, resposta 413) e vida máxima de 12 h da sessão. Duas garantias viraram teste
