@@ -764,8 +764,8 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
     (tabela `cobrancas`, novo tipo `multa_manutencao` — é `cobrancas` que guarda
     o tipo, não `pagamentos`), **cobrada direto**, sem conferência prévia do dono.
 - **Multa: valor fixo único**, definido em Configurações
-  (`configuracoes.multa_troca_oleo_valor`). O valor em reais ainda será informado
-  pelo dono; enquanto for 0,00 (padrão) o excesso é registrado, mas nada é cobrado.
+  (`configuracoes.multa_troca_oleo_valor`), com padrão de **R$ 12,50**. O dono pode
+  alterá-lo; enquanto for 0,00 o excesso é registrado, mas nada é cobrado.
   Como o hodômetro é informado pelo próprio locatário, a foto é a evidência.
 - Bucket de fotos privado `trocas_oleo` (só imagem, até 10 MB), acesso do dono
   por URL assinada — mesmo padrão da Fase 5. O locatário só insere na própria

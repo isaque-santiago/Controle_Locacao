@@ -445,8 +445,9 @@ Sem publicar a função, "Criar acesso" mostra um erro. Confira no painel: Edge 
 uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o
 km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
 padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
-Configurações > "Multa por troca de óleo fora do intervalo". Valor 0,00 (padrão) não cobra
-multa. O app ainda não tem tela para cancelar cobrança: se a foto não confirmar o km, a
+Configurações > "Multa por troca de óleo fora do intervalo". O valor padrão é R$ 12,50;
+valor 0,00 desativa a cobrança da multa. O app ainda não tem tela para cancelar cobrança:
+se a foto não confirmar o km, a
 multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
 
 ## Publicação
