@@ -509,7 +509,14 @@ valores: 15,00 | 7,00 | 300 | 15 | 50,00 | 30 | 30) mostram **os mesmos dados**.
 na comparação (dispensado pelo proprietário na Fase 3); o Streamlit mostra o botão «Comprovante» mesmo sem arquivo, e o app novo diz «Sem
 comprovante»; o exemplo de encargos usa «= encargos; total a pagar» (explicado na Fase 3); o backup baixa direto em vez de ficar na sessão.
 Observação herdada, igual nos dois: na Inadimplência o cartão «Total em atraso» (R$ 560,00) é menor que a soma da coluna «Valor + encargos»
-(R$ 442,00 + R$ 344,00); o cartão não inclui os encargos. Falta o Portal do Locatário (precisa de login de locatário).
+(R$ 442,00 + R$ 344,00); o cartão não inclui os encargos.
+
+**Portal do Locatário (13/10/2026), locatário João logado nas duas aplicações** (comparação só do texto das telas; envio de troca de óleo e
+troca de senha não testados aqui, ficam para o item das fotos no celular). Mesmos dados: moto EXA-2B22 (Biz 125), óleo em dia, hodômetro
+15.450 km, última troca 15.320 km, próxima em 16.320 km, faltam 870 km, multa fixa de R$ 50,00. Diferenças só de interface: o app novo mostra
+«10 MB» por foto e o Streamlit «20 MB» (é o padrão do componente de upload dele; a regra de negócio, em `src/domain/arquivos.py`, é 10 MB nos
+dois, então o app novo é o que diz a verdade); o app novo marca «(obrigatório)» e dá a dica do hodômetro mínimo; o Streamlit capitaliza os
+rótulos dos cartões.
 
 **Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
 CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
