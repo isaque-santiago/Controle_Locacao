@@ -110,7 +110,7 @@ uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console 
 
 **Fase 4 em andamento** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
 Parte A concluída: o núcleo (`config`, `db`, `domain`, `services`, `repositories`) e o app web não dependem mais do Streamlit;
-o código exclusivo dele fica em `src/ui/sessao_streamlit.py` e some na remoção. Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`) e C (CI do app novo) concluídas; D (revisão de segurança: `Arquivos/Revisao_Seguranca.md`) concluída. Próximas: E (homologação com o proprietário) e F (remover o Streamlit).
+o código exclusivo dele fica em `src/ui/sessao_streamlit.py` e some na remoção. Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`) e C (CI do app novo) concluídas; D (revisão de segurança: `Arquivos/Revisao_Seguranca.md`) concluída. E (homologação com o proprietário) em andamento: comparação lado a lado com o Streamlit, regressão visual (32 casos) e os 10 fluxos no desktop feitos; faltam teclado/zoom, celular (POCO M6 Pro) e fotos de câmera reais (`Arquivos/Roteiro_Homologacao_Manual.md`). Depois, F (remover o Streamlit), só com a aprovação do proprietário.
 
 Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
