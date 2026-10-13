@@ -4,7 +4,8 @@ Fotos de câmera trazem nos metadados EXIF a posição por GPS, a marca e o mode
 miniatura. Só ficam a data da foto e a orientação (para a imagem aparecer de pé). A limpeza não recodifica a imagem: os
 dados dos pixels seguem iguais, byte a byte; só os metadados são reescritos ou descartados.
 
-JPEG: o bloco EXIF é refeito só com a lista de permitidos; XMP, IPTC e comentários são descartados. PNG: saem os blocos de
+JPEG: o bloco EXIF é refeito só com a lista de permitidos; XMP, IPTC, comentários e blocos de fabricante (APP2 a APP15, salvo
+perfil de cor ICC e Adobe) são descartados. PNG: saem os blocos de
 texto e de EXIF. PDF e outros tipos passam sem alteração.
 """
 
@@ -23,6 +24,8 @@ _PERMITIDOS_EXIF = (0x9003, 0x9004, 0x9010, 0x9011, 0x9012)
 
 _PREFIXO_EXIF = b"Exif\x00\x00"
 _PREFIXO_XMP = b"http://ns.adobe.com/xap/"
+_PREFIXO_ICC = b"ICC_PROFILE\x00"  # perfil de cor: sem ele as cores mudam
+_PREFIXO_ADOBE = b"Adobe"  # APP14: diz como decodificar as cores (CMYK/YCCK)
 _BLOCOS_PNG_REMOVIDOS = (b"eXIf", b"tEXt", b"zTXt", b"iTXt", b"tIME")
 
 
@@ -86,6 +89,9 @@ def _limpar_jpeg(conteudo: bytes) -> bytes:
         if marcador == 0xE1 and carga.startswith(_PREFIXO_XMP):
             continue
         if marcador in (0xED, 0xFE):  # APP13 (IPTC/Photoshop) e comentários
+            continue
+        # Blocos de fabricante (APP2 a APP15 que não são perfil de cor nem Adobe) carregam marca e modelo (ex.: XIAOMI_CUSTOMIZE).
+        if 0xE2 <= marcador <= 0xEF and not carga.startswith((_PREFIXO_ICC, _PREFIXO_ADOBE)):
             continue
         saida += bytes([0xFF, marcador]) + struct.pack(">H", comprimento) + carga
     raise ImagemInvalida("Arquivo JPEG sem dados de imagem.")

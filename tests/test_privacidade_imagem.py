@@ -69,6 +69,24 @@ def test_jpeg_perde_xmp_e_comentarios():
     assert b"xmpmeta" not in limpo and b"tirada em casa" not in limpo
 
 
+def test_jpeg_perde_blocos_do_fabricante_mas_mantem_perfil_de_cor():
+    """Câmeras Xiaomi gravam JSON próprio em APP3/APP4 (achado na homologação com o POCO M6 Pro)."""
+    original = _jpeg_com_exif()
+    fabricante = b"XIAOMI_CUSTOMIZE\x00\x01\x01" + b'{"110":"POCO"}'
+    algoritmo = b"ALGO_COMMON\x00\x01\x01dados"
+    icc = b"ICC_PROFILE\x00\x01\x01perfil-de-cor"
+    inserido = (
+        original[:2]
+        + b"\xff\xe4" + struct.pack(">H", len(fabricante) + 2) + fabricante
+        + b"\xff\xe3" + struct.pack(">H", len(algoritmo) + 2) + algoritmo
+        + b"\xff\xe2" + struct.pack(">H", len(icc) + 2) + icc
+        + original[2:]
+    )
+    limpo = remover_dados_pessoais("a.jpg", inserido)
+    assert b"XIAOMI" not in limpo and b"POCO" not in limpo and b"ALGO_COMMON" not in limpo
+    assert b"ICC_PROFILE" in limpo
+
+
 def test_png_perde_blocos_de_texto_e_exif():
     exif = Image.Exif()
     exif[0x010F] = "Xiaomi"
