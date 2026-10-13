@@ -12,7 +12,7 @@ Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + 
 
 1. Crie um projeto no Supabase. As migrations em `supabase/migrations/` seguem o formato `AAAAMMDDHHMMSS_descricao.sql` (exigido pela integração Supabase ↔ GitHub, que aplica cada push automaticamente); ao adicionar uma nova, use um timestamp maior que o da última. `supabase/seed.sql` **não** é aplicado por essa integração — rode-o manualmente no SQL Editor após a primeira aplicação das migrations.
 2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users) e troque o UUID dentro de `is_dono()` na migration `20260922000000_restringe_rls_ao_dono.sql` **antes de aplicá-la** — a RLS libera o acesso somente a esse usuário; com um UUID errado, ninguém consegue ler nem gravar dados.
-3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` (só em desenvolvimento; o nome do arquivo é herdado do antigo app) e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Em produção use variáveis de ambiente.
+3. Copie `.env.example` para `.env` (só em desenvolvimento; ignorado pelo git) e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Em produção use variáveis de ambiente.
 4. Instale as dependências:
 
 ```bash
@@ -115,7 +115,7 @@ Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/REA
 `app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
 `plotly` e `watchdog`). Falta o deploy (Fase 5).
 
-Rodar em desenvolvimento (usa as credenciais de `.streamlit/secrets.toml` ou as variáveis
+Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
 
 ```bash

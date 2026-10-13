@@ -23,10 +23,10 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    dono é o do usuário de teste **desse** projeto. Não altere o UUID na migration versionada
    (é o de produção): gere um SQL único em pasta temporária, com o UUID de dev trocado, e
    o usuário o cole no SQL Editor.
-2. **Segredos:** o usuário aponta `.streamlit/secrets.toml` (ignorado pelo git) para a URL e a
+2. **Segredos:** o usuário aponta `.env` (ignorado pelo git) para a URL e a
    anon key do projeto de dev. A IA não lê, não imprime e não commita esse arquivo. Antes de
    trocar, o usuário guarda o de produção fora do repositório (ex.: `~/backup-secrets-locacao/`).
-   Nunca crie backups de segredos dentro do repositório: só `.streamlit/secrets.toml` está no
+   Nunca crie backups de segredos dentro do repositório: só `.env` está no
    `.gitignore`.
 3. **Subir o app:** `preview_start` com a configuração `locacao-web` de
    `.claude/launch.json` (usa `.venv\Scripts\python.exe executar_web.py`, `autoPort: true`). Se não existir
@@ -38,7 +38,7 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    de inatividade: peça novo login.
 5. **Depois de logado:** verifique pelo `read_page`/`get_page_text`, `read_console_messages`
    e `preview_logs` (nível erro). Dados criados ou alterados nesse ambiente são fictícios.
-6. **Ao encerrar:** não troque o `.streamlit/secrets.toml` de volta para produção por conta
+6. **Ao encerrar:** não troque o `.env` de volta para produção por conta
    própria; apenas avise ao usuário qual ambiente ficou configurado.
 
 # Frontend

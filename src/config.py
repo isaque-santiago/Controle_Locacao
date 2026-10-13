@@ -1,24 +1,34 @@
 """Leitura e validação das credenciais públicas do Supabase.
 
 Em produção os valores vêm de variáveis de ambiente. Em desenvolvimento, na falta delas, lê-se
-`.streamlit/secrets.toml` (ignorado pelo git; o arquivo guarda só a URL e a anon key do projeto de dev).
+`.env` na raiz do projeto (ignorado pelo git; guarda só a URL e a anon key do projeto de dev).
 """
 
 import os
-import tomllib
 from pathlib import Path
 
-_SEGREDOS_DEV = Path(__file__).resolve().parent.parent / ".streamlit" / "secrets.toml"
+_SEGREDOS_DEV = Path(__file__).resolve().parent.parent / ".env"
 
 
 def _segredo_do_arquivo(nome: str) -> str | None:
-    """Valor de `nome` no arquivo de segredos de desenvolvimento, ou None se não houver."""
+    """Valor de `nome` no `.env` de desenvolvimento (`CHAVE=valor`), ou None se não houver."""
     try:
-        with _SEGREDOS_DEV.open("rb") as arquivo:
-            valor = tomllib.load(arquivo).get(nome)
-    except (OSError, tomllib.TOMLDecodeError):
+        linhas = _SEGREDOS_DEV.read_text(encoding="utf-8-sig").splitlines()
+    except OSError:
         return None
-    return valor if isinstance(valor, str) else None
+    for linha in linhas:
+        linha = linha.strip()
+        if not linha or linha.startswith("#"):
+            continue
+        linha = linha.removeprefix("export ").lstrip()
+        chave, separador, valor = linha.partition("=")
+        if not separador or chave.strip() != nome:
+            continue
+        valor = valor.strip()
+        if len(valor) >= 2 and valor[0] == valor[-1] and valor[0] in "\"'":
+            return valor[1:-1]
+        return valor.split(" #", 1)[0].strip()
+    return None
 
 
 def _ler(nome: str) -> str | None:

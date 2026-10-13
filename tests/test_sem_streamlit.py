@@ -45,8 +45,11 @@ def test_get_client_sem_requisicao_avisa():
 def test_config_le_o_arquivo_de_segredos_de_dev_quando_nao_ha_variavel(monkeypatch, tmp_path):
     from src import config
 
-    arquivo = tmp_path / "secrets.toml"
-    arquivo.write_text('SUPABASE_URL = "https://dev.supabase.co/"\nSUPABASE_ANON_KEY = "chave-dev"\n', encoding="utf-8")
+    arquivo = tmp_path / ".env"
+    arquivo.write_text(
+        '# dev\nSUPABASE_URL="https://dev.supabase.co/"\nexport SUPABASE_ANON_KEY=chave-dev  # anon\n',
+        encoding="utf-8",
+    )
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
     monkeypatch.setattr(config, "_SEGREDOS_DEV", arquivo)
@@ -57,8 +60,8 @@ def test_config_le_o_arquivo_de_segredos_de_dev_quando_nao_ha_variavel(monkeypat
 def test_variavel_de_ambiente_tem_prioridade_sobre_o_arquivo(monkeypatch, tmp_path):
     from src import config
 
-    arquivo = tmp_path / "secrets.toml"
-    arquivo.write_text('SUPABASE_URL = "https://arquivo.supabase.co"\n', encoding="utf-8")
+    arquivo = tmp_path / ".env"
+    arquivo.write_text("SUPABASE_URL=https://arquivo.supabase.co\n", encoding="utf-8")
     monkeypatch.setenv("SUPABASE_URL", "https://ambiente.supabase.co")
     monkeypatch.setattr(config, "_SEGREDOS_DEV", arquivo)
     assert config.get_supabase_url() == "https://ambiente.supabase.co"

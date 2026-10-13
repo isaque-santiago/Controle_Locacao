@@ -541,7 +541,7 @@ tela de três arquivos de teste mistos (`test_portal_locatario`, `test_configura
 domínio), a configuração `controle-locacao` do `launch.json`, o gancho `registrar_origem_alternativa` de `src/db.py`, o código morto das rotas «em
 migração» e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`, `plotly` e `watchdog` (nenhuma era usada pelo app novo).
 `tests/test_contraste_tokens.py` passou a ler os tokens de `src/web/estilos/app.css`. `tests/test_sem_streamlit.py` impede a volta do import.
-O `.streamlit/secrets.toml` do proprietário não foi tocado (o app novo ainda o lê em dev; só o nome da pasta é herdado). Suíte `pytest`: 1104 passaram
+Depois da remoção os segredos de dev passaram de `.streamlit/secrets.toml` (TOML) para `.env` (`CHAVE=valor`; modelo em `.env.example`). Suíte `pytest`: 1104 passaram
 (a queda de 1340 vem dos testes de tela removidos). **Não verificado:** subir o app e navegar depois da remoção, e a suíte e2e (rodam no terminal do proprietário).
 
 ## 8. Reaproveitamento, descarte e impacto nos documentos

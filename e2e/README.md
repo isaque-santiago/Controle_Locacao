@@ -21,7 +21,7 @@ A suíte só roda contra `localhost` e usa o usuário de teste do projeto Supaba
 "Como a IA acessa o app" no `CLAUDE.md`). Os fluxos 4 a 10 **gravam** nesse banco (contrato, pagamento, manutenção, documento,
 vistoria, configurações); o que criam leva "E2E" na descrição. Recrie o banco de dev quando quiser limpar.
 
-1. Aponte o `.streamlit/secrets.toml` para o projeto de dev e suba o app novo (`.venv\Scripts\python.exe executar_web.py`,
+1. Aponte o `.env` para o projeto de dev e suba o app novo (`.venv\Scripts\python.exe executar_web.py`,
    que escuta na porta 8000, ou a configuração `locacao-web` do preview).
 2. Defina as variáveis de ambiente na sua sessão (nada disso vai para o repositório; a IA nunca digita nem lê estes valores):
 

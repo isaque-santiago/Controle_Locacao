@@ -16,7 +16,7 @@ def test_configuracao_aceita_variaveis_de_ambiente(monkeypatch):
 def test_configuracao_ausente_exibe_causa(monkeypatch):
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
-    with patch("src.config._SEGREDOS_DEV", Path("/inexistente/secrets.toml")):
+    with patch("src.config._SEGREDOS_DEV", Path("/inexistente/.env")):
         with pytest.raises(RuntimeError, match="SUPABASE_URL"):
             config.get_supabase_url()
         with pytest.raises(RuntimeError, match="SUPABASE_ANON_KEY"):
