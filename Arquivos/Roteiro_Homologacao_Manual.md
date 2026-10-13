@@ -52,9 +52,9 @@ página e que o clique duplo não grava duas vezes (a IA já testa o duplo cliqu
 
 ## 4. Teclado e zoom (desktop)
 
-- [ ] Percorrer cada página só com Tab, Shift+Tab, Enter, Espaço e Esc: o foco aparece sempre e a ordem é lógica; Esc fecha
+- [x] (13/10/2026, só por automação, aceita pelo proprietário: `e2e/test_homologacao.py`, 14 aprovados em modo estrito; não prova a visibilidade do foco a olho nem o retorno do foco após Esc) Percorrer cada página só com Tab, Shift+Tab, Enter, Espaço e Esc: o foco aparece sempre e a ordem é lógica; Esc fecha
   diálogos e o foco volta ao botão que os abriu.
-- [ ] Zoom do navegador em 200% e depois 400% (equivale a 320 px): nada some e nada rola na horizontal.
+- [x] (13/10/2026, só por automação: zoom 200% e reflow a 320 px, sem achados) Zoom do navegador em 200% e depois 400% (equivale a 320 px): nada some e nada rola na horizontal.
 
 ## 5. Celular (Android, Chrome)
 
