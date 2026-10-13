@@ -2,18 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "controle-locacao",
-      "runtimeExecutable": ".venv\\Scripts\\streamlit.exe",
-      "runtimeArgs": [
-        "run",
-        "app.py",
-        "--server.headless",
-        "true"
-      ],
-      "port": 8501,
-      "autoPort": true
-    },
-    {
       "name": "locacao-web",
       "runtimeExecutable": ".venv\\Scripts\\python.exe",
       "runtimeArgs": [

@@ -1,7 +1,7 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
-> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 3 (demais páginas,
-> uma por vez) CONCLUÍDA em 08/10/2026; próxima: Fase 4 (E2E, homologação e desligamento do Streamlit). Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
+> **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 4 (E2E, homologação e
+> desligamento do Streamlit) CONCLUÍDA em 13/10/2026; próxima: Fase 5 (deploy). Fase 3 (demais páginas, uma por vez) CONCLUÍDA em 08/10/2026. Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
 > proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. A falta de recarga
@@ -432,6 +432,117 @@ dispensado), Documentos, Relatórios, Configurações e Portal do Locatário. Su
 Adaptar a suíte Playwright (`e2e/`), rodar axe, teclado, zoom/reflow e regressão visual, concluir os 10 fluxos de
 homologação e os aparelhos reais. **Esta fase absorve a Etapa 9 do plano de UI/UX** (decisão 2, opção b). Só então remover o Streamlit, `tema.py`, `acessibilidade.py`, o CSS
 dependente do DOM do Streamlit e as dependências.
+
+**Plano da Fase 4 aprovado em 08/10/2026** (branch `fase-4-e2e-e-desligamento`), em partes, cada uma com testes e commit:
+A) desacoplar o núcleo do Streamlit; B) adaptar a suíte Playwright ao app novo (o proprietário roda no terminal dele, com
+`E2E_EMAIL`/`E2E_SENHA`; a IA lê só `e2e/resultados/`); C) CI do app novo; D) revisão de segurança; E) homologação com o
+proprietário (banco de dev recriado antes; fluxos, leitor de tela, aparelhos e fotos reais); F) remover o Streamlit (sem apagar o
+`secrets.toml` do proprietário); deploy fica para a **Fase 5** (só o `Dockerfile` pode entrar no fim da Fase 4). Decisões: CSV
+dos relatórios sempre com duas casas; sem "adicionar fotos depois" em Vistorias; Streamlit pode ser congelado se a Parte A o
+atrapalhar.
+
+**Parte A concluída (08/10/2026): núcleo desacoplado.** `src/config.py` lê só variáveis de ambiente e, em dev, o
+`.streamlit/secrets.toml` com `tomllib` (sem Streamlit). `src/db.py` ficou só com o cliente por requisição; o que era do Streamlit
+(cookies, `session_state`, tema) foi para `src/ui/sessao_streamlit.py`, que se registra em `db.registrar_origem_alternativa` para o
+Streamlit seguir funcionando. `papel_atual` e `trocar_senha` saíram de `services/portal_locatario.py` (o app web não usa) e foram para
+a camada do Streamlit. `formatadores.py` (que o app web importava de `src/ui`) foi para `src/domain/formatadores.py`.
+`tests/test_desacoplamento_streamlit.py` garante que `domain`, `repositories`, `services`, `web`, `config` e `db` não importam o
+Streamlit e que `src.web.app` sobe sem carregá-lo. O Streamlit continua funcionando (testes de tela passam). Suíte: 1303 testes.
+
+**Parte B em andamento (08/10/2026): suíte Playwright no app novo.** Reescritos `e2e/config.py`, `ajudas.py`, `verificacoes.py`,
+`conftest.py`, `test_paginas.py`, `test_fluxos.py` e o novo `roteiro.py`: login pelo formulário novo, espera do HTMX, medições
+sem o DOM do Streamlit (`dialog[open]`, `.lateral`, rolagem do documento), tema pelo cookie `tema`, captura de página inteira,
+respostas 5xx como achado e referências visuais novas em `e2e/referencia/web/`. Os fluxos 4 a 10 agora **gravam** (contrato
+criado e encerrado, pagamento parcial e quitação, manutenção aberta e concluída, documento com comprovante e regularização,
+vistoria com fotos, exportações CSV/Excel abertas, configuração alterada e restaurada, backup); rodam uma vez por perfil
+Chromium (desktop e celular), largura de referência, tema claro. **Verificado:** a tela de acesso nos quatro perfis (10
+cenários cada, axe e teclado), que revelou dois defeitos reais, já corrigidos em `app.css`: na faixa de 720 a 1099 px o link da
+marca ficava sem nome acessível (axe `link-name`) e em qualquer largura tinha 37 px de altura. **Não verificado:** tudo o que
+exige login (páginas, fluxos, homologação, regressão visual): o proprietário roda no terminal dele (D1) e a IA lê
+`e2e/resultados/`.
+
+**Primeira rodada autenticada (08/10/2026, desktop 1440 px, claro; 15 testes passaram).** Achados e destino: (1) CSV dos
+relatórios com uma casa decimal: **corrigido** (D3), `exportar_csv` agora escreve sempre duas casas; (2) caixas de seleção dos itens
+do plano na manutenção com 19 px de altura: **corrigido** em `app.css` (`label.caixa`); (3) cabeçalhos de tabela vazios nos
+relatórios: **corrigido** (texto só para leitor de tela "Proporção"); (4) "armadilha de teclado" no campo de data: falso positivo
+do detector (Tab percorre dia, mês e ano no mesmo elemento), detector ajustado; (5) erro de console de CSP de estilo: tem o hash
+do texto vazio e aparece logo depois de cada rodada do axe-core, então foi tratado como efeito da ferramenta (a confirmar na
+próxima rodada); (6) fluxos 4 (sem cliente livre), 8 (comparação) e 10 (botão "Salvar alterações" duplicado) tinham
+problema no roteiro de teste, ajustados. Os fluxos 5, 6, 7 e 9 gravaram sem recusa de formulário.
+
+**Segunda e terceira rodadas (desktop 1440 px, claro; 14 de 15 passaram na última).** Bug real do app encontrado e corrigido: os
+links "Exportar CSV/Excel" das abas Custo, Inadimplência e Fluxo omitiam a aba e baixavam sempre o Resultado por moto (teste de
+regressão incluído). O erro de console de CSP vinha do `htmx.min.js` (copia o atributo `style` ao acomodar trocas); `style` saiu de
+`attributesToSettle` (confirmar na próxima rodada). Os fluxos 4 a 10 gravaram sem recusa; no fluxo 8 não havia contrato sem
+vistoria, então o registro com fotos ficou sem exercitar nesse banco. **Aberto:** um teste falhou na última rodada e o nome não foi
+informado.
+
+**Parte B concluída (09/10/2026).** Rodadas com `--e2e-estrito` e login real, todas sem P0 nem P1: desktop nas cinco larguras e dois
+temas (páginas, fluxos 1 a 10 no 1440 px claro, homologação: zoom, reflow, paisagem, texto 200%, espaçamento WCAG, teclado, rede e
+CPU reduzidas), celular emulado (54 testes, fluxos que gravam no 390 px), Firefox (66) e WebKit (66). Defeitos reais do app achados
+e corrigidos nesta parte: nome da marca perdido no trilho (axe `link-name`) e alvo de 37 px na tela de acesso; botões «Abrir a
+ficha» cortados a 1024 px (tabelas viram cartões até 959 px de caixa, com rolagem horizontal de segurança); cartões de tabela
+estourando a 390 px; links de exportação dos relatórios sem a aba; CSV com uma casa decimal; caixas de seleção de 19 px na
+manutenção; cabeçalhos de tabela vazios; chips e abas focados por teclado cortados na faixa de rolagem; foco atrás da barra
+inferior no celular; `style` copiado pelo htmx contra a CSP. Falsos positivos ajustados no detector: campo de data nativo (Tab
+percorre dia, mês e ano), CSS das variantes (agora pelo CSSOM) e a folha injetada pelo screenshot do WebKit.
+**Pendente (não bloqueia):** P2 de foco parcialmente abaixo da dobra a 1024 px (Configurações) e a 390 px no Firefox; a regressão
+visual só tem sentido com o banco recriado (referência gravada antes dos fluxos); WebKit emulado não substitui iPhone real.
+O registro de vistoria com fotos (fluxo 8) não foi exercitado porque todos os contratos do banco de dev já tinham as duas vistorias.
+
+**Parte C concluída (08/10/2026): CI do app novo.** `.github/workflows/ci.yml` sobe `uvicorn --factory src.web.app:criar_app`
+(1 worker) e espera o `/saude`; os jobs `navegador-login` (quatro perfis, sem credenciais, `--e2e-estrito`) e
+`navegador-autenticado` (manual, segredos de dev, um perfil por vez porque os fluxos gravam no mesmo banco) usam o app novo.
+Conferido localmente: o comando de subida em modo de produção (sem `LOCACAO_AMBIENTE=dev`), `/saude` e a tela de acesso em
+Chromium desktop e celular e WebKit (18 testes). **Não verificado:** a execução no GitHub Actions (exige `push`).
+
+**Parte E iniciada (13/10/2026).** Decisões do proprietário: manter o bloqueio de login e subir o limite por e-mail de 5 para 10; remover da
+foto só GPS e dados do aparelho (ficam data e orientação); homologar só no Android (Xiaomi POCO M6 Pro, Chrome) e **sem** leitor de tela.
+Feito na preparação: `privacidade_imagem.py` ligado a vistorias, documentos e portal (com testes), `executar_web.py --rede` para abrir o app
+no celular, teste de clique duplo no pagamento (e2e), `Roteiro_Homologacao_Manual.md` reescrito para o app novo e o SQL `recriar_banco_dev.sql`
+(com trava que só roda no banco com o UUID de dev), gerado fora do repositório. Pendentes (com o proprietário): recriar o banco de dev, gravar a
+referência visual, comparação lado a lado com o Streamlit, os 10 fluxos à mão, fotos de câmera reais e o portal do locatário no celular.
+
+**Comparação lado a lado com o Streamlit (13/10/2026), banco de dev recriado, dono logado nas duas aplicações.** Vistorias (lista de 4 e
+comparação de Carlos Eduardo Lima), Documentos (4 documentos), Relatórios (as quatro abas, período 01/10 a 13/10) e Configurações (os sete
+valores: 15,00 | 7,00 | 300 | 15 | 50,00 | 30 | 30) mostram **os mesmos dados**. Diferenças, todas de interface: o Streamlit oferece «Adicionar fotos»
+na comparação (dispensado pelo proprietário na Fase 3); o Streamlit mostra o botão «Comprovante» mesmo sem arquivo, e o app novo diz «Sem
+comprovante»; o exemplo de encargos usa «= encargos; total a pagar» (explicado na Fase 3); o backup baixa direto em vez de ficar na sessão.
+Observação herdada, igual nos dois: na Inadimplência o cartão «Total em atraso» (R$ 560,00) é menor que a soma da coluna «Valor + encargos»
+(R$ 442,00 + R$ 344,00); o cartão não inclui os encargos.
+
+**Portal do Locatário (13/10/2026), locatário João logado nas duas aplicações** (comparação só do texto das telas; envio de troca de óleo e
+troca de senha não testados aqui, ficam para o item das fotos no celular). Mesmos dados: moto EXA-2B22 (Biz 125), óleo em dia, hodômetro
+15.450 km, última troca 15.320 km, próxima em 16.320 km, faltam 870 km, multa fixa de R$ 50,00. Diferenças só de interface: o app novo mostra
+«10 MB» por foto e o Streamlit «20 MB» (é o padrão do componente de upload dele; a regra de negócio, em `src/domain/arquivos.py`, é 10 MB nos
+dois, então o app novo é o que diz a verdade); o app novo marca «(obrigatório)» e dá a dica do hodômetro mínimo; o Streamlit capitaliza os
+rótulos dos cartões.
+
+**Regressão visual (13/10/2026).** Referências regravadas com o banco de dev recriado (`--atualizar-referencia`; a flag `--capturas` só salva
+imagens e não grava referência). Comparação seguinte: 32 casos (desktop e móvel) sem diferenças acima do limite. Houve uma rodada em que o
+login do perfil desktop travou 20 s no clique em «Entrar» (timeout, sem relação com o visual; causa não identificada, não repetiu); o desktop
+rodado de novo isolado passou (20 de 20). As referências de outras larguras/temas (130 imagens de 02/10 e 08/10) ficaram desatualizadas
+em relação ao banco recriado e precisam ser regravadas se esses cenários forem usados.
+
+**Parte E, situação em 13/10/2026.** Feitos: comparação lado a lado (inclui o Portal), regressão visual, teste de clique duplo no pagamento (gravou uma só vez) e os 10 fluxos no desktop (relato do proprietário). Suíte `pytest`: 1339 passaram. **Pendentes, dependem do proprietário e do aparelho:** teclado e zoom a 200%/400%, os fluxos no POCO M6 Pro, fotos de câmera reais e conferência dos metadados. **Decisão do proprietário (13/10/2026):** manter o cartão «Total em atraso» da Inadimplência como está (sem os encargos), igual ao Streamlit. A Parte F só começa com a aprovação explícita.
+
+**Parte E, fechamento (13/10/2026).** Fluxos no desktop e no POCO M6 Pro, teclado/zoom (só automação, aceito) e fotos de câmera feitos. Conferência de privacidade: 3 fotos guardadas pelo app, sem GPS, aparelho nem XMP (só data, fuso e orientação 0). Achado corrigido: blocos de fabricante (APP3/APP4 `XIAOMI_CUSTOMIZE`/`ALGO_COMMON`) sobreviviam à limpeza; `privacidade_imagem.py` agora descarta APP2–APP15 salvo ICC e Adobe, com teste. Suíte `pytest`: 1340 passaram. Cartão «Total em atraso»: mantido como está. **Parte F (remover o Streamlit) aguarda a aprovação explícita do proprietário.** Fotos enviadas antes da correção continuam com os blocos no banco de dev.
+
+**Parte D concluída (09/10/2026): revisão de segurança.** Relatório em `Arquivos/Revisao_Seguranca.md`. Auditados login, cookies,
+CSRF, papéis, cabeçalhos, uploads, erros e segredos no histórico do git. Dois pontos corrigidos: limite do corpo das requisições
+(1 MB nos formulários, 105 MB no envio de arquivos, resposta 413) e vida máxima de 12 h da sessão. Duas garantias viraram teste
+permanente (`tests/web/test_seguranca_rotas.py`): toda rota exige sessão e toda mutação exige CSRF. Requisitos para a Fase 5:
+`--proxy-headers` com `--forwarded-allow-ips` do proxy, 1 worker, `LOCACAO_AMBIENTE` diferente de `dev`. Decisões do proprietário
+pendentes: bloqueio por tentativas contra o dono e remoção do EXIF das fotos.
+
+**Parte F concluída (13/10/2026): Streamlit removido**, a pedido explícito do proprietário. Saíram `app.py`, `pages/`, `src/ui/` (inclui `tema.py`,
+`acessibilidade.py`, `sessao_streamlit.py` e os dois CSS dependentes do DOM do Streamlit), `src/auth.py`, 17 arquivos de teste de tela e as partes de
+tela de três arquivos de teste mistos (`test_portal_locatario`, `test_configuracoes`, `test_config_auth`; ficaram os testes de serviço, repositório e
+domínio), a configuração `controle-locacao` do `launch.json`, o gancho `registrar_origem_alternativa` de `src/db.py`, o código morto das rotas «em
+migração» e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`, `plotly` e `watchdog` (nenhuma era usada pelo app novo).
+`tests/test_contraste_tokens.py` passou a ler os tokens de `src/web/estilos/app.css`. `tests/test_sem_streamlit.py` impede a volta do import.
+Depois da remoção os segredos de dev passaram de `.streamlit/secrets.toml` (TOML) para `.env` (`CHAVE=valor`; modelo em `.env.example`). Suíte `pytest`: 1104 passaram
+(a queda de 1340 vem dos testes de tela removidos). **Não verificado:** subir o app e navegar depois da remoção, e a suíte e2e (rodam no terminal do proprietário).
 
 ## 8. Reaproveitamento, descarte e impacto nos documentos
 

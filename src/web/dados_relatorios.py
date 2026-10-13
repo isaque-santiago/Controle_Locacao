@@ -5,7 +5,7 @@ Os testes das rotas trocam este serviço por dados fictícios."""
 
 from src.domain.relatorios import agrupar_por_modelo, destaques, proporcoes
 from src.services import relatorios
-from src.ui.formatadores import formatar_data, formatar_mes, formatar_placa
+from src.domain.formatadores import formatar_data, formatar_mes, formatar_placa
 
 
 def periodo_texto(inicio, fim):

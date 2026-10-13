@@ -42,14 +42,14 @@ from src.web.rotas import documentos_regularizacao as rotas_documentos_regulariz
 from src.web.rotas import vistorias as rotas_vistorias
 from src.web.rotas import vistorias_registro as rotas_vistorias_registro
 from src.web.rotas import paginas as rotas_paginas
-from src.web.seguranca import CabecalhosSeguranca
+from src.web.seguranca import CabecalhosSeguranca, LimiteDeCorpo
 from src.web.sessao import ArmazemSessoes
 from src.web.templates import PASTA_ESTATICOS
 
 logger = logging.getLogger(__name__)
 
-# 5 falhas por e-mail/CPF e 20 por IP (IP de operadora pode ser compartilhado) em 15 min.
-FALHAS_POR_IDENTIFICADOR = 5
+# 10 falhas por e-mail/CPF e 20 por IP (IP de operadora pode ser compartilhado) em 15 min.
+FALHAS_POR_IDENTIFICADOR = 10
 FALHAS_POR_IP = 20
 JANELA_LIMITE_SEGUNDOS = 900
 
@@ -84,6 +84,7 @@ def criar_app(
         FALHAS_POR_IDENTIFICADOR, JANELA_LIMITE_SEGUNDOS, relogio
     )
 
+    app.add_middleware(LimiteDeCorpo)
     app.add_middleware(CabecalhosSeguranca)
     app.mount("/static", StaticFiles(directory=str(PASTA_ESTATICOS)), name="static")
 

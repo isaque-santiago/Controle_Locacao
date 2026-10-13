@@ -138,7 +138,7 @@
 <div class="tabela-caixa">
   <table class="dados">
     <caption class="so-leitor">{{ descricao }}</caption>
-    <thead><tr>{% for rotulo, classe in colunas %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}>{{ rotulo }}</th>{% endfor %}</tr></thead>
+    <thead><tr>{% for rotulo, classe in colunas %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}>{% if rotulo %}{{ rotulo }}{% else %}<span class="so-leitor">Proporção</span>{% endif %}</th>{% endfor %}</tr></thead>
     <tbody>{{ caller() }}</tbody>
   </table>
 </div>

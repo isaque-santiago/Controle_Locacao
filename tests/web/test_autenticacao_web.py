@@ -258,8 +258,8 @@ def test_paginas_do_menu_existem_para_o_dono(cliente):
 
 # ---------- limite de tentativas ----------
 
-def test_apos_5_falhas_o_login_e_bloqueado_mesmo_com_a_senha_certa(cliente, servico):
-    for _ in range(5):
+def test_apos_10_falhas_o_login_e_bloqueado_mesmo_com_a_senha_certa(cliente, servico):
+    for _ in range(10):
         assert entrar(cliente, senha="errada").status_code == 401
     entradas = servico.entradas
     bloqueada = entrar(cliente)  # senha certa
@@ -269,15 +269,21 @@ def test_apos_5_falhas_o_login_e_bloqueado_mesmo_com_a_senha_certa(cliente, serv
     assert servico.entradas == entradas  # nem chegou ao Supabase
 
 
+def test_a_decima_falha_ainda_nao_bloqueia_e_a_senha_certa_entra(cliente):
+    for _ in range(9):
+        assert entrar(cliente, senha="errada").status_code == 401
+    assert entrar(cliente).status_code == 303
+
+
 def test_bloqueio_acaba_depois_de_15_minutos(cliente, relogio):
-    for _ in range(5):
+    for _ in range(10):
         entrar(cliente, senha="errada")
     relogio.avancar(15 * 60 + 1)
     assert entrar(cliente).status_code == 303
 
 
 def test_bloqueio_de_um_usuario_nao_trava_os_outros(cliente):
-    for _ in range(5):
+    for _ in range(10):
         entrar(cliente, senha="errada")
     assert entrar(cliente, identificador=CPF_LOCATARIO, senha="senha-locatario").status_code == 303
 

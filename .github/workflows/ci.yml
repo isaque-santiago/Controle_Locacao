@@ -1,9 +1,10 @@
 name: CI
 
 # Testes Python em todo push e pull request; testes de navegador (responsivo, acessibilidade e
-# capturas) da tela de acesso em Chromium, Firefox e WebKit. As páginas autenticadas exigem o
-# projeto Supabase de DESENVOLVIMENTO e rodam sob demanda (workflow_dispatch), com segredos do
-# repositório. Nunca aponte esses segredos para o projeto de produção.
+# capturas) da tela de acesso do app web (FastAPI + HTMX) em Chromium, Firefox e WebKit. As páginas
+# autenticadas e os fluxos de homologação exigem o projeto Supabase de DESENVOLVIMENTO e rodam sob
+# demanda (workflow_dispatch), com segredos do repositório. Nunca aponte esses segredos para o projeto
+# de produção: os fluxos GRAVAM no banco (dados fictícios marcados com "E2E").
 
 on:
   push:
@@ -12,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       autenticado:
-        description: "Rodar também as páginas autenticadas (exige os segredos do projeto de desenvolvimento)"
+        description: "Rodar também as páginas e os fluxos autenticados (exige os segredos do projeto de desenvolvimento; os fluxos gravam no banco de dev)"
         type: boolean
         default: false
 
@@ -41,7 +42,7 @@ jobs:
     env:
       SUPABASE_URL: https://ci-exemplo.supabase.co
       SUPABASE_ANON_KEY: ci-chave-anonima-ficticia
-      E2E_BASE_URL: http://localhost:8501
+      E2E_BASE_URL: http://localhost:8000
       E2E_DADOS: normal
     steps:
       - uses: actions/checkout@v4
@@ -52,17 +53,20 @@ jobs:
       - run: pip install -r requirements.txt -r e2e/requirements-e2e.txt
       - name: Instalar o navegador
         run: python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }}
-      - name: Subir o app
+      - name: Subir o app web
         run: |
-          nohup streamlit run app.py --server.headless true --server.port 8501 > streamlit.log 2>&1 &
+          nohup python -m uvicorn --factory src.web.app:criar_app --host 127.0.0.1 --port 8000 --workers 1 > app.log 2>&1 &
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8501/_stcore/health && exit 0
+            curl -sf http://localhost:8000/saude && exit 0
             sleep 1
           done
-          cat streamlit.log
+          cat app.log
           exit 1
       - name: Tela de acesso (5 larguras, 2 temas, axe-core, capturas)
-        run: python -m pytest e2e/test_login.py -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito
+        run: python -m pytest e2e/test_login.py e2e/test_cobertura_dos_fluxos.py -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito
+      - name: Log do app
+        if: failure()
+        run: cat app.log
       - name: Capturas e achados
         if: always()
         uses: actions/upload-artifact@v4
@@ -78,6 +82,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Um perfil por vez: os fluxos gravam no mesmo banco de desenvolvimento e não devem se atropelar.
+      max-parallel: 1
       matrix:
         perfil: [chromium-desktop, chromium-movel, firefox, webkit]
     env:
@@ -85,7 +91,7 @@ jobs:
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_DEV_ANON_KEY }}
       E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
       E2E_SENHA: ${{ secrets.E2E_SENHA }}
-      E2E_BASE_URL: http://localhost:8501
+      E2E_BASE_URL: http://localhost:8000
       E2E_DADOS: normal
     steps:
       - uses: actions/checkout@v4
@@ -96,14 +102,14 @@ jobs:
       - run: pip install -r requirements.txt -r e2e/requirements-e2e.txt
       - name: Instalar o navegador
         run: python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }}
-      - name: Subir o app
+      - name: Subir o app web
         run: |
-          nohup streamlit run app.py --server.headless true --server.port 8501 > streamlit.log 2>&1 &
+          nohup python -m uvicorn --factory src.web.app:criar_app --host 127.0.0.1 --port 8000 --workers 1 > app.log 2>&1 &
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8501/_stcore/health && exit 0
+            curl -sf http://localhost:8000/saude && exit 0
             sleep 1
           done
-          cat streamlit.log
+          cat app.log
           exit 1
       - name: Páginas, fluxos e condições extras (axe-core, teclado, zoom, reflow)
         run: python -m pytest e2e -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito -k "not visual"

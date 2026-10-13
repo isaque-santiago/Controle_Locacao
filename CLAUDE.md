@@ -23,29 +23,26 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    dono é o do usuário de teste **desse** projeto. Não altere o UUID na migration versionada
    (é o de produção): gere um SQL único em pasta temporária, com o UUID de dev trocado, e
    o usuário o cole no SQL Editor.
-2. **Segredos:** o usuário aponta `.streamlit/secrets.toml` (ignorado pelo git) para a URL e a
+2. **Segredos:** o usuário aponta `.env` (ignorado pelo git) para a URL e a
    anon key do projeto de dev. A IA não lê, não imprime e não commita esse arquivo. Antes de
    trocar, o usuário guarda o de produção fora do repositório (ex.: `~/backup-secrets-locacao/`).
-   Nunca crie backups de segredos dentro do repositório: só `.streamlit/secrets.toml` está no
+   Nunca crie backups de segredos dentro do repositório: só `.env` está no
    `.gitignore`.
-3. **Subir o app:** `preview_start` com a configuração `controle-locacao` de
-   `.claude/launch.json` (usa `.venv\Scripts\streamlit.exe`, `autoPort: true`). Se não existir
+3. **Subir o app:** `preview_start` com a configuração `locacao-web` de
+   `.claude/launch.json` (usa `.venv\Scripts\python.exe executar_web.py`, `autoPort: true`). Se não existir
    `.venv`: `python -m venv .venv` e `.venv\Scripts\python.exe -m pip install -r requirements.txt`.
-   O Streamlit ignora a porta atribuída pelo preview e sobe na primeira livre (ex.: 8503). Leia a
-   porta real em `preview_logs` e use `navigate` para `http://localhost:<porta>`.
+   Leia a porta real em `preview_logs` e use `navigate` para `http://localhost:<porta>`.
    Não derrube servidores de outras conversas nem processos que não foram iniciados por você.
 4. **Login:** o usuário faz o login na aba do navegador embutido. Se precisar dos dados da conta
    de preview, peça ao usuário; a IA não digita credenciais. A sessão expira após 30 min
    de inatividade: peça novo login.
 5. **Depois de logado:** verifique pelo `read_page`/`get_page_text`, `read_console_messages`
    e `preview_logs` (nível erro). Dados criados ou alterados nesse ambiente são fictícios.
-6. **Ao encerrar:** não troque o `.streamlit/secrets.toml` de volta para produção por conta
+6. **Ao encerrar:** não troque o `.env` de volta para produção por conta
    própria; apenas avise ao usuário qual ambiente ficou configurado.
 
-# Migração do frontend (em andamento)
+# Frontend
 
-O Streamlit será substituído por FastAPI + Jinja2 + HTMX + Tailwind. Antes de mexer em qualquer coisa de
-interface, leia `Arquivos/Analise_Migracao_Frontend.md` (plano aprovado, fases, decisões) e use
-`prototipo/` como referência visual do layout. Siga as fases na ordem; a fase atual está no topo desse
-documento. Atualize a linha "Fase atual" ao concluir cada fase. Até a Fase 4, o Streamlit continua
-funcionando em paralelo, no mesmo banco. Não faça novos ajustes de CSS no Streamlit.
+O app é FastAPI + Jinja2 + HTMX + Tailwind (o Streamlit foi removido na Fase 4, parte F, em 13/10/2026). Antes de mexer na
+interface, leia `Arquivos/Analise_Migracao_Frontend.md` (decisões e histórico). CSS-fonte em `src/web/estilos/app.css`;
+regenere `static/css/app.css` com `python scripts/construir_css.py`. Deploy é a Fase 5 (requisitos em `Arquivos/Revisao_Seguranca.md`).

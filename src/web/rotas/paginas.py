@@ -23,29 +23,3 @@ def inicio(request: Request, sessao: Sessao = Depends(exigir_sessao)):
     if sessao.papel == PAPEL_LOCATARIO:
         return RedirectResponse("/portal", status_code=303)
     return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar()})
-
-
-def _registrar_em_migracao(item: navegacao.ItemNavegacao) -> None:
-    def pagina(request: Request, _: Sessao = Depends(exigir_dono)):
-        return renderizar(request, "em_migracao.html", {"titulo": item.rotulo, "item": item})
-
-    pagina.__name__ = f"em_migracao_{item.chave}"
-    router.add_api_route(item.caminho, pagina, methods=["GET"])
-
-
-# As demais telas seguem no Streamlit até a sua fase; a rota existe para o menu não dar 404.
-_JA_MIGRADAS = {
-    navegacao.DASHBOARD,
-    navegacao.MOTOS,
-    navegacao.CLIENTES,
-    navegacao.CONTRATOS,
-    navegacao.COBRANCAS,
-    navegacao.MANUTENCAO,
-    navegacao.DOCUMENTOS,
-    navegacao.RELATORIOS,
-    navegacao.CONFIGURACOES,
-    navegacao.VISTORIAS,
-}
-for _item in navegacao.TODOS:
-    if _item not in _JA_MIGRADAS:
-        _registrar_em_migracao(_item)

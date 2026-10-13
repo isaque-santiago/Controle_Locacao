@@ -11,7 +11,7 @@ from PIL import Image, ImageChops
 
 PASTA_E2E = Path(__file__).parent
 PASTA_ATUAL = PASTA_E2E / "capturas_atuais"
-PASTA_REFERENCIA = PASTA_E2E / "referencia" / sys.platform
+PASTA_REFERENCIA = PASTA_E2E / "referencia" / "web" / sys.platform
 PASTA_DIFERENCAS = PASTA_E2E / "resultados" / "diferencas"
 
 # Diferença de canal (0–255) abaixo da qual o pixel conta como igual (serrilhado de fontes).
@@ -33,7 +33,7 @@ def comparar(atual: Path, tolerancia_percentual: float, atualizar: bool) -> tupl
     if a.size != r.size:
         return False, f"dimensões diferentes: {a.size[0]}×{a.size[1]} contra {r.size[0]}×{r.size[1]} da referência"
     diferenca = ImageChops.difference(a, r).convert("L").point(lambda v: 255 if v > _LIMIAR_CANAL else 0)
-    pixels = sum(1 for v in diferenca.getdata() if v)
+    pixels = diferenca.histogram()[255]  # a imagem é binária (0 ou 255)
     percentual = 100 * pixels / (a.size[0] * a.size[1])
     if percentual <= tolerancia_percentual:
         return True, f"{percentual:.3f}% de pixels diferentes"

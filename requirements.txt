@@ -1,14 +1,10 @@
-streamlit==1.64.0
-streamlit-cookies-controller==0.0.4
 supabase==2.31.0
-pandas==3.0.6
-plotly==7.1.0
 python-dateutil==2.9.0.post0
 pydantic==2.13.5
 openpyxl==3.1.5
+pillow==12.3.0
 pytest==9.1.1
 tzdata==2026.4
-watchdog==6.0.0
 fastapi==0.142.2
 uvicorn==0.53.0
 Jinja2==3.1.6

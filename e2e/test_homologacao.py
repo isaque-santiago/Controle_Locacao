@@ -50,6 +50,14 @@ _LARGURA_REFERENCIA_PADRAO = 1440
 _LIMITE_CARGA_REDUZIDA_S = 45
 
 
+def _aplicar_css(page, css: str) -> None:
+    """Aplica CSS pelo CSSOM (folha construída): a CSP do app (style-src 'self') recusa <style> inline."""
+    page.evaluate(
+        "css => { const f = new CSSStyleSheet(); f.replaceSync(css); document.adoptedStyleSheets = [...document.adoptedStyleSheets, f]; }",
+        css,
+    )
+
+
 def _roda_nesta_largura(cenario) -> bool:
     return cenario.largura == _LARGURA_REFERENCIA.get(cenario.perfil, _LARGURA_REFERENCIA_PADRAO)
 
@@ -75,7 +83,7 @@ def test_variante(variante, pagina_logada, cenario, registrar, coletor, request)
                 reg("P0", "sessao-perdida", pagina.titulo, "A navegação voltou para a tela de acesso.")
                 continue
             if css:
-                page.add_style_tag(content=css)
+                _aplicar_css(page, css)
                 page.wait_for_timeout(400)
             verificar_layout(page, cenario, reg, f"{pagina.titulo} ({variante})")
             verificar_texto_cortado(page, reg, f"{pagina.titulo} ({variante})")

@@ -55,17 +55,17 @@ def _slug(texto: str) -> str:
 
 
 def _esperar_assentar(page: Page) -> None:
-    """Espera elementos 'velhos' do Streamlit (esmaecidos durante o rerun) e transições terminarem.
+    """Espera trocas do HTMX e transições de CSS terminarem.
 
     Sem isso o axe mede o contraste de um texto ainda semitransparente e acusa falso positivo."""
     try:
         page.wait_for_function(
-            "() => !document.querySelector('[data-stale=\"true\"]') && !document.querySelector('[data-testid=\"stStatusWidget\"]')",
+            "() => !document.querySelector('.htmx-request, .htmx-swapping, .htmx-settling, .htmx-added')",
             timeout=8_000,
         )
     except Exception:
         pass
-    page.wait_for_timeout(700)
+    page.wait_for_timeout(500)
 
 
 def verificar_layout(page: Page, cenario, registrar, nome_pagina: str) -> None:
@@ -122,9 +122,13 @@ def verificar_layout(page: Page, cenario, registrar, nome_pagina: str) -> None:
 
 
 def verificar_saude(page: Page, registrar, nome_pagina: str) -> None:
-    """Exceções do Streamlit e erros de console."""
+    """Páginas de erro do app, respostas 5xx e erros de console."""
     for texto in textos_de_excecao(page):
-        registrar("P0", "excecao-streamlit", nome_pagina, "Exceção exibida na página.", texto[:160].replace("\n", " "))
+        registrar("P0", "pagina-de-erro", nome_pagina, "Página de erro exibida.", " ".join(texto.split())[:160])
+    falhas_http = getattr(page, "falhas_http", [])
+    for falha in dict.fromkeys(falhas_http):
+        registrar("P0", "resposta-5xx", nome_pagina, "O servidor respondeu com erro.", falha[:200])
+    falhas_http.clear()
     erros = getattr(page, "erros_console", [])
     for erro in dict.fromkeys(erros):  # únicos, na ordem
         registrar("P2", "erro-console", nome_pagina, "Erro no console do navegador.", erro[:200])
@@ -134,11 +138,20 @@ def verificar_saude(page: Page, registrar, nome_pagina: str) -> None:
 def verificar_acessibilidade(page: Page, registrar, nome_pagina: str) -> None:
     """Auditoria automatizada (axe-core): uma ocorrência por regra violada na tela atual."""
     _esperar_assentar(page)
+    antes = len(getattr(page, "erros_console", []))
     try:
         resultado = Axe().run(page, options=_OPCOES_AXE)
     except Exception as erro:  # a auditoria nunca derruba o fluxo; vira achado
         registrar("P2", "axe-indisponivel", nome_pagina, f"Falha ao rodar o axe-core: {type(erro).__name__}")
         return
+    # O axe aplica estilos inline temporários e a CSP (style-src 'self') os recusa com um erro de console
+    # (hash de texto vazio). É efeito da ferramenta, não da página: não conta como erro do app.
+    page.wait_for_timeout(250)
+    erros = getattr(page, "erros_console", [])
+    do_axe = [e for e in erros[antes:] if "Content Security Policy" in e and "style-src" in e]
+    if do_axe:
+        erros[:] = [e for e in erros if e not in do_axe]
+        registrar("INFO", "csp-style-do-axe", nome_pagina, "Erro de CSP de estilo causado pelo próprio axe-core (ignorado).")
     for v in resultado.response["violations"]:
         severidade, tipo = _IMPACTO_AXE.get(v.get("impact") or "minor", ("INFO", "acessibilidade-leve"))
         alvos = [" ".join(n["target"]) if isinstance(n["target"], list) else str(n["target"]) for n in v["nodes"]]
@@ -170,7 +183,7 @@ def verificar_teclado(page: Page, registrar, nome_pagina: str, maximo: int = 60)
             if p.get("ultimo"):
                 break  # saiu da página pelo fim (Firefox mantém o último elemento focado)
             repetidos += 1
-            if repetidos >= 2:
+            if repetidos >= p.get("segmentos", 1) + 1:
                 registrar("P0", "armadilha-de-teclado", nome_pagina, "O foco não avança com Tab.", p["el"])
                 break
             continue
@@ -184,8 +197,8 @@ def verificar_teclado(page: Page, registrar, nome_pagina: str, maximo: int = 60)
         if not p["dentro"]:
             # Parcialmente visível (o WebKit deixa o campo rente à borda inferior) é P2: conferir em iPhone/iPad reais.
             severidade = "P2" if p.get("parcial") else "P1"
-            registrar(severidade, "foco-fora-da-janela", nome_pagina, "Elemento focado fora da área visível.", f"{p['el']} «{p['rotulo']}»")
-        if not p["rotulo"] and "stMain" not in p["el"]:  # a região principal é um marco, não um controle
+            registrar(severidade, "foco-fora-da-janela", nome_pagina, "Elemento focado fora da área visível.", f"{p['el']} «{p['rotulo']}»", detalhe="esq, dir, topo, base, larg, alt = " + ", ".join(map(str, p.get("caixa", []))))
+        if not p["rotulo"] and "main#conteudo" not in p["el"]:  # a região principal é um marco, não um controle
             registrar("P1", "foco-sem-nome", nome_pagina, "Elemento focável sem nome acessível.", p["el"])
         if p["regressao"]:
             registrar(
@@ -249,22 +262,8 @@ def capturar(page: Page, cenario, nome: str, pasta_base: Path = PASTA_CAPTURAS, 
     `variante` separa fotos de condições extras (zoom, paisagem…) das da matriz principal."""
     pasta = pasta_base / estado_dados() / cenario.perfil / cenario.tema / (variante or str(cenario.largura))
     pasta.mkdir(parents=True, exist_ok=True)
-    # O Streamlit rola dentro de stMain, não no documento: full_page não capturaria o
-    # conteúdo abaixo da dobra. Estica a janela até a altura do conteúdo só durante a foto.
-    conteudo = page.evaluate(
-        "() => { const m = document.querySelector('[data-testid=\"stMain\"]'); "
-        "return m ? m.scrollHeight : document.documentElement.scrollHeight; }"
-    )
-    original = page.viewport_size
-    largura = original["width"] if original else cenario.largura
-    altura = original["height"] if original else cenario.altura
     destino = pasta / f"{_slug(nome)}.png"
-    try:
-        page.set_viewport_size({"width": largura, "height": max(altura, min(conteudo, 12_000))})
-        page.wait_for_timeout(300)
-        page.screenshot(path=str(destino))
-    finally:
-        if original:
-            page.set_viewport_size(original)
-            page.wait_for_timeout(200)
+    # O documento rola (não há contêiner interno): a foto de página inteira cobre o conteúdo abaixo da dobra.
+    page.wait_for_timeout(300)
+    page.screenshot(path=str(destino), full_page=True)
     return destino

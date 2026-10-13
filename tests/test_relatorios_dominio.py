@@ -7,7 +7,7 @@ from src.domain.relatorios import (
     previsto_do_mes,
     proporcoes,
 )
-from src.ui.formatadores import formatar_mes
+from src.domain.formatadores import formatar_mes
 
 CONFIG = {
     "multa_atraso_valor": Decimal("15.00"),

@@ -122,3 +122,14 @@ def test_css_compilado_existe_e_tem_os_componentes():
     for classe in (".btn", ".cartao", ".lateral", ".barra-inferior", ".selo", ".aviso"):
         assert classe in css, f"{classe} ausente: rode python scripts/construir_css.py"
     assert "--foco" in css and "prefers-color-scheme:dark" in css.replace(" ", "")
+
+
+def test_htmx_nao_reaplica_o_atributo_style_ao_trocar_trechos(cliente):
+    """A CSP (style-src 'self') recusa style inline: o htmx não pode copiá-lo na acomodação das trocas."""
+    import json
+    import re
+
+    html = cliente.get("/login").text
+    config = json.loads(re.search(r'name="htmx-config" content=\'([^\']+)\'', html).group(1))
+    assert "style" not in config["attributesToSettle"]
+    assert config["includeIndicatorStyles"] is False and config["allowEval"] is False

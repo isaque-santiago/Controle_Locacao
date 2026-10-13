@@ -39,23 +39,23 @@ PERFIL_PADRAO = "chromium-desktop"
 
 @dataclass(frozen=True)
 class Pagina:
-    titulo: str  # texto do menu lateral (st.Page title)
-    caminho: str  # url_path do Streamlit ("" = página inicial)
+    titulo: str  # texto do menu lateral
+    caminho: str  # caminho da rota ("/" = Dashboard)
 
 
-# Espelha app.py, na ordem do menu agrupado (Operação, Cadastros, Frota, Gestão, Sistema).
-# Se as páginas mudarem lá, ajuste aqui.
+# Espelha src/web/navegacao.py, na ordem do menu (Operação, Cadastros, Frota, Gestão e sistema);
+# test_cobertura_dos_fluxos.py confere que as duas listas continuam iguais.
 PAGINAS = (
-    Pagina("Dashboard", ""),
-    Pagina("Contratos", "Contratos"),
-    Pagina("Cobranças", "Cobrancas"),
-    Pagina("Motos", "Motos"),
-    Pagina("Clientes", "Clientes"),
-    Pagina("Manutenção", "Manutencao"),
-    Pagina("Documentos", "Documentos"),
-    Pagina("Vistorias", "Vistorias"),
-    Pagina("Relatórios", "Relatorios"),
-    Pagina("Configurações", "Configuracoes"),
+    Pagina("Dashboard", "/"),
+    Pagina("Contratos", "/contratos"),
+    Pagina("Cobranças", "/cobrancas"),
+    Pagina("Motos", "/motos"),
+    Pagina("Clientes", "/clientes"),
+    Pagina("Manutenção", "/manutencao"),
+    Pagina("Documentos", "/documentos"),
+    Pagina("Vistorias", "/vistorias"),
+    Pagina("Relatórios", "/relatorios"),
+    Pagina("Configurações", "/configuracoes"),
 )
 
 # Estados de dados possíveis (ver e2e/README.md e supabase/seed_e2e.sql).
@@ -63,7 +63,7 @@ ESTADOS_DADOS = ("vazio", "normal", "extremo")
 
 
 def base_url() -> str:
-    return os.environ.get("E2E_BASE_URL", "http://localhost:8501").rstrip("/")
+    return os.environ.get("E2E_BASE_URL", "http://localhost:8000").rstrip("/")
 
 
 def credenciais() -> tuple[str, str] | None:

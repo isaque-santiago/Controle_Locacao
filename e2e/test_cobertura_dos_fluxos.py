@@ -1,8 +1,5 @@
 """Garante que todos os fluxos mínimos da Etapa 9 têm cenário de teste."""
 
-import re
-from pathlib import Path
-
 from e2e.config import PAGINAS
 from e2e.test_fluxos import FLUXOS
 
@@ -27,6 +24,6 @@ def test_todos_os_fluxos_minimos_tem_cenario():
 
 
 def test_inventario_de_paginas_espelha_o_app():
-    app = (Path(__file__).parent.parent / "app.py").read_text(encoding="utf-8")
-    titulos = re.findall(r'st\.Page\("pages/[^"]+", title="([^"]+)"', app)
-    assert titulos == [p.titulo for p in PAGINAS]
+    from src.web.navegacao import TODOS
+
+    assert [(i.rotulo, i.caminho) for i in TODOS] == [(p.titulo, p.caminho) for p in PAGINAS]
