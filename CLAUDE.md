@@ -30,7 +30,7 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    `.gitignore`.
 3. **Subir o app:** `preview_start` com a configuração `locacao-web` de
    `.claude/launch.json` (usa `.venv\Scripts\python.exe executar_web.py`, `autoPort: true`). Se não existir
-   `.venv`: `python -m venv .venv` e `.venv\Scripts\python.exe -m pip install -r requirements.txt`.
+   `.venv`: `python -m venv .venv` e `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt`.
    Leia a porta real em `preview_logs` e use `navigate` para `http://localhost:<porta>`.
    Não derrube servidores de outras conversas nem processos que não foram iniciados por você.
 4. **Login:** o usuário faz o login na aba do navegador embutido. Se precisar dos dados da conta

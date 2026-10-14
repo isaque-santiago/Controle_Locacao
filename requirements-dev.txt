@@ -1,0 +1,4 @@
+# Desenvolvimento e CI: tudo de produção mais as ferramentas de teste.
+# Os testes de navegador (Playwright) têm o próprio arquivo: e2e/requirements-e2e.txt.
+-r requirements.txt
+pytest==9.1.1

@@ -16,7 +16,7 @@ Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + 
 4. Instale as dependências:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # desenvolvimento e testes (requirements.txt = só produção)
 ```
 
 5. Rode o app:
@@ -395,7 +395,7 @@ homologada apenas com base nas telas e testes isolados.
    projeto conectado com `supabase link` e use `supabase db push`.
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
 5. Em homologação, execute `supabase/verificar_fluxos.sql`, `supabase/verificar_portal_locatario.sql` e `supabase/verificar_regras_negocio.sql`. Os roteiros usam `ROLLBACK`.
-6. Reinicie o aplicativo com as dependências de `requirements.txt`.
+6. Reinicie o aplicativo com as dependências de `requirements-dev.txt`.
 
 Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
 
