@@ -30,7 +30,7 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    `.gitignore`.
 3. **Subir o app:** `preview_start` com a configuração `locacao-web` de
    `.claude/launch.json` (usa `.venv\Scripts\python.exe executar_web.py`, `autoPort: true`). Se não existir
-   `.venv`: `python -m venv .venv` e `.venv\Scripts\python.exe -m pip install -r requirements.txt`.
+   `.venv`: `python -m venv .venv` e `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt`.
    Leia a porta real em `preview_logs` e use `navigate` para `http://localhost:<porta>`.
    Não derrube servidores de outras conversas nem processos que não foram iniciados por você.
 4. **Login:** o usuário faz o login na aba do navegador embutido. Se precisar dos dados da conta
@@ -45,4 +45,4 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
 
 O app é FastAPI + Jinja2 + HTMX + Tailwind (o Streamlit foi removido na Fase 4, parte F, em 13/10/2026). Antes de mexer na
 interface, leia `Arquivos/Analise_Migracao_Frontend.md` (decisões e histórico). CSS-fonte em `src/web/estilos/app.css`;
-regenere `static/css/app.css` com `python scripts/construir_css.py`. Deploy é a Fase 5 (requisitos em `Arquivos/Revisao_Seguranca.md`).
+regenere `static/css/app.css` com `python scripts/construir_css.py`. Deploy (Fase 5): `Dockerfile` + guia `Arquivos/Deploy_VPS.md` (Coolify, DuckDNS); o deploy só sai pela CI após o pytest verde; `requirements.txt` é só produção e `requirements-dev.txt` traz o pytest; requisitos de segurança em `Arquivos/Revisao_Seguranca.md`.

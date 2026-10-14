@@ -16,7 +16,7 @@ Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + 
 4. Instale as dependências:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # desenvolvimento e testes (requirements.txt = só produção)
 ```
 
 5. Rode o app:
@@ -113,7 +113,10 @@ uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console 
 Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`), C (CI do app novo), D (revisão de segurança:
 `Arquivos/Revisao_Seguranca.md`), E (homologação com o proprietário: `Arquivos/Roteiro_Homologacao_Manual.md`) e F (remoção do Streamlit:
 `app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
-`plotly` e `watchdog`). Falta o deploy (Fase 5).
+`plotly` e `watchdog`).
+
+**Fase 5 (deploy) em andamento:** `Dockerfile`, `.dockerignore`, dependências de produção separadas (`requirements.txt`; testes em
+`requirements-dev.txt`) e job `deploy` na CI estão prontos; falta publicar e verificar na VPS (passo a passo em `Arquivos/Deploy_VPS.md`).
 
 Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
@@ -395,7 +398,7 @@ homologada apenas com base nas telas e testes isolados.
    projeto conectado com `supabase link` e use `supabase db push`.
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
 5. Em homologação, execute `supabase/verificar_fluxos.sql`, `supabase/verificar_portal_locatario.sql` e `supabase/verificar_regras_negocio.sql`. Os roteiros usam `ROLLBACK`.
-6. Reinicie o aplicativo com as dependências de `requirements.txt`.
+6. Reinicie o aplicativo com as dependências de `requirements-dev.txt`.
 
 Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
 
@@ -452,7 +455,10 @@ multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
 
 ## Publicação
 
-O deploy do app FastAPI é a Fase 5. Requisitos já definidos na revisão de segurança (`Arquivos/Revisao_Seguranca.md`):
+O deploy do app FastAPI (Fase 5) usa o `Dockerfile` do repositório no Coolify da VPS; o passo a passo está em
+`Arquivos/Deploy_VPS.md`. O deploy só sai pela CI, no push para a `main`, depois do `pytest` verde (job `deploy` de `.github/workflows/ci.yml`;
+segredos `COOLIFY_URL`, `COOLIFY_TOKEN` e `COOLIFY_APP_UUID` no GitHub); a reversão é o Rollback do Coolify. A imagem já sobe com 1 worker,
+`--proxy-headers` e `LOCACAO_AMBIENTE=producao`. Requisitos da revisão de segurança na revisão de segurança (`Arquivos/Revisao_Seguranca.md`):
 `uvicorn --factory src.web.app:criar_app` com `--proxy-headers` e `--forwarded-allow-ips` do proxy, **1 worker**, `LOCACAO_AMBIENTE`
 diferente de `dev`, `SUPABASE_URL` e `SUPABASE_ANON_KEY` por variável de ambiente (nunca a chave `service_role`). Antes de publicar:
 migrations aplicadas, cadastro público do Supabase desativado, usuário do dono criado e buckets privados.
