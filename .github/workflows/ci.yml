@@ -127,3 +127,32 @@ jobs:
             e2e/capturas/
             e2e/resultados/
           if-no-files-found: ignore
+
+  deploy:
+    # Só publica no push para a main e só depois do pytest verde (3.12 e 3.14). O auto-deploy do Coolify deve ficar
+    # DESLIGADO (sem webhook do GitHub): este é o único gatilho. Segredos do repositório: COOLIFY_URL (ex.:
+    # https://coolify.exemplo.com, sem barra no fim), COOLIFY_TOKEN (token de API com permissão de deploy) e
+    # COOLIFY_APP_UUID. Reversão: aba Deployments do aplicativo no Coolify (Rollback). Passo a passo: Arquivos/Deploy_VPS.md.
+    needs: testes-python
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: producao
+    concurrency:
+      group: deploy-producao
+      cancel-in-progress: false
+    steps:
+      - name: Pedir o deploy ao Coolify
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+        run: |
+          if [ -z "$COOLIFY_URL" ] || [ -z "$COOLIFY_TOKEN" ] || [ -z "$COOLIFY_APP_UUID" ]; then
+            echo "::error::Segredos COOLIFY_URL, COOLIFY_TOKEN e COOLIFY_APP_UUID não configurados."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+            "${COOLIFY_URL%/}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=false"
+          echo
+          echo "Deploy solicitado. Acompanhe em Deployments no Coolify."

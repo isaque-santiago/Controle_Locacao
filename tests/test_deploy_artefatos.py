@@ -119,3 +119,28 @@ def test_cabecalhos_de_origem_nao_confiavel_sao_ignorados(monkeypatch):
 def test_em_producao_componentes_nao_existe(monkeypatch):
     cliente = _app_atras_do_proxy(monkeypatch, "172.18.0.4")
     assert cliente.get("/componentes").status_code == 404
+
+
+def _job_deploy() -> str:
+    ci = _ler(".github/workflows/ci.yml")
+    return ci[ci.index("\n  deploy:"):]
+
+
+def test_ci_deploy_so_na_main_e_depois_do_pytest():
+    job = _job_deploy()
+    assert "needs: testes-python" in job
+    assert "github.event_name == 'push'" in job and "refs/heads/main" in job
+    assert "pull_request" not in job
+
+
+def test_ci_deploy_usa_segredos_do_github_sem_valores_no_arquivo():
+    job = _job_deploy()
+    for nome in ("COOLIFY_URL", "COOLIFY_TOKEN", "COOLIFY_APP_UUID"):
+        assert f"${{{{ secrets.{nome} }}}}" in job
+    assert not re.search(r"Bearer [A-Za-z0-9]{10,}", job)
+
+
+def test_ci_testa_na_versao_da_imagem():
+    ci = _ler(".github/workflows/ci.yml")
+    versao = re.search(r"^FROM python:(\d+\.\d+)", _ler("Dockerfile"), re.M).group(1)
+    assert f'"{versao}"' in ci[: ci.index("navegador-login:")]
