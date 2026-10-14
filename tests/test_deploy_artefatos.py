@@ -60,3 +60,62 @@ def test_dockerignore_exclui_segredos_testes_e_ambiente_local():
     linhas = {l.strip() for l in _ler(".dockerignore").splitlines()}
     assert {".env", ".git", ".venv", "tests", "e2e"} <= linhas
     assert ".sessoes_dev.json*" in linhas
+
+
+def test_dockerfile_comando_de_producao():
+    d = _ler("Dockerfile")
+    cmd = d[d.index("CMD ["):]
+    assert "--workers 1" in cmd
+    assert "--proxy-headers" in cmd
+    assert "--forwarded-allow-ips" in cmd
+    assert "--reload" not in cmd
+    assert "--forwarded-allow-ips '*'" not in cmd and "--forwarded-allow-ips=*" not in cmd
+
+
+def test_dockerfile_ambiente_de_producao_e_proxy_sem_curinga():
+    d = _ler("Dockerfile")
+    assert re.search(r"LOCACAO_AMBIENTE=producao", d)
+    assert not re.search(r"LOCACAO_AMBIENTE=dev", d)
+    padrao = re.search(r'FORWARDED_ALLOW_IPS="([^"]*)"', d).group(1)
+    assert padrao and "*" not in padrao
+
+
+def test_proxy_confiavel_padrao_cobre_o_docker_e_exclui_a_internet():
+    from uvicorn.middleware.proxy_headers import _TrustedHosts
+
+    padrao = re.search(r'FORWARDED_ALLOW_IPS="([^"]*)"', _ler("Dockerfile")).group(1)
+    confiaveis = _TrustedHosts(padrao)
+    assert "172.18.0.4" in confiaveis and "10.0.1.5" in confiaveis
+    assert "203.0.113.9" not in confiaveis
+
+
+def _app_atras_do_proxy(monkeypatch, ip_do_proxy: str):
+    from starlette.testclient import TestClient
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+    from src.web.app import criar_app
+
+    monkeypatch.setenv("SUPABASE_URL", "https://exemplo.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "chave-anonima-ficticia")
+    padrao = re.search(r'FORWARDED_ALLOW_IPS="([^"]*)"', _ler("Dockerfile")).group(1)
+    app = ProxyHeadersMiddleware(criar_app(desenvolvimento=False), trusted_hosts=padrao)
+    return TestClient(app, client=(ip_do_proxy, 50000))
+
+
+def test_atras_do_proxy_confiavel_o_app_percebe_https_e_hsts(monkeypatch):
+    cliente = _app_atras_do_proxy(monkeypatch, "172.18.0.4")
+    r = cliente.get("/saude", headers={"X-Forwarded-Proto": "https", "X-Forwarded-For": "203.0.113.9"})
+    assert r.status_code == 200
+    assert "max-age" in r.headers.get("strict-transport-security", "")
+    assert "content-security-policy" in r.headers
+
+
+def test_cabecalhos_de_origem_nao_confiavel_sao_ignorados(monkeypatch):
+    cliente = _app_atras_do_proxy(monkeypatch, "203.0.113.50")
+    r = cliente.get("/saude", headers={"X-Forwarded-Proto": "https"})
+    assert "strict-transport-security" not in r.headers
+
+
+def test_em_producao_componentes_nao_existe(monkeypatch):
+    cliente = _app_atras_do_proxy(monkeypatch, "172.18.0.4")
+    assert cliente.get("/componentes").status_code == 404
