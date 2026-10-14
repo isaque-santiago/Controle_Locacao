@@ -1,7 +1,7 @@
 # Análise e proposta: migração da camada de interface (Streamlit → FastAPI + HTMX)
 
 > **Status: APROVADA pelo proprietário em 05/10/2026 (decisões na seção 10). Fase atual: 4 (E2E, homologação e
-> desligamento do Streamlit) CONCLUÍDA em 13/10/2026; próxima: Fase 5 (deploy). Fase 3 (demais páginas, uma por vez) CONCLUÍDA em 08/10/2026. Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
+> desligamento do Streamlit) CONCLUÍDA em 13/10/2026; Fase 5 (deploy na VPS) EM ANDAMENTO: artefatos prontos em 14/10/2026 (Dockerfile, CI com deploy após o pytest, guia `Arquivos/Deploy_VPS.md`); falta o proprietário criar o app no Coolify, configurar os segredos e fazer a verificação pós-deploy (seção 7 do guia). Fase 3 (demais páginas, uma por vez) CONCLUÍDA em 08/10/2026. Iniciada em 06/10/2026. Clientes CONCLUÍDA em 07/10/2026 (lista, cadastro, edição e quatro abas,
 > incluindo Portal). Contratos CONCLUÍDA em 07/10/2026 (lista, ficha, assistente em 4 etapas e encerramento).
 > Cobranças e Manutenção CONCLUÍDAS em 07/10/2026. Vistorias CONCLUÍDA em 08/10/2026 (sem a parte C, dispensada pelo
 > proprietário). Documentos, Relatórios, Configurações e Portal do Locatário CONCLUÍDAS em 08/10/2026. A falta de recarga
