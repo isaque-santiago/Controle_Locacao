@@ -27,6 +27,6 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 
 # Produção: 1 worker (sessões e limitadores de login ficam na memória do processo) e cabeçalhos do proxy (Traefik do
 # Coolify) para o app perceber HTTPS (cookie Secure, HSTS) e o IP real. Só confiamos em proxies das redes privadas do
-# Docker; para restringir ao IP do Traefik, defina FORWARDED_ALLOW_IPS no Coolify (ver Arquivos/Deploy_VPS.md).
+# Docker (provisório); em produção defina FORWARDED_ALLOW_IPS no Coolify com o IP do Traefik (ver Arquivos/Deploy_VPS.md).
 # LOCACAO_AMBIENTE nunca deve ser "dev" (liga /componentes e o espelho de sessões em arquivo).
 CMD ["sh", "-c", "exec uvicorn --factory src.web.app:criar_app --host 0.0.0.0 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips \"$FORWARDED_ALLOW_IPS\""]

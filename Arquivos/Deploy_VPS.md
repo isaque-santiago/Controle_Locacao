@@ -75,22 +75,33 @@ Marque **todas** como *Runtime only* (não entram no build) e não marque *Is Bu
 |---|---|---|
 | `SUPABASE_URL` | URL do projeto Supabase **de produção** | Sim |
 | `SUPABASE_ANON_KEY` | chave anon (`sb_publishable_…` ou JWT anon) de produção | Sim |
-| `FORWARDED_ALLOW_IPS` | Opcional. Padrão da imagem: `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16` | Não |
+| `FORWARDED_ALLOW_IPS` | IP do Traefik (ver "Restringir o proxy confiável"). Sem ela, a imagem usa `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16` (provisório) | Sim, após o 1º deploy |
 
 Regras: **nunca** `service_role`; **nunca** definir `LOCACAO_AMBIENTE=dev` nem `LOCACAO_SESSOES_ARQUIVO`; nada de `.env` na
 VPS. O app não exige outras variáveis.
 
-### Restringir o proxy confiável (opcional, recomendado)
+### Restringir o proxy confiável ao IP do Traefik (obrigatório após o primeiro deploy)
 
-O padrão confia em qualquer proxy das redes privadas do Docker, o que cobre o Traefik sem precisar saber o IP dele. O risco
-residual: outro contêiner da mesma rede Docker poderia forjar `X-Forwarded-For`/`Proto`. Para fechar ao IP do Traefik:
+Decisão do proprietário (14/10/2026): o app só confia nos cabeçalhos `X-Forwarded-*` vindos do Traefik. O IP dele só existe
+na VPS, por isso não vai no repositório: a imagem sobe com a faixa privada do Docker como valor **provisório** e você o
+troca por um IP fixo assim que o Traefik estiver de pé (provisório = outro contêiner da mesma rede poderia forjar IP e HTTPS).
+
+1. Na VPS, descubra o IP do Traefik na rede que ele compartilha com o app:
 
 ```bash
-docker inspect coolify-proxy --format '{{range $n,$c := .NetworkSettings.Networks}}{{$n}} {{$c.IPAddress}}{{"\n"}}{{end}}'
+docker inspect coolify-proxy --format '{{range $n,$c := .NetworkSettings.Networks}}{{$n}} {{$c.IPAddress}}{{"
+"}}{{end}}'
+docker network inspect coolify --format '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{"
+"}}{{end}}'
 ```
 
-Use o IP da rede `coolify` em `FORWARDED_ALLOW_IPS` (ex.: `10.0.1.2`). Se o contêiner do proxy for recriado e o IP mudar, o
-app volta a ver todos os acessos como o IP do proxy (login limitado "para todos juntos"); por isso o padrão é a faixa.
+2. No Coolify, aplicativo → Environment Variables: `FORWARDED_ALLOW_IPS` = esse IP **sem máscara** (ex.: `10.0.1.2`),
+   *Runtime only*. Salve e faça **Restart** (não precisa de build).
+3. Confirme pela seção 7, itens 2, 4 e 8 (HSTS presente, cookie `Secure`, IP real do cliente nos logs).
+4. Se o contêiner do proxy for recriado (atualização do Coolify, reinício da VPS), o IP pode mudar. Sintoma: sem HSTS, cookie
+   sem `Secure` e todos os acessos com o mesmo IP nos logs. Correção: repetir os passos 1 e 2. Para tolerar essa troca sem
+   abrir para a internet, use a sub-rede da rede `coolify` (`docker network inspect coolify --format '{{(index .IPAM.Config 0).Subnet}}'`),
+   que é mais ampla (inclui os outros contêineres da rede) mas ainda exclui a internet.
 
 ## 5. Primeiro build
 
