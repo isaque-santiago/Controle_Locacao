@@ -144,3 +144,18 @@ def test_ci_testa_na_versao_da_imagem():
     ci = _ler(".github/workflows/ci.yml")
     versao = re.search(r"^FROM python:(\d+\.\d+)", _ler("Dockerfile"), re.M).group(1)
     assert f'"{versao}"' in ci[: ci.index("navegador-login:")]
+
+
+def test_guia_de_deploy_cobre_variaveis_ci_e_verificacao():
+    guia = _ler("Arquivos/Deploy_VPS.md")
+    for trecho in ("SUPABASE_URL", "SUPABASE_ANON_KEY", "Runtime only", "free -h", "docker stats",
+                   "COOLIFY_TOKEN", "Rollback", "22/tcp", "unattended-upgrades", "strict-transport-security", "/componentes"):
+        assert trecho in guia, trecho
+    assert not re.search(r"eyJ[A-Za-z0-9_-]{20,}|sb_secret_\w+", guia)  # nenhum segredo no guia
+
+
+def test_variaveis_exigidas_pelo_app_estao_no_guia():
+    guia = _ler("Arquivos/Deploy_VPS.md")
+    config = _ler("src/config.py")
+    for nome in re.findall(r'_ler\("([A-Z_]+)"\)', config):
+        assert nome in guia, nome
