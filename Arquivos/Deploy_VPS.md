@@ -5,7 +5,8 @@ proxy e o HTTPS; banco, Auth e Storage continuam no Supabase. Decisões: `Analis
 Requisitos de segurança: `Revisao_Seguranca.md`, seção "Requisitos para o deploy".
 
 > **Estado:** artefatos prontos e testados no repositório (Dockerfile, CI). Os passos abaixo que dependem da VPS, do
-> Coolify e do GitHub só podem ser executados pelo proprietário e **ainda não foram verificados**.
+> Coolify e do GitHub só podem ser executados pelo proprietário e **ainda não foram verificados**
+> (exceto o DNS, seção 1, concluído em 15/10/2026).
 
 ## 0. O que o repositório já traz
 
@@ -18,6 +19,8 @@ Requisitos de segurança: `Revisao_Seguranca.md`, seção "Requisitos para o dep
 | CI/CD | job `deploy` em `.github/workflows/ci.yml` | Só no push para a `main`, depois do `pytest` verde (Python 3.12 e 3.14) |
 
 ## 1. DNS (DuckDNS)
+
+> **Concluído em 15/10/2026** (relato do proprietário): subdomínio criado e apontado para o IP público da VPS.
 
 1. Em duckdns.org, crie o subdomínio `SEU-SUBDOMINIO` (fica `SEU-SUBDOMINIO.duckdns.org`).
 2. Aponte para o **IP público da VPS** (campo *current ip*).
