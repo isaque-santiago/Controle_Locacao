@@ -151,7 +151,8 @@ jobs:
             echo "::error::Segredos COOLIFY_URL, COOLIFY_TOKEN e COOLIFY_APP_UUID não configurados."
             exit 1
           fi
-          curl --fail-with-body --silent --show-error --max-time 60 \
+          # A API do Coolify exige POST neste endpoint (GET devolve 405: "This endpoint has changed to a POST request").
+          curl --fail-with-body --silent --show-error --max-time 60 --request POST \
             -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
             "${COOLIFY_URL%/}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=false"
           echo
