@@ -142,6 +142,20 @@ O job `deploy` (em `.github/workflows/ci.yml`) roda **só no push para a `main`*
   publicação não trazer o defeito de volta).
 - Deploy manual de emergência: **Redeploy** no Coolify (não passa pela CI).
 
+### Migrations do banco e deploy (regra do proprietário, 16/10/2026)
+
+O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase não volta junto**. Por isso:
+
+1. **Aplique a migration em produção ANTES de mesclar** o PR que a usa (SQL Editor do projeto de produção ou CLI).
+2. Toda migration deve ser **compatível com a versão anterior do app** (adicionar coluna/função/tabela, nunca renomear ou
+   remover algo que o app em produção ainda use). Mudança incompatível é feita em duas etapas: primeiro uma versão do app
+   que aceita os dois formatos, depois a migration que remove o antigo.
+3. Se um deploy precisar de rollback, o app anterior continua funcionando com o banco já migrado (garantido pelo item 2).
+4. Registre no PR qual migration foi aplicada em produção e quando.
+
+> **Atenção:** a migration `20260922000000_restringe_rls_ao_dono.sql` fixa o UUID do dono de **produção**
+> (`is_dono()`). Nunca a aplique em um projeto cujo usuário tenha outro UUID, ou o RLS bloqueia todos os dados.
+
 ## 7. Verificação pós-deploy (com o proprietário)
 
 1. **Saúde:** `curl -s https://SEU-SUBDOMINIO.duckdns.org/saude` → `{"status":"ok"}`.
