@@ -174,6 +174,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
   .topo-movel .marca {padding: 0; flex: 1; min-width: 0;}
   .topo-movel .marca-simbolo {width: 32px; height: 32px; font-size: 13px;}
   .topo-movel .btn-icone {color: #fff; border-color: rgba(255,255,255,.25);}
+  .topo-movel .btn-icone:hover {background: rgba(255,255,255,.12);}
   main {padding-bottom: calc(var(--barra-inferior) + 32px + env(safe-area-inset-bottom));}
   .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--superficie-elevada); border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom);}
   .barra-inferior a, .barra-inferior button {position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--barra-inferior); padding: var(--e2) 2px; border: 0; background: none; color: var(--texto-2); text-decoration: none; font-size: 12px; font-weight: 500; cursor: pointer;}
@@ -199,7 +200,15 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover);}
 .btn-perigo {border-color: var(--perigo); color: var(--perigo-texto);}
 .btn-perigo:hover {background: var(--perigo-fundo);}
-.btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-campo); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer;}
+.btn:active:not(:disabled):not([aria-disabled="true"]) {transform: translateY(1px);}
+.btn:disabled, .btn[aria-disabled="true"] {opacity: .5; cursor: not-allowed;}
+.btn:disabled:hover, .btn[aria-disabled="true"]:hover {background: var(--superficie-elevada); border-color: var(--linha-forte);}
+.btn-primario:disabled:hover, .btn-primario[aria-disabled="true"]:hover {background: var(--btn); border-color: var(--btn);}
+.btn-perigo:disabled:hover, .btn-perigo[aria-disabled="true"]:hover {border-color: var(--perigo);}
+.btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-campo); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer; transition: background 150ms ease, border-color 150ms ease;}
+.btn-icone:hover {background: var(--superficie-hover);}
+.btn-icone:disabled {opacity: .5; cursor: not-allowed;}
+.btn-icone:disabled:hover {background: transparent;}
 .btn-bloco {width: 100%;}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
@@ -437,7 +446,8 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .portal-topo {display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: #fff;}
 .portal-topo .marca {padding: 0; flex: 1; min-width: 0;}
 .portal-topo .btn-icone, .portal-topo .btn-texto {color: #fff; border: 1px solid rgba(255,255,255,.25); background: transparent;}
-.portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer;}
+.portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer; transition: background 150ms ease;}
+.portal-topo .btn-icone:hover, .portal-topo .btn-texto:hover {background: rgba(255,255,255,.12);}
 .entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
 .campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
 .campo.caixa input[type="checkbox"] {width: 22px; height: 22px; accent-color: var(--btn);}
