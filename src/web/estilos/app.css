@@ -450,6 +450,15 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados td.c-acao:empty {display: none;}
   .lista-cartoes .dados td.c-acao::before {display: none;}
   .lista-cartoes .dados td.c-acao > .btn {width: 100%;}
+  /* Documentos: a ordem de leitura difere da ordem das colunas (moto | situação, tipo | vencimento, referência | valor) */
+  .lista-cartoes .dados td.d-placa {order: 1;} .lista-cartoes .dados td.d-sit {order: 2;}
+  .lista-cartoes .dados td.d-tipo {order: 3;} .lista-cartoes .dados td.d-venc {order: 4;}
+  .lista-cartoes .dados td.d-ref {order: 5;} .lista-cartoes .dados td.d-valor {order: 6;}
+  /* Ações do documento: botões lado a lado em largura total, comprovante centralizado logo abaixo */
+  .lista-cartoes .dados td.c-acao .acoes-linha {flex-direction: column; align-items: stretch; gap: var(--e3);}
+  .lista-cartoes .dados td.c-acao .acoes-linha .botoes {order: 1;}
+  .lista-cartoes .dados td.c-acao .acoes-linha .botoes .btn {flex: 1; min-height: var(--alvo);}
+  .lista-cartoes .dados td.c-acao .acoes-linha .comprovante {order: 2; margin: 0; text-align: center;}
 }
 @media (max-width: 719px) {
   .tabela-caixa.lista-cartoes {background: transparent; border: 0; border-radius: 0; overflow: visible;}
