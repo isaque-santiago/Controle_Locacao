@@ -523,8 +523,8 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 @media (max-width: 719px) {.kpis-compactos {grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e2);} .kpis-compactos .kpi dd {font-size: 15px;}}
 
 /* ---------- Tela de login (painel de apresentação + formulário) ---------- */
-.entrada-tela {min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
-.entrada-vitrine {position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--e6); padding: clamp(28px, 4vw, 56px); color: #ECEEEE; background: radial-gradient(120% 80% at 0% 0%, #2B3036 0%, #1E2227 45%, #121518 100%);}
+.entrada-tela {max-width: none; margin: 0; padding: 0; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
+.entrada-vitrine {position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--e6); padding: clamp(28px, 4vw, 56px); color: #ECEEEE; background: linear-gradient(90deg, transparent calc(100% - clamp(120px, 14vw, 220px)), var(--fundo) 100%), radial-gradient(120% 80% at 0% 0%, #2B3036 0%, #1E2227 45%, #121518 100%);}
 .entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid rgba(242,183,5,.10); pointer-events: none;}
 .entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%); -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%); pointer-events: none;}
 .entrada-vitrine > * {position: relative; z-index: 1;}
