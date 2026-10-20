@@ -201,9 +201,13 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .btn-perigo:hover {background: var(--perigo-fundo);}
 .btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-campo); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer;}
 .btn-bloco {width: 100%;}
-.acoes-portal {display: flex; flex-wrap: wrap; gap: var(--e3); margin-top: var(--e4);}
-.acoes-portal .btn {flex: 0 0 auto;}
-@media (max-width: 719px) {.acoes-portal {flex-direction: column;} .acoes-portal .btn {width: 100%;}}
+.portal-acesso {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3);}
+.portal-acesso-bloco {display: flex; flex-direction: column; justify-content: space-between; gap: var(--e4); padding: var(--e4); border: 1px solid var(--linha); border-radius: var(--raio-campo); background: var(--superficie-elevada);}
+.portal-acesso-info {flex-direction: row; justify-content: flex-start; align-items: flex-start; gap: var(--e3);}
+.portal-acesso-icone {display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--sucesso-fundo); color: var(--sucesso-texto);}
+.portal-acesso-titulo {font-weight: 600;}
+.portal-acesso-desc {color: var(--texto-2); font-size: 13px; margin-top: 2px;}
+@media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
 .campo small {color: var(--texto-3); font-size: 12px;}
