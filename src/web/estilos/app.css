@@ -445,6 +445,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados td.k-d {justify-self: end; text-align: right;}
   .lista-cartoes .dados td.k-larga {grid-column: 1 / -1;}
   .lista-cartoes .dados td.k-selo::before {display: none;}
+  .lista-cartoes .dados td.c-barra {grid-column: 1 / -1; padding-top: var(--e1);}
+  /* Com número ímpar de dados, a barra divide a última linha com o dado (barra à direita) */
+  .lista-cartoes .dados td.c-barra.k-lado {grid-column: auto; padding-top: 0; justify-self: end; width: 110px;}
   .lista-cartoes .dados td[data-rotulo]::before {font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase; margin-bottom: var(--e1);}
   .lista-cartoes .dados td.c-acao {grid-column: 1 / -1; order: 99; margin-top: var(--e1); padding-top: var(--e3); border-top: 1px solid var(--linha-sutil);}
   .lista-cartoes .dados td.c-acao:empty {display: none;}
@@ -550,6 +553,7 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .barra-periodo {display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e3); margin-bottom: var(--e4);}
 .barra-periodo .campo {flex: 1 1 150px; max-width: 220px;}
 .barra-rel {display: block; width: 100px; height: 6px;}
+@container (max-width: 959px) {.lista-cartoes .dados td.c-barra .barra-rel {width: 100%;}}
 .barra-rel-fundo {fill: var(--seg-vazio);}
 .barra-rel-ok {fill: var(--sucesso);}
 .barra-rel-perigo {fill: var(--perigo);}
