@@ -177,8 +177,9 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
 ## 8. Monitoramento e backups
 
 - Rota `/saude` com monitor externo gratuito (UptimeRobot ou similar) avisando por e-mail se o site cair.
-- Dados no Supabase: backup conforme a Fase 6. A VPS é ponto único de falha dos dois projetos; o backup do Postgres do
-  cell-pag deve ter destino fora da VPS.
+- Dados no Supabase: dump semanal criptografado no Google Drive (`.github/workflows/backup.yml`; passo a passo, teste de
+  restauração e limites em `Arquivos/Backup_Supabase.md`). A VPS é ponto único de falha dos dois projetos; o backup do
+  Postgres do cell-pag deve ter destino fora da VPS.
 - Fuso do servidor: UTC; o app trabalha em America/Sao_Paulo.
 
 ## 9. Problemas comuns

@@ -120,7 +120,11 @@ produção separadas (`requirements.txt`; testes em `requirements-dev.txt`) e jo
 Confirmado: DNS (DuckDNS), `ufw` só com 22, 80 e 443, `unattended-upgrades` ativo, SSH só por chave, app no Coolify (Auto Deploy e webhook
 desligados, limite de memória), `FORWARDED_ALLOW_IPS` restrito ao IP do Traefik, segredos do GitHub, migrations aplicadas no Supabase de
 produção, `/saude`, HSTS/CSP, HTTP→HTTPS, `/componentes` com 404, login e portal do locatário, e monitor UptimeRobot em `/saude`.
-Pendentes: backup do Supabase (Fase 6), roteiro de homologação manual no app publicado e medição com Lighthouse.
+**Backup do Supabase:** workflow semanal `.github/workflows/backup.yml` (dump `pg_dump` do schema `public`, criptografado com AES-256 e
+enviado ao Google Drive; nunca como artefato do GitHub, porque o repositório é público). Passo a passo, restauração e limites (Auth e
+Storage ficam de fora) em `Arquivos/Backup_Supabase.md`. Os segredos `SUPABASE_DB_URL`, `BACKUP_PASSPHRASE`, `GDRIVE_CLIENT_ID`,
+`GDRIVE_CLIENT_SECRET` e `GDRIVE_TOKEN` ainda precisam ser criados e o teste de restauração ainda não foi feito.
+Pendentes: configurar e testar o backup, roteiro de homologação manual no app publicado e medição com Lighthouse.
 
 Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

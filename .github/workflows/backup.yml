@@ -1,0 +1,81 @@
+name: Backup do banco
+
+# Dump semanal do schema public do Supabase de PRODUÇÃO, criptografado e enviado ao Google Drive.
+# O repositório é público: NUNCA guarde o dump como artefato do workflow (qualquer pessoa logada no
+# GitHub poderia baixá-lo). Passo a passo, restauração e limites: Arquivos/Backup_Supabase.md.
+# Só lê o banco (pg_dump); não grava nada em produção. Roda na main (agendamento) ou sob demanda.
+
+on:
+  schedule:
+    # Domingo, 03:17 no horário de Brasília (06:17 UTC). Minuto fora de :00 para evitar o horário de pico.
+    - cron: "17 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-banco
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    # Segredos só existem no repositório do proprietário; um fork não tenta rodar.
+    if: github.repository == 'isaque-santiago/Controle_Locacao'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      RCLONE_CONFIG_DRIVE_TYPE: drive
+      RCLONE_CONFIG_DRIVE_SCOPE: drive.file
+      RCLONE_CONFIG_DRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+      RCLONE_CONFIG_DRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+      RCLONE_CONFIG_DRIVE_TOKEN: ${{ secrets.GDRIVE_TOKEN }}
+      PASTA_DRIVE: backups-locacao
+      RETENCAO: 90d
+    steps:
+      - name: Conferir os segredos
+        run: |
+          faltando=0
+          for nome in SUPABASE_DB_URL BACKUP_PASSPHRASE RCLONE_CONFIG_DRIVE_CLIENT_ID RCLONE_CONFIG_DRIVE_CLIENT_SECRET RCLONE_CONFIG_DRIVE_TOKEN; do
+            if [ -z "${!nome}" ]; then echo "::error::Segredo ausente: $nome"; faltando=1; fi
+          done
+          exit $faltando
+
+      - name: Instalar pg_dump 17 e rclone
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17 rclone gnupg
+
+      - name: Gerar o dump do schema public
+        run: |
+          data="$(TZ=America/Sao_Paulo date +%Y-%m-%d)"
+          echo "ARQUIVO=locacao-${data}.dump" >> "$GITHUB_ENV"
+          pg_dump "$SUPABASE_DB_URL" --schema=public --format=custom --no-owner --no-privileges \
+            --file="locacao-${data}.dump"
+
+      - name: Validar o dump
+        run: |
+          tabelas="$(pg_restore --list "$ARQUIVO" | grep -c ' TABLE DATA ')"
+          tamanho="$(stat -c %s "$ARQUIVO")"
+          echo "Tabelas com dados: $tabelas; tamanho: $tamanho bytes"
+          if [ "$tabelas" -lt 15 ]; then echo "::error::Esperadas 15 tabelas, achei $tabelas"; exit 1; fi
+          if [ "$tamanho" -lt 10000 ]; then echo "::error::Dump pequeno demais"; exit 1; fi
+
+      - name: Criptografar (AES-256)
+        run: |
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --output "${ARQUIVO}.gpg" "$ARQUIVO"
+          rm -f "$ARQUIVO"
+          ls -l "${ARQUIVO}.gpg"
+
+      - name: Enviar ao Google Drive
+        run: |
+          rclone copy "${ARQUIVO}.gpg" "drive:${PASTA_DRIVE}"
+          rclone lsl "drive:${PASTA_DRIVE}/${ARQUIVO}.gpg"
+
+      - name: Apagar backups com mais de 90 dias
+        run: rclone delete "drive:${PASTA_DRIVE}" --min-age "$RETENCAO"
