@@ -26,7 +26,7 @@ def test_lista_mostra_motos_com_dados_formatados(cliente):
     assert "ABC1D01" not in html and "ABC-1D01" in html  # placa formatada
     assert "Honda CG 101" in html and "1.000" in html
     assert "vencida há 120 km" in html
-    assert 'class="c-man text-perigo font-medium"' in html
+    assert 'class="c-man k-d text-perigo font-medium"' in html
 
 
 def test_locatario_do_contrato_ativo_e_escapado(cliente):
