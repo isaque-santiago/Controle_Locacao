@@ -133,9 +133,11 @@
 {%- endmacro %}
 
 {# Tabela que vira cartões no celular. colunas: lista de (rotulo, classe_do_th).
-   As linhas vêm do bloco {% call %}: cada <td> leva data-rotulo="..." para o rótulo no cartão. #}
-{% macro tabela(colunas, descricao) -%}
-<div class="tabela-caixa">
+   As linhas vêm do bloco {% call %}: cada <td> leva data-rotulo="..." para o rótulo no cartão.
+   `cartoes=True` usa o cartão padronizado no celular (ver `.lista-cartoes` no CSS): a 1ª célula é o título, as demais
+   formam pares esquerda/direita (a da direita leva a classe `k-d`; o selo de situação, `k-d k-selo`, fica no cabeçalho sem rótulo) e a célula `c-acao` ocupa a última linha, de ponta a ponta. #}
+{% macro tabela(colunas, descricao, cartoes=False) -%}
+<div class="tabela-caixa{{ ' lista-cartoes' if cartoes else '' }}">
   <table class="dados">
     <caption class="so-leitor">{{ descricao }}</caption>
     <thead><tr>{% for rotulo, classe in colunas %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}>{% if rotulo %}{{ rotulo }}{% else %}<span class="so-leitor">Proporção</span>{% endif %}</th>{% endfor %}</tr></thead>

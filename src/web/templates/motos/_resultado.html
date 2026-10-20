@@ -11,15 +11,15 @@
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 
 {% if d.itens %}
-{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Motos cadastradas") %}
+{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Motos cadastradas", cartoes=True) %}
   {% for item in d.itens %}{% set m = item.moto %}{% set man = item.proxima_manutencao %}
   <tr>
     <td class="c-placa">{{ placa(m.placa|placa_br) }}</td>
     <td class="c-moto modelo">{{ m.marca }} {{ m.modelo }}<span class="sub">{{ m.ano_modelo or m.ano_fabricacao or "—" }}{% if m.cor %}, {{ m.cor|lower }}{% endif %}</span></td>
-    <td class="c-sit">{{ selo(status_rotulo[m.status], tom_status_moto[m.status]) }}</td>
+    <td class="c-sit k-d k-selo">{{ selo(status_rotulo[m.status], tom_status_moto[m.status]) }}</td>
     <td class="c-km num mono" data-rotulo="Km">{{ m.km_atual|milhar }}</td>
     <td class="c-loc" data-rotulo="Locatário">{% if item.locatario %}{{ item.locatario }}{% else %}<span class="text-texto-3">Sem locatário</span>{% endif %}</td>
-    <td class="c-man{% if man.situacao == 'vencida' %} text-perigo font-medium{% endif %}" data-rotulo="Próxima manutenção">{{ man.texto }}</td>
+    <td class="c-man k-d{% if man.situacao == 'vencida' %} text-perigo font-medium{% endif %}" data-rotulo="Próxima manutenção">{{ man.texto }}</td>
     <td class="c-acao"><a class="btn" href="/motos/{{ m.id }}" aria-label="Abrir a ficha da moto {{ m.placa|placa_br }}">Abrir ficha</a></td>
   </tr>
   {% endfor %}

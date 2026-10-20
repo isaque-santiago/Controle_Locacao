@@ -3,14 +3,14 @@
 <nav class="chips" aria-label="Filtrar por situação">{% for chave, rotulo, quantidade, url in chips %}<a class="chip" href="{{ url }}" hx-get="{{ url }}" hx-target="#resultado" hx-push-url="true"{% if chave == situacao %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 {% if d.itens %}
-{% call tabela([("Moto", ""), ("Tipo", ""), ("Referência", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Documentos da frota") %}
+{% call tabela([("Moto", ""), ("Tipo", ""), ("Referência", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Documentos da frota", cartoes=True) %}
 {% for item in d.itens %}{% set doc = item.documento %}{% set tipo = tipos.get(doc.tipo, doc.tipo) %}<tr>
-<td>{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
-<td data-rotulo="Tipo">{{ tipo }}</td>
-<td class="text-texto-2" data-rotulo="Referência">{{ doc.descricao or doc.ano_referencia or "—" }}</td>
-<td class="mono" data-rotulo="Vencimento">{{ doc.vencimento|data_br }}</td>
-<td class="num mono" data-rotulo="Valor">{% if doc.valor is not none %}{{ doc.valor|moeda }}{% else %}—{% endif %}</td>
-<td data-rotulo="Situação">{{ selo(item.rotulo, tom[item.situacao]) }}</td>
+<td class="d-placa">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td class="d-tipo" data-rotulo="Tipo">{{ tipo }}</td>
+<td class="d-ref text-texto-2" data-rotulo="Referência">{{ doc.descricao or doc.ano_referencia or "—" }}</td>
+<td class="d-venc mono k-d" data-rotulo="Vencimento">{{ doc.vencimento|data_br }}</td>
+<td class="d-valor num mono k-d" data-rotulo="Valor">{% if doc.valor is not none %}{{ doc.valor|moeda }}{% else %}—{% endif %}</td>
+<td class="d-sit k-d k-selo" data-rotulo="Situação">{{ selo(item.rotulo, tom[item.situacao]) }}</td>
 <td class="c-acao"><div class="acoes-linha">{% if doc.arquivo_path %}<a class="comprovante" href="/documentos/{{ doc.id }}/comprovante" target="_blank" rel="noopener noreferrer" aria-label="Ver o comprovante do {{ tipo }} (abre em nova aba)">Comprovante</a>{% else %}<span class="comprovante">Sem comprovante</span>{% endif %}<div class="botoes">{{ botao("Editar", href="/documentos/" ~ doc.id ~ "/editar", aria="Editar o documento " ~ tipo ~ " da moto " ~ (item.placa|placa_br), extra='hx-get="/documentos/' ~ doc.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML" hx-push-url="false"') }}{% if not doc.regularizado and item.moto %}{{ botao("Regularizar", href="/documentos/" ~ doc.id ~ "/regularizar", aria="Marcar o documento " ~ tipo ~ " da moto " ~ (item.placa|placa_br) ~ " como regularizado", extra='hx-get="/documentos/' ~ doc.id ~ '/regularizar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML" hx-push-url="false"') }}{% endif %}</div></div></td></tr>{% endfor %}
 {% endcall %}
 {{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}

@@ -437,6 +437,47 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .dados td.c-acao .btn {width: 100%;}
 }
 
+/* Tabelas em cartões padronizados (macro `tabela` com cartoes=True): título (1ª célula) em destaque, dados em pares
+   esquerda/direita com rótulo, ação em largura total no pé do cartão. Sem linhas vazias nem elementos soltos. */
+@container (max-width: 959px) {
+  .lista-cartoes .dados tbody tr {grid-template-columns: minmax(0, 1fr) auto; align-items: center;}
+  .lista-cartoes .dados td:first-child {font-size: 15px; font-weight: 600; line-height: 1.35;}
+  .lista-cartoes .dados td.k-d {justify-self: end; text-align: right;}
+  .lista-cartoes .dados td.k-larga {grid-column: 1 / -1;}
+  .lista-cartoes .dados td.k-selo::before {display: none;}
+  .lista-cartoes .dados td.c-barra {grid-column: 1 / -1; padding-top: var(--e1);}
+  /* Com número ímpar de dados, a barra divide a última linha com o dado (barra à direita) */
+  .lista-cartoes .dados td.c-barra.k-lado {grid-column: auto; padding-top: 0; justify-self: end; width: 110px;}
+  .lista-cartoes .dados td[data-rotulo]::before {font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase; margin-bottom: var(--e1);}
+  .lista-cartoes .dados td.c-acao {grid-column: 1 / -1; order: 99; margin-top: var(--e1); padding-top: var(--e3); border-top: 1px solid var(--linha-sutil);}
+  .lista-cartoes .dados td.c-acao:empty {display: none;}
+  .lista-cartoes .dados td.c-acao::before {display: none;}
+  .lista-cartoes .dados td.c-acao > .btn {width: 100%;}
+  /* Ordem de leitura explícita quando difere da ordem das colunas (o1 = título, o2 = selo, ...) */
+  .lista-cartoes .dados td.o1 {order: 1;} .lista-cartoes .dados td.o2 {order: 2;} .lista-cartoes .dados td.o3 {order: 3;}
+  .lista-cartoes .dados td.o4 {order: 4;} .lista-cartoes .dados td.o5 {order: 5;} .lista-cartoes .dados td.o6 {order: 6;}
+  .lista-cartoes .dados td.o7 {order: 7;}
+  /* Vários botões na ação: dividem a largura do cartão */
+  .lista-cartoes .dados td.c-acao > .flex {flex-wrap: nowrap;}
+  .lista-cartoes .dados td.c-acao > .flex .btn {flex: 1;}
+  /* Documentos: a ordem de leitura difere da ordem das colunas (moto | situação, tipo | vencimento, referência | valor) */
+  .lista-cartoes .dados td.d-placa {order: 1;} .lista-cartoes .dados td.d-sit {order: 2;}
+  .lista-cartoes .dados td.d-tipo {order: 3;} .lista-cartoes .dados td.d-venc {order: 4;}
+  .lista-cartoes .dados td.d-ref {order: 5;} .lista-cartoes .dados td.d-valor {order: 6;}
+  /* Ações do documento: botões lado a lado em largura total, comprovante centralizado logo abaixo */
+  .lista-cartoes .dados td.c-acao .acoes-linha {flex-direction: column; align-items: stretch; gap: var(--e3);}
+  .lista-cartoes .dados td.c-acao .acoes-linha .botoes {order: 1;}
+  .lista-cartoes .dados td.c-acao .acoes-linha .botoes .btn {flex: 1; min-height: var(--alvo);}
+  .lista-cartoes .dados td.c-acao .acoes-linha .comprovante {order: 2; margin: 0; text-align: center;}
+}
+@media (max-width: 719px) {
+  .tabela-caixa.lista-cartoes {background: transparent; border: 0; border-radius: 0; overflow: visible;}
+  .lista-cartoes .dados tbody {display: grid; gap: var(--e3);}
+  .lista-cartoes .dados tbody tr,
+  .lista-cartoes .dados tbody tr:first-child {padding: var(--e4); border: 1px solid var(--linha); border-left: 3px solid var(--marca); border-radius: var(--raio-lg); background: var(--superficie); gap: var(--e3) var(--e4);}
+  .lista-cartoes .dados tbody tr:hover {background: var(--superficie);}
+}
+
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
 
@@ -519,6 +560,7 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .barra-periodo {display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e3); margin-bottom: var(--e4);}
 .barra-periodo .campo {flex: 1 1 150px; max-width: 220px;}
 .barra-rel {display: block; width: 100px; height: 6px;}
+@container (max-width: 959px) {.lista-cartoes .dados td.c-barra .barra-rel {width: 100%;}}
 .barra-rel-fundo {fill: var(--seg-vazio);}
 .barra-rel-ok {fill: var(--sucesso);}
 .barra-rel-perigo {fill: var(--perigo);}
