@@ -393,6 +393,7 @@ class BaseContratos:
 def base_contratos(monkeypatch):
     from src.web import dados_contratos
     from src.web.rotas import contratos_encerramento
+    from datetime import date
 
     base = BaseContratos()
     from src.services.contratos import previa_agenda
