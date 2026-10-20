@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import cartao, tabela, selo, aviso, botao, estado_vazio %}
+{% from "componentes/macros.html" import cartao, tabela, selo, aviso, botao, estado_vazio, icone %}
 {% set base = "/clientes/" ~ cliente.id %}
 {% if erro_portal %}{{ aviso("erro", erro_portal) }}{% endif %}
 {% call cartao("Acesso ao portal do locatário") %}
@@ -14,10 +14,28 @@
 <p>Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma senha individual gerada aqui.</p>
 <div class="acoes">{{ botao("Criar acesso", variante="primario", extra='hx-post="' ~ base ~ '/portal/acesso" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
 {% else %}
-{{ aviso("sucesso", "Acesso ativo ao portal do locatário.") }}
-<div class="acoes">
-  {{ botao("Gerar nova senha", extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar."') }}
-  {{ botao("Remover acesso", variante="perigo", extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal. Confirmar?"') }}
+<div class="portal-acesso">
+  <div class="portal-acesso-bloco portal-acesso-info">
+    <span class="portal-acesso-icone">{{ icone("check") }}</span>
+    <div>
+      <p class="portal-acesso-titulo">Acesso ativo</p>
+      <p class="portal-acesso-desc">O locatário entra no portal com o CPF <span class="mono">{{ cliente.cpf|cpf_mascarado }}</span> e a senha individual.</p>
+    </div>
+  </div>
+  <div class="portal-acesso-bloco">
+    <div>
+      <p class="portal-acesso-titulo">Senha</p>
+      <p class="portal-acesso-desc">Gera uma nova senha. A atual deixa de funcionar.</p>
+    </div>
+    {{ botao("Gerar nova senha", icone_nome="cadeado", bloco=True, extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar."') }}
+  </div>
+  <div class="portal-acesso-bloco">
+    <div>
+      <p class="portal-acesso-titulo">Remoção</p>
+      <p class="portal-acesso-desc">Exclui o login e impede a entrada no portal.</p>
+    </div>
+    {{ botao("Remover acesso", variante="perigo", icone_nome="fechar", bloco=True, extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal. Confirmar?"') }}
+  </div>
 </div>
 {% endif %}
 {% endcall %}

@@ -66,7 +66,7 @@ def test_aba_portal_com_acesso_oferece_senha_e_remocao(cliente, base_clientes):
     base_clientes.clientes[0]["auth_user_id"] = "u1"
     entrar(cliente)
     html = cliente.get(f"/clientes/{base_clientes.id}?aba=portal").text
-    assert "Acesso ativo ao portal do locatário." in html
+    assert "Acesso ativo" in html and "O locatário entra no portal com o CPF" in html
     assert "Gerar nova senha" in html and "Remover acesso" in html and "Criar acesso" not in html
 
 
