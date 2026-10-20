@@ -20,6 +20,18 @@
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
 
+  // ---- Mostrar/ocultar senha: data-alternar-senha="id-do-campo" ----
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('[data-alternar-senha]');
+    if (!botao) return;
+    var campo = document.getElementById(botao.getAttribute('data-alternar-senha'));
+    if (!campo) return;
+    var mostrar = campo.type === 'password';
+    campo.type = mostrar ? 'text' : 'password';
+    botao.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+    botao.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  });
+
   // ---- Copiar texto: data-copiar="id-do-campo" copia o valor; data-copiar-aviso="id" recebe o resultado ----
   document.addEventListener('click', function (e) {
     var botao = e.target.closest('[data-copiar]');

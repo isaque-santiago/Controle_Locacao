@@ -521,3 +521,54 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .grade-dados dd {margin: 0; overflow-wrap: anywhere;}
 @media (max-width: 1099px) {.ficha-resumo {grid-template-columns: minmax(0, 1fr);}}
 @media (max-width: 719px) {.kpis-compactos {grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e2);} .kpis-compactos .kpi dd {font-size: 15px;}}
+
+/* ---------- Tela de login (painel de apresentação + formulário) ---------- */
+.entrada-tela {min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
+.entrada-vitrine {position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--e6); padding: clamp(28px, 4vw, 56px); color: #ECEEEE; background: radial-gradient(120% 80% at 0% 0%, #2B3036 0%, #1E2227 45%, #121518 100%);}
+.entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid rgba(242,183,5,.10); pointer-events: none;}
+.entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%); -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%); pointer-events: none;}
+.entrada-vitrine > * {position: relative; z-index: 1;}
+.entrada-vitrine .marca {padding: 0; min-height: var(--alvo);}
+.entrada-vitrine .marca {width: auto; justify-content: flex-start;}
+.entrada-vitrine .marca > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
+.vitrine-texto {display: grid; gap: var(--e5); max-width: 34rem;}
+.vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: rgba(242,183,5,.14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
+.entrada-vitrine h2 {font-size: clamp(30px, 3.4vw, 46px); line-height: 1.08; color: #fff;}
+.entrada-vitrine h2 em {font-style: normal; color: var(--marca);}
+.vitrine-lista {list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e4);}
+.vitrine-lista li {display: flex; align-items: flex-start; gap: var(--e3);}
+.vitrine-lista strong {display: block; font-weight: 600; color: #fff;}
+.vitrine-lista li span:not(.vitrine-icone) {display: block; font-size: 13px; color: #AEB4BA;}
+.vitrine-icone {flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--raio-md); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); color: var(--marca);}
+.vitrine-faixa {height: 6px; border-radius: 3px; background: repeating-linear-gradient(90deg, var(--marca) 0 28px, transparent 28px 48px); opacity: .85;}
+.entrada-painel {display: grid; place-items: center; padding: var(--pad);}
+.entrada-conteudo {width: min(24rem, 100%); display: grid; gap: var(--e5);}
+.marca-compacta {display: none;}
+.entrada-cab {display: grid; gap: var(--e2);}
+.entrada-selo {display: inline-flex; align-items: center; gap: var(--e2); width: fit-content; margin: 0; padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--neutro-fundo); color: var(--texto-2); font-size: 12px; font-weight: 500;}
+.entrada-selo .i {width: 14px; height: 14px;}
+.entrada-cab h1 {margin: 0; font-size: 34px;}
+.entrada-sub {margin: 0; color: var(--texto-2);}
+.entrada-form {display: grid; gap: var(--e4);}
+.entrada-form .entrada {min-height: 48px; padding-left: 42px; background: var(--superficie);}
+.entrada-form .entrada-icone .i {top: 15px;}
+.entrada-form .btn-primario {min-height: 50px; font-size: 15px; margin-top: var(--e2); box-shadow: 0 6px 18px -8px rgba(30,34,39,.55);}
+.entrada-form .btn-primario .i {transition: transform .15s ease;}
+.entrada-form .btn-primario:hover .i {transform: translateX(3px);}
+.entrada-form .entrada-icone .senha-alternar {position: absolute; right: 4px; top: 2px; left: auto; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--texto-3); cursor: pointer;}
+.senha-alternar .i {position: static; pointer-events: none;}
+.senha-alternar:hover {color: var(--texto); background: var(--superficie-hover);}
+.senha-alternar .ico-ocultar, .senha-alternar[aria-pressed="true"] .ico-mostrar {display: none;}
+.senha-alternar[aria-pressed="true"] .ico-ocultar {display: block;}
+.entrada-form .entrada-icone:has(.senha-alternar) .entrada {padding-right: 48px;}
+.entrada-rodape {margin: 0; text-align: center; font-size: 13px; color: var(--texto-3);}
+@media (max-width: 899px) {
+  .entrada-tela {grid-template-columns: 1fr;}
+  .entrada-vitrine {display: none;}
+  .marca-compacta {display: flex; padding: 0; min-height: var(--alvo); color: var(--texto);}
+  .marca-compacta strong {color: var(--texto);}
+  .marca-compacta span.sub {color: var(--texto-3);}
+  .marca-compacta > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
+  .entrada-cab h1 {font-size: 30px;}
+}
+@media (prefers-reduced-motion: reduce) {.entrada-form .btn-primario .i {transition: none;}}

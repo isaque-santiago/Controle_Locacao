@@ -1,16 +1,63 @@
-{% extends "layout_acesso.html" %}
-{% from "componentes/macros.html" import aviso, campo, botao %}
+{% extends "base.html" %}
+{% from "componentes/macros.html" import aviso, botao, icone %}
 {% set titulo = "Entrar" %}
 
-{% block caixa %}
-<form class="cartao" method="post" action="/login">
-  <h1>Entrar</h1>
-  {% if mensagem_aviso %}{{ aviso("atencao", mensagem_aviso) }}{% endif %}
-  {% if erro %}{{ aviso("erro", erro) }}{% endif %}
-  <input type="hidden" name="csrf_token" value="{{ csrf_login }}">
-  <input type="hidden" name="proximo" value="{{ proximo }}">
-  {{ campo("identificador", "E-mail ou CPF", valor=identificador, autocomplete="username", obrigatorio=True, extra='autofocus autocapitalize="none" spellcheck="false"') }}
-  {{ campo("senha", "Senha", tipo="password", autocomplete="current-password", obrigatorio=True) }}
-  {{ botao("Entrar", tipo="submit", variante="primario", bloco=True) }}
-</form>
+{% block corpo %}
+<main class="entrada-tela" id="conteudo">
+  <aside class="entrada-vitrine" aria-label="Apresentação do sistema">
+    <a class="marca" href="/">
+      <span class="marca-simbolo" aria-hidden="true">CL</span>
+      <div><strong>Controle de Locação</strong><span class="sub">frota de motos</span></div>
+    </a>
+    <div class="vitrine-texto">
+      <p class="vitrine-selo">Gestão de locação</p>
+      <h2>Sua frota <em>sempre em dia</em>, do contrato à cobrança.</h2>
+      <ul class="vitrine-lista">
+        <li><span class="vitrine-icone">{{ icone("contrato") }}</span><div><strong>Contratos e vistorias</strong><span>Cada locação registrada do início ao encerramento.</span></div></li>
+        <li><span class="vitrine-icone">{{ icone("cobranca") }}</span><div><strong>Cobranças sob controle</strong><span>Vencimentos e pagamentos num só lugar.</span></div></li>
+        <li><span class="vitrine-icone">{{ icone("manutencao") }}</span><div><strong>Manutenção da frota</strong><span>Histórico de cada moto, sem planilha solta.</span></div></li>
+      </ul>
+    </div>
+    <div class="vitrine-faixa" aria-hidden="true"></div>
+  </aside>
+
+  <section class="entrada-painel">
+    <div class="entrada-conteudo">
+      <a class="marca marca-compacta" href="/">
+        <span class="marca-simbolo" aria-hidden="true">CL</span>
+        <div><strong>Controle de Locação</strong><span class="sub">frota de motos</span></div>
+      </a>
+      <header class="entrada-cab">
+        <p class="entrada-selo">{{ icone("escudo") }} Acesso restrito</p>
+        <h1>Bem-vindo de volta</h1>
+        <p class="entrada-sub">Entre com seu e-mail ou CPF para continuar.</p>
+      </header>
+      <form class="entrada-form" method="post" action="/login">
+        {% if mensagem_aviso %}{{ aviso("atencao", mensagem_aviso) }}{% endif %}
+        {% if erro %}{{ aviso("erro", erro) }}{% endif %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_login }}">
+        <input type="hidden" name="proximo" value="{{ proximo }}">
+        <div class="campo">
+          <label for="identificador">E-mail ou CPF <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
+          <div class="entrada-icone">
+            {{ icone("cliente") }}
+            <input class="entrada" id="identificador" name="identificador" type="text" value="{{ identificador }}" autocomplete="username" required autofocus autocapitalize="none" spellcheck="false" placeholder="E-mail ou CPF">
+          </div>
+        </div>
+        <div class="campo">
+          <label for="senha">Senha <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
+          <div class="entrada-icone">
+            {{ icone("cadeado") }}
+            <input class="entrada" id="senha" name="senha" type="password" autocomplete="current-password" required placeholder="Digite sua senha">
+            <button class="senha-alternar" type="button" data-alternar-senha="senha" aria-label="Mostrar senha" aria-pressed="false">
+              {{ icone("olho", "ico-mostrar") }}{{ icone("olho-fechado", "ico-ocultar") }}
+            </button>
+          </div>
+        </div>
+        {{ botao("Entrar", tipo="submit", variante="primario", bloco=True, icone_nome="seta") }}
+      </form>
+      <p class="entrada-rodape">Problemas para entrar? Fale com quem administra o sistema.</p>
+    </div>
+  </section>
+</main>
 {% endblock %}
