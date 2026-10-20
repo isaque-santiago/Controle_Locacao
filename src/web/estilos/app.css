@@ -158,8 +158,9 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .conta[open] .conta-seta {transform: rotate(180deg);}
 .conta-menu {position: absolute; z-index: 40; left: 0; right: 0; bottom: calc(100% + var(--e2)); padding: var(--e2); border-radius: var(--raio-md); background: var(--lateral-fundo); border: 1px solid var(--lateral-linha); box-shadow: 0 8px 24px rgba(0,0,0,.25); display: grid; gap: 2px;}
 .conta-menu form {display: contents;}
-.conta-menu button {display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--lateral-texto); cursor: pointer; width: 100%; text-align: left;}
-.conta-menu button:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+.conta-menu button, .conta-item {display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--lateral-texto); cursor: pointer; width: 100%; text-align: left;}
+.conta-menu button:hover, .conta-item:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+.conta-item {text-decoration: none;}
 .conta-id {display: grid; padding: var(--e2) var(--e3); line-height: 1.25; color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha); margin-bottom: var(--e1);}
 .conta-id span {font-size: 12px; color: var(--lateral-sub); overflow-wrap: anywhere;}
 .conta-movel .avatar {cursor: pointer; width: var(--alvo); height: var(--alvo);}
