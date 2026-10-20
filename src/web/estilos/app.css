@@ -201,6 +201,9 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .btn-perigo:hover {background: var(--perigo-fundo);}
 .btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-campo); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer;}
 .btn-bloco {width: 100%;}
+.acoes-portal {display: flex; flex-wrap: wrap; gap: var(--e3); margin-top: var(--e4);}
+.acoes-portal .btn {flex: 0 0 auto;}
+@media (max-width: 719px) {.acoes-portal {flex-direction: column;} .acoes-portal .btn {width: 100%;}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
 .campo small {color: var(--texto-3); font-size: 12px;}

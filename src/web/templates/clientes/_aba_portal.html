@@ -15,9 +15,9 @@
 <div class="acoes">{{ botao("Criar acesso", variante="primario", extra='hx-post="' ~ base ~ '/portal/acesso" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
 {% else %}
 {{ aviso("sucesso", "Acesso ativo ao portal do locatário.") }}
-<div class="acoes">
-  {{ botao("Gerar nova senha", extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar."') }}
-  {{ botao("Remover acesso", variante="perigo", extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal. Confirmar?"') }}
+<div class="acoes-portal">
+  {{ botao("Gerar nova senha", icone_nome="cadeado", extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar."') }}
+  {{ botao("Remover acesso", variante="perigo", icone_nome="fechar", extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal. Confirmar?"') }}
 </div>
 {% endif %}
 {% endcall %}
