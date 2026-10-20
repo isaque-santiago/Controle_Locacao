@@ -4,8 +4,9 @@ Controle_Locacao como segundo aplicativo do **Coolify** na VPS KingHost (a mesma
 proxy e o HTTPS; banco, Auth e Storage continuam no Supabase. Decisões: `Analise_Migracao_Frontend.md` seção 10.1.
 Requisitos de segurança: `Revisao_Seguranca.md`, seção "Requisitos para o deploy".
 
-> **Estado:** artefatos prontos e testados no repositório (Dockerfile, CI). Os passos abaixo que dependem da VPS, do
-> Coolify e do GitHub só podem ser executados pelo proprietário e **ainda não foram verificados**.
+> **Estado (20/10/2026):** o app está no ar em `https://lamotos.duckdns.org`. O proprietário confirmou as seções 1 a 7 (DNS,
+> firewall e atualizações automáticas, Coolify, `FORWARDED_ALLOW_IPS` restrito ao Traefik, CI/CD, migrations e verificação
+> pós-deploy) e criou o monitor UptimeRobot da seção 8. Pendente: backup do Supabase (Fase 6).
 
 ## 0. O que o repositório já traz
 

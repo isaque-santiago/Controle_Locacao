@@ -392,9 +392,16 @@ class BaseContratos:
 @pytest.fixture(autouse=True)
 def base_contratos(monkeypatch):
     from src.web import dados_contratos
+    from src.web.rotas import contratos_encerramento
+    from datetime import date
 
     base = BaseContratos()
     from src.services.contratos import previa_agenda
+
+    # "Hoje" é 15/10/2026 nos fluxos de Contratos: as cobranças fictícias vencem em 20/10/2026 e, com o relógio real,
+    # os testes passariam a falhar assim que essa data chegasse. As rotas importam o próprio `hoje_br`.
+    for modulo in (dados_contratos, contratos_encerramento):
+        monkeypatch.setattr(modulo, "hoje_br", lambda: date(2026, 10, 15))
 
     pessoas = [base.cliente, base.cliente_bloqueado]
     frota = [base.moto, base.moto_livre]

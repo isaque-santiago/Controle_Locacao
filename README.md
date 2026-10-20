@@ -115,8 +115,12 @@ Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/REA
 `app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
 `plotly` e `watchdog`).
 
-**Fase 5 (deploy) em andamento:** `Dockerfile`, `.dockerignore`, dependências de produção separadas (`requirements.txt`; testes em
-`requirements-dev.txt`) e job `deploy` na CI estão prontos; falta publicar e verificar na VPS (passo a passo em `Arquivos/Deploy_VPS.md`).
+**Fase 5 (deploy) publicada em `https://lamotos.duckdns.org` (verificada em 20/10/2026):** `Dockerfile`, `.dockerignore`, dependências de
+produção separadas (`requirements.txt`; testes em `requirements-dev.txt`) e job `deploy` na CI (passo a passo em `Arquivos/Deploy_VPS.md`).
+Confirmado: DNS (DuckDNS), `ufw` só com 22, 80 e 443, `unattended-upgrades` ativo, SSH só por chave, app no Coolify (Auto Deploy e webhook
+desligados, limite de memória), `FORWARDED_ALLOW_IPS` restrito ao IP do Traefik, segredos do GitHub, migrations aplicadas no Supabase de
+produção, `/saude`, HSTS/CSP, HTTP→HTTPS, `/componentes` com 404, login e portal do locatário, e monitor UptimeRobot em `/saude`.
+Pendentes: backup do Supabase (Fase 6), roteiro de homologação manual no app publicado e medição com Lighthouse.
 
 Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
