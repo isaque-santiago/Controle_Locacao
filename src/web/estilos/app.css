@@ -453,6 +453,13 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados td.c-acao:empty {display: none;}
   .lista-cartoes .dados td.c-acao::before {display: none;}
   .lista-cartoes .dados td.c-acao > .btn {width: 100%;}
+  /* Ordem de leitura explícita quando difere da ordem das colunas (o1 = título, o2 = selo, ...) */
+  .lista-cartoes .dados td.o1 {order: 1;} .lista-cartoes .dados td.o2 {order: 2;} .lista-cartoes .dados td.o3 {order: 3;}
+  .lista-cartoes .dados td.o4 {order: 4;} .lista-cartoes .dados td.o5 {order: 5;} .lista-cartoes .dados td.o6 {order: 6;}
+  .lista-cartoes .dados td.o7 {order: 7;}
+  /* Vários botões na ação: dividem a largura do cartão */
+  .lista-cartoes .dados td.c-acao > .flex {flex-wrap: nowrap;}
+  .lista-cartoes .dados td.c-acao > .flex .btn {flex: 1;}
   /* Documentos: a ordem de leitura difere da ordem das colunas (moto | situação, tipo | vencimento, referência | valor) */
   .lista-cartoes .dados td.d-placa {order: 1;} .lista-cartoes .dados td.d-sit {order: 2;}
   .lista-cartoes .dados td.d-tipo {order: 3;} .lista-cartoes .dados td.d-venc {order: 4;}
