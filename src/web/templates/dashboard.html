@@ -45,7 +45,7 @@
   </section>
 </div>
 
-    <section class="cartao mt-4" aria-labelledby="t-hoje">
+    <section class="cartao mt-4 moto-lista-cards hoje-lista" aria-labelledby="t-hoje">
       <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">vencendo hoje e atrasadas</span></div>
       {% if d.hoje %}
       {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}

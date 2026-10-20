@@ -401,6 +401,17 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .moto-lista-cards .dados td.acao {padding-top: var(--e3); border-top: 1px solid var(--linha-sutil); margin-top: 0;}
   .moto-lista-cards .dados td.acao:empty {display: none;}
   .moto-lista-cards .dados td.acao .btn {width: 100%;}
+  /* Dashboard, "Hoje": cartão compacto em grade 2x3 (cliente | situação, moto | vencimento, valor | ação), sem linhas vazias */
+  .hoje-lista .dados tbody tr,
+  .hoje-lista .dados tbody tr:first-child {grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--e3) var(--e3);}
+  .hoje-lista .dados td:nth-child(1) {grid-column: 1; grid-row: 1;}
+  .hoje-lista .dados td:nth-child(5) {grid-column: 2; grid-row: 1; justify-self: end;}
+  .hoje-lista .dados td:nth-child(5)::before {display: none;}
+  .hoje-lista .dados td:nth-child(2) {grid-column: 1; grid-row: 2;}
+  .hoje-lista .dados td:nth-child(3) {grid-column: 2; grid-row: 2; justify-self: end; text-align: right;}
+  .hoje-lista .dados td:nth-child(4) {grid-column: 1; grid-row: 3; font-size: 17px; font-weight: 600; color: var(--texto);}
+  .hoje-lista .dados td.acao {grid-column: 2; grid-row: 3; padding: 0; border-top: 0; justify-self: end;}
+  .hoje-lista .dados td.acao .btn {width: auto; min-width: 96px;}
   .formulario {grid-template-columns: 1fr;}
   .passo span {display: none;} .passo.atual span {display: block;}
   .passos {grid-template-columns: repeat(4, 1fr);}
