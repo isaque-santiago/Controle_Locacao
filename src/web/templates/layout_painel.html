@@ -30,6 +30,7 @@
           {{ icone('chevron', 'conta-seta') }}
         </summary>
         <div class="conta-menu">
+          <a class="conta-item" href="/termos">{{ icone('documento') }}Termos e privacidade</a>
           <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit">{{ icone('sair') }}Sair</button>
@@ -50,6 +51,7 @@
         <summary class="avatar" aria-label="Menu da conta">{{ inicial }}</summary>
         <div class="conta-menu">
           <div class="conta-id"><strong>{{ usuario_nome }}</strong>{% if usuario_email %}<span>{{ usuario_email }}</span>{% endif %}</div>
+          <a class="conta-item" href="/termos">{{ icone('documento') }}Termos e privacidade</a>
           <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit">{{ icone('sair') }}Sair</button>

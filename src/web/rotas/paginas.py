@@ -23,3 +23,8 @@ def inicio(request: Request, sessao: Sessao = Depends(exigir_sessao)):
     if sessao.papel == PAPEL_LOCATARIO:
         return RedirectResponse("/portal", status_code=303)
     return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar()})
+
+
+@router.get("/termos")
+def termos(request: Request, _: Sessao = Depends(exigir_dono)):
+    return renderizar(request, "termos.html", {"titulo": "Termos e privacidade"})
