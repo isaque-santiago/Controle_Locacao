@@ -437,6 +437,28 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .dados td.c-acao .btn {width: 100%;}
 }
 
+/* Tabelas em cartões padronizados (macro `tabela` com cartoes=True): título (1ª célula) em destaque, dados em pares
+   esquerda/direita com rótulo, ação em largura total no pé do cartão. Sem linhas vazias nem elementos soltos. */
+@container (max-width: 959px) {
+  .lista-cartoes .dados tbody tr {grid-template-columns: minmax(0, 1fr) auto; align-items: center;}
+  .lista-cartoes .dados td:first-child {font-size: 15px; font-weight: 600; line-height: 1.35;}
+  .lista-cartoes .dados td.k-d {justify-self: end; text-align: right;}
+  .lista-cartoes .dados td.k-larga {grid-column: 1 / -1;}
+  .lista-cartoes .dados td.k-selo::before {display: none;}
+  .lista-cartoes .dados td[data-rotulo]::before {font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase; margin-bottom: var(--e1);}
+  .lista-cartoes .dados td.c-acao {grid-column: 1 / -1; order: 99; margin-top: var(--e1); padding-top: var(--e3); border-top: 1px solid var(--linha-sutil);}
+  .lista-cartoes .dados td.c-acao:empty {display: none;}
+  .lista-cartoes .dados td.c-acao::before {display: none;}
+  .lista-cartoes .dados td.c-acao > .btn {width: 100%;}
+}
+@media (max-width: 719px) {
+  .tabela-caixa.lista-cartoes {background: transparent; border: 0; border-radius: 0; overflow: visible;}
+  .lista-cartoes .dados tbody {display: grid; gap: var(--e3);}
+  .lista-cartoes .dados tbody tr,
+  .lista-cartoes .dados tbody tr:first-child {padding: var(--e4); border: 1px solid var(--linha); border-left: 3px solid var(--marca); border-radius: var(--raio-lg); background: var(--superficie); gap: var(--e3) var(--e4);}
+  .lista-cartoes .dados tbody tr:hover {background: var(--superficie);}
+}
+
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
 
