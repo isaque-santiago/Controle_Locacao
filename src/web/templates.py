@@ -17,6 +17,7 @@ from src.web.apresentacao import (
     rotulo_tipo_cobranca,
     tema_do_cookie,
 )
+from src.domain.acesso_locatario import eh_email_de_locatario
 from src.domain.entradas import formatar_telefone
 from src.domain.formatadores import mascarar_cpf
 
@@ -73,6 +74,8 @@ def renderizar(
     comum = {
         "sessao": sessao,
         "usuario_nome": nome_de_exibicao(sessao.email) if sessao else "",
+        # O e-mail interno do locatário é o CPF: nunca aparece na tela.
+        "usuario_email": sessao.email if sessao and not eh_email_de_locatario(sessao.email) else "",
         "csrf_token": sessao.csrf_token if sessao else "",
         "tema": tema_do_cookie(request.cookies.get("tema")),
         "caminho_atual": request.url.path,

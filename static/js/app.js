@@ -20,6 +20,17 @@
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
 
+  // ---- Menu da conta (<details data-conta>): fecha ao clicar fora ou com Esc ----
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('details[data-conta][open]').forEach(function (d) {
+      if (!d.contains(e.target)) d.removeAttribute('open');
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('details[data-conta][open]').forEach(function (d) { d.removeAttribute('open'); });
+  });
+
   // ---- Mostrar/ocultar senha: data-alternar-senha="id-do-campo" ----
   document.addEventListener('click', function (e) {
     var botao = e.target.closest('[data-alternar-senha]');

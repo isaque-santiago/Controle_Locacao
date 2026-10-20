@@ -145,13 +145,30 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .nav-item .i {opacity: .9;}
 .nav-contagem {margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 99px; background: var(--perigo); color: #fff; font: 600 12px/20px var(--fonte-mono); text-align: center;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
-.usuario {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e3); color: var(--lateral-forte);}
+.topo-desktop {display: flex; justify-content: flex-end; padding: var(--e3) var(--pad) 0;}
+.conta {position: relative;}
+.conta summary {list-style: none; cursor: pointer;}
+.conta summary::-webkit-details-marker {display: none;}
+.conta-cartao {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e3); border-radius: var(--raio-campo); color: var(--lateral-forte);}
+.conta-cartao:hover, .conta[open] > .conta-cartao {background: var(--lateral-ativo);}
+.conta-textos {display: grid; min-width: 0; flex: 1; line-height: 1.25;}
+.conta-textos strong {font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.conta-textos span {font-size: 12px; color: var(--lateral-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.conta-seta {width: 16px; height: 16px; color: var(--lateral-sub); transition: transform 150ms ease;}
+.conta[open] .conta-seta {transform: rotate(180deg);}
+.conta-menu {position: absolute; z-index: 40; left: 0; right: 0; bottom: calc(100% + var(--e2)); padding: var(--e2); border-radius: var(--raio-md); background: var(--lateral-fundo); border: 1px solid var(--lateral-linha); box-shadow: 0 8px 24px rgba(0,0,0,.25); display: grid; gap: 2px;}
+.conta-menu form {display: contents;}
+.conta-menu button {display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--lateral-texto); cursor: pointer; width: 100%; text-align: left;}
+.conta-menu button:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+.conta-id {display: grid; padding: var(--e2) var(--e3); line-height: 1.25; color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha); margin-bottom: var(--e1);}
+.conta-id span {font-size: 12px; color: var(--lateral-sub); overflow-wrap: anywhere;}
+.conta-movel .avatar {cursor: pointer; width: var(--alvo); height: var(--alvo);}
 .avatar {width: 32px; height: 32px; border-radius: 50%; background: var(--lateral-avatar); border: 1px solid var(--lateral-linha); display: grid; place-items: center; font: 600 13px var(--fonte-ui); flex: none;}
 .btn-lateral {display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--lateral-texto); cursor: pointer; width: 100%; text-align: left;}
 .btn-lateral:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
 
 /* Topo do celular e barra inferior: ocultos fora do celular */
-.topo-movel, .barra-inferior {display: none;}
+.topo-movel, .barra-inferior, .conta-movel {display: none;}
 
 /* Tablet: trilho de ícones, rótulos viram dica acessível */
 @media (max-width: 1099px) and (min-width: 720px) {
@@ -164,17 +181,20 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
   .nav-grupo {width: 100%;} .nav-grupo h2 {display: none;}
   .nav-grupo + .nav-grupo {border-top: 1px solid rgba(255,255,255,.1); padding-top: var(--e3);}
   .nav-item {justify-content: center; padding: 0;}
-  .nav-item span.rotulo, .btn-lateral span, .usuario div {display: none;}
+  .nav-item span.rotulo, .conta-textos, .conta-seta {display: none;}
+  .conta-cartao {justify-content: center; padding: var(--e2) 0;}
+  .conta-menu {left: 0; right: auto; min-width: 140px;}
   .nav-item[aria-current="page"]::before {left: -8px;}
   .nav-contagem {position: absolute; top: 2px; right: 2px; min-width: 18px; font-size: 11px; line-height: 16px; padding: 0 4px;}
   .btn-lateral {justify-content: center; padding: 0;}
-  .usuario {justify-content: center; padding: 0;}
 }
 
 /* Celular: topo enxuto + barra inferior com polegar */
 @media (max-width: 719px) {
   .app {display: block;}
-  .lateral {display: none;}
+  .lateral, .topo-desktop {display: none;}
+  .conta-movel {display: block;}
+  .conta-movel .conta-menu {left: auto; right: 0; bottom: auto; top: calc(100% + var(--e2)); min-width: 220px;}
   .topo-movel {position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha);}
   .topo-movel .marca {padding: 0; flex: 1; min-width: 0;}
   .topo-movel .marca-simbolo {width: 32px; height: 32px; font-size: 13px;}
