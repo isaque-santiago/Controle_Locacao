@@ -86,3 +86,25 @@ class TestValorTotalDaPromessa:
     )
     def test_totais_da_planilha_fecham(self, parcelas, valor, esperado):
         assert Decimal(parcelas) * Decimal(valor) == Decimal(esperado)
+
+
+class TestEncargosNaPromessa:
+    """D3 (22/10/2026): a parcela de promessa é cobrança 'locacao', logo paga encargos; a entrada não."""
+
+    def test_parcela_de_promessa_paga_encargos(self):
+        from src.domain.encargos import calcular_encargos
+
+        r = calcular_encargos(
+            "locacao", Decimal("550.00"), date(2026, 10, 12), date(2026, 10, 14),
+            Decimal("15.00"), Decimal("7.00"),
+        )
+        assert r["encargos"] == Decimal("29.00")
+
+    def test_entrada_nao_paga_encargos(self):
+        from src.domain.encargos import calcular_encargos
+
+        r = calcular_encargos(
+            "outros", Decimal("500.00"), date(2026, 10, 12), date(2026, 10, 14),
+            Decimal("15.00"), Decimal("7.00"),
+        )
+        assert r["encargos"] == Decimal("0.00")

@@ -527,8 +527,7 @@ preparam o banco para a planilha "PAGAMENTO MOTOS":
 - `20261022150000_importacao_rastreio_lotes.sql`: `importacoes_lote` (idempotência e desfazer por lote).
 
 Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
-Produção só depois de backup e autorização do dono. A carga dos dados (SQL gerado, colado no SQL Editor) ainda não existe: depende da
-decisão D3, dos conflitos da seção 5 do documento e do CPF/telefone dos locatários. Regra pura da agenda: `src/domain/agenda_cobrancas.py`
+Produção só depois de backup e autorização do dono. A carga dos dados (SQL gerado, colado no SQL Editor) ainda não existe: depende dos conflitos da seção 5 do documento e do CPF/telefone dos locatários. Regra pura da agenda: `src/domain/agenda_cobrancas.py`
 (`tests/test_agenda_promessa.py`).
 
 ## Convenções dos relatórios
