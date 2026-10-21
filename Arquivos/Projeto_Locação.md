@@ -941,7 +941,7 @@ decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md)
 
 ---
 
-## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; não implementado)
+## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; migrations escritas em 22/10/2026, ainda não aplicadas; carga pendente)
 
 Os dados reais da operação estão na planilha "PAGAMENTO MOTOS" (Google Sheets). O desenho completo, a lista de conflitos
 e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_Reais.md). Resumo do que muda no modelo:

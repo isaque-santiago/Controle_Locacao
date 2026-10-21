@@ -28,6 +28,10 @@ def gerar_agenda(
     periodicidade: str,
     valor_periodo: Decimal,
     data_fim_prevista: Optional[date] = None,
+    *,
+    numero_parcelas: Optional[int] = None,
+    parcelas_pagas_inicial: int = 0,
+    primeira_cobranca: Optional[date] = None,
 ) -> list:
     """Agenda de cobranças de locação de um contrato.
 
@@ -38,11 +42,22 @@ def gerar_agenda(
     Com `data_fim_prevista`, gera todas as parcelas até essa data (inclusive).
     Sem ela (contrato por prazo indeterminado, a regra da operação), gera só a
     janela inicial de HORIZONTE_INDETERMINADO_DIAS dias a partir de data_inicio.
+
+    Promessa de compra e contratos importados (mesma regra de `rpc_criar_contrato`):
+    - `primeira_cobranca` ancora a 1ª parcela (padrão: data_inicio);
+    - a numeração parte de `parcelas_pagas_inicial + 1`;
+    - com `numero_parcelas`, a agenda para na última parcela do contrato.
     """
     if periodicidade not in _INCREMENTOS:
         raise ValueError(f"Periodicidade inválida: {periodicidade!r}")
     if data_fim_prevista is not None and data_fim_prevista < data_inicio:
         raise ValueError("data_fim_prevista não pode ser anterior a data_inicio.")
+    if numero_parcelas is not None and numero_parcelas <= 0:
+        raise ValueError("numero_parcelas deve ser positivo.")
+    if parcelas_pagas_inicial < 0:
+        raise ValueError("parcelas_pagas_inicial não pode ser negativo.")
+    if numero_parcelas is not None and parcelas_pagas_inicial > numero_parcelas:
+        raise ValueError("As parcelas já pagas não podem superar o número de parcelas.")
 
     limite = (
         data_fim_prevista
@@ -50,9 +65,9 @@ def gerar_agenda(
         else data_inicio + timedelta(days=HORIZONTE_INDETERMINADO_DIAS)
     )
     agenda = []
-    vencimento = data_inicio
-    numero = 1
-    while vencimento <= limite:
+    vencimento = primeira_cobranca or data_inicio
+    numero = parcelas_pagas_inicial + 1
+    while vencimento <= limite and (numero_parcelas is None or numero <= numero_parcelas):
         agenda.append({"numero": numero, "vencimento": vencimento, "valor": valor_periodo})
         numero += 1
         vencimento = _proximo_vencimento(vencimento, periodicidade)

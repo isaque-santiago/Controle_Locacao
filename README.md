@@ -512,6 +512,25 @@ manutenção preventiva concluída e corretiva em aberto, e documentos vencido/a
 vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 `seed.sql`. É idempotente pela placa `EXA1A11`; não rode em produção.
 
+## Importação dos dados reais (modelo de dados pronto; carga pendente)
+
+Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Quatro migrations
+preparam o banco para a planilha "PAGAMENTO MOTOS":
+
+- `20261022120000_importacao_veiculos_contratos.sql`: tipo/dono/rastreador/seguro em `motos`; promessa de compra em `contratos`
+  (`tipo_contrato`, `numero_parcelas`, `valor_total`, `valor_entrada`, `parcelas_pagas_inicial`, `dia_cobranca`,
+  `primeira_cobranca`); `contas`; `conta_id`, `data_estimada` e a forma `abatimento` em `pagamentos`; `rpc_criar_contrato` e
+  `rpc_gerar_cobrancas_pendentes` respeitam a promessa (a janela móvel nasce em `primeira_cobranca`, não na data antiga de início).
+- `20261022130000_importacao_despesas_socio_dividas.sql`: `fornecedores`, `despesas`, `movimentos_socio`, `dividas`,
+  `pagamentos_divida`, `vw_saldo_dividas` e as colunas `custo_despesas` e `resultado_com_despesas` em `vw_resultado_moto`.
+- `20261022140000_importacao_multas.sql`: `multas_transito` e `vw_multas_locatario`.
+- `20261022150000_importacao_rastreio_lotes.sql`: `importacoes_lote` (idempotência e desfazer por lote).
+
+Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
+Produção só depois de backup e autorização do dono. A carga dos dados (SQL gerado, colado no SQL Editor) ainda não existe: depende da
+decisão D3, dos conflitos da seção 5 do documento e do CPF/telefone dos locatários. Regra pura da agenda: `src/domain/agenda_cobrancas.py`
+(`tests/test_agenda_promessa.py`).
+
 ## Convenções dos relatórios
 
 Receita usa a data de pagamento e exclui caução. Custo de manutenção considera

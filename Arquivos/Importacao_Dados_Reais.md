@@ -1,7 +1,12 @@
 # Importação dos dados reais (planilha "PAGAMENTO MOTOS")
 
 Proposta de modelo de dados e plano de carga. **Aprovada em 21/10/2026** (desenho e recomendações D1, D2, D4, D5, D6).
-**Nada foi implementado ainda**: não há migrations, código nem carga. D3 segue pendente.
+**Status (22/10/2026):** as migrations 1 a 4 (`supabase/migrations/20261022*`), o roteiro `supabase/verificar_importacao_modelo.sql` e a
+regra da agenda (`src/domain/agenda_cobrancas.py`, `tests/test_agenda_promessa.py`) foram escritos, mas **ainda não aplicados** em nenhum
+banco. A **carga** dos dados não existe. D3 segue pendente.
+
+Desvio do desenho aprovado: `vw_resultado_moto` ganhou as colunas `custo_despesas` e `resultado_com_despesas` em vez de alterar `resultado`,
+para não divergir de `src/domain/relatorios.py` enquanto as telas não incorporam as despesas.
 
 Planilha de origem: Google Sheets "PAGAMENTO MOTOS" (19 abas). Controle de cobrança na planilha começa em 12/10/2026.
 
