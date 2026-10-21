@@ -16,7 +16,7 @@
   {{ kpi("Avarias na devolução", "—" if c.avarias_devolucao is none else ("Nenhuma" if c.avarias_devolucao == 0 else c.avarias_devolucao ~ " registrada(s)"), atencao=(c.avarias_devolucao or 0) > 0) }}
 </dl>
 <div class="grade cols-2">
-{% for k in c.cartoes %}<div>{% include "vistorias/_cartao.html" %}</div>{% endfor %}
+{% for k in c.cartoes %}{% include "vistorias/_cartao.html" %}{% endfor %}
 </div>
 {% if c.tem_alterados %}<p class="text-texto-2 text-[13px]">Itens marcados como “alterado” (fundo amarelo) mudaram entre a entrega e a devolução.</p>{% endif %}
 {% endblock %}
