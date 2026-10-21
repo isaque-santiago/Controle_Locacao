@@ -605,8 +605,9 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .kpis-compactos .kpi {padding: var(--e3);}
 .kpis-compactos .kpi dt {font-size: 12px; line-height: 1.3; min-height: 2.6em;}
 .kpis-compactos .kpi dd {font-size: clamp(16px, 1.6vw, 20px); white-space: nowrap; overflow-wrap: normal;}
-.ficha-moto {display: flex; align-items: center; gap: var(--e2); margin-bottom: var(--e1);}
-.ficha-sub {color: var(--texto-2); font-size: 13px; margin-bottom: var(--e4);}
+.ficha-moto {display: flex; align-items: center; flex-wrap: wrap; gap: var(--e1) var(--e2); flex: 1; min-width: 0; margin: 0;}
+.cartao-cab-ficha {align-items: center; flex-wrap: wrap;}
+.ficha-sub {color: var(--texto-2); font-size: 13px; margin: 0;}
 .grade-dados {display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--e4) var(--e5); margin: 0;}
 .grade-dados > div {min-width: 0; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha);}
 .grade-dados dt {color: var(--texto-2); font-size: 12.5px; margin-bottom: var(--e1);}
