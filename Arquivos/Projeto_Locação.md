@@ -938,3 +938,25 @@ decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md)
 - O Portal do Locatário (Fase 7) fica **no mesmo app**, com login por CPF e papel separado.
 - As regras de trabalho do `CLAUDE.md` continuam valendo (fase por fase, `pytest`, README, commit por fase).
 - Hospedagem decidida: **VPS com acesso público e HTTPS** (os locatários usam o portal pelo celular). Provedor: KingHost (VPS pequena); domínio gratuito (DuckDNS, confirmado); contratação da VPS (a partir de R$ 32,90/mês) adiada para antes do primeiro deploy; deploy automático por GitHub Actions; administração: Alisson (seção 10.1 do documento de migração).
+
+---
+
+## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; não implementado)
+
+Os dados reais da operação estão na planilha "PAGAMENTO MOTOS" (Google Sheets). O desenho completo, a lista de conflitos
+e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_Reais.md). Resumo do que muda no modelo:
+
+- **Promessa de compra** passa a existir: `contratos` ganha `tipo_contrato` (`locacao` ou `promessa_compra`), `numero_parcelas`,
+  `valor_total`, `valor_entrada`, `parcelas_pagas_inicial`, `dia_cobranca` e `primeira_cobranca`. A agenda (seção 5.2) passa a ancorar
+  no dia da semana ou do mês, respeitar o número de parcelas e começar após as parcelas já pagas.
+- **Veículos:** `motos` ganha `tipo` (`moto` ou `carro`), `proprietario_documento`, `link_documento`, `possui_rastreador` e dados de seguro.
+- **Pagamentos:** `conta_id`, `data_estimada` e a forma `abatimento` (desconto sem dinheiro). Nova tabela `contas`.
+- **Tabelas novas:** `fornecedores`, `despesas`, `movimentos_socio` (retiradas e aportes), `dividas`, `pagamentos_divida`,
+  `multas_transito` e `importacoes_lote`; views `vw_saldo_dividas` e a de locatário na data da multa. `vw_resultado_moto` passa a somar as despesas.
+- **Início do controle de cobrança:** 12/10/2026. O que veio antes entra como cobrança única de "saldo anterior".
+- **Decisões:** promessa como coluna de `contratos`; pagamento sem data fica em 12/10/2026 com `data_estimada`; `km_inicial` = 0 com
+  observação; ex-locatários sem CPF só como texto em `multas_transito`; escopo inicial só banco e carga em dev (telas depois).
+- **Pendente (D3):** encargos de atraso (seção 5.3, hoje só locação) também valem para promessa de compra? Decisão do dono.
+- **CPF e telefone** não existem na planilha: a carga de `clientes` e `contratos` espera a planilha ser completada.
+- **Ensaio** sempre no banco de dev; produção só depois de backup e autorização do dono. A carga é um SQL colado no SQL Editor
+  (sem `service_role`), idempotente e numa transação única.

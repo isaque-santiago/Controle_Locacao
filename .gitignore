@@ -22,3 +22,4 @@ resultado*.txt
 
 # Memória local do projeto para agentes (não versionar)
 AGENTS.md
+.claude/settings.local.json
