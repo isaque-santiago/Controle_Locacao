@@ -625,7 +625,7 @@ Valores iniciais para o dono ajustar por modelo em Configurações (referência 
 
 ### 5.3 Encargos por atraso (`domain/encargos.py`)
 
-Regra da operação (seção 14.1), com os valores configuráveis em `configuracoes`: **R$ 15,00 fixos já no dia do vencimento** + **R$ 7,00 fixos por dia** a partir do dia seguinte. Sem carência. Incide **apenas sobre cobranças `tipo = 'locacao'`** e não depende do saldo.
+Regra da operação (seção 14.1), com os valores configuráveis em `configuracoes`: **R$ 15,00 fixos já no dia do vencimento** + **R$ 7,00 fixos por dia** a partir do dia seguinte. Sem carência. Incide **apenas sobre cobranças `tipo = 'locacao'`** e não depende do saldo. As parcelas de **promessa de compra** também são cobranças `tipo = 'locacao'` (decisão D3, 22/10/2026), portanto também pagam encargos; entrada, caução e saldo anterior (`outros`/`caucao`) não.
 
 ```
 se cobranca.tipo != 'locacao' ou saldo == 0 ou hoje < vencimento: encargo = 0
@@ -941,7 +941,7 @@ decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md)
 
 ---
 
-## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; não implementado)
+## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; migrations escritas em 22/10/2026, ainda não aplicadas; carga pendente)
 
 Os dados reais da operação estão na planilha "PAGAMENTO MOTOS" (Google Sheets). O desenho completo, a lista de conflitos
 e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_Reais.md). Resumo do que muda no modelo:
@@ -956,7 +956,7 @@ e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_R
 - **Início do controle de cobrança:** 12/10/2026. O que veio antes entra como cobrança única de "saldo anterior".
 - **Decisões:** promessa como coluna de `contratos`; pagamento sem data fica em 12/10/2026 com `data_estimada`; `km_inicial` = 0 com
   observação; ex-locatários sem CPF só como texto em `multas_transito`; escopo inicial só banco e carga em dev (telas depois).
-- **Pendente (D3):** encargos de atraso (seção 5.3, hoje só locação) também valem para promessa de compra? Decisão do dono.
+- **D3 (decidida em 22/10/2026):** os encargos de atraso (seção 5.3) também valem para as parcelas de promessa de compra. Como elas são cobranças `tipo = 'locacao'`, não houve mudança de código.
 - **CPF e telefone** não existem na planilha: a carga de `clientes` e `contratos` espera a planilha ser completada.
 - **Ensaio** sempre no banco de dev; produção só depois de backup e autorização do dono. A carga é um SQL colado no SQL Editor
   (sem `service_role`), idempotente e numa transação única.

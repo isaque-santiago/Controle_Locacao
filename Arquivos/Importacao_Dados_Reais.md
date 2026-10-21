@@ -1,7 +1,12 @@
 # Importação dos dados reais (planilha "PAGAMENTO MOTOS")
 
 Proposta de modelo de dados e plano de carga. **Aprovada em 21/10/2026** (desenho e recomendações D1, D2, D4, D5, D6).
-**Nada foi implementado ainda**: não há migrations, código nem carga. D3 segue pendente.
+**Status (22/10/2026):** as migrations 1 a 4 (`supabase/migrations/20261022*`), o roteiro `supabase/verificar_importacao_modelo.sql` e a
+regra da agenda (`src/domain/agenda_cobrancas.py`, `tests/test_agenda_promessa.py`) foram escritos, mas **ainda não aplicados** em nenhum
+banco. A **carga** dos dados não existe. D3 foi decidida (encargos valem na promessa).
+
+Desvio do desenho aprovado: `vw_resultado_moto` ganhou as colunas `custo_despesas` e `resultado_com_despesas` em vez de alterar `resultado`,
+para não divergir de `src/domain/relatorios.py` enquanto as telas não incorporam as despesas.
 
 Planilha de origem: Google Sheets "PAGAMENTO MOTOS" (19 abas). Controle de cobrança na planilha começa em 12/10/2026.
 
@@ -85,7 +90,7 @@ Não foi encontrado dado fictício nas abas de dados. A confirmação final é d
 | --- | --- | --- |
 | D1 | Promessa de compra: coluna em `contratos` ou tabela separada | **Coluna** (aprovado) |
 | D2 | Pagamentos sem data | **Data fixa 12/10/2026 com `data_estimada`** para os agregados; datas que afetam o caixa serão pedidas ao Alisson (aprovado) |
-| D3 | Cobrar encargos de atraso (R$ 15 + R$ 7/dia) nas promessas. O plano diz "só locação" (seção 5.3), a planilha cobra | **PENDENTE** (decisão do dono) |
+| D3 | Cobrar encargos de atraso (R$ 15 + R$ 7/dia) nas promessas | **Sim** (decidido em 22/10/2026). As parcelas de promessa são cobranças `locacao`, então a regra já vale; entrada, caução e saldo anterior não pagam encargos |
 | D4 | `km_inicial` sem dado na planilha | **Gravar 0** e anotar em `observacoes` (aprovado) |
 | D5 | Ex-locatários sem CPF (Jonatha, outro Wagner) | **Texto livre em multas**, sem cadastro em `clientes` (aprovado) |
 | D6 | Escopo agora | **Só banco e carga em dev**; telas depois (aprovado) |
@@ -111,7 +116,7 @@ Não foi encontrado dado fictício nas abas de dados. A confirmação final é d
 
 ## 6. Ordem de execução
 
-1. Resolver os conflitos da seção 5 e a decisão D3 com o dono.
+1. Resolver os conflitos da seção 5 com o dono (D3 já decidida).
 2. Atualizar o plano e o `CLAUDE.md` se preciso (feito: seção 16 do plano).
 3. Implementar as migrations 1 a 4, regras em `src/domain` e testes (`pytest`), README e commit.
 4. Gerar o SQL de carga em pasta temporária (fora do repositório quando tiver dado pessoal) e rodar no banco de **dev**.
