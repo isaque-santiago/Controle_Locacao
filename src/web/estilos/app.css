@@ -556,6 +556,9 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 /* ---------- Vistorias ---------- */
 .cols-2 {grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start;}
 .kpis.kpis-3 {grid-template-columns: repeat(3, minmax(0, 1fr));}
+/* Ficha do contrato: 5 cards ocupam a linha toda (sem espaço vazio) */
+.kpis.kpis-5 {grid-template-columns: repeat(5, minmax(0, 1fr));}
+@media (max-width: 1099px) {.kpis.kpis-5 {grid-template-columns: repeat(2, minmax(0, 1fr));} .kpis.kpis-5 .kpi:last-child {grid-column: 1 / -1;}}
 .cartao.tracejado {border-style: dashed; background: transparent;}
 .vistoria-resumo {padding-bottom: var(--e4);}
 .vistoria-resumo > h2 {margin-bottom: var(--e3);}

@@ -10,7 +10,7 @@
   </div>
   <div class="acoes">{{ botao("Ver cliente", href="/clientes/" ~ cliente.id) }}{% if contrato.status == "ativo" %}{{ botao("Encerrar contrato", variante="perigo", extra='hx-get="/contratos/' ~ contrato.id ~ '/encerrar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endif %}</div>
 </header>
-<dl class="grade kpis">
+<dl class="grade kpis kpis-5">
   {{ kpi("Valor / período", contrato.valor_periodo|moeda) }}
   {{ kpi("Caução", contrato.caucao_valor|moeda) }}
   {{ kpi("Km inicial", (contrato.km_inicial|milhar) ~ " km") }}
