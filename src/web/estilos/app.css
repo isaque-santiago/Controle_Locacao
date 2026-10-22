@@ -636,7 +636,8 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 @media (max-width: 719px) {
   .kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}
   .vistoria-dados {grid-template-columns: minmax(0, 1fr);}
-  .vistoria-dados > div {padding: var(--e3) 0; border-right: 0 !important;}
+  .vistoria-dados > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-right: 0 !important;}
+  .vistoria-dados dd {margin: 0; text-align: right;}
 }
 
 /* ---------- Relatórios ---------- */
