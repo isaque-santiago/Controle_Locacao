@@ -678,7 +678,23 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .barra-rel-neutro {fill: var(--seg-cheio);}
 .resumo-relatorio {margin: 0 0 var(--e4); color: var(--texto-2);}
 .resumo-relatorio strong {color: var(--texto); font-weight: 600;}
-@media (max-width: 719px) {.acoes-rel, .barra-periodo, .exportar-rel {width: 100%;} .barra-periodo .campo {flex: 1 1 100%; max-width: none;} .barra-periodo .btn, .exportar-rel .btn {flex: 1 1 100%;}}
+/* Celular: grade de duas colunas (datas lado a lado, rótulo em cima), ações logo abaixo, sem sobras de espaço */
+@media (max-width: 719px) {
+  .cabecalho:has(.acoes-rel) {gap: var(--e3); padding-bottom: var(--e3); margin-bottom: var(--e3);}
+  .acoes-rel {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); align-items: end;}
+  .acoes-rel .barra-periodo {display: contents;}
+  .acoes-rel .barra-periodo .campo {display: grid; gap: var(--e1); max-width: none; width: auto;}
+  .acoes-rel .barra-periodo .campo > label {font-size: 13px;}
+  .acoes-rel .barra-periodo .entrada {width: 100%; min-width: 0;}
+  .acoes-rel .aplicar-periodo {display: inline-flex; align-items: center; justify-content: center; min-height: var(--alvo); padding: 0 var(--e4); border-radius: var(--raio-md); background: var(--btn); color: var(--btn-texto); text-decoration: none; font-weight: 600;}
+  .acoes-rel:not(.acoes-rel-custo) .aplicar-periodo {grid-column: 1 / -1;}
+  .colapsavel-visao > summary {width: 100%; min-height: var(--alvo); justify-content: space-between;}
+  .colapsavel-visao .opcoes {left: 0; right: 0; min-width: 0;}
+  .acoes-rel .exportar-rel {grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin-left: 0; width: 100%;}
+  .acoes-rel .exportar-rel .btn {width: 100%; padding: 0 var(--e3);}
+}
+/* Cartões: a barra ocupa a linha toda (sem lacuna ao lado dos números) */
+@container (max-width: 959px) {#painel-aba .dados td.c-barra.k-lado {grid-column: 1 / -1; width: auto; justify-self: stretch; padding-top: var(--e1);}}
 .portal-topo .marca {min-height: var(--alvo); align-items: center;}
 
 /* ---------- Ficha do cliente (aba Resumo) ---------- */
