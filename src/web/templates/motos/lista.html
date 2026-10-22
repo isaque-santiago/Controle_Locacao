@@ -1,8 +1,10 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% from "componentes/macros.html" import filtro_colapsavel, cabecalho_pagina, botao, icone %}
 
 {% block conteudo %}
+{% set na_pagina = True %}
 {% call cabecalho_pagina("Motos", d.total_cadastradas ~ (" moto cadastrada" if d.total_cadastradas == 1 else " motos cadastradas")) %}
+{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao) }}
 {{ botao("Nova moto", variante="primario", icone_nome="novo", extra='hx-get="/motos/nova" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 

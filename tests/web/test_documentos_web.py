@@ -28,7 +28,7 @@ def test_lista_filtra_por_situacao_e_busca_por_placa(cliente, base_documentos):
     assert "Licenciamento" in so_m2 and "Seguro" not in so_m2
     assert "Nenhum documento encontrado" in cliente.get("/documentos?q=zzz").text
     trecho = cliente.get("/documentos?q=bra", headers=HX).text
-    assert "<html" not in trecho and 'class="chips"' in trecho
+    assert "<html" not in trecho and 'class="chips filtro-opcoes"' in trecho
 
 
 def test_lista_vazia_e_paginada(cliente, base_documentos):

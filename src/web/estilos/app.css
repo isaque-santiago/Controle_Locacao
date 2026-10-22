@@ -215,6 +215,18 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .cabecalho h1 {font-size: clamp(26px, 5vw, 32px);}
 .cabecalho p {margin-top: var(--e2); color: var(--texto-2); max-width: 60ch;}
 .cabecalho .acoes {display: flex; flex-wrap: wrap; gap: var(--e2);}
+.cabecalho .acoes {align-items: center;}
+.filtro-pagina:empty {display: none;}
+.filtro-col {position: relative;}
+.filtro-col summary {list-style: none;}
+.filtro-col summary::-webkit-details-marker {display: none;}
+.filtro-col summary b {font-weight: 600;}
+.filtro-col .seta-filtro {transition: transform 180ms ease;}
+.filtro-col[open] .seta-filtro {transform: rotate(180deg);}
+.filtro-opcoes {position: absolute; z-index: 20; top: calc(100% + var(--e2)); right: 0; min-width: 220px; flex-direction: column; overflow: visible; margin: 0; padding: var(--e2); gap: var(--e1); border: 1px solid var(--linha-forte); border-radius: var(--raio-md); background: var(--superficie-elevada); box-shadow: 0 8px 24px rgba(21,24,28,.16);}
+.filtro-opcoes .chip {justify-content: space-between; border-color: transparent; background: transparent; border-radius: var(--raio-sm);}
+.filtro-opcoes .chip:hover {background: var(--superficie-hover);}
+.filtro-opcoes .chip[aria-current="true"] {background: var(--btn); color: var(--btn-texto);}
 .voltar {display: inline-flex; align-items: center; gap: var(--e1); min-height: var(--alvo); margin: calc(var(--e2) * -1) 0 var(--e2) calc(var(--e2) * -1); padding: 0 var(--e3) 0 var(--e2); border-radius: var(--raio-campo); color: var(--texto-2); text-decoration: none; font-weight: 500;}
 .voltar:hover {background: var(--superficie-hover); color: var(--texto);}
 
@@ -451,6 +463,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .medidor {gap: 2px;}
   .rodape-acoes {flex-direction: column-reverse;} .rodape-acoes .btn {width: 100%;}
   .cabecalho .acoes, .cabecalho .acoes .btn {width: 100%;}
+  .filtro-pagina, .filtro-col {width: 100%;}
+  .filtro-col summary {justify-content: space-between;}
+  .filtro-opcoes {left: 0; right: 0;}
   .pendencia {grid-template-columns: 44px minmax(0, 1fr);} .pendencia .btn {grid-column: 1 / -1;}
 }
 @media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}

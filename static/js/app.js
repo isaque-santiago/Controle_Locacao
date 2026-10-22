@@ -20,15 +20,15 @@
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
 
-  // ---- Menu da conta (<details data-conta>): fecha ao clicar fora ou com Esc ----
+  // ---- Menu da conta e filtros colapsáveis (<details data-conta|data-filtro>): fecha ao clicar fora ou com Esc ----
   document.addEventListener('click', function (e) {
-    document.querySelectorAll('details[data-conta][open]').forEach(function (d) {
+    document.querySelectorAll('details[data-conta][open], details[data-filtro][open]').forEach(function (d) {
       if (!d.contains(e.target)) d.removeAttribute('open');
     });
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    document.querySelectorAll('details[data-conta][open]').forEach(function (d) { d.removeAttribute('open'); });
+    document.querySelectorAll('details[data-conta][open], details[data-filtro][open]').forEach(function (d) { d.removeAttribute('open'); });
   });
 
   // ---- Mostrar/ocultar senha: data-alternar-senha="id-do-campo" ----

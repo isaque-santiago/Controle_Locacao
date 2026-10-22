@@ -1,12 +1,8 @@
-{% from "componentes/macros.html" import selo, placa, tabela, paginacao, estado_vazio, botao %}
+{% from "componentes/macros.html" import filtro_colapsavel, selo, placa, tabela, paginacao, estado_vazio, botao %}
 {# Trecho trocado pelo HTMX: filtros em chips, lista e paginação. O campo oculto mantém a situação nos envios do formulário. #}
 <input type="hidden" name="situacao" value="{{ situacao }}">
 
-<nav class="chips" aria-label="Filtrar por situação">
-  {% for chave, rotulo, quantidade, url in chips %}
-  <a class="chip" href="{{ url }}" hx-get="{{ url }}" hx-target="#resultado" hx-push-url="true"{% if chave == situacao %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>
-  {% endfor %}
-</nav>
+{% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao, oob=True) }}{% endif %}
 
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 

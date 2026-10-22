@@ -15,7 +15,7 @@ def test_lista_filtra_busca_e_escapa_dados(cliente, base_clientes):
     assert "Maria" not in cliente.get("/clientes?status=inativo").text
     assert "Maria" in cliente.get("/clientes?q=529.982").text
     trecho = cliente.get("/clientes?q=maria", headers=HX).text
-    assert "<html" not in trecho and 'class="chips"' in trecho
+    assert "<html" not in trecho and 'class="chips filtro-opcoes"' in trecho
 
 
 def test_ficha_tem_abas_e_dados_financeiros(cliente, base_clientes):

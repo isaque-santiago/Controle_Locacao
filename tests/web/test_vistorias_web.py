@@ -25,7 +25,7 @@ def test_lista_filtra_por_tipo_e_busca(cliente, base_vistorias):
     assert "01/08/2026" in cliente.get("/vistorias?q=bra2e19").text
     assert "Nenhuma vistoria encontrada" in cliente.get("/vistorias?q=zzz").text
     trecho = cliente.get("/vistorias?q=maria", headers=HX).text
-    assert "<html" not in trecho and 'class="chips"' in trecho
+    assert "<html" not in trecho and 'class="chips filtro-opcoes"' in trecho
 
 
 def test_lista_vazia_e_paginada(cliente, base_vistorias):

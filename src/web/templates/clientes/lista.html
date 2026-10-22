@@ -1,7 +1,9 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% from "componentes/macros.html" import filtro_colapsavel, cabecalho_pagina, botao, icone %}
 {% block conteudo %}
+{% set na_pagina = True %}
 {% call cabecalho_pagina("Clientes", d.total_cadastrados ~ (" cliente cadastrado" if d.total_cadastrados == 1 else " clientes cadastrados")) %}
+{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status) }}
 {{ botao("Novo cliente", variante="primario", icone_nome="novo", extra='hx-get="/clientes/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 <form id="filtros" role="search" action="/clientes" method="get" hx-get="/clientes" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">

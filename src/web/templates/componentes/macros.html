@@ -166,6 +166,20 @@
 </div>
 {%- endmacro %}
 
+{# Filtro colapsável do cabeçalho: um botão com a opção atual que abre a lista de opções (antes eram chips soltos).
+   `itens` = (chave, rótulo, quantidade, url[, url_parcial]); com url_parcial, a troca é do painel inteiro (abas).
+   Vai no bloco {% call %} do cabecalho_pagina; nas respostas do HTMX é refeito fora de banda (`oob`). #}
+{% macro filtro_colapsavel(titulo, rotulo_aria, itens, ativo, alvo="#resultado", oob=False) -%}
+<div id="filtro-pagina" class="filtro-pagina"{% if oob %} hx-swap-oob="true"{% endif %}>
+{%- if itens %}
+<details class="filtro-col" data-filtro>
+  <summary class="btn">{% for item in itens if item[0] == ativo %}<span>{{ titulo }}: <b>{{ item[1] }}</b></span>{% endfor %}{{ icone("chevron", "seta-filtro") }}</summary>
+  <nav class="chips filtro-opcoes" aria-label="{{ rotulo_aria }}">{% for item in itens %}<a class="chip" href="{{ item[3] }}"{% if item|length > 4 %} hx-get="{{ item[4] }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ item[3] }}"{% else %} hx-get="{{ item[3] }}" hx-target="{{ alvo }}" hx-push-url="true"{% endif %}{% if item[0] == ativo %} aria-current="true"{% endif %}>{{ item[1] }} <b>{{ item[2] }}</b></a>{% endfor %}</nav>
+</details>
+{%- endif %}
+</div>
+{%- endmacro %}
+
 {# Botão que abre um diálogo (ver `dialogo`). #}
 {% macro abrir_dialogo(id, rotulo, icone_nome=None, variante="primario") -%}
 {{ botao(rotulo, variante=variante, icone_nome=icone_nome, extra='data-abrir="' ~ id ~ '"') }}
