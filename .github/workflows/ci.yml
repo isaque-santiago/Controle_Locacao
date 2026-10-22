@@ -24,6 +24,7 @@ jobs:
   testes-python:
     # 3.12 é a versão da imagem de produção (Dockerfile); 3.14 é a do desenvolvimento local.
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -40,6 +41,7 @@ jobs:
   navegador-login:
     # Sem credenciais: valores fictícios bastam para a tela de acesso renderizar.
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -85,6 +87,7 @@ jobs:
   navegador-autenticado:
     if: github.event_name == 'workflow_dispatch' && inputs.autenticado
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       # Um perfil por vez: os fluxos gravam no mesmo banco de desenvolvimento e não devem se atropelar.
@@ -136,6 +139,7 @@ jobs:
     needs: testes-python
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: producao
     concurrency:
       group: deploy-producao
