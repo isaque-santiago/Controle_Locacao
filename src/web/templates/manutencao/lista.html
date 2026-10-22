@@ -1,8 +1,10 @@
 {% extends "layout_painel.html" %}
 {% from "componentes/macros.html" import filtro_colapsavel, cabecalho_pagina, abas_remotas, botao %}
+{% from "manutencao/_acao_catalogo.html" import acao_catalogo %}
 {% block conteudo %}
 {% call cabecalho_pagina("Manutenção", d.vencidas ~ " vencida(s) · " ~ d.proximas ~ " próxima(s)") %}
 {{ filtro_colapsavel("Situação" if aba == "alertas" else "Tipo", "Filtrar alertas por situação" if aba == "alertas" else "Filtrar por tipo", chips if chips is defined else [], situacao if aba == "alertas" else tipo) }}
+{{ acao_catalogo(aba) }}
 {{ botao("Registrar manutenção", href="/manutencao/registrar", variante="primario", icone_nome="novo", extra='hx-get="/manutencao/registrar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 {{ abas_remotas("Seções de manutenção", abas_da_lista, aba) }}

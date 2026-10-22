@@ -1,4 +1,6 @@
 {% from "componentes/macros.html" import abas_remotas, filtro_colapsavel %}
+{% from "manutencao/_acao_catalogo.html" import acao_catalogo %}
 {{ abas_remotas("Seções de manutenção", abas_da_lista, aba, oob=True) }}
 {% include "manutencao/_painel.html" %}
 {{ filtro_colapsavel("Situação" if aba == "alertas" else "Tipo", "Filtrar alertas por situação" if aba == "alertas" else "Filtrar por tipo", chips if chips is defined else [], situacao if aba == "alertas" else tipo, oob=True) }}
+{{ acao_catalogo(aba, oob=True) }}
