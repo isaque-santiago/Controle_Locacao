@@ -407,6 +407,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 .resumo .total {border-top: 1px solid var(--linha); padding-top: var(--e3); font-size: 16px;}
 .resumo .total dd {font: 600 20px var(--fonte-mono);}
 .rodape-acoes {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--linha);}
+@media (min-width: 720px) {.so-celular {display: none;}}
 
 /* ---------- Diálogos ---------- */
 dialog {margin: auto; border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
@@ -465,6 +466,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .cartao {padding: var(--e4);}
   .medidor {gap: 2px;}
   .rodape-acoes {flex-direction: column-reverse;} .rodape-acoes .btn {width: 100%;}
+  .so-desktop {display: none;}
   .cabecalho .acoes, .cabecalho .acoes .btn {width: 100%;}
   .filtro-pagina, .filtro-col {width: 100%;}
   .filtro-col summary {justify-content: space-between;}
