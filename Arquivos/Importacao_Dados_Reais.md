@@ -1,9 +1,11 @@
 # Importação dos dados reais (planilha "PAGAMENTO MOTOS")
 
 Proposta de modelo de dados e plano de carga. **Aprovada em 21/10/2026** (desenho e recomendações D1, D2, D4, D5, D6).
-**Status (22/10/2026):** as migrations 1 a 4 (`supabase/migrations/20261022*`), o roteiro `supabase/verificar_importacao_modelo.sql` e a
-regra da agenda (`src/domain/agenda_cobrancas.py`, `tests/test_agenda_promessa.py`) foram escritos, mas **ainda não aplicados** em nenhum
-banco. A **carga** dos dados não existe. D3 foi decidida (encargos valem na promessa).
+**Status (22/10/2026):** as migrations 1 a 4 (`supabase/migrations/20261022*`) foram aplicadas pelo dono no banco de **dev**, junto com uma
+carga parcial (motos, contas, fornecedores, despesas, multas, sócio e duas dívidas; gerada fora do repositório porque contém dados reais).
+A migration 5 (capital em veículos sem operação) foi escrita e testada em Postgres descartável, mas **ainda não foi aplicada** em banco algum.
+O roteiro `supabase/verificar_importacao_modelo.sql` e a regra da agenda (`src/domain/agenda_cobrancas.py`, `tests/test_agenda_promessa.py`)
+acompanham. Faltam clientes, contratos e pagamentos de locação (CPF/telefone e respostas pendentes). D3 foi decidida (encargos valem na promessa).
 
 Desvio do desenho aprovado: `vw_resultado_moto` ganhou as colunas `custo_despesas` e `resultado_com_despesas` em vez de alterar `resultado`,
 para não divergir de `src/domain/relatorios.py` enquanto as telas não incorporam as despesas.
@@ -27,6 +29,7 @@ Planilha de origem: Google Sheets "PAGAMENTO MOTOS" (19 abas). Controle de cobra
 | Frota, Histórico, Documentos | Real | `motos`, `clientes`, `contratos` |
 | Pagamentos | Real | `pagamentos` (e cobranças de saldo anterior) |
 | Despesas | Real | `despesas` |
+| Etios, Celta, Capital de fora | Real (abas criadas em 22/10/2026) | `despesas` (categoria `aquisicao`), `dividas`, `dividas_vencimentos`, `movimentos_socio`; "Capital de fora" é derivada (`vw_capital_veiculo`) |
 | Dívidas | Real | `dividas`, `pagamentos_divida` |
 | Retiradas, Aportes | Real | `movimentos_socio` |
 | Multas | Real | `multas_transito` |
@@ -83,6 +86,25 @@ Não foi encontrado dado fictício nas abas de dados. A confirmação final é d
 
 - `importacoes_lote`: lote, tabela, aba e linha de origem, id gravado. Dá idempotência e permite desfazer um lote inteiro.
   Cada carga roda numa transação única.
+
+### Migration 5: capital em veículos sem operação (Etios e Celta)
+
+Aprovada em 22/10/2026. Aplica-se a veículos que ainda não rendem (Etios) ou sem placa conhecida (Celta).
+
+- `motos.placa_provisoria`: o Etios e o Celta entram com placa provisória (`PROV-ETIOS`, `PROV-CELTA`) e marca/modelo `A INFORMAR`
+  onde faltar, até a placa real ser informada.
+- `despesas`: nova categoria `aquisicao` (compra e reforma até o veículo render), `pago_por` (`locadora`, `locatario`, `terceiro`;
+  o compressor de R$ 450 do Celta é do locatário) e `a_confirmar` (valores de memória, como o arremate do Etios).
+- `dividas.tipo` ganha `emprestimo` (Etios: R$ 14.000, R$ 3.000 pagos). Nova tabela `dividas_vencimentos` guarda parcelas futuras,
+  com a data podendo ser nula (R$ 1.000 sem data e R$ 10.000 em 06/11/2026 do Etios; 4 parcelas do motor do Celta).
+- `movimentos_socio.moto_id`: o dinheiro próprio colocado no Etios (R$ 2.965) é um aporte ligado ao veículo.
+- `vw_capital_veiculo`: custo total, pago pelo locatário, a pagar (saldo confirmado ou, sem ele, o calculado das dívidas de
+  empréstimo/fornecedor do veículo), saiu do bolso (= custo - pago pelo locatário - a pagar), recebido e saldo. Reproduz a aba
+  "Capital de fora" (Etios 16.965 = 0 + 5.965 + 11.000; Celta 9.550 = 450 + 5.100 + 4.000).
+- `vw_resultado_moto`: `custo_despesas` e `resultado_com_despesas` ignoram a categoria `aquisicao` (capital) e o que não foi a
+  locadora que pagou.
+- Celta: motor de R$ 8.000 em despesa + dívida de fornecedor com 5 parcelas pagas (R$ 5.000) e saldo confirmado de R$ 4.000; a
+  diferença de R$ 1.000 (9 parcelas x R$ 8.000) fica visível em `vw_saldo_dividas` e como despesa `a_confirmar` de R$ 1.000.
 
 ## 4. Decisões
 

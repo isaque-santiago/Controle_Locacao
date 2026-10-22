@@ -514,7 +514,7 @@ vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 
 ## Importação dos dados reais (modelo de dados pronto; carga pendente)
 
-Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Quatro migrations
+Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Cinco migrations
 preparam o banco para a planilha "PAGAMENTO MOTOS":
 
 - `20261022120000_importacao_veiculos_contratos.sql`: tipo/dono/rastreador/seguro em `motos`; promessa de compra em `contratos`
@@ -525,6 +525,8 @@ preparam o banco para a planilha "PAGAMENTO MOTOS":
   `pagamentos_divida`, `vw_saldo_dividas` e as colunas `custo_despesas` e `resultado_com_despesas` em `vw_resultado_moto`.
 - `20261022140000_importacao_multas.sql`: `multas_transito` e `vw_multas_locatario`.
 - `20261022150000_importacao_rastreio_lotes.sql`: `importacoes_lote` (idempotência e desfazer por lote).
+- `20261022160000_importacao_capital_veiculos.sql`: capital em veículos sem operação (Etios, Celta): `placa_provisoria`, categoria `aquisicao`,
+  `pago_por`, `a_confirmar`, dívida `emprestimo`, `dividas_vencimentos`, aporte ligado ao veículo e `vw_capital_veiculo`.
 
 Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
 Produção só depois de backup e autorização do dono. A carga dos dados (SQL gerado, colado no SQL Editor) ainda não existe: depende dos conflitos da seção 5 do documento e do CPF/telefone dos locatários. Regra pura da agenda: `src/domain/agenda_cobrancas.py`
