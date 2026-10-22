@@ -11,7 +11,10 @@
 </form>
 {% endif %}
 {% if aba == "custo" and not erro_periodo %}
-<nav class="chips alternador" aria-label="Visão do custo de manutenção">{% for chave, rotulo, url, parcial in visoes %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == visao %} aria-current="true"{% endif %}>{{ rotulo }}</a>{% endfor %}</nav>
+<details class="colapsavel-visao">
+  <summary class="chip" aria-label="Visão do custo de manutenção">{% for chave, rotulo, url, parcial in visoes %}{% if chave == visao %}{{ rotulo }}{% endif %}{% endfor %}<span class="seta" aria-hidden="true"></span></summary>
+  <nav class="opcoes" aria-label="Visão do custo de manutenção">{% for chave, rotulo, url, parcial in visoes %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == visao %} aria-current="true"{% endif %}>{{ rotulo }}</a>{% endfor %}</nav>
+</details>
 {% endif %}
 {% if exportar and not erro_periodo %}<div class="exportar-rel">{% for rotulo, url in exportar %}<a class="btn" href="{{ url }}" download>{{ rotulo }}</a>{% endfor %}</div>{% endif %}
 </div>
