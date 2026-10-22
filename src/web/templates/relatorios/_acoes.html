@@ -1,13 +1,13 @@
 {% from "componentes/macros.html" import campo %}
 {# Ações do cabeçalho: período, alternância de visão (custo) e exportação. Refeito a cada aba via troca fora de banda. #}
-<div id="acoes-rel" class="acoes-rel"{% if oob %} hx-swap-oob="true"{% endif %}>
+<div id="acoes-rel" class="acoes-rel acoes-rel-{{ aba }}"{% if oob %} hx-swap-oob="true"{% endif %}>
 {% if aba != "inadimplencia" %}
 <form class="barra-periodo" method="get" action="/relatorios" aria-label="Período do relatório">
   <input type="hidden" name="aba" value="{{ aba }}">
   {% if aba == "custo" %}<input type="hidden" name="visao" value="{{ visao }}">{% endif %}
   {{ campo("rel-de", "De", nome="de", valor=de, tipo="date", obrigatorio=True) }}
   {{ campo("rel-ate", "Até", nome="ate", valor=ate, tipo="date", obrigatorio=True) }}
-  <button class="btn btn-primario" type="submit">Aplicar período</button>
+  <button class="aplicar-periodo" type="submit">Aplicar período</button>
 </form>
 {% endif %}
 {% if aba == "custo" and not erro_periodo %}
