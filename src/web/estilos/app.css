@@ -289,6 +289,13 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .quilometragem-item:first-child {padding-top: 0; border-top: 0;}
 .quilometragem-item:last-child {padding-bottom: 0;}
 .quilometragem-detalhe {justify-self: end; color: var(--texto-2); font-size: 13px; text-align: right; overflow-wrap: anywhere;}
+.quilometragem-mais {margin-top: var(--e2); border-top: 1px solid var(--linha-sutil);}
+.quilometragem-mais > summary {list-style: none; cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--texto-2); font-size: 13px; font-weight: 600;}
+.quilometragem-mais > summary::-webkit-details-marker {display: none;}
+.quilometragem-mais > summary::after {content: "▾"; margin-left: var(--e2);}
+.quilometragem-mais[open] > summary::after {content: "▴";}
+.quilometragem-mais[open] > summary {margin-bottom: var(--e1, 4px);}
+.quilometragem-mais .quilometragem-item:first-child {padding-top: var(--e2); border-top: 1px solid var(--linha-sutil);}
 .selo {display: inline-flex; align-items: center; gap: 7px; padding: 2px 10px 2px 8px; min-height: 26px; border-radius: 99px; font-size: 12.5px; font-weight: 500; white-space: nowrap;}
 .selo::before {content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;}
 .selo.ok {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
