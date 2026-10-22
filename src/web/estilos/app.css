@@ -452,6 +452,10 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .moto-lista-cards .dados td.acao {padding-top: var(--e3); border-top: 1px solid var(--linha-sutil); margin-top: 0;}
   .moto-lista-cards .dados td.acao:empty {display: none;}
   .moto-lista-cards .dados td.acao .btn {width: 100%;}
+  /* Ordem dos campos nos cartões da moto (Histórico e Documentos): título e descrição em largura total, o resto em pares sem lacunas */
+  .moto-lista-cards .dados td.moto-o1 {order: 1;} .moto-lista-cards .dados td.moto-o2 {order: 2;} .moto-lista-cards .dados td.moto-o3 {order: 3;}
+  .moto-lista-cards .dados td.moto-o4 {order: 4;} .moto-lista-cards .dados td.moto-o5 {order: 5;} .moto-lista-cards .dados td.moto-o6 {order: 6;}
+  .moto-lista-cards .dados td.acao.moto-o5 {grid-column: 1 / -1;}
   /* Dashboard, "Hoje": cartão compacto em grade 2x3 (cliente | situação, moto | vencimento, valor | ação), sem linhas vazias */
   .hoje-lista .dados tbody tr,
   .hoje-lista .dados tbody tr:first-child {grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--e3) var(--e3);}
