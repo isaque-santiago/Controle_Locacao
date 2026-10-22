@@ -503,6 +503,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados td.c-acao {grid-column: 1 / -1; order: 99; margin-top: var(--e1); padding-top: var(--e3); border-top: 1px solid var(--linha-sutil);}
   .lista-cartoes .dados td.c-acao:empty {display: none;}
   .lista-cartoes .dados td.c-acao::before {display: none;}
+  .lista-cartoes .dados td.c-acao > a:not(.btn) {display: inline-block; padding-block: var(--e2);}
   .lista-cartoes .dados td.c-acao > .btn {width: 100%;}
   /* Ordem de leitura explícita quando difere da ordem das colunas (o1 = título, o2 = selo, ...) */
   .lista-cartoes .dados td.o1 {order: 1;} .lista-cartoes .dados td.o2 {order: 2;} .lista-cartoes .dados td.o3 {order: 3;}
