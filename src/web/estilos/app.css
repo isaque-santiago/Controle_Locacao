@@ -611,7 +611,13 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .barra-periodo {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3);}
 .barra-periodo .campo {display: flex; align-items: center; gap: var(--e2); max-width: 220px;}
 .barra-periodo .campo > label {font-size: 15px; white-space: nowrap;}
-.acoes-rel .chips {margin: 0; padding: 0; overflow: visible;}
+.colapsavel-visao {position: relative;}
+.colapsavel-visao > summary {list-style: none; user-select: none; background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
+.colapsavel-visao > summary::-webkit-details-marker {display: none;}
+.colapsavel-visao .seta {width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s;}
+.colapsavel-visao[open] .seta {transform: translateY(2px) rotate(-135deg);}
+.colapsavel-visao .opcoes {position: absolute; z-index: 10; top: calc(100% + var(--e2)); left: 0; display: grid; gap: var(--e1); min-width: 100%; padding: var(--e2); border: 1px solid var(--linha-forte); border-radius: 16px; background: var(--superficie-elevada); box-shadow: 0 8px 24px rgb(0 0 0 / .25);}
+.colapsavel-visao .opcoes .chip {white-space: nowrap;}
 .exportar-rel {display: flex; flex-wrap: wrap; gap: var(--e2);}
 #painel-aba .dados td {padding-block: var(--e4);}
 .barra-rel {display: block; width: 100px; height: 6px;}
