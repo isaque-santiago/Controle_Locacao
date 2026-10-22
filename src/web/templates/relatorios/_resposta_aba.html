@@ -1,3 +1,5 @@
 {% from "componentes/macros.html" import abas_remotas %}
+{% set oob = True %}
+{% include "relatorios/_acoes.html" %}
 {{ abas_remotas("Seções de relatórios", abas_da_lista, aba, oob=True) }}
 {% include "relatorios/_painel.html" %}
