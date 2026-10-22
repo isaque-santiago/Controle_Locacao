@@ -3,17 +3,20 @@
 --   20261022130000_importacao_despesas_socio_dividas.sql
 --   20261022140000_importacao_multas.sql
 --   20261022150000_importacao_rastreio_lotes.sql
+--   20261022160000_importacao_capital_veiculos.sql
 -- Verifica o modelo da importação dos dados reais (Arquivos/Importacao_Dados_Reais.md):
 --   * promessa de compra: restrição do total, agenda ancorada em primeira_cobranca, numeração e parada;
 --   * abatimento (desconto sem dinheiro) aceito como forma de pagamento;
 --   * saldo de dívida de fornecedor (dívida anterior + pedidos novos - pagamentos);
---   * locatário na data da multa.
+--   * locatário na data da multa;
+--   * capital em veículos sem operação (Etios e Celta): placa provisória, aquisição, empréstimo, parcelas futuras e aporte.
 -- Todas as alterações deste roteiro são desfeitas ao final (ROLLBACK).
 begin;
 do $$
 declare
   cliente uuid; moto uuid; moto2 uuid; c jsonb; contrato uuid; n int; primeira uuid;
   forn uuid; div uuid; saldo numeric; locatario text;
+  etios uuid; celta uuid; forn_motor uuid; div_emp uuid; div_motor uuid; cap record;
 begin
   insert into clientes(nome, cpf) values ('Teste importacao', '00000000002') returning id into cliente;
   insert into motos(placa, marca, modelo, km_atual, tipo) values ('TST5Z55', 'Teste', 'Teste', 100, 'carro') returning id into moto;
@@ -87,6 +90,63 @@ begin
     raise exception using errcode = 'ZX202', message = 'Linha de origem duplicada foi aceita';
   exception when unique_violation then null;
   end;
+
+  -- Capital em veículos sem operação: Etios (compra com empréstimo) e Celta (reforma do motor parcelada)
+  insert into motos(placa, marca, modelo, tipo, placa_provisoria) values ('PROV-ETIOS', 'Toyota', 'Etios 2015', 'carro', true) returning id into etios;
+  insert into motos(placa, marca, modelo, tipo, placa_provisoria) values ('PROV-CELTA', 'A INFORMAR', 'Celta', 'carro', true) returning id into celta;
+  assert (select placa_provisoria from motos where id = etios), 'placa_provisoria não gravada';
+
+  insert into despesas(data, data_estimada, moto_id, categoria, valor, a_confirmar, observacoes) values
+    (hoje_br(), true, etios, 'aquisicao', 15500, true, 'Arremate (de memória)'),
+    (hoje_br(), true, etios, 'aquisicao', 775, false, 'Comissão de 5%'),
+    (hoje_br(), true, etios, 'aquisicao', 500, false, 'Busca do carro'),
+    (hoje_br(), true, etios, 'aquisicao', 50, false, 'Almoço na viagem'),
+    (hoje_br(), true, etios, 'aquisicao', 140, false, '2 pneus');
+  insert into dividas(tipo, credor, moto_id, valor_original) values ('emprestimo', 'Empréstimo do Etios', etios, 14000) returning id into div_emp;
+  insert into pagamentos_divida(divida_id, data, data_estimada, valor) values (div_emp, hoje_br(), true, 3000);
+  insert into dividas_vencimentos(divida_id, vencimento, valor, observacoes) values
+    (div_emp, null, 1000, 'Sem data informada'), (div_emp, hoje_br() + 15, 10000, 'Parcela principal');
+  insert into movimentos_socio(tipo, data, data_estimada, valor, moto_id, origem_destino)
+  values ('aporte', hoje_br(), true, 2965, etios, 'Dinheiro próprio no Etios');
+
+  select * into cap from vw_capital_veiculo where moto_id = etios;
+  assert cap.custo_total = 16965, 'Custo total do Etios incorreto: ' || cap.custo_total;
+  assert cap.a_pagar = 11000, 'A pagar do Etios incorreto: ' || cap.a_pagar;
+  assert cap.saiu_do_bolso = 5965, 'Saiu do bolso do Etios incorreto: ' || cap.saiu_do_bolso;
+  assert cap.saldo = -16965, 'Saldo do Etios incorreto';
+  assert cap.tem_valor_a_confirmar, 'Valor a confirmar do Etios não sinalizado';
+  assert (select count(*) from dividas_vencimentos where divida_id = div_emp and vencimento is null) = 1, 'Parcela sem data não gravada';
+  assert (select sum(valor) from dividas_vencimentos where divida_id = div_emp) = 11000, 'Parcelas futuras do Etios não fecham com o saldo';
+  assert (select sum(valor) from movimentos_socio where moto_id = etios) = 2965, 'Aporte ligado ao veículo incorreto';
+
+  insert into fornecedores(nome) values ('Motor do Celta (teste)') returning id into forn_motor;
+  insert into despesas(data, data_estimada, moto_id, categoria, valor, fornecedor_id, observacoes)
+  values (hoje_br(), true, celta, 'aquisicao', 8000, forn_motor, 'Motor (reforma)');
+  insert into despesas(data, data_estimada, moto_id, categoria, valor, observacoes) values
+    (hoje_br(), false, celta, 'aquisicao', 100, 'Peças enviadas ao Gabriel');
+  insert into despesas(data, data_estimada, moto_id, categoria, valor, pago_por, observacoes)
+  values (hoje_br(), true, celta, 'aquisicao', 450, 'locatario', 'Compressor do ar-condicionado');
+  insert into despesas(data, data_estimada, moto_id, categoria, valor, a_confirmar, observacoes)
+  values (hoje_br(), true, celta, 'aquisicao', 1000, true, 'Diferença: parcelas x valor do motor (a confirmar)');
+  insert into dividas(tipo, credor, fornecedor_id, moto_id, valor_original, saldo_confirmado)
+  values ('fornecedor', 'Motor do Celta (teste)', forn_motor, celta, 0, 4000) returning id into div_motor;
+  insert into pagamentos_divida(divida_id, data, data_estimada, valor) values (div_motor, hoje_br(), true, 5000);
+
+  select * into cap from vw_capital_veiculo where moto_id = celta;
+  assert cap.custo_total = 9550, 'Custo total do Celta incorreto: ' || cap.custo_total;
+  assert cap.pago_pelo_locatario = 450, 'Pago pelo locatário do Celta incorreto';
+  assert cap.a_pagar = 4000, 'A pagar do Celta incorreto: ' || cap.a_pagar;
+  assert cap.saiu_do_bolso = 5100, 'Saiu do bolso do Celta incorreto: ' || cap.saiu_do_bolso;
+  -- o saldo calculado (8.000 - 5.000) difere do confirmado (4.000): a diferença fica visível
+  assert (select diferenca from vw_saldo_dividas where divida_id = div_motor) = 1000, 'Diferença do motor do Celta incorreta';
+
+  -- Capital e despesas pagas por terceiros não entram no resultado das motos
+  assert (select custo_despesas from vw_resultado_moto where moto_id = etios) = 0, 'Aquisição não deveria entrar em custo_despesas';
+  insert into despesas(data, categoria, valor, moto_id, pago_por) values (hoje_br(), 'manutencao', 10, celta, 'locatario');
+  insert into despesas(data, categoria, valor, moto_id) values (hoje_br(), 'manutencao', 20, celta);
+  assert (select custo_despesas from vw_resultado_moto where moto_id = celta) = 20, 'Só o que a locadora pagou deveria entrar em custo_despesas';
+  -- Veículo sem despesas de aquisição não aparece em vw_capital_veiculo
+  assert not exists (select 1 from vw_capital_veiculo where moto_id = moto), 'Veículo sem aquisição apareceu em vw_capital_veiculo';
 
   raise notice 'Verificação do modelo de importação: OK';
 end $$;
