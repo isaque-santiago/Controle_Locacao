@@ -39,17 +39,18 @@
 </div>
 {% endif %}
 {% endcall %}
-<h2 class="rotulo">Trocas de óleo reportadas</h2>
+{% call cartao("Trocas de óleo reportadas") %}
 {% if a.trocas %}
-{% call tabela([("Data", ""), ("Hodômetro", "num"), ("Acima do previsto", "num"), ("Multa", ""), ("Fotos", "")], "Trocas de óleo reportadas pelo locatário") %}
+{% call tabela([("Data", ""), ("Multa", ""), ("Hodômetro", "num"), ("Acima do previsto", "num"), ("Fotos", "")], "Trocas de óleo reportadas pelo locatário", cartoes=True) %}
 {% for t in a.trocas %}<tr>
-  <td class="topo mono">{{ t.criado_em|data_br }}</td>
+  <td class="mono">{{ t.criado_em|data_br }}</td>
+  <td class="k-d k-selo" data-rotulo="Multa">{% if t.cobranca_id %}{{ selo("Cobrada", "perigo") }}{% else %}—{% endif %}</td>
   <td class="num mono" data-rotulo="Hodômetro">{{ t.km|milhar }} km</td>
   <td class="num mono" data-rotulo="Acima do previsto">{% if t.km_excedente %}{{ t.km_excedente|milhar }} km{% else %}—{% endif %}</td>
-  <td data-rotulo="Multa">{% if t.cobranca_id %}{{ selo("Cobrada", "perigo") }}{% else %}—{% endif %}</td>
-  <td data-rotulo="Fotos"><a href="{{ base }}/portal/trocas/{{ t.id }}/painel" target="_blank" rel="noopener">Foto do painel</a> · <a href="{{ base }}/portal/trocas/{{ t.id }}/nota" target="_blank" rel="noopener">Nota fiscal</a></td>
+  <td class="c-acao" data-rotulo="Fotos"><a href="{{ base }}/portal/trocas/{{ t.id }}/painel" target="_blank" rel="noopener">Foto do painel</a> · <a href="{{ base }}/portal/trocas/{{ t.id }}/nota" target="_blank" rel="noopener">Nota fiscal</a></td>
 </tr>{% endfor %}
 {% endcall %}
 {% else %}
 {{ estado_vazio("Nenhuma troca reportada", "As trocas de óleo informadas pelo locatário aparecem aqui.") }}
 {% endif %}
+{% endcall %}
