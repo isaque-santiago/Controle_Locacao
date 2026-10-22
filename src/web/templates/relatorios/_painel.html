@@ -1,23 +1,9 @@
-{% from "componentes/macros.html" import tabela, placa, estado_vazio, aviso, kpi, campo %}
+{% from "componentes/macros.html" import tabela, placa, estado_vazio, aviso, kpi %}
 {% from "relatorios/_macros.html" import barra, resumo, liquido %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
-{% if aba != "inadimplencia" %}
-{# O formulário fica no painel: cada aba o refaz com os campos escondidos (aba e visão) certos. #}
-<form class="barra-periodo" method="get" action="/relatorios" aria-label="Período do relatório">
-  <input type="hidden" name="aba" value="{{ aba }}">
-  {% if aba == "custo" %}<input type="hidden" name="visao" value="{{ visao }}">{% endif %}
-  {{ campo("rel-de", "De", nome="de", valor=de, tipo="date", obrigatorio=True) }}
-  {{ campo("rel-ate", "Até", nome="ate", valor=ate, tipo="date", obrigatorio=True) }}
-  <button class="btn btn-primario" type="submit">Aplicar período</button>
-</form>
-{% endif %}
 {% if erro_periodo %}
 {{ aviso("erro", erro_periodo) }}
 {% else %}
-{% if exportar %}<div class="flex flex-wrap justify-end gap-2 mb-4">{% for rotulo, url in exportar %}<a class="btn" href="{{ url }}" download>{{ rotulo }}</a>{% endfor %}</div>{% endif %}
-{% if aba == "custo" %}
-<nav class="chips" aria-label="Visão do custo de manutenção">{% for chave, rotulo, url, parcial in visoes %}<a class="chip" href="{{ url }}" hx-get="{{ parcial }}" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="{{ url }}"{% if chave == visao %} aria-current="true"{% endif %}>{{ rotulo }}</a>{% endfor %}</nav>
-{% endif %}
 {% if aba == "inadimplencia" %}
 <p class="text-texto-2 mb-4">Posição atual de cobranças em atraso, independente do período selecionado.</p>
 <dl class="grade kpis kpis-3">

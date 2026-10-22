@@ -592,8 +592,13 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 }
 
 /* ---------- Relatórios ---------- */
-.barra-periodo {display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e3); margin-bottom: var(--e4);}
-.barra-periodo .campo {flex: 1 1 150px; max-width: 220px;}
+.acoes-rel {display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--e3);}
+.barra-periodo {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3);}
+.barra-periodo .campo {display: flex; align-items: center; gap: var(--e2); max-width: 220px;}
+.barra-periodo .campo > label {font-size: 15px; white-space: nowrap;}
+.acoes-rel .chips {margin: 0; padding: 0; overflow: visible;}
+.exportar-rel {display: flex; flex-wrap: wrap; gap: var(--e2);}
+#painel-aba .dados td {padding-block: var(--e4);}
 .barra-rel {display: block; width: 100px; height: 6px;}
 @container (max-width: 959px) {.lista-cartoes .dados td.c-barra .barra-rel {width: 100%;}}
 .barra-rel-fundo {fill: var(--seg-vazio);}
@@ -602,7 +607,7 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .barra-rel-neutro {fill: var(--seg-cheio);}
 .resumo-relatorio {margin: 0 0 var(--e4); color: var(--texto-2);}
 .resumo-relatorio strong {color: var(--texto); font-weight: 600;}
-@media (max-width: 719px) {.barra-periodo .campo {max-width: none;} .barra-periodo .btn {flex: 1 1 100%;}}
+@media (max-width: 719px) {.acoes-rel, .barra-periodo, .exportar-rel {width: 100%;} .barra-periodo .campo {flex: 1 1 100%; max-width: none;} .barra-periodo .btn, .exportar-rel .btn {flex: 1 1 100%;}}
 .portal-topo .marca {min-height: var(--alvo); align-items: center;}
 
 /* ---------- Ficha do cliente (aba Resumo) ---------- */
