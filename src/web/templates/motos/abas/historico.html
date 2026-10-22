@@ -4,12 +4,12 @@
 {% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Oficina", ""), ("Custo", "num")], "Histórico de manutenção da moto") %}
   {% for m in a.manutencoes %}
   <tr>
-    <td class="topo mono">{{ m.data_entrada|data_br }}</td>
-    <td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td>
-    <td class="total" data-rotulo="Descrição">{{ m.descricao }}</td>
-    <td class="num mono" data-rotulo="Km">{{ m.km|milhar }} km</td>
-    <td data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
-    <td class="num mono moto-card-destaque" data-rotulo="Custo">{{ m.custo_total|moeda }}</td>
+    <td class="topo mono moto-o1">{{ m.data_entrada|data_br }}</td>
+    <td class="moto-o3" data-rotulo="Tipo">{{ m.tipo|capitalize }}</td>
+    <td class="total moto-o2" data-rotulo="Descrição">{{ m.descricao }}</td>
+    <td class="num mono moto-o4" data-rotulo="Km">{{ m.km|milhar }} km</td>
+    <td class="moto-o5" data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
+    <td class="num mono moto-card-destaque moto-o6" data-rotulo="Custo">{{ m.custo_total|moeda }}</td>
   </tr>
   {% endfor %}
 {% endcall %}

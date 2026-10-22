@@ -1,5 +1,5 @@
 {% set c = a.contrato %}
-<div class="grade duas-colunas motos-resumo-grade">
+<div class="grade duas-colunas motos-resumo-grade{% if c %} motos-resumo-igual{% endif %}">
   <section class="cartao" aria-labelledby="t-contrato">
     <div class="cartao-cab"><h2 id="t-contrato">Contrato ativo</h2>{% if c %}<a href="/contratos" aria-label="Ver contratos de {{ c.cliente }}">Ver contrato</a>{% endif %}</div>
     {% if c %}
@@ -23,11 +23,23 @@
   <section class="cartao" aria-labelledby="t-km">
     <div class="cartao-cab"><h2 id="t-km">Quilometragem</h2></div>
     {% if a.leituras %}
+    {% set visiveis = a.leituras[:2] %}
+    {% set ocultas = a.leituras[2:] %}
     <ul class="quilometragem-lista">
-      {% for h in a.leituras %}
+      {% for h in visiveis %}
       <li class="quilometragem-item"><span class="mono">{{ h.km|milhar }} km</span><span class="quilometragem-detalhe">{{ h.data|data_br }} · {{ h.origem }}</span></li>
       {% endfor %}
     </ul>
+    {% if ocultas %}
+    <details class="quilometragem-mais">
+      <summary>Ver mais {{ ocultas|length }} {{ "leitura" if ocultas|length == 1 else "leituras" }}</summary>
+      <ul class="quilometragem-lista">
+        {% for h in ocultas %}
+        <li class="quilometragem-item"><span class="mono">{{ h.km|milhar }} km</span><span class="quilometragem-detalhe">{{ h.data|data_br }} · {{ h.origem }}</span></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
     {% else %}
     <p class="text-texto-2">Nenhuma leitura registrada.</p>
     {% endif %}
