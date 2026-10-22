@@ -1,7 +1,9 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% from "componentes/macros.html" import filtro_colapsavel, cabecalho_pagina, botao, icone %}
 {% block conteudo %}
+{% set na_pagina = True %}
 {% call cabecalho_pagina("Documentos", vencidos ~ " vencido(s) · " ~ a_vencer ~ " a vencer") %}
+{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao) }}
 {{ botao("Novo documento", href="/documentos/novo", variante="primario", icone_nome="novo", extra='hx-get="/documentos/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 <form id="filtros" role="search" action="/documentos" method="get" hx-get="/documentos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">

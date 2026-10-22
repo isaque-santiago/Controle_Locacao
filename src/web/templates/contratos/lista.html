@@ -1,7 +1,9 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% from "componentes/macros.html" import filtro_colapsavel, cabecalho_pagina, botao, icone %}
 {% block conteudo %}
+{% set na_pagina = True %}
 {% call cabecalho_pagina("Contratos", d.total_ativos ~ (" contrato ativo" if d.total_ativos == 1 else " contratos ativos")) %}
+{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status) }}
 {{ botao("Novo contrato", href="/contratos/novo/iniciar", variante="primario", icone_nome="novo") }}
 {% endcall %}
 <form id="filtros" role="search" action="/contratos" method="get" hx-get="/contratos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">

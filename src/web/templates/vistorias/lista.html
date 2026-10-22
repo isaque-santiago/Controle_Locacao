@@ -1,7 +1,9 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, botao, icone %}
+{% from "componentes/macros.html" import filtro_colapsavel, cabecalho_pagina, botao, icone %}
 {% block conteudo %}
+{% set na_pagina = True %}
 {% call cabecalho_pagina("Vistorias", "Entregas e devoluções registradas") %}
+{{ filtro_colapsavel("Tipo", "Filtrar por tipo", chips, tipo) }}
 {{ botao("Registrar vistoria", href="/vistorias/registrar", variante="primario", icone_nome="novo", extra='hx-get="/vistorias/registrar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 <form id="filtros" role="search" action="/vistorias" method="get" hx-get="/vistorias" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">

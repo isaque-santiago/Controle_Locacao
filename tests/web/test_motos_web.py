@@ -110,7 +110,7 @@ def test_tamanho_da_pagina_e_escolhido_na_lista(cliente, base_motos):
 def test_htmx_devolve_so_o_resultado(cliente):
     entrar(cliente)
     html = cliente.get("/motos?situacao=alugada", headers=HTMX).text
-    assert "<html" not in html and 'class="chips"' in html and "Honda CG 101" in html
+    assert "<html" not in html and 'class="chips filtro-opcoes"' in html and "Honda CG 101" in html
 
 
 def test_restaurar_o_historico_do_htmx_devolve_a_pagina_inteira(cliente):

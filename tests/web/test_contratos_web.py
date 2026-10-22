@@ -24,7 +24,7 @@ def test_lista_filtra_por_situacao_e_busca(cliente, base_contratos):
     assert "Nenhum contrato encontrado" in cliente.get("/contratos?q=zzz").text
     assert "Maria" in cliente.get("/contratos?status=invalido").text  # situação inválida volta ao padrão
     trecho = cliente.get("/contratos?q=maria", headers=HX).text
-    assert "<html" not in trecho and 'class="chips"' in trecho
+    assert "<html" not in trecho and 'class="chips filtro-opcoes"' in trecho
 
 
 def test_lista_conta_por_situacao(cliente, base_contratos):
