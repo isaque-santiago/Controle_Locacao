@@ -335,6 +335,9 @@ table.dados {width: 100%; border-collapse: collapse;}
 .acoes-linha a.comprovante {color: var(--texto-2); text-decoration: underline; text-underline-offset: 3px;}
 .acoes-linha a.comprovante:hover {color: var(--texto);}
 .acoes-linha .botoes {display: flex; gap: var(--e2);}
+/* Histórico de manutenção: Concluir e Cancelar centralizados na coluna, com a mesma largura */
+.acoes-manutencao {justify-content: center;}
+.acoes-manutencao .btn {min-width: 92px; justify-content: center;}
 .acoes-linha .btn {min-height: 36px; padding: 0 var(--e3); font-size: 13px;}
 @media (min-width: 960px) {.acoes-linha {flex-wrap: nowrap;}}
 .dados .modelo {font-weight: 500;} .dados .sub {display: block; font-size: 12.5px; color: var(--texto-3);}
