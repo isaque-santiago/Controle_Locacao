@@ -1,0 +1,5 @@
+{% from "componentes/macros.html" import botao %}
+{# Botão "Novo item" no cabeçalho; só aparece na aba Catálogo e é trocado junto com a aba (oob). #}
+{% macro acao_catalogo(aba, oob=False) -%}
+<span id="acao-catalogo" class="contents"{% if oob %} hx-swap-oob="true"{% endif %}>{% if aba == "catalogo" %}{{ botao("Novo item", href="/manutencao/catalogo/novo", variante="primario", icone_nome="novo", extra='hx-get="/manutencao/catalogo/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endif %}</span>
+{%- endmacro %}
