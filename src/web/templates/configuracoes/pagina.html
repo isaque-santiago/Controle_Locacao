@@ -2,7 +2,7 @@
 {% from "componentes/macros.html" import cabecalho_pagina, campo, botao, aviso %}
 {% block conteudo %}
 {% call cabecalho_pagina("Configurações", "Parâmetros do sistema") %}
-{{ botao("Salvar alterações", tipo="submit", variante="primario", extra='form="form-config"') }}
+<span class="so-desktop">{{ botao("Salvar alterações", tipo="submit", variante="primario", extra='form="form-config"') }}</span>
 {% endcall %}
 <form id="form-config" method="post" action="/configuracoes" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -34,7 +34,7 @@
     </div>
   </section>
   <p class="text-texto-2 text-[13px] mb-4"><span aria-hidden="true">*</span> Campo obrigatório. Quantidades vão de 0 a {{ limite|milhar }}.</p>
-  <div class="rodape-acoes mb-6"><button class="btn btn-primario" type="submit">Salvar alterações</button></div>
+  <div class="rodape-acoes so-celular mb-6"><button class="btn btn-primario" type="submit">Salvar alterações</button></div>
 </form>
 <section class="cartao" aria-labelledby="cfg-backup">
   <h2 id="cfg-backup">Backup manual</h2>
