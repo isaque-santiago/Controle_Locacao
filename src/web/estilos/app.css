@@ -607,7 +607,20 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 }
 
 /* ---------- Relatórios ---------- */
-.acoes-rel {display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--e3);}
+.cabecalho:has(.acoes-rel) {flex-wrap: nowrap; align-items: center; gap: var(--e4) var(--e6);}
+.cabecalho:has(.acoes-rel) .cabecalho-texto {flex: 0 0 auto;}
+.cabecalho:has(.acoes-rel) .acoes {flex: 1 1 auto; min-width: 0;}
+.acoes-rel {display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--e3); width: 100%;}
+.acoes-rel .barra-periodo, .acoes-rel .exportar-rel {flex-wrap: nowrap;}
+.acoes-rel .btn, .acoes-rel .chip {white-space: nowrap;}
+.acoes-rel .exportar-rel {margin-left: auto;}
+.aplicar-periodo {white-space: nowrap; padding: 0 var(--e1); border: 0; background: none; color: var(--btn); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;}
+.aplicar-periodo:hover {text-decoration-thickness: 2px;}
+.acoes-rel:not(:has(.barra-periodo)), .acoes-rel-resultado, .acoes-rel-fluxo {justify-content: space-between;}
+.acoes-rel:not(:has(.barra-periodo)) {justify-content: flex-end;}
+.acoes-rel .barra-periodo .campo {flex: 0 0 auto; width: auto;}
+.acoes-rel .barra-periodo .entrada {width: 10.5rem; min-width: 10.5rem;}
+@media (max-width: 1279px) {.cabecalho:has(.acoes-rel) {flex-wrap: wrap;} .acoes-rel, .acoes-rel .barra-periodo {flex-wrap: wrap;}}
 .barra-periodo {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3);}
 .barra-periodo .campo {display: flex; align-items: center; gap: var(--e2); max-width: 220px;}
 .barra-periodo .campo > label {font-size: 15px; white-space: nowrap;}
@@ -616,8 +629,10 @@ form.htmx-request button[type="submit"] {pointer-events: none; opacity: .6;}
 .colapsavel-visao > summary::-webkit-details-marker {display: none;}
 .colapsavel-visao .seta {width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s;}
 .colapsavel-visao[open] .seta {transform: translateY(2px) rotate(-135deg);}
-.colapsavel-visao .opcoes {position: absolute; z-index: 10; top: calc(100% + var(--e2)); left: 0; display: grid; gap: var(--e1); min-width: 100%; padding: var(--e2); border: 1px solid var(--linha-forte); border-radius: 16px; background: var(--superficie-elevada); box-shadow: 0 8px 24px rgb(0 0 0 / .25);}
-.colapsavel-visao .opcoes .chip {white-space: nowrap;}
+.colapsavel-visao .opcoes {position: absolute; z-index: 10; top: calc(100% + var(--e2)); left: 0; display: grid; gap: var(--e1); min-width: max(100%, 170px); padding: var(--e2); border: 1px solid var(--linha-forte); border-radius: 14px; background: var(--superficie-elevada); box-shadow: 0 8px 24px rgb(0 0 0 / .25);}
+.colapsavel-visao .opcoes .chip {white-space: nowrap; width: 100%; justify-content: flex-start; border: 0; border-radius: 10px; background: transparent; padding: 0 var(--e4);}
+.colapsavel-visao .opcoes .chip:hover {background: var(--superficie-hover);}
+.colapsavel-visao .opcoes .chip[aria-current="true"] {background: var(--superficie-hover); color: inherit; font-weight: 600;}
 .exportar-rel {display: flex; flex-wrap: wrap; gap: var(--e2);}
 #painel-aba .dados td {padding-block: var(--e4);}
 .barra-rel {display: block; width: 100px; height: 6px;}
