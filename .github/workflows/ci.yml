@@ -41,7 +41,7 @@ jobs:
   navegador-login:
     # Sem credenciais: valores fictícios bastam para a tela de acesso renderizar.
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -59,7 +59,13 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt -r e2e/requirements-e2e.txt
       - name: Instalar o navegador
-        run: python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }}
+        # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
+        run: |
+          for tentativa in 1 2 3; do
+            timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
+            echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
+          done
+          exit 1
       - name: Subir o app web
         run: |
           nohup python -m uvicorn --factory src.web.app:criar_app --host 127.0.0.1 --port 8000 --workers 1 > app.log 2>&1 &
@@ -87,7 +93,7 @@ jobs:
   navegador-autenticado:
     if: github.event_name == 'workflow_dispatch' && inputs.autenticado
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       # Um perfil por vez: os fluxos gravam no mesmo banco de desenvolvimento e não devem se atropelar.
@@ -109,7 +115,13 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt -r e2e/requirements-e2e.txt
       - name: Instalar o navegador
-        run: python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }}
+        # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
+        run: |
+          for tentativa in 1 2 3; do
+            timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
+            echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
+          done
+          exit 1
       - name: Subir o app web
         run: |
           nohup python -m uvicorn --factory src.web.app:criar_app --host 127.0.0.1 --port 8000 --workers 1 > app.log 2>&1 &
