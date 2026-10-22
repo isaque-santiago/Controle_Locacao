@@ -25,9 +25,10 @@
 </div>
 {% else %}
 {% if a.manutencoes %}
+<div class="contrato-linhas">
 {% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Cobrada do cliente", ""), ("Custo", "num")], "Manutenções durante o contrato") %}
 {% for m in a.manutencoes %}<tr>
-<td class="mono">{{ m.data_entrada|data_br }}</td>
+<td class="mono modelo">{{ m.data_entrada|data_br }}</td>
 <td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td>
 <td data-rotulo="Descrição">{{ m.descricao }}</td>
 <td class="num mono" data-rotulo="Km">{{ m.km|milhar }} km</td>
@@ -35,6 +36,7 @@
 <td class="num mono" data-rotulo="Custo">{{ m.custo_total|moeda }}</td>
 </tr>{% endfor %}
 {% endcall %}
+</div>
 <p class="text-texto-2 text-[13px]">Mostrando apenas manutenções realizadas durante a vigência deste contrato.</p>
 {% else %}{{ estado_vazio("Nenhuma manutenção no período", "As manutenções feitas durante a vigência deste contrato aparecerão aqui.") }}{% endif %}
 {% endif %}
