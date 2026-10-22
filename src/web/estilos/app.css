@@ -268,6 +268,9 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 /* ---------- Cartões, KPIs, selos ---------- */
 .cartao {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); padding: var(--e5);}
 .cartao > h2 {font-size: 18px; margin-bottom: var(--e4);}
+/* Tabela dentro de um cartão: o próprio cartão é o contêiner, sem segunda borda */
+.cartao > .tabela-caixa {background: transparent; border: 0; border-radius: 0;}
+.painel > .cartao + .cartao {margin-top: var(--e4);}
 .cartao-cab {display: flex; align-items: baseline; justify-content: space-between; gap: var(--e3); margin-bottom: var(--e4);}
 .cartao-cab h2 {font-size: 18px;}
 .cartao-cab a {color: var(--texto-2); font-size: 13px;}

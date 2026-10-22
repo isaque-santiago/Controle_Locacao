@@ -39,7 +39,7 @@
 </div>
 {% endif %}
 {% endcall %}
-<h2 class="rotulo">Trocas de óleo reportadas</h2>
+{% call cartao("Trocas de óleo reportadas") %}
 {% if a.trocas %}
 {% call tabela([("Data", ""), ("Multa", ""), ("Hodômetro", "num"), ("Acima do previsto", "num"), ("Fotos", "")], "Trocas de óleo reportadas pelo locatário", cartoes=True) %}
 {% for t in a.trocas %}<tr>
@@ -53,3 +53,4 @@
 {% else %}
 {{ estado_vazio("Nenhuma troca reportada", "As trocas de óleo informadas pelo locatário aparecem aqui.") }}
 {% endif %}
+{% endcall %}
