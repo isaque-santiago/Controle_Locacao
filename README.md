@@ -70,6 +70,10 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Atalhos de teclado** (`static/js/app.js`): `/` foca a busca da página e `n` aciona o botão marcado com `data-atalho-novo`
   (o "Novo ..." de Motos, Clientes, Contratos, Documentos e do catálogo de Manutenção; `aria-keyshortcuts="n"`). Só valem sem
   Ctrl/Alt/Cmd, fora de campos de texto e com nenhum diálogo aberto.
+- **App instalável (PWA básico)**: `static/manifest.webmanifest` (modo `standalone`, `start_url` `/`), ícones em `static/icones/`
+  (gerados por `python scripts/gerar_icones_pwa.py`, com Pillow; versionados) e, no `<head>` de `base.html`, `manifest`,
+  `apple-touch-icon` e `theme-color` claro/escuro. **Sem service worker**: a sessão fica na memória do servidor, então o app não
+  funciona offline e não há cache de páginas autenticadas. No Android/Chrome aparece "Instalar app"; no iOS, "Adicionar à Tela de Início".
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
