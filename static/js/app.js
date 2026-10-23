@@ -203,6 +203,25 @@
   var invalidoNaPagina = document.querySelector('main form [aria-invalid="true"]');
   if (invalidoNaPagina) invalidoNaPagina.focus();
 
+  // ---- Carregamento: a classe "carregando" no <html> acende a barra do topo enquanto houver requisição do HTMX ----
+  var pendentes = new Set();
+  function atualizarBarra() { document.documentElement.classList.toggle('carregando', pendentes.size > 0); }
+  document.body.addEventListener('htmx:beforeRequest', function (e) {
+    pendentes.add(e.detail.xhr);
+    // O trecho que vai ser trocado fica "ocupado" (leitores de tela anunciam; o CSS esmaece a lista)
+    if (e.detail.target && e.detail.target.setAttribute) e.detail.target.setAttribute('aria-busy', 'true');
+    atualizarBarra();
+  });
+  ['htmx:afterRequest', 'htmx:sendError', 'htmx:timeout', 'htmx:sendAbort'].forEach(function (nome) {
+    document.body.addEventListener(nome, function (e) {
+      pendentes.delete(e.detail.xhr);
+      if (e.detail.target && e.detail.target.removeAttribute) e.detail.target.removeAttribute('aria-busy');
+      atualizarBarra();
+    });
+  });
+  // Voltar pelo histórico (bfcache) não deve reabrir a página com a barra acesa
+  window.addEventListener('pageshow', function () { pendentes.clear(); atualizarBarra(); });
+
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
