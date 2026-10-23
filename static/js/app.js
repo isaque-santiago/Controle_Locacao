@@ -20,6 +20,52 @@
     if (e.target.tagName === 'DIALOG') e.target.close();
   });
 
+  // ---- Confirmação de ações destrutivas ----
+  // Elementos HTMX usam hx-confirm="texto"; formulários comuns usam data-confirmar="texto". Opcionais no
+  // elemento: data-confirmar-titulo, data-confirmar-rotulo (botão de confirmar) e data-confirmar-neutro
+  // (botão sem destaque de perigo). Em vez do confirm() do navegador, abre o <dialog id="dlg-confirmar">.
+  var confirmarPendente = null;
+  function pedirConfirmacao(origem, texto, aoConfirmar) {
+    var dialogo = document.getElementById('dlg-confirmar');
+    if (!dialogo || !dialogo.showModal) return window.confirm(texto) && (aoConfirmar(), true);
+    var ok = document.getElementById('dlg-confirmar-ok');
+    document.getElementById('dlg-confirmar-titulo').textContent = origem.getAttribute('data-confirmar-titulo') || 'Confirmar ação';
+    document.getElementById('dlg-confirmar-texto').textContent = texto;
+    ok.textContent = origem.getAttribute('data-confirmar-rotulo') || 'Confirmar';
+    ok.classList.toggle('btn-perigo', !origem.hasAttribute('data-confirmar-neutro'));
+    confirmarPendente = aoConfirmar;
+    dialogo.showModal();
+    return true;
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#dlg-confirmar-ok')) return;
+    var acao = confirmarPendente;
+    confirmarPendente = null;
+    document.getElementById('dlg-confirmar').close();
+    if (acao) acao();
+  });
+  document.addEventListener('close', function (e) {
+    if (e.target && e.target.id === 'dlg-confirmar') confirmarPendente = null;
+  }, true);
+  // HTMX: intercepta a pergunta do hx-confirm e só dispara a requisição depois do "Confirmar"
+  document.body.addEventListener('htmx:confirm', function (e) {
+    if (!e.detail.question) return;
+    e.preventDefault();
+    pedirConfirmacao(e.detail.elt, e.detail.question, function () { e.detail.issueRequest(true); });
+  });
+  // Formulário comum: pergunta antes de enviar; depois do "Confirmar", reenvia sem perguntar de novo
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    var texto = form.getAttribute && form.getAttribute('data-confirmar');
+    if (!texto || form.hasAttribute('data-confirmado')) return;
+    e.preventDefault();
+    var botao = e.submitter;
+    pedirConfirmacao(form, texto, function () {
+      form.setAttribute('data-confirmado', '');
+      if (form.requestSubmit) form.requestSubmit(botao); else form.submit();
+    });
+  });
+
   // ---- Menu da conta e filtros colapsáveis (<details data-conta|data-filtro>): fecha ao clicar fora ou com Esc ----
   document.addEventListener('click', function (e) {
     document.querySelectorAll('details[data-conta][open], details[data-filtro][open]').forEach(function (d) {
