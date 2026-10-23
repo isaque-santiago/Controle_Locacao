@@ -203,6 +203,42 @@
   var invalidoNaPagina = document.querySelector('main form [aria-invalid="true"]');
   if (invalidoNaPagina) invalidoNaPagina.focus();
 
+  // ---- Falha de rede do HTMX (sem conexão ou tempo esgotado): avisa em #avisos; some quando uma requisição der certo ----
+  function avisarFalhaDeRede(texto) {
+    // Com um diálogo aberto, a página fica atrás do fundo escuro: o aviso vai para dentro do diálogo
+    var dialogo = document.querySelector('dialog[open]');
+    var area = document.getElementById('avisos');
+    if (dialogo) {
+      area = dialogo.querySelector('[data-avisos-dialogo]');
+      if (!area) {
+        area = document.createElement('div');
+        area.setAttribute('data-avisos-dialogo', '');
+        area.setAttribute('aria-live', 'polite');
+        dialogo.insertBefore(area, dialogo.firstChild);
+      }
+    }
+    if (!area) return;
+    document.querySelectorAll('[data-falha-rede]').forEach(function (a) { a.remove(); });
+    var aviso = document.createElement('div');
+    aviso.className = 'aviso erro';
+    aviso.setAttribute('role', 'alert');
+    aviso.setAttribute('data-falha-rede', '');
+    aviso.innerHTML = '<svg class="i" aria-hidden="true" focusable="false"><use href="#i-alerta"/></svg><div></div>';
+    aviso.lastChild.textContent = texto;
+    area.appendChild(aviso);
+    area.scrollIntoView({ block: 'nearest' });
+  }
+  document.body.addEventListener('htmx:sendError', function () {
+    avisarFalhaDeRede('Sem conexão com o servidor. Verifique a internet e tente de novo.');
+  });
+  document.body.addEventListener('htmx:timeout', function () {
+    avisarFalhaDeRede('O servidor demorou demais para responder. Tente de novo.');
+  });
+  document.body.addEventListener('htmx:afterRequest', function (e) {
+    if (!e.detail.successful) return;
+    document.querySelectorAll('[data-falha-rede]').forEach(function (a) { a.remove(); });
+  });
+
   // ---- Carregamento: a classe "carregando" no <html> acende a barra do topo enquanto houver requisição do HTMX ----
   var pendentes = new Set();
   function atualizarBarra() { document.documentElement.classList.toggle('carregando', pendentes.size > 0); }

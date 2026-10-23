@@ -50,6 +50,8 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Ficha com abas** (`macros.abas_remotas`): cada aba carrega o painel por HTMX, com URL própria
   (`/motos/{id}?aba=plano`); o servidor devolve as abas junto do painel (swap fora de banda), então o botão
   voltar do navegador fica coerente. Setas movem o foco, Enter abre.
+- **Falha de rede do HTMX** (`static/js/app.js`): `htmx:sendError` e `htmx:timeout` (limite de 60 s, em `htmx-config`)
+  mostram um aviso de erro em `#avisos` (ou dentro do diálogo aberto) e ele some na próxima requisição bem-sucedida.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
