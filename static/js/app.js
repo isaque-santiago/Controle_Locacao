@@ -208,11 +208,14 @@
   function atualizarBarra() { document.documentElement.classList.toggle('carregando', pendentes.size > 0); }
   document.body.addEventListener('htmx:beforeRequest', function (e) {
     pendentes.add(e.detail.xhr);
+    // O trecho que vai ser trocado fica "ocupado" (leitores de tela anunciam; o CSS esmaece a lista)
+    if (e.detail.target && e.detail.target.setAttribute) e.detail.target.setAttribute('aria-busy', 'true');
     atualizarBarra();
   });
   ['htmx:afterRequest', 'htmx:sendError', 'htmx:timeout', 'htmx:sendAbort'].forEach(function (nome) {
     document.body.addEventListener(nome, function (e) {
       pendentes.delete(e.detail.xhr);
+      if (e.detail.target && e.detail.target.removeAttribute) e.detail.target.removeAttribute('aria-busy');
       atualizarBarra();
     });
   });
