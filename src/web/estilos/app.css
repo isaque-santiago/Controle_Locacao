@@ -429,6 +429,8 @@ dialog::backdrop {background: rgba(21,24,28,.55);}
 .dialogo-cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
 .dialogo-cab h2 {font-size: 20px;}
 .dialogo-corpo {padding: var(--e5); overflow-y: auto;}
+dialog.confirmar {width: min(26rem, calc(100vw - 32px));}
+dialog.confirmar .dialogo-corpo {white-space: pre-line;}
 .dialogo-rodape {display: flex; justify-content: flex-end; gap: var(--e2); padding: var(--e4) var(--e5); border-top: 1px solid var(--linha);}
 dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32px);}
 @media (max-width: 719px) {

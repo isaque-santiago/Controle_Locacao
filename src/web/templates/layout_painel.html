@@ -77,6 +77,13 @@
 {# Diálogo de formulários carregados sob demanda pelo HTMX (conteúdo vem de /.../nova, /.../editar etc.) #}
 <dialog class="cheio" id="dlg-form" aria-labelledby="dlg-form-titulo"><div id="dlg-form-conteudo"></div></dialog>
 
+{# Confirmação de ações destrutivas: aberta pelo app.js para hx-confirm / data-confirmar (texto, título e rótulo vêm do elemento) #}
+<dialog class="confirmar" id="dlg-confirmar" aria-labelledby="dlg-confirmar-titulo" aria-describedby="dlg-confirmar-texto">
+  <div class="dialogo-cab"><h2 id="dlg-confirmar-titulo">Confirmar ação</h2></div>
+  <div class="dialogo-corpo"><p id="dlg-confirmar-texto"></p></div>
+  <div class="dialogo-rodape"><button class="btn" type="button" data-fechar autofocus>Voltar</button><button class="btn btn-perigo" type="button" id="dlg-confirmar-ok">Confirmar</button></div>
+</dialog>
+
 <dialog class="folha" id="dlg-mais" aria-labelledby="t-mais">
   <div class="dialogo-cab"><h2 id="t-mais">Mais opções</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
   <ul class="folha-lista">

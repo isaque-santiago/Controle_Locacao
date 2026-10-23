@@ -275,3 +275,10 @@ def test_documento_de_outra_moto_ou_id_invalido_da_404(cliente):
     _logado(cliente)
     assert cliente.get(f"/motos/{MOTO}/documentos/00000000-0000-0000-0000-0000000000ee/regularizar").status_code == 404
     assert cliente.get(f"/motos/{MOTO}/documentos/xyz/regularizar").status_code == 404
+
+
+def test_inativar_pede_confirmacao_e_reativar_nao(cliente):
+    _logado(cliente)
+    disponivel = cliente.get(f"/motos/{DISPONIVEL}").text
+    assert 'data-confirmar="' in disponivel and 'id="dlg-confirmar"' in disponivel
+    assert 'data-confirmar="' not in cliente.get(f"/motos/{INATIVA}").text
