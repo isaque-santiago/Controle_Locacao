@@ -56,6 +56,10 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   `confirm()` do navegador, `hx-confirm="texto"` (HTMX) e `data-confirmar="texto"` (formulário comum) abrem um diálogo próprio;
   `data-confirmar-titulo`, `data-confirmar-rotulo` e `data-confirmar-neutro` personalizam. Usado em: gerar nova senha e remover
   acesso do portal, inativar moto e cancelar o novo contrato.
+- **Formulário em diálogo seguro** (`#dlg-form`, `static/js/app.js`): qualquer alteração marca `data-alterado` no diálogo; fechar
+  (Cancelar, X, fundo ou Esc) com alterações pede "Descartar alterações?" no diálogo de confirmação. No envio, `form_dialogo` usa
+  `hx-sync="this:drop"` e `hx-disabled-elt` (ignora cliques repetidos); formulários comuns recebem `data-enviando` (bloqueio por
+  10 s, para não travar downloads) e o botão mostra um anel girando.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
