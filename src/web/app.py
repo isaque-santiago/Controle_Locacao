@@ -11,6 +11,7 @@ import os
 from time import time
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.services.autenticacao import ServicoAutenticacao
@@ -87,6 +88,12 @@ def criar_app(
     app.add_middleware(LimiteDeCorpo)
     app.add_middleware(CabecalhosSeguranca)
     app.mount("/static", StaticFiles(directory=str(PASTA_ESTATICOS)), name="static")
+
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon():
+        """Alguns navegadores (e leitores de feed, atalhos) pedem /favicon.ico direto, ignorando o <link rel="icon">; sem isto era 404 a cada página."""
+        return FileResponse(PASTA_ESTATICOS / "icones" / "icone-192.png", media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=86400"})
 
     app.include_router(rotas_paginas.router)
     app.include_router(rotas_clientes_formularios.router)
