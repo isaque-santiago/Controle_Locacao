@@ -282,3 +282,9 @@ def test_inativar_pede_confirmacao_e_reativar_nao(cliente):
     disponivel = cliente.get(f"/motos/{DISPONIVEL}").text
     assert 'data-confirmar="' in disponivel and 'id="dlg-confirmar"' in disponivel
     assert 'data-confirmar="' not in cliente.get(f"/motos/{INATIVA}").text
+
+
+def test_formulario_em_dialogo_bloqueia_envio_duplo(cliente):
+    _logado(cliente)
+    html = cliente.get(f"/motos/{DISPONIVEL}/editar", headers=HX).text
+    assert 'hx-sync="this:drop"' in html and 'hx-disabled-elt="find button[type=submit]"' in html

@@ -13,11 +13,54 @@
     }
     var fechar = e.target.closest('[data-fechar]');
     if (fechar) {
-      var dialogo = fechar.closest('dialog');
-      if (dialogo) dialogo.close();
+      fecharDialogo(fechar.closest('dialog'));
       return;
     }
-    if (e.target.tagName === 'DIALOG') e.target.close();
+    if (e.target.tagName === 'DIALOG') fecharDialogo(e.target);
+  });
+
+  // ---- Formulário em diálogo (#dlg-form): avisa antes de fechar com alterações não enviadas ----
+  // O marcador fica no <dialog>: sobrevive à troca do formulário com erro de validação e some ao abrir outro conteúdo.
+  var dlgForm = function () { return document.getElementById('dlg-form'); };
+  function fecharDialogo(dialogo) {
+    if (!dialogo) return;
+    if (dialogo.id !== 'dlg-form' || !dialogo.hasAttribute('data-alterado')) { dialogo.close(); return; }
+    var origem = document.createElement('span');
+    origem.setAttribute('data-confirmar-titulo', 'Descartar alterações?');
+    origem.setAttribute('data-confirmar-rotulo', 'Descartar');
+    pedirConfirmacao(origem, 'O que você preencheu e não enviou será perdido.', function () { dialogo.removeAttribute('data-alterado'); dialogo.close(); });
+  }
+  function marcarAlterado(e) {
+    var dialogo = dlgForm();
+    if (dialogo && e.target.closest && e.target.closest('#dlg-form form')) dialogo.setAttribute('data-alterado', '');
+  }
+  document.addEventListener('input', marcarAlterado);
+  document.addEventListener('change', marcarAlterado);
+  document.addEventListener('cancel', function (e) {  // Esc
+    if (e.target.id === 'dlg-form' && e.target.hasAttribute('data-alterado')) {
+      e.preventDefault();
+      fecharDialogo(e.target);
+    }
+  }, true);
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (e.detail.target && e.detail.target.id === 'dlg-form-conteudo' && dlgForm()) dlgForm().removeAttribute('data-alterado');
+  });
+  document.addEventListener('close', function (e) {
+    if (e.target && e.target.id === 'dlg-form') e.target.removeAttribute('data-alterado');
+  }, true);
+
+  // ---- Envio de formulário comum (página inteira): bloqueia clique duplo e mostra o indicador no botão ----
+  // Formulários do HTMX usam hx-sync/hx-disabled-elt; downloads não recarregam a página, então o bloqueio expira.
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (e.defaultPrevented || !form.classList || form.hasAttribute('hx-post')) return;
+    if (form.hasAttribute('data-confirmar') && !form.hasAttribute('data-confirmado')) return;  // ainda vai perguntar
+    if (form.hasAttribute('data-enviando')) { e.preventDefault(); return; }
+    form.setAttribute('data-enviando', '');
+    window.setTimeout(function () { form.removeAttribute('data-enviando'); }, 10000);
+  });
+  window.addEventListener('pageshow', function () {
+    document.querySelectorAll('form[data-enviando]').forEach(function (f) { f.removeAttribute('data-enviando'); });
   });
 
   // ---- Confirmação de ações destrutivas ----
