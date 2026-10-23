@@ -127,3 +127,27 @@ def test_lista_nao_usa_estilo_nem_script_inline(cliente):
     for campo in re.findall(r"<(?:input|select|textarea)\b[^>]*>", html):
         if 'type="hidden"' not in campo:
             assert re.search(r'\sid="([^"]+)"', campo).group(1) in ids_com_rotulo
+
+
+def _placas_na_ordem(html):
+    return re.findall(r"ABC-1D0\d", html)
+
+
+def test_cabecalhos_ordenaveis_e_ordem_pela_url(cliente):
+    entrar(cliente)
+    html = cliente.get("/motos?ordem=km").text
+    assert 'aria-sort="ascending"' in html and 'id="ord-km"' in html
+    assert 'href="/motos?ordem=-km"' in html  # próximo clique inverte
+    assert 'name="ordem" value="km"' in html  # a busca digitada mantém a ordem
+    crescente = _placas_na_ordem(html)
+    decrescente = _placas_na_ordem(cliente.get("/motos?ordem=-km").text)
+    assert crescente and decrescente == crescente[::-1]
+    assert 'aria-sort="descending"' in cliente.get("/motos?ordem=-km").text
+
+
+def test_ordem_invalida_volta_ao_padrao_e_paginacao_mantem_a_ordem(cliente):
+    entrar(cliente)
+    html = cliente.get("/motos?ordem=xpto").text
+    assert 'aria-sort="ascending"' not in html and 'aria-sort="descending"' not in html
+    assert 'name="ordem" value=""' in html
+    assert "ordem=km" in cliente.get("/motos?ordem=km&situacao=disponivel", headers=HTMX).text  # chips preservam a ordem

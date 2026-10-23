@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.domain import motos_lista
+from src.domain.ordenacao import cabecalhos, interpretar, valor_da_url
 from src.domain.paginacao import OPCOES_POR_PAGINA
 from src.web import dados_motos
 from src.web.apresentacao import formatar_placa
@@ -25,7 +26,7 @@ def _inteiro(valor: str | None, padrao: int) -> int:
         return padrao
 
 
-def _url_lista(situacao: str, busca: str, por_pagina: int, pagina: int = 1) -> str:
+def _url_lista(situacao: str, busca: str, por_pagina: int, pagina: int = 1, ordem: str = "") -> str:
     """Endereço da lista só com o que foge do padrão (URL curta e fácil de compartilhar)."""
     parametros = {}
     if situacao != motos_lista.TODAS:
@@ -34,6 +35,8 @@ def _url_lista(situacao: str, busca: str, por_pagina: int, pagina: int = 1) -> s
         parametros["q"] = busca
     if por_pagina != OPCOES_POR_PAGINA[0]:
         parametros["por_pagina"] = por_pagina
+    if ordem:
+        parametros["ordem"] = ordem
     if pagina > 1:
         parametros["pagina"] = pagina
     return "/motos" + (f"?{urlencode(parametros)}" if parametros else "")
@@ -56,6 +59,7 @@ def lista(
     q: str | None = None,
     pagina: str | None = None,
     por_pagina: str | None = None,
+    ordem: str | None = None,
     _: Sessao = Depends(exigir_dono),
 ):
     situacao = motos_lista.situacao_valida(situacao)
@@ -64,7 +68,9 @@ def lista(
     if tamanho not in OPCOES_POR_PAGINA:
         tamanho = OPCOES_POR_PAGINA[0]
 
-    dados = dados_motos.carregar_lista(situacao, busca, _inteiro(pagina, 1), tamanho)
+    campo, decrescente = interpretar(ordem, motos_lista.COLUNAS_ORDENAVEIS.values())
+    ordem = valor_da_url(campo, decrescente)
+    dados = dados_motos.carregar_lista(situacao, busca, _inteiro(pagina, 1), tamanho, ordem)
     p = dados["pagina"]
     contexto = {
         "titulo": "Motos",
@@ -72,17 +78,19 @@ def lista(
         "situacao": situacao,
         "busca": busca,
         "por_pagina": tamanho,
+        "ordem": ordem,
+        "ordenacao": cabecalhos(motos_lista.COLUNAS_ORDENAVEIS, campo, decrescente, lambda nova: _url_lista(situacao, busca, tamanho, ordem=nova)),
         "opcoes_por_pagina": OPCOES_POR_PAGINA,
         "status_rotulo": motos_lista.STATUS_ROTULO,
         "chips": [
-            (chave, rotulo, dados["contagem"][chave], _url_lista(chave, busca, tamanho))
+            (chave, rotulo, dados["contagem"][chave], _url_lista(chave, busca, tamanho, ordem=ordem))
             for chave, rotulo in (
                 (motos_lista.TODAS, "Todas"),
                 *((c, motos_lista.STATUS_ROTULO[c]) for c in motos_lista.STATUS_ORDEM),
             )
         ],
-        "url_anterior": _url_lista(situacao, busca, tamanho, p.pagina - 1) if p.tem_anterior else None,
-        "url_proxima": _url_lista(situacao, busca, tamanho, p.pagina + 1) if p.tem_proxima else None,
+        "url_anterior": _url_lista(situacao, busca, tamanho, p.pagina - 1, ordem) if p.tem_anterior else None,
+        "url_proxima": _url_lista(situacao, busca, tamanho, p.pagina + 1, ordem) if p.tem_proxima else None,
         "url_limpar": _url_lista(motos_lista.TODAS, "", tamanho),
         "filtrando": situacao != motos_lista.TODAS or bool(busca),
     }

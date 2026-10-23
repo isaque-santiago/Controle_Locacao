@@ -7,6 +7,7 @@ from collections import defaultdict
 from datetime import date
 
 from src.domain import motos_lista
+from src.domain.ordenacao import interpretar
 from src.domain.paginacao import calcular_pagina
 from src.domain.valores import hoje_br
 from src.services import (
@@ -33,10 +34,12 @@ def _locatarios_por_moto() -> dict[str, str]:
     }
 
 
-def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int) -> dict:
+def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, ordem: str = "") -> dict:
     registros = motos.listar()
     locatarios = _locatarios_por_moto()
     filtradas = motos_lista.filtrar_motos(registros, situacao, busca, locatarios)
+    campo, decrescente = interpretar(ordem, motos_lista.COLUNAS_ORDENAVEIS.values())
+    filtradas = motos_lista.ordenar_motos(filtradas, campo, decrescente, locatarios)
     recorte = calcular_pagina(len(filtradas), pagina, por_pagina)
 
     pagina_atual = filtradas[recorte.inicio : recorte.fim]

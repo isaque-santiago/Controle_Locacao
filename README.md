@@ -60,6 +60,10 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   (Cancelar, X, fundo ou Esc) com alterações pede "Descartar alterações?" no diálogo de confirmação. No envio, `form_dialogo` usa
   `hx-sync="this:drop"` e `hx-disabled-elt` (ignora cliques repetidos); formulários comuns recebem `data-enviando` (bloqueio por
   10 s, para não travar downloads) e o botão mostra um anel girando.
+- **Ordenação por coluna** (Motos, Clientes e Contratos): `?ordem=campo` (crescente) ou `?ordem=-campo` (decrescente); cada clique no
+  cabeçalho cicla crescente → decrescente → ordem padrão. Regras puras em `src/domain/ordenacao.py` (valores ausentes ficam no
+  fim) e `COLUNAS_ORDENAVEIS` de cada `*_lista.py`; a macro `tabela(..., ordenacao=)` põe `aria-sort` e o link no `<th>`. O
+  cabeçalho some em cartões, então no celular a ordem só vem da URL. Busca, chips e paginação preservam a ordem.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
