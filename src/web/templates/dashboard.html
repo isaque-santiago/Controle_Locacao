@@ -8,7 +8,7 @@
 <dl class="grade kpis">
   {{ kpi("Frota", d.frota_total ~ (" moto" if d.frota_total == 1 else " motos"), d.ocupacao ~ "% de ocupação") }}
   {{ kpi("Recebido no mês", d.recebido|moeda_compacta, "de " ~ (d.previsto|moeda_compacta) ~ " previstos (" ~ d.percentual_recebido ~ "%)") }}
-  {{ kpi("Em atraso", d.atrasado|moeda_compacta, d.clientes_atrasados ~ (" cliente atrasado" if d.clientes_atrasados == 1 else " clientes atrasados"), atencao=(d.atrasado > 0)) }}
+  {{ kpi("Em atraso", d.atrasado|moeda_compacta, d.clientes_atrasados ~ (" cliente atrasado" if d.clientes_atrasados == 1 else " clientes atrasados"), atencao=(d.atrasado > 0), href="/cobrancas?aba=atrasadas") }}
   {{ kpi("Manutenção no mês", d.manutencao_mes|moeda_compacta, d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas")) }}
 </dl>
 
