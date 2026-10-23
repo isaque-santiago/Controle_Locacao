@@ -4,8 +4,9 @@ from fastapi.routing import APIRoute
 
 from src.web.app import criar_app
 
-# Rotas públicas de propósito: login, saúde (healthcheck) e a página de componentes (só em desenvolvimento).
-PUBLICAS = {("GET", "/login"), ("POST", "/login"), ("GET", "/saude"), ("HEAD", "/saude")}
+# Rotas públicas de propósito: login, saúde (healthcheck), o ícone /favicon.ico (arquivo estático, sem dados) e a página de
+# componentes (só em desenvolvimento).
+PUBLICAS = {("GET", "/login"), ("POST", "/login"), ("GET", "/saude"), ("HEAD", "/saude"), ("GET", "/favicon.ico")}
 PROTEGIDAS_POR_SESSAO = {"exigir_dono", "exigir_locatario", "exigir_sessao"}
 CSRF = {"validar_csrf", "validar_csrf_login"}
 

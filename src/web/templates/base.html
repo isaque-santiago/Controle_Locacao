@@ -15,7 +15,7 @@
 <script src="{{ url_estatico('js/htmx.min.js') }}" defer></script>
 <script src="{{ url_estatico('js/app.js') }}" defer></script>
 </head>
-<body{% if csrf_token %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
+<body{% if csrf_token %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}{% if sessao_limite_segundos %} data-sessao-limite="{{ sessao_limite_segundos }}"{% endif %}>
 {% include "_icones.html" %}
 <div id="barra-carregamento" aria-hidden="true"></div>
 {% block corpo %}{% endblock %}

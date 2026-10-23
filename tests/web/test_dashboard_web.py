@@ -70,3 +70,10 @@ def test_dashboard_sem_dados_mostra_estados_vazios(cliente, monkeypatch):
     assert "Nenhuma cobrança vencendo hoje ou atrasada." in html
     assert "Nenhum alerta no momento." in html
     assert 'class="medidor"' not in html
+
+
+def test_kpi_em_atraso_leva_as_cobrancas_atrasadas(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert '<a href="/cobrancas?aba=atrasadas">Em atraso</a>' in html
+    assert cliente.get("/cobrancas?aba=atrasadas").status_code == 200

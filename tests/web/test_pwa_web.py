@@ -27,3 +27,8 @@ def test_pagina_de_login_aponta_para_o_manifesto_e_a_cor_do_tema(cliente):
     html = cliente.get("/login").text
     assert 'rel="manifest" href="/static/manifest.webmanifest' in html
     assert 'rel="apple-touch-icon"' in html and html.count('name="theme-color"') == 2
+
+
+def test_favicon_ico_nao_da_404(cliente):
+    resposta = cliente.get("/favicon.ico")
+    assert resposta.status_code == 200 and resposta.headers["content-type"] == "image/png"

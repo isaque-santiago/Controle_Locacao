@@ -127,9 +127,9 @@
 </div>
 {%- endmacro %}
 
-{# Indicador numérico. atencao=True pinta a borda de vermelho. #}
-{% macro kpi(rotulo, valor, detalhe=None, atencao=False) -%}
-<div class="kpi{{ ' atencao' if atencao else '' }}"><dt>{{ rotulo }}</dt><dd>{{ valor }}{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}</dd></div>
+{# Indicador numérico. atencao=True pinta a borda de vermelho. href (opcional) faz o cartão inteiro levar a outra página. #}
+{% macro kpi(rotulo, valor, detalhe=None, atencao=False, href=None) -%}
+<div class="kpi{{ ' atencao' if atencao else '' }}{{ ' kpi-link' if href else '' }}"><dt>{% if href %}<a href="{{ href }}">{{ rotulo }}</a>{% else %}{{ rotulo }}{% endif %}</dt><dd>{{ valor }}{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}</dd></div>
 {%- endmacro %}
 
 {# Tabela que vira cartões no celular. colunas: lista de (rotulo, classe_do_th).

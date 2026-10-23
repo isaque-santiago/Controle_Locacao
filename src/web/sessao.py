@@ -75,6 +75,11 @@ class ArmazemSessoes:
         if self._arquivo:
             self._carregar()
 
+    @property
+    def limite_inatividade(self) -> int:
+        """Segundos sem atividade até a sessão expirar (a tela avisa antes disso)."""
+        return self._limite
+
     def criar(
         self,
         *,

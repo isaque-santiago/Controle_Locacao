@@ -4,7 +4,7 @@ import logging
 import secrets
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 
 from src.domain import erros
 from src.domain.acesso_locatario import identificador_para_email
@@ -172,6 +172,12 @@ def entrar(
     )
     resposta.delete_cookie(COOKIE_CSRF_LOGIN, path="/login")
     return resposta
+
+
+@router.post("/sessao/renovar", dependencies=[Depends(validar_csrf)])
+async def renovar_sessao():
+    """Só passar pela dependência já renova o prazo de inatividade; o aviso de sessão chama isto em "Continuar conectado"."""
+    return Response(status_code=204)
 
 
 @router.post("/logout", dependencies=[Depends(validar_csrf)])

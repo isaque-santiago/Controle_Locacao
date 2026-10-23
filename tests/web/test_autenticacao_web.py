@@ -344,3 +344,19 @@ def test_catalogo_de_componentes_so_existe_em_desenvolvimento(servico, relogio):
     desenvolvimento = TestClient(criar_app(servico=servico, relogio=relogio, desenvolvimento=True))
     assert producao.get("/componentes").status_code == 404
     assert desenvolvimento.get("/componentes").status_code == 200
+
+
+# ---------- aviso de sessão prestes a expirar ----------
+
+def test_paginas_declaram_o_limite_de_inatividade_e_o_login_nao(cliente):
+    assert "data-sessao-limite" not in cliente.get("/login").text
+    entrar(cliente)
+    assert f'data-sessao-limite="{TRINTA_MINUTOS}"' in cliente.get("/").text
+
+
+def test_renovar_sessao_exige_login_e_csrf(cliente):
+    assert cliente.post("/sessao/renovar", follow_redirects=False).status_code == 303
+    entrar(cliente)
+    assert cliente.post("/sessao/renovar").status_code == 403
+    resposta = cliente.post("/sessao/renovar", headers={"X-CSRF-Token": csrf_da_sessao(cliente)})
+    assert resposta.status_code == 204 and resposta.content == b""

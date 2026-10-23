@@ -77,7 +77,7 @@
     ok.textContent = origem.getAttribute('data-confirmar-rotulo') || 'Confirmar';
     ok.classList.toggle('btn-perigo', !origem.hasAttribute('data-confirmar-neutro'));
     confirmarPendente = aoConfirmar;
-    dialogo.showModal();
+    if (!dialogo.open) dialogo.showModal();
     return true;
   }
   document.addEventListener('click', function (e) {
@@ -401,6 +401,64 @@
       novo.click();
     }
   });
+
+  // ---- Aviso de sessão prestes a expirar ----
+  // O servidor expira a sessão após data-sessao-limite segundos sem requisições. Cinco minutos antes, abre o diálogo de
+  // confirmação com "Continuar conectado" (POST /sessao/renovar); se o prazo passar, avisa que expirou e leva ao login.
+  // Qualquer requisição do HTMX bem-sucedida conta como atividade e reinicia a contagem.
+  var limiteSessao = parseInt(document.body.getAttribute('data-sessao-limite') || '0', 10);
+  if (limiteSessao > 0) {
+    var ultimaAtividade = Date.now();
+    var avisoEm = Math.max(limiteSessao - 300, Math.floor(limiteSessao / 2)) * 1000;
+    var relogioSessao = null;
+    var estadoSessao = 'ativa';  // 'ativa' | 'avisada' | 'expirada'
+    var origemAviso = document.createElement('span');
+    origemAviso.setAttribute('data-confirmar-neutro', '');
+
+    function csrfDaPagina() {
+      try { return JSON.parse(document.body.getAttribute('hx-headers') || '{}')['X-CSRF-Token'] || ''; } catch (erro) { return ''; }
+    }
+    function avisarSessaoExpirada() {
+      estadoSessao = 'expirada';
+      origemAviso.setAttribute('data-confirmar-titulo', 'Sessão expirada');
+      origemAviso.setAttribute('data-confirmar-rotulo', 'Entrar de novo');
+      pedirConfirmacao(origemAviso, 'Sua sessão expirou por inatividade. Entre de novo para continuar.', function () { location.assign('/login?expirou=1'); });
+    }
+    function avisarSessaoPrestesAExpirar() {
+      estadoSessao = 'avisada';
+      origemAviso.setAttribute('data-confirmar-titulo', 'Sessão prestes a expirar');
+      origemAviso.setAttribute('data-confirmar-rotulo', 'Continuar conectado');
+      pedirConfirmacao(origemAviso, 'Por inatividade, sua sessão termina em poucos minutos. Quer continuar conectado?', function () {
+        fetch('/sessao/renovar', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': csrfDaPagina() } })
+          .then(function (r) { if (r.ok && !r.redirected) reiniciarSessao(); else avisarSessaoExpirada(); },
+                function () { avisarSessaoExpirada(); });
+      });
+    }
+    function agendarSessao() {
+      window.clearTimeout(relogioSessao);
+      var parado = Date.now() - ultimaAtividade;
+      if (parado >= limiteSessao * 1000) { if (estadoSessao !== 'expirada') avisarSessaoExpirada(); return; }
+      if (parado >= avisoEm) {
+        if (estadoSessao === 'ativa') avisarSessaoPrestesAExpirar();
+        relogioSessao = window.setTimeout(agendarSessao, limiteSessao * 1000 - parado + 500);
+      } else {
+        relogioSessao = window.setTimeout(agendarSessao, avisoEm - parado);
+      }
+    }
+    function reiniciarSessao() {
+      ultimaAtividade = Date.now();
+      if (estadoSessao === 'avisada') {
+        var dialogo = document.getElementById('dlg-confirmar');
+        if (dialogo && dialogo.open) dialogo.close();
+      }
+      if (estadoSessao !== 'expirada') estadoSessao = 'ativa';
+      agendarSessao();
+    }
+    document.body.addEventListener('htmx:afterRequest', function (e) { if (e.detail.successful) reiniciarSessao(); });
+    // Aba em segundo plano: os temporizadores atrasam, então reconfere o prazo ao voltar
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) agendarSessao(); });
+    agendarSessao();
+  }
 
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
