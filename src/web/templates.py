@@ -79,6 +79,7 @@ def renderizar(
         "csrf_token": sessao.csrf_token if sessao else "",
         "tema": tema_do_cookie(request.cookies.get("tema")),
         "caminho_atual": request.url.path,
+        "sessao_limite_segundos": request.app.state.armazem.limite_inatividade if sessao else 0,
     }
     comum["avisos"] = _consumir_avisos(sessao, nome)
     comum.update(contexto or {})
