@@ -1,9 +1,10 @@
 {% from "componentes/macros.html" import filtro_colapsavel, selo, placa, tabela, paginacao, estado_vazio, botao %}
 <input type="hidden" name="status" value="{{ status }}">
+<input type="hidden" name="ordem" value="{{ ordem }}">
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 {% if d.itens %}
-{% call tabela([("Cliente", ""), ("Situação", ""), ("Moto", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num"), ("Ações", "col-acoes")], "Contratos", cartoes=True) %}
+{% call tabela([("Cliente", ""), ("Situação", ""), ("Moto", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num"), ("Ações", "col-acoes")], "Contratos", cartoes=True, ordenacao=ordenacao) %}
 {% for item in d.itens %}{% set c = item.contrato %}<tr>
 <td class="modelo{% if c.status != 'ativo' %} text-texto-3{% endif %}">{{ item.cliente_nome }}</td>
 <td class="k-d k-selo" data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else ("perigo" if c.status == "cancelado" else "neutro")) }}</td>

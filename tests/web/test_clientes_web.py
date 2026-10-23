@@ -158,3 +158,11 @@ def test_pagamentos_curtos_nao_mostram_paginacao_e_totais_ignoram_a_pagina(clien
     _muitas_cobrancas(base_clientes, 23)
     resumo = cliente.get(f"/clientes/{base_clientes.id}?pagina=3").text
     assert "R$ 2.300,00" in resumo  # em aberto soma as 23 parcelas, não só as da página
+
+
+def test_lista_de_clientes_oferece_ordenacao(cliente, base_clientes):
+    entrar(cliente)
+    html = cliente.get("/clientes?ordem=nome").text
+    assert 'aria-sort="ascending"' in html and 'id="ord-nome"' in html and 'href="/clientes?ordem=-nome"' in html
+    assert 'name="ordem" value="nome"' in html
+    assert 'aria-sort="ascending"' not in cliente.get("/clientes?ordem=xpto").text

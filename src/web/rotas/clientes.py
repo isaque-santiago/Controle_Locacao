@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from src.domain import clientes_lista
+from src.domain.ordenacao import cabecalhos, interpretar, valor_da_url
 from src.domain.paginacao import OPCOES_POR_PAGINA
 from src.web import dados_clientes
 from src.web.dependencias import exigir_dono
@@ -22,7 +23,7 @@ def _inteiro(valor, padrao):
         return padrao
 
 
-def _url_lista(status, busca, por_pagina, pagina=1):
+def _url_lista(status, busca, por_pagina, pagina=1, ordem=""):
     parametros = {}
     if status != clientes_lista.TODOS:
         parametros["status"] = status
@@ -30,6 +31,8 @@ def _url_lista(status, busca, por_pagina, pagina=1):
         parametros["q"] = busca
     if por_pagina != OPCOES_POR_PAGINA[0]:
         parametros["por_pagina"] = por_pagina
+    if ordem:
+        parametros["ordem"] = ordem
     if pagina > 1:
         parametros["pagina"] = pagina
     return "/clientes" + (f"?{urlencode(parametros)}" if parametros else "")
@@ -41,21 +44,24 @@ def _so_resultado(request):
 
 @router.get("/clientes")
 def lista(request: Request, status: str | None = None, q: str | None = None, pagina: str | None = None,
-          por_pagina: str | None = None, _: Sessao = Depends(exigir_dono)):
+          por_pagina: str | None = None, ordem: str | None = None, _: Sessao = Depends(exigir_dono)):
     status = clientes_lista.status_valido(status)
     busca = (q or "").strip()[:80]
     tamanho = _inteiro(por_pagina, OPCOES_POR_PAGINA[0])
     if tamanho not in OPCOES_POR_PAGINA:
         tamanho = OPCOES_POR_PAGINA[0]
-    dados = dados_clientes.carregar_lista(status, busca, _inteiro(pagina, 1), tamanho)
+    campo, decrescente = interpretar(ordem, clientes_lista.COLUNAS_ORDENAVEIS.values())
+    ordem = valor_da_url(campo, decrescente)
+    dados = dados_clientes.carregar_lista(status, busca, _inteiro(pagina, 1), tamanho, ordem)
     p = dados["pagina"]
     contexto = {
-        "titulo": "Clientes", "d": dados, "status": status, "busca": busca, "por_pagina": tamanho,
+        "titulo": "Clientes", "d": dados, "status": status, "busca": busca, "por_pagina": tamanho, "ordem": ordem,
+        "ordenacao": cabecalhos(clientes_lista.COLUNAS_ORDENAVEIS, campo, decrescente, lambda nova: _url_lista(status, busca, tamanho, ordem=nova)),
         "opcoes_por_pagina": OPCOES_POR_PAGINA, "status_rotulo": clientes_lista.STATUS_ROTULO,
-        "chips": [(chave, rotulo, dados["total_cadastrados"] if chave == clientes_lista.TODOS else dados["contagem"][chave], _url_lista(chave, busca, tamanho))
+        "chips": [(chave, rotulo, dados["total_cadastrados"] if chave == clientes_lista.TODOS else dados["contagem"][chave], _url_lista(chave, busca, tamanho, ordem=ordem))
                   for chave, rotulo in ((clientes_lista.TODOS, "Todos"), *((x, clientes_lista.STATUS_ROTULO[x]) for x in clientes_lista.STATUS_ORDEM))],
-        "url_anterior": _url_lista(status, busca, tamanho, p.pagina - 1) if p.tem_anterior else None,
-        "url_proxima": _url_lista(status, busca, tamanho, p.pagina + 1) if p.tem_proxima else None,
+        "url_anterior": _url_lista(status, busca, tamanho, p.pagina - 1, ordem) if p.tem_anterior else None,
+        "url_proxima": _url_lista(status, busca, tamanho, p.pagina + 1, ordem) if p.tem_proxima else None,
         "url_limpar": _url_lista(clientes_lista.TODOS, "", tamanho), "filtrando": status != clientes_lista.TODOS or bool(busca),
     }
     return renderizar(request, "clientes/_resultado.html" if _so_resultado(request) else "clientes/lista.html", contexto)

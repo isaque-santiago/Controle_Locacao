@@ -8,13 +8,14 @@ from decimal import Decimal
 
 from src.domain import clientes_lista, contratos_lista
 from src.domain.encerramento import resumo_encerramento
+from src.domain.ordenacao import interpretar
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, contratos, manutencao, motos, vistorias
 
 _TIPOS_VISTORIA = (("entrega", "Entrega"), ("devolucao", "Devolução"))
 
 
-def carregar_lista(status, busca, pagina, por_pagina):
+def carregar_lista(status, busca, pagina, por_pagina, ordem=""):
     registros = contratos.listar()
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
     frota = {m["id"]: m for m in motos.listar()}
@@ -23,7 +24,7 @@ def carregar_lista(status, busca, pagina, por_pagina):
          "placa": (frota.get(c["moto_id"]) or {}).get("placa", "")}
         for c in registros
     ]
-    pagina_itens, recorte, contagem = contratos_lista.montar_pagina(itens, status, busca, pagina, por_pagina)
+    pagina_itens, recorte, contagem = contratos_lista.montar_pagina(itens, status, busca, pagina, por_pagina, *interpretar(ordem, contratos_lista.COLUNAS_ORDENAVEIS.values()))
     return {"itens": pagina_itens, "pagina": recorte, "contagem": contagem, "total_cadastrados": len(registros),
             "total_ativos": contagem["ativo"]}
 

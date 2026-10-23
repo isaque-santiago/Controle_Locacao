@@ -3,15 +3,16 @@
 from decimal import Decimal
 
 from src.domain import clientes_lista
+from src.domain.ordenacao import interpretar
 from src.domain.paginacao import OPCOES_POR_PAGINA, calcular_pagina
 from src.domain.cnh_regras import situacao_cnh
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, configuracoes, contratos, motos, portal_locatario
 
 
-def carregar_lista(status, busca, pagina, por_pagina):
+def carregar_lista(status, busca, pagina, por_pagina, ordem=""):
     registros = clientes.listar()
-    itens, recorte, contagem = clientes_lista.montar_pagina(registros, status, busca, pagina, por_pagina)
+    itens, recorte, contagem = clientes_lista.montar_pagina(registros, status, busca, pagina, por_pagina, *interpretar(ordem, clientes_lista.COLUNAS_ORDENAVEIS.values()))
     contratos_ativos = {c["cliente_id"]: c for c in contratos.listar() if c["status"] == "ativo"}
     placas = {m["id"]: m["placa"] for m in motos.listar()}
     alerta = configuracoes.obter()["alerta_cnh_dias"]

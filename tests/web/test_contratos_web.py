@@ -77,3 +77,10 @@ def test_tipo_da_cobranca_aparece_com_acento_na_ficha_do_contrato_e_do_cliente(c
     assert "Caução" in contrato and "Locação" in contrato and "Caucao" not in contrato
     base_clientes.cobrancas[0]["tipo"] = "multa_transito"
     assert "Multa de trânsito" in cliente.get(f"/clientes/{base_clientes.id}?aba=pagamentos").text
+
+
+def test_lista_ordena_pela_coluna_na_url(cliente, base_contratos):
+    entrar(cliente)
+    html = cliente.get("/contratos?status=todos&ordem=-valor").text
+    assert 'aria-sort="descending"' in html and 'href="/contratos?status=todos"' in html  # terceiro clique volta ao padrão
+    assert 'name="ordem" value="-valor"' in html

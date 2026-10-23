@@ -338,6 +338,14 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 table.dados {width: 100%; border-collapse: collapse;}
 .dados th {text-align: left; font-weight: 600; font-size: 12.5px; color: var(--texto-2); padding: var(--e3) var(--e4); background: var(--superficie-hover); border-bottom: 1px solid var(--linha);}
 .dados td {padding: var(--e3) var(--e4); border-top: 1px solid var(--linha-sutil); vertical-align: middle;}
+/* Cabeçalho ordenável (só aparece na tabela; em cartões o thead some) */
+.dados th a.ordenar {display: inline-flex; align-items: center; gap: var(--e1); color: inherit; text-decoration: none; border-radius: var(--raio-campo);}
+.dados th a.ordenar:hover {color: var(--texto);}
+.dados th .ordenar-seta {width: 14px; height: 14px; opacity: 0; transition: opacity 150ms ease, transform 150ms ease;}
+.dados th:hover .ordenar-seta, .dados th a.ordenar:focus-visible .ordenar-seta {opacity: .45;}
+.dados th[aria-sort="ascending"] .ordenar-seta, .dados th[aria-sort="descending"] .ordenar-seta {opacity: 1;}
+.dados th[aria-sort="descending"] .ordenar-seta {transform: rotate(180deg);}
+@media (prefers-reduced-motion: reduce) {.dados th .ordenar-seta {transition: none;}}
 .dados tbody tr:first-child td {border-top: 0;}
 .dados tbody tr:hover {background: var(--superficie-hover);}
 .dados td.num, .dados th.num {text-align: right;}
