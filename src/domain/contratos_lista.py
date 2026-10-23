@@ -2,6 +2,9 @@
 
 import re
 
+from decimal import Decimal
+
+from src.domain.ordenacao import ordenar
 from src.domain.paginacao import calcular_pagina
 
 TODOS = "todos"
@@ -36,9 +39,27 @@ def filtrar(itens: list[dict], status: str, busca: str) -> list[dict]:
     ]
 
 
-def montar_pagina(itens, status, busca, pagina, por_pagina):
-    """Itens da página, recorte e contagem por situação (a contagem ignora filtro e busca)."""
+# Coluna da tabela -> campo da URL (`?ordem=inicio`, `?ordem=-inicio` para decrescente)
+COLUNAS_ORDENAVEIS = {"Cliente": "cliente", "Situação": "situacao", "Moto": "placa", "Início": "inicio", "Valor / período": "valor"}
+
+
+def ordenar_contratos(itens, campo, decrescente):
+    chaves = {
+        "cliente": lambda i: (i.get("cliente_nome") or "").casefold() or None,
+        "situacao": lambda i: STATUS_ORDEM.index(i["contrato"]["status"]) if i["contrato"].get("status") in STATUS_ORDEM else len(STATUS_ORDEM),
+        "placa": lambda i: re.sub(r"[^a-z0-9]", "", (i.get("placa") or "").casefold()) or None,
+        "inicio": lambda i: str(i["contrato"]["data_inicio"])[:10] if i["contrato"].get("data_inicio") else None,
+        "valor": lambda i: Decimal(str(i["contrato"]["valor_periodo"])) if i["contrato"].get("valor_periodo") is not None else None,
+    }
+    return ordenar(itens, campo, decrescente, chaves)
+
+
+def montar_pagina(itens, status, busca, pagina, por_pagina, campo=None, decrescente=False):
+    """Itens da página, recorte e contagem por situação (a contagem ignora filtro e busca).
+
+    Sem `campo`, do início mais recente para o mais antigo; com `campo`, essa ordem desempata."""
     filtrados = sorted(filtrar(itens, status, busca), key=lambda i: i["contrato"]["data_inicio"], reverse=True)
+    filtrados = ordenar_contratos(filtrados, campo, decrescente)
     recorte = calcular_pagina(len(filtrados), pagina, por_pagina)
     contagem = {chave: sum(i["contrato"].get("status") == chave for i in itens) for chave in STATUS_ORDEM}
     return filtrados[recorte.inicio:recorte.fim], recorte, contagem

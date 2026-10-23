@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import date
 
+from src.domain.ordenacao import ordenar
+
 STATUS_ROTULO = {
     "disponivel": "Disponível",
     "alugada": "Alugada",
@@ -69,6 +71,23 @@ def filtrar_motos(
                 continue
         resultado.append(moto)
     return resultado
+
+
+# Coluna da tabela -> campo da URL (`?ordem=km`, `?ordem=-km` para decrescente)
+COLUNAS_ORDENAVEIS = {"Placa": "placa", "Moto": "moto", "Situação": "situacao", "Km": "km", "Locatário": "locatario"}
+
+
+def ordenar_motos(motos: list[dict], campo: str | None, decrescente: bool, locatarios: dict[str, str] | None = None) -> list[dict]:
+    """Ordena a lista pela coluna escolhida (sem `campo`, mantém a ordem recebida)."""
+    locatarios = locatarios or {}
+    chaves = {
+        "placa": lambda m: (m["placa"] or "").casefold() or None,
+        "moto": lambda m: f"{m['marca']} {m['modelo']}".casefold(),
+        "situacao": lambda m: STATUS_ORDEM.index(m["status"]) if m["status"] in STATUS_ORDEM else len(STATUS_ORDEM),
+        "km": lambda m: m["km_atual"],
+        "locatario": lambda m: (locatarios.get(m["id"]) or "").casefold() or None,
+    }
+    return ordenar(motos, campo, decrescente, chaves)
 
 
 @dataclass(frozen=True)

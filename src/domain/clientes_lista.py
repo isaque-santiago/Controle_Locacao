@@ -2,6 +2,7 @@
 
 import re
 
+from src.domain.ordenacao import ordenar
 from src.domain.paginacao import calcular_pagina
 
 TODOS = "todos"
@@ -32,8 +33,22 @@ def filtrar(registros: list[dict], status: str, busca: str) -> list[dict]:
     ]
 
 
-def montar_pagina(registros, status, busca, pagina, por_pagina):
-    filtrados = filtrar(registros, status, busca)
+# Coluna da tabela -> campo da URL (`?ordem=nome`, `?ordem=-nome` para decrescente)
+COLUNAS_ORDENAVEIS = {"Cliente": "nome", "Situação": "situacao", "CPF": "cpf", "CNH": "cnh"}
+
+
+def ordenar_clientes(registros, campo, decrescente):
+    chaves = {
+        "nome": lambda c: (c.get("nome") or "").casefold() or None,
+        "situacao": lambda c: STATUS_ORDEM.index(c["status"]) if c.get("status") in STATUS_ORDEM else len(STATUS_ORDEM),
+        "cpf": lambda c: re.sub(r"\D", "", c.get("cpf") or "") or None,
+        "cnh": lambda c: str(c["cnh_validade"])[:10] if c.get("cnh_validade") else None,
+    }
+    return ordenar(registros, campo, decrescente, chaves)
+
+
+def montar_pagina(registros, status, busca, pagina, por_pagina, campo=None, decrescente=False):
+    filtrados = ordenar_clientes(filtrar(registros, status, busca), campo, decrescente)
     recorte = calcular_pagina(len(filtrados), pagina, por_pagina)
     contagem = {chave: sum(c.get("status") == chave for c in registros) for chave in STATUS_ORDEM}
     return filtrados[recorte.inicio:recorte.fim], recorte, contagem
