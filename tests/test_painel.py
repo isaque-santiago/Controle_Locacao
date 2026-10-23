@@ -115,3 +115,50 @@ def test_alertas_de_documento_e_cnh():
     assert itens[1].descricao == "próximos 30 dias"
     assert itens[2].descricao == "Ana · 01/09/2026"
     assert itens[2].area == "clientes"
+
+
+# ---------------------------------------------------------------- variação mês a mês --
+
+def test_periodo_anterior_e_o_mesmo_intervalo_do_mes_passado():
+    assert painel.periodo_anterior(date(2026, 10, 23)) == (date(2026, 9, 1), date(2026, 9, 23))
+    assert painel.periodo_anterior(date(2026, 10, 31)) == (date(2026, 9, 1), date(2026, 9, 30))  # setembro tem 30 dias
+    assert painel.periodo_anterior(date(2026, 3, 30)) == (date(2026, 2, 1), date(2026, 2, 28))
+    assert painel.periodo_anterior(date(2028, 3, 30)) == (date(2028, 2, 1), date(2028, 2, 29))  # bissexto
+    assert painel.periodo_anterior(date(2026, 1, 15)) == (date(2025, 12, 1), date(2025, 12, 15))  # virada de ano
+
+
+def test_variacao_calcula_diferenca_e_percentual_em_decimal():
+    v = painel.variacao(Decimal("1120.00"), Decimal("1000.00"))
+    assert (v.sentido, v.diferenca, v.percentual) == ("mais", Decimal("120.00"), Decimal("12"))
+    v = painel.variacao(Decimal("850"), Decimal("1000"))
+    assert (v.sentido, v.diferenca) == ("menos", Decimal("-150")) and v.percentual == Decimal("-15")
+    assert painel.variacao(Decimal("500"), Decimal("500")).sentido == "igual"
+
+
+def test_variacao_sem_base_e_sem_nada_a_comparar():
+    v = painel.variacao(Decimal("300"), Decimal("0"))
+    assert v.sentido == "sem_base" and v.percentual is None
+    assert painel.variacao(Decimal("0"), Decimal("0")) is None
+    assert painel.variacao(0, None) is None
+
+
+def test_descricao_usa_tom_conforme_o_que_e_bom():
+    mais = painel.variacao(Decimal("1120"), Decimal("1000"))
+    receita = painel.descrever_variacao(mais, "setembro", subir_e_bom=True)
+    assert receita["tom"] == "bom" and receita["seta"] == "↑"
+    assert receita["texto"] == "R$ 120 a mais (+12%) que no mesmo período de setembro."
+    custo = painel.descrever_variacao(mais, "setembro", subir_e_bom=False)
+    assert custo["tom"] == "ruim"
+    menos = painel.descrever_variacao(painel.variacao(Decimal("850"), Decimal("1000")), "setembro", subir_e_bom=False)
+    assert menos["tom"] == "bom" and menos["seta"] == "↓" and "R$ 150 a menos (−15%)" in menos["texto"]
+
+
+def test_descricao_casos_de_borda():
+    assert painel.descrever_variacao(None, "setembro", True) is None
+    sem_base = painel.descrever_variacao(painel.variacao(Decimal("300"), Decimal("0")), "setembro", True)
+    assert sem_base["tom"] == "neutro" and "Sem base de comparação" in sem_base["texto"]
+    igual = painel.descrever_variacao(painel.variacao(Decimal("5"), Decimal("5")), "setembro", True)
+    assert igual["tom"] == "neutro" and igual["texto"].startswith("Igual")
+    # diferença menor que R$ 1: mostra centavos (nunca "R$ 0 a mais") e percentual "menos de 1%"
+    pequena = painel.descrever_variacao(painel.variacao(Decimal("1000.40"), Decimal("1000")), "setembro", True)
+    assert "R$ 0,40 a mais (menos de 1%)" in pequena["texto"]
