@@ -50,6 +50,8 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Ficha com abas** (`macros.abas_remotas`): cada aba carrega o painel por HTMX, com URL própria
   (`/motos/{id}?aba=plano`); o servidor devolve as abas junto do painel (swap fora de banda), então o botão
   voltar do navegador fica coerente. Setas movem o foco, Enter abre.
+- **Falha de rede do HTMX** (`static/js/app.js`): `htmx:sendError` e `htmx:timeout` (limite de 60 s, em `htmx-config`)
+  mostram um aviso de erro em `#avisos` (ou dentro do diálogo aberto) e ele some na próxima requisição bem-sucedida.
 - **Formulário em diálogo** (`macros.form_dialogo`, `rotas/motos_formularios.py`): o diálogo `#dlg-form` abre ao
   chegar o conteúdo; a validação é no servidor, campo a campo (`src/domain/formulario_moto.py`): com erro o mesmo
   formulário volta com a mensagem ao lado do campo; com sucesso vem `HX-Redirect` e um aviso de confirmação
