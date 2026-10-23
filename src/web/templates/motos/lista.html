@@ -8,7 +8,7 @@
 {{ botao("Nova moto", variante="primario", icone_nome="novo", extra='hx-get="/motos/nova" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 
-<form id="filtros" role="search" action="/motos" method="get" hx-get="/motos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
+<form id="filtros" data-lembrar-filtros role="search" action="/motos" method="get" hx-get="/motos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
   <div class="barra-filtros">
     <div class="entrada-icone">
       {{ icone("busca") }}

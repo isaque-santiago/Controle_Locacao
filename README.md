@@ -64,6 +64,9 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   cabeçalho cicla crescente → decrescente → ordem padrão. Regras puras em `src/domain/ordenacao.py` (valores ausentes ficam no
   fim) e `COLUNAS_ORDENAVEIS` de cada `*_lista.py`; a macro `tabela(..., ordenacao=)` põe `aria-sort` e o link no `<th>`. O
   cabeçalho some em cartões, então no celular a ordem só vem da URL. Busca, chips e paginação preservam a ordem.
+- **Filtros lembrados** (Motos, Clientes, Contratos, Vistorias e Documentos; `<form id="filtros" data-lembrar-filtros>`): o `app.js`
+  guarda na aba (`sessionStorage`) a query da URL (busca, filtro, ordem, "por página"). Voltar da ficha pelo "Voltar" ou pelo menu
+  para o endereço puro da lista reabre com ela. "Limpar filtros" apaga o guardado; sair da conta apaga tudo.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.

@@ -151,3 +151,8 @@ def test_ordem_invalida_volta_ao_padrao_e_paginacao_mantem_a_ordem(cliente):
     assert 'aria-sort="ascending"' not in html and 'aria-sort="descending"' not in html
     assert 'name="ordem" value=""' in html
     assert "ordem=km" in cliente.get("/motos?ordem=km&situacao=disponivel", headers=HTMX).text  # chips preservam a ordem
+
+
+def test_formulario_de_filtros_pede_para_lembrar_a_busca(cliente):
+    entrar(cliente)
+    assert '<form id="filtros" data-lembrar-filtros' in cliente.get("/motos").text
