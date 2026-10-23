@@ -79,6 +79,8 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   Requisições do HTMX bem-sucedidas reiniciam a contagem.
 - **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
   filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
+- **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com
+  3:1 (`--borda-campo`); alvos de toque ≥ 44 px medidos em 13 páginas (390 e 1280 px), sem exceções; `/favicon.ico` deixou de dar 404.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.

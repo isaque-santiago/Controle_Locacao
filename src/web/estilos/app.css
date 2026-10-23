@@ -38,6 +38,7 @@
   --marca: #F2B705; --marca-hover: #FFC933; --grafite: #1E2227; --grafite-700: #2B3036;
   --fundo: #EEF0F0; --superficie: #FAFAF9; --superficie-elevada: #FFFFFF; --superficie-hover: #F1F2F1;
   --linha: rgba(30,34,39,.12); --linha-sutil: rgba(30,34,39,.07); --linha-forte: rgba(30,34,39,.28);
+  --borda-campo: #8A9096; /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
   --texto: #1E2227; --texto-2: #585F66; --texto-3: #646B72; --texto-invertido: #FAFAF9;
   --sucesso: #2F9E6E; --sucesso-texto: #1B6F4D; --sucesso-fundo: rgba(47,158,110,.12);
   --alerta: #F2B705;  --alerta-texto: #7A5A00;  --alerta-fundo: rgba(242,183,5,.18);
@@ -68,6 +69,7 @@
 :root[data-tema="escuro"] {
   --fundo: #121518; --superficie: #1A1E22; --superficie-elevada: #21262B; --superficie-hover: #272D33;
   --linha: rgba(255,255,255,.12); --linha-sutil: rgba(255,255,255,.07); --linha-forte: rgba(255,255,255,.3);
+  --borda-campo: #7C858D;
   --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
   --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
   --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
@@ -86,6 +88,7 @@
   :root:not([data-tema="claro"]) {
     --fundo: #121518; --superficie: #1A1E22; --superficie-elevada: #21262B; --superficie-hover: #272D33;
     --linha: rgba(255,255,255,.12); --linha-sutil: rgba(255,255,255,.07); --linha-forte: rgba(255,255,255,.3);
+    --borda-campo: #7C858D;
     --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
     --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
     --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
@@ -143,7 +146,6 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .nav-item[aria-current="page"] {background: var(--lateral-ativo); color: var(--lateral-forte);}
 .nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
 .nav-item .i {opacity: .9;}
-.nav-contagem {margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 99px; background: var(--perigo); color: #fff; font: 600 12px/20px var(--fonte-mono); text-align: center;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
 .topo-desktop {display: flex; justify-content: flex-end; padding: var(--e3) var(--pad) 0;}
 .conta {position: relative;}
@@ -165,8 +167,6 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .conta-id span {font-size: 12px; color: var(--lateral-sub); overflow-wrap: anywhere;}
 .conta-movel .avatar {cursor: pointer; width: var(--alvo); height: var(--alvo);}
 .avatar {width: 32px; height: 32px; border-radius: 50%; background: var(--lateral-avatar); border: 1px solid var(--lateral-linha); display: grid; place-items: center; font: 600 13px var(--fonte-ui); flex: none;}
-.btn-lateral {display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--lateral-texto); cursor: pointer; width: 100%; text-align: left;}
-.btn-lateral:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
 
 /* Topo do celular e barra inferior: ocultos fora do celular */
 .topo-movel, .barra-inferior, .conta-movel {display: none;}
@@ -186,8 +186,6 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
   .conta-cartao {justify-content: center; padding: var(--e2) 0;}
   .conta-menu {left: 0; right: auto; min-width: 140px;}
   .nav-item[aria-current="page"]::before {left: -8px;}
-  .nav-contagem {position: absolute; top: 2px; right: 2px; min-width: 18px; font-size: 11px; line-height: 16px; padding: 0 4px;}
-  .btn-lateral {justify-content: center; padding: 0;}
 }
 
 /* Celular: topo enxuto + barra inferior com polegar */
@@ -206,7 +204,6 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
   .barra-inferior [aria-current="page"] {color: var(--texto); font-weight: 600;}
   .barra-inferior [aria-current="page"]::before {content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--marca);}
   .barra-inferior .i {width: 22px; height: 22px;}
-  .barra-inferior .nav-contagem {position: absolute; top: 6px; left: calc(50% + 6px); min-width: 18px; font-size: 11px; line-height: 16px; padding: 0 4px;}
 }
 
 /* ---------- Cabeçalho de página ---------- */
@@ -255,7 +252,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
 .campo small {color: var(--texto-3); font-size: 12px;}
-.entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--linha-forte); background: var(--superficie-elevada);}
+.entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--borda-campo); background: var(--superficie-elevada);}
 .entrada:hover {border-color: var(--texto-2);}
 .entrada:focus {outline: 3px solid var(--foco-halo); border-color: var(--foco);}
 .entrada-icone {position: relative;}
@@ -346,7 +343,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 .dados th {text-align: left; font-weight: 600; font-size: 12.5px; color: var(--texto-2); padding: var(--e3) var(--e4); background: var(--superficie-hover); border-bottom: 1px solid var(--linha);}
 .dados td {padding: var(--e3) var(--e4); border-top: 1px solid var(--linha-sutil); vertical-align: middle;}
 /* Cabeçalho ordenável (só aparece na tabela; em cartões o thead some) */
-.dados th a.ordenar {display: inline-flex; align-items: center; gap: var(--e1); color: inherit; text-decoration: none; border-radius: var(--raio-campo);}
+.dados th a.ordenar {display: inline-flex; align-items: center; gap: var(--e1); min-height: var(--alvo); margin-block: calc(var(--e3) * -1); color: inherit; text-decoration: none; border-radius: var(--raio-campo);}
 .dados th a.ordenar:hover {color: var(--texto);}
 .dados th .ordenar-seta {width: 14px; height: 14px; opacity: 0; transition: opacity 150ms ease, transform 150ms ease;}
 .dados th:hover .ordenar-seta, .dados th a.ordenar:focus-visible .ordenar-seta {opacity: .45;}
@@ -361,7 +358,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 /* Ações da linha: comprovante (link discreto) à esquerda e botões compactos alinhados à direita, sempre numa linha só */
 .acoes-linha {display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--e2) var(--e3);}
 .acoes-linha .comprovante {font-size: 13px; color: var(--texto-3); white-space: nowrap; margin-right: var(--e1);}
-.acoes-linha a.comprovante {color: var(--texto-2); text-decoration: underline; text-underline-offset: 3px;}
+.acoes-linha a.comprovante {display: inline-flex; align-items: center; justify-content: center; min-height: var(--alvo); color: var(--texto-2); text-decoration: underline; text-underline-offset: 3px;}
 .acoes-linha a.comprovante:hover {color: var(--texto);}
 .acoes-linha .botoes {display: flex; gap: var(--e2);}
 /* Histórico de manutenção: Concluir e Cancelar centralizados na coluna, com a mesma largura */
@@ -679,7 +676,7 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .acoes-rel .barra-periodo, .acoes-rel .exportar-rel {flex-wrap: nowrap;}
 .acoes-rel .btn, .acoes-rel .chip {white-space: nowrap;}
 .acoes-rel .exportar-rel {margin-left: auto;}
-.aplicar-periodo {white-space: nowrap; padding: 0 var(--e1); border: 0; background: none; color: var(--btn); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;}
+.aplicar-periodo {white-space: nowrap; min-height: var(--alvo); padding: 0 var(--e1); border: 0; background: none; color: var(--btn); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;}
 .aplicar-periodo:hover {text-decoration-thickness: 2px;}
 .acoes-rel:not(:has(.barra-periodo)), .acoes-rel-resultado, .acoes-rel-fluxo {justify-content: space-between;}
 .acoes-rel:not(:has(.barra-periodo)) {justify-content: flex-end;}
