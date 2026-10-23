@@ -116,6 +116,10 @@ DADOS_PAINEL = {
     "clientes_atrasados": 1,
     "manutencao_mes": Decimal("85.00"),
     "ordens_concluidas": 1,
+    "variacoes": {
+        "recebido": {"seta": "↑", "tom": "bom", "texto": "R$ 120 a mais (+9%) que no mesmo período de setembro."},
+        "manutencao": {"seta": "↓", "tom": "bom", "texto": "R$ 40 a menos (−32%) que no mesmo período de setembro."},
+    },
     "hoje": [
         {"id": "c1", "cliente": "Joana <b>Prado</b>", "placa": "QRS4T21", "vencimento": "2026-10-01",
          "valor": Decimal("320.00"), "atrasada": True, "dias_atraso": 5},

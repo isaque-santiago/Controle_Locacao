@@ -2,7 +2,10 @@
 
 from dataclasses import dataclass
 from datetime import date
-from decimal import Decimal
+from calendar import monthrange
+from decimal import ROUND_HALF_UP, Decimal
+
+from src.domain.formatadores import formatar_moeda, formatar_moeda_compacta
 
 STATUS_FROTA = ("alugada", "disponivel", "manutencao", "inativa")
 # Rótulo no plural, usado na legenda do medidor de ocupação.
@@ -105,6 +108,81 @@ def percentual_recebido(recebido: Decimal, previsto: Decimal) -> int:
     if not previsto:
         return 0
     return max(0, min(100, round(100 * recebido / previsto)))
+
+
+# ----------------------------------------------------- variação mês a mês --
+
+SENTIDO_MAIS = "mais"
+SENTIDO_MENOS = "menos"
+SENTIDO_IGUAL = "igual"
+SENTIDO_SEM_BASE = "sem_base"
+TOM_BOM = "bom"
+TOM_RUIM = "ruim"
+TOM_NEUTRO = "neutro"
+
+
+def nome_do_mes(data: date) -> str:
+    return _MESES[data.month - 1]
+
+
+def periodo_anterior(hoje: date) -> tuple[date, date]:
+    """Mesmo intervalo do mês anterior: do dia 1 até o dia de `hoje` (limitado ao último dia, se o mês anterior for mais curto).
+
+    Em 23/10 compara 01–23/09; em 31/10 compara 01–30/09. Comparar com o mês anterior inteiro faria todo começo de mês parecer queda."""
+    ano, mes = (hoje.year - 1, 12) if hoje.month == 1 else (hoje.year, hoje.month - 1)
+    return date(ano, mes, 1), date(ano, mes, min(hoje.day, monthrange(ano, mes)[1]))
+
+
+@dataclass(frozen=True)
+class Variacao:
+    sentido: str  # SENTIDO_*
+    diferenca: Decimal  # atual - anterior
+    percentual: Decimal | None  # None sem base de comparação
+
+
+def variacao(atual: Decimal, anterior: Decimal) -> Variacao | None:
+    """None quando os dois valores são zero (nada a comparar)."""
+    atual, anterior = Decimal(str(atual or 0)), Decimal(str(anterior or 0))
+    if not atual and not anterior:
+        return None
+    diferenca = atual - anterior
+    if not anterior:
+        return Variacao(SENTIDO_SEM_BASE, diferenca, None)
+    percentual = 100 * diferenca / anterior
+    if not diferenca:
+        return Variacao(SENTIDO_IGUAL, diferenca, percentual)
+    return Variacao(SENTIDO_MAIS if diferenca > 0 else SENTIDO_MENOS, diferenca, percentual)
+
+
+def _valor_da_diferenca(diferenca: Decimal) -> str:
+    """Reais inteiros; com diferença menor que R$ 1, mostra os centavos para não aparecer `R$ 0` ao lado de "a mais"."""
+    absoluta = abs(diferenca)
+    return formatar_moeda(absoluta) if absoluta < 1 else formatar_moeda_compacta(absoluta)
+
+
+def _percentual_texto(percentual: Decimal) -> str:
+    arredondado = abs(percentual).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    if not arredondado:
+        return "menos de 1%"
+    return f"{'+' if percentual > 0 else '−'}{arredondado}%"
+
+
+def descrever_variacao(v: Variacao | None, mes_anterior: str, subir_e_bom: bool) -> dict | None:
+    """Texto, seta e tom (bom/ruim/neutro) da linha de variação de um indicador.
+
+    `subir_e_bom`: recebido sobe = bom; custo de manutenção sobe = ruim. O texto sempre diz "a mais" ou "a menos":
+    a seta e a cor nunca são a única indicação."""
+    if v is None:
+        return None
+    periodo = f"no mesmo período de {mes_anterior}"
+    if v.sentido == SENTIDO_SEM_BASE:
+        return {"seta": "", "tom": TOM_NEUTRO, "texto": f"Sem base de comparação: nada registrado {periodo}."}
+    if v.sentido == SENTIDO_IGUAL:
+        return {"seta": "=", "tom": TOM_NEUTRO, "texto": f"Igual ao que foi registrado {periodo}."}
+    subiu = v.sentido == SENTIDO_MAIS
+    tom = TOM_BOM if subiu == subir_e_bom else TOM_RUIM
+    quanto = f"{_valor_da_diferenca(v.diferenca)} a {'mais' if subiu else 'menos'} ({_percentual_texto(v.percentual)})"
+    return {"seta": "↑" if subiu else "↓", "tom": tom, "texto": f"{quanto} que {periodo}."}
 
 
 # ---------------------------------------------------------------- cobranças --

@@ -2,6 +2,7 @@
 
 from collections import defaultdict
 from decimal import Decimal
+from src.domain import painel
 from src.domain.valores import hoje_br
 from src.domain.relatorios import valor
 from src.services import relatorios, motos, cobrancas, clientes
@@ -12,7 +13,9 @@ def resumo():
     frota = motos.listar()
     parcelas = cobrancas.listar()
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
-    mensal = relatorios.resultado_por_moto(hoje.replace(day=1), hoje)["resultado"]
+    inicio_anterior, fim_anterior = painel.periodo_anterior(hoje)
+    atual, anterior = relatorios.resultados_por_periodos([(hoje.replace(day=1), hoje), (inicio_anterior, fim_anterior)])
+    mensal, mensal_anterior = atual["resultado"], anterior["resultado"]
     devedores = defaultdict(lambda: Decimal(0))
     for c in parcelas:
         if c["situacao"] == "atrasada":
@@ -22,6 +25,9 @@ def resumo():
         "cobrancas": parcelas,
         "recebido": sum((r["receita_recebida"] for r in mensal), Decimal(0)),
         "manutencao": sum((r["custo_manutencao"] for r in mensal), Decimal(0)),
+        # Mesmo intervalo do mês anterior (ver painel.periodo_anterior), para a variação mês a mês
+        "recebido_anterior": sum((r["receita_recebida"] for r in mensal_anterior), Decimal(0)),
+        "manutencao_anterior": sum((r["custo_manutencao"] for r in mensal_anterior), Decimal(0)),
         "previsto": sum(
             (
                 valor(c["valor"])
