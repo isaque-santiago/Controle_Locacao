@@ -4,7 +4,7 @@
 {% set na_pagina = True %}
 {% call cabecalho_pagina("Contratos", d.total_ativos ~ (" contrato ativo" if d.total_ativos == 1 else " contratos ativos")) %}
 {{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status) }}
-{{ botao("Novo contrato", href="/contratos/novo/iniciar", variante="primario", icone_nome="novo") }}
+{{ botao("Novo contrato", href="/contratos/novo/iniciar", variante="primario", icone_nome="novo", extra='data-atalho-novo aria-keyshortcuts="n"') }}
 {% endcall %}
 <form id="filtros" data-lembrar-filtros role="search" action="/contratos" method="get" hx-get="/contratos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
   <div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca">Buscar contratos</label><input class="entrada" id="busca" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="Buscar por cliente ou placa" autocomplete="off"></div></div>
