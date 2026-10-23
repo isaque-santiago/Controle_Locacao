@@ -67,6 +67,9 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Filtros lembrados** (Motos, Clientes, Contratos, Vistorias e Documentos; `<form id="filtros" data-lembrar-filtros>`): o `app.js`
   guarda na aba (`sessionStorage`) a query da URL (busca, filtro, ordem, "por página"). Voltar da ficha pelo "Voltar" ou pelo menu
   para o endereço puro da lista reabre com ela. "Limpar filtros" apaga o guardado; sair da conta apaga tudo.
+- **Atalhos de teclado** (`static/js/app.js`): `/` foca a busca da página e `n` aciona o botão marcado com `data-atalho-novo`
+  (o "Novo ..." de Motos, Clientes, Contratos, Documentos e do catálogo de Manutenção; `aria-keyshortcuts="n"`). Só valem sem
+  Ctrl/Alt/Cmd, fora de campos de texto e com nenhum diálogo aberto.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.

@@ -5,7 +5,7 @@
 {% set na_pagina = True %}
 {% call cabecalho_pagina("Motos", d.total_cadastradas ~ (" moto cadastrada" if d.total_cadastradas == 1 else " motos cadastradas")) %}
 {{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao) }}
-{{ botao("Nova moto", variante="primario", icone_nome="novo", extra='hx-get="/motos/nova" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+{{ botao("Nova moto", variante="primario", icone_nome="novo", extra='data-atalho-novo aria-keyshortcuts="n" hx-get="/motos/nova" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 
 <form id="filtros" data-lembrar-filtros role="search" action="/motos" method="get" hx-get="/motos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">

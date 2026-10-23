@@ -156,3 +156,9 @@ def test_ordem_invalida_volta_ao_padrao_e_paginacao_mantem_a_ordem(cliente):
 def test_formulario_de_filtros_pede_para_lembrar_a_busca(cliente):
     entrar(cliente)
     assert '<form id="filtros" data-lembrar-filtros' in cliente.get("/motos").text
+
+
+def test_botao_novo_e_busca_ficam_no_conteudo_para_os_atalhos(cliente):
+    entrar(cliente)
+    principal = cliente.get("/motos").text.split("<main", 1)[1]
+    assert "data-atalho-novo" in principal and 'type="search"' in principal

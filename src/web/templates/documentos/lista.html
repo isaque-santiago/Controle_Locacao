@@ -4,7 +4,7 @@
 {% set na_pagina = True %}
 {% call cabecalho_pagina("Documentos", vencidos ~ " vencido(s) · " ~ a_vencer ~ " a vencer") %}
 {{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao) }}
-{{ botao("Novo documento", href="/documentos/novo", variante="primario", icone_nome="novo", extra='hx-get="/documentos/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
+{{ botao("Novo documento", href="/documentos/novo", variante="primario", icone_nome="novo", extra='data-atalho-novo aria-keyshortcuts="n" hx-get="/documentos/novo" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
 {% endcall %}
 <form id="filtros" data-lembrar-filtros role="search" action="/documentos" method="get" hx-get="/documentos" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
   <div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca">Buscar documentos</label><input class="entrada" id="busca" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="Buscar por placa" autocomplete="off"></div></div>

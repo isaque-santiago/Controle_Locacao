@@ -379,6 +379,29 @@
     } catch (erro) { /* idem */ }
   });
 
+  // ---- Atalhos de teclado (só sem modificadores, fora de campos de texto e sem diálogo aberto) ----
+  // "/" leva o foco à busca da página; "n" aciona o botão marcado com data-atalho-novo (o "Novo ..." da lista).
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key !== '/' && e.key !== 'n') return;
+    var alvo = e.target;
+    var tag = alvo && alvo.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (alvo && alvo.isContentEditable)) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (e.key === '/') {
+      var busca = document.querySelector('main input[type="search"]');
+      if (!busca) return;
+      e.preventDefault();
+      busca.focus();
+      busca.select();
+    } else {
+      var novo = document.querySelector('main [data-atalho-novo]');
+      if (!novo) return;
+      e.preventDefault();
+      novo.click();
+    }
+  });
+
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
