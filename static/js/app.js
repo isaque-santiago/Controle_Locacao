@@ -347,6 +347,38 @@
   // Voltar pelo histórico (bfcache) não deve reabrir a página com a barra acesa
   window.addEventListener('pageshow', function () { pendentes.clear(); atualizarBarra(); });
 
+  // ---- Lembrar filtros da lista ----
+  // Em listas com <form id="filtros" data-lembrar-filtros>, guarda na aba (sessionStorage) a busca, o filtro, a ordem e o "por
+  // página" da URL. Ao voltar da ficha ("Voltar", menu lateral) para o endereço puro da lista, reabre com o que estava.
+  // "Limpar filtros" (que deixa a URL sem parâmetros) apaga o que foi guardado; sair da conta também.
+  var PREFIXO_FILTROS = 'filtros-lista:';
+  function lembrarFiltros() {
+    var lista = document.getElementById('filtros');
+    if (!lista || !lista.hasAttribute('data-lembrar-filtros')) return;
+    var chave = PREFIXO_FILTROS + location.pathname;
+    try {
+      if (location.search) sessionStorage.setItem(chave, location.search);
+      else sessionStorage.removeItem(chave);
+    } catch (erro) { /* armazenamento indisponível: a lista só não lembra */ }
+  }
+  (function restaurarFiltros() {
+    var lista = document.getElementById('filtros');
+    if (!lista || !lista.hasAttribute('data-lembrar-filtros') || location.search) return lembrarFiltros();
+    try {
+      var salvo = sessionStorage.getItem(PREFIXO_FILTROS + location.pathname);
+      if (salvo) location.replace(location.pathname + salvo);
+    } catch (erro) { /* idem */ }
+  })();
+  document.body.addEventListener('htmx:pushedIntoHistory', lembrarFiltros);
+  document.body.addEventListener('htmx:historyRestore', lembrarFiltros);
+  document.addEventListener('submit', function (e) {
+    if (!e.target.action || new URL(e.target.action).pathname !== '/logout') return;
+    try {
+      Object.keys(sessionStorage).filter(function (k) { return k.indexOf(PREFIXO_FILTROS) === 0; })
+        .forEach(function (k) { sessionStorage.removeItem(k); });
+    } catch (erro) { /* idem */ }
+  });
+
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
