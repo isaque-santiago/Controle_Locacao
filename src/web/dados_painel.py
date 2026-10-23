@@ -39,6 +39,8 @@ def carregar(hoje: date | None = None) -> dict:
         for c in painel.cobrancas_de_hoje(dados["cobrancas"], hoje)
     ]
 
+    mes_anterior = painel.nome_do_mes(painel.periodo_anterior(hoje)[0])
+
     return {
         "data_extenso": painel.data_por_extenso(hoje),
         "frota_total": len(frota),
@@ -53,6 +55,14 @@ def carregar(hoje: date | None = None) -> dict:
         "atrasado": dados["atrasado"],
         "clientes_atrasados": len(dados["devedores"]),
         "manutencao_mes": dados["manutencao"],
+        "variacoes": {
+            "recebido": painel.descrever_variacao(
+                painel.variacao(dados["recebido"], dados["recebido_anterior"]), mes_anterior, subir_e_bom=True
+            ),
+            "manutencao": painel.descrever_variacao(
+                painel.variacao(dados["manutencao"], dados["manutencao_anterior"]), mes_anterior, subir_e_bom=False
+            ),
+        },
         "ordens_concluidas": painel.ordens_concluidas_no_mes(manutencao.listar_manutencoes(), hoje),
         "hoje": linhas_hoje,
         "alertas": painel.agrupar_alertas(
