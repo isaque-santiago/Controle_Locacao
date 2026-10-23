@@ -1,11 +1,11 @@
 # Importação dos dados reais (planilha "PAGAMENTO MOTOS")
 
 Proposta de modelo de dados e plano de carga. **Aprovada em 21/10/2026** (desenho e recomendações D1, D2, D4, D5, D6).
-**Status (22/10/2026):** as migrations 1 a 4 (`supabase/migrations/20261022*`) foram aplicadas pelo dono no banco de **dev**, junto com uma
-carga parcial (motos, contas, fornecedores, despesas, multas, sócio e duas dívidas; gerada fora do repositório porque contém dados reais).
-A migration 5 (capital em veículos sem operação) foi escrita e testada em Postgres descartável, mas **ainda não foi aplicada** em banco algum.
-O roteiro `supabase/verificar_importacao_modelo.sql` e a regra da agenda (`src/domain/agenda_cobrancas.py`, `tests/test_agenda_promessa.py`)
-acompanham. Faltam clientes, contratos e pagamentos de locação (CPF/telefone e respostas pendentes). D3 foi decidida (encargos valem na promessa).
+**Status (23/10/2026):** as migrations 1 a 5 (`supabase/migrations/20261022*`) estão aplicadas no banco de **dev** e o roteiro
+`supabase/verificar_importacao_modelo.sql` passou. Cinco cargas de dados já rodaram no dev (seção 7): veículos, contas, fornecedores, despesas, multas,
+sócio, dívidas sem conflito, capital do Etios e do Celta e, dos locatários, apenas os de identidade confirmada (8 clientes e 5 contratos).
+As cargas são geradas fora do repositório porque contêm dados reais (CPF, telefone). **Nada foi carregado em produção.** Faltam os demais
+locatários e contratos, pagamentos de locação restantes e três dívidas com saldo conflitante (seção 7). D3 foi decidida (encargos valem na promessa).
 
 Desvio do desenho aprovado: `vw_resultado_moto` ganhou as colunas `custo_despesas` e `resultado_com_despesas` em vez de alterar `resultado`,
 para não divergir de `src/domain/relatorios.py` enquanto as telas não incorporam as despesas.
@@ -116,6 +116,8 @@ Aprovada em 22/10/2026. Aplica-se a veículos que ainda não rendem (Etios) ou s
 | D4 | `km_inicial` sem dado na planilha | **Gravar 0** e anotar em `observacoes` (aprovado) |
 | D5 | Ex-locatários sem CPF (Jonatha, outro Wagner) | **Texto livre em multas**, sem cadastro em `clientes` (aprovado) |
 | D6 | Escopo agora | **Só banco e carga em dev**; telas depois (aprovado) |
+| D7 | Como alocar os pagamentos de locação nas cobranças | **FIFO por vencimento**: cada pagamento abate a cobrança mais antiga com saldo e é dividido se passar do saldo; o saldo anterior ao controle é a primeira cobrança (23/10/2026) |
+| D8 | Quais locatários carregar já | **Só os de identidade confirmada** (nome, placa e data de início batem entre o Drive e a planilha). Os inferidos ou em conflito esperam a confirmação do Alisson (23/10/2026) |
 
 ## 5. Conflitos nos dados a resolver antes de gerar a carga
 
@@ -138,10 +140,39 @@ Aprovada em 22/10/2026. Aplica-se a veículos que ainda não rendem (Etios) ou s
 
 ## 6. Ordem de execução
 
-1. Resolver os conflitos da seção 5 com o dono (D3 já decidida).
+1. Resolver os conflitos da seção 5 com o dono (D3 já decidida). **Parcial:** o Jefferson (PNH1H96) foi resolvido pelo contrato do Drive; o resto segue aberto.
 2. Atualizar o plano e o `CLAUDE.md` se preciso (feito: seção 16 do plano).
-3. Implementar as migrations 1 a 4, regras em `src/domain` e testes (`pytest`), README e commit.
-4. Gerar o SQL de carga em pasta temporária (fora do repositório quando tiver dado pessoal) e rodar no banco de **dev**.
-5. Conferir totais contra a planilha (receita, débitos, saldos de dívida) e corrigir.
-6. Quando CPF e telefone estiverem na planilha, carregar `clientes` e `contratos`.
-7. Backup de produção, autorização do dono e carga em produção.
+3. Implementar as migrations 1 a 5, regras em `src/domain` e testes (`pytest`), README e commit. **Feito** (PRs 81, 82 e 100).
+4. Gerar o SQL de carga em pasta temporária (fora do repositório quando tiver dado pessoal) e rodar no banco de **dev**. **Feito** para o que não tem
+   pendência (seção 7).
+5. Conferir totais contra a planilha (receita, débitos, saldos de dívida) e corrigir. **Feito** para o que foi carregado.
+6. Com a conferência dos cadastros do Drive respondida, carregar os demais `clientes` e `contratos`. **Pendente.**
+7. Backup de produção, autorização do dono e carga em produção. **Pendente.**
+
+## 7. Estado do banco de dev (23/10/2026)
+
+As cargas ficam fora do repositório e são aplicadas pelo dono no SQL Editor do dev. Cada uma roda em transação única, é idempotente
+(`importacoes_lote` guarda a linha de origem de cada registro) e tem um SQL para desfazer.
+
+| Carga | Lote | Conteúdo |
+| --- | --- | --- |
+| 01 parcial | `planilha-2026-10-22-dev-parcial` | 28 veículos, 5 contas, 5 fornecedores, 24 despesas, 72 multas, retirada e aporte do sócio, 2 dívidas |
+| 02 complemento | mesmo lote | 3 despesas de 21 e 22/10 |
+| 03 capital | `planilha-2026-10-22-dev-capital` | Etios e Celta (placa provisória), despesas de aquisição, empréstimo do Etios, motor do Celta, parcelas futuras e aporte |
+| 04 clientes e contratos | `planilha-2026-10-23-dev-clientes` | 8 clientes e 5 contratos (4 ativos e 1 encerrado) com cobranças e pagamentos |
+| 05 complemento | lote parcial | moto PMZ8278, 5 despesas e 3 aportes de cartão |
+
+Total conferido no dev: 31 veículos, 5 contas, 6 fornecedores, 40 despesas, 72 multas, 6 movimentos de sócio, 4 dívidas, 3 pagamentos de dívida,
+3 parcelas futuras, 8 clientes e 5 contratos. O Dashboard abriu sem erros e o débito do contrato conferido (R$ 270) bateu com a planilha.
+
+Regras aplicadas na carga dos contratos (D7 e D8): cobrança controlada desde 12/10/2026, com a parcela nº 1 nessa data; o que veio antes entra como
+cobrança única de "saldo anterior" (tipo `outros`); km inicial 0 com observação; cobranças futuras ficam por conta da janela móvel do app.
+
+**Ainda pendente:**
+
+- Contratos de três locatários que entraram só como cliente (moto, valor e dia de pagamento a confirmar) e de cinco com identidade inferida ou em conflito.
+- Onze locatários sem dados no Drive e um CPF com dígito verificador inválido.
+- Pagamento de 22/10 de um locatário cujo contrato ainda não foi carregado.
+- Dívidas XRE, Bros/Pop e TIA1B71 (saldos conflitantes) e os dados do Celta e do Etios (placa, datas, credor).
+- Escopo do histórico dos 64 contratos do Drive (atuais, histórico inativo ou não carregar).
+- Produção: backup do Supabase, autorização do dono e carga.
