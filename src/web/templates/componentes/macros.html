@@ -127,9 +127,10 @@
 </div>
 {%- endmacro %}
 
-{# Indicador numérico. atencao=True pinta a borda de vermelho. href (opcional) faz o cartão inteiro levar a outra página. #}
-{% macro kpi(rotulo, valor, detalhe=None, atencao=False, href=None) -%}
-<div class="kpi{{ ' atencao' if atencao else '' }}{{ ' kpi-link' if href else '' }}"><dt>{% if href %}<a href="{{ href }}">{{ rotulo }}</a>{% else %}{{ rotulo }}{% endif %}</dt><dd>{{ valor }}{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}</dd></div>
+{# Indicador numérico. atencao=True pinta a borda de vermelho. href (opcional) faz o cartão inteiro levar a outra página.
+   variacao (opcional, de `painel.descrever_variacao`): linha com a variação em relação ao mês anterior, tom bom/ruim/neutro. #}
+{% macro kpi(rotulo, valor, detalhe=None, atencao=False, href=None, variacao=None) -%}
+<div class="kpi{{ ' atencao' if atencao else '' }}{{ ' kpi-link' if href else '' }}"><dt>{% if href %}<a href="{{ href }}">{{ rotulo }}</a>{% else %}{{ rotulo }}{% endif %}</dt><dd>{{ valor }}{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}{% if variacao %}<small class="kpi-variacao {{ variacao.tom }}">{% if variacao.seta %}<span aria-hidden="true">{{ variacao.seta }}</span> {% endif %}{{ variacao.texto }}</small>{% endif %}</dd></div>
 {%- endmacro %}
 
 {# Tabela que vira cartões no celular. colunas: lista de (rotulo, classe_do_th).

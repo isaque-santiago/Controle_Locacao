@@ -81,6 +81,11 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
 - **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com
   3:1 (`--borda-campo`); alvos de toque ≥ 44 px medidos em 13 páginas (390 e 1280 px), sem exceções; `/favicon.ico` deixou de dar 404.
+- **Variação mês a mês no Dashboard** ("Recebido no mês" e "Manutenção no mês"): compara o acumulado do mês (dia 1 até hoje) com o *mesmo
+  intervalo* do mês anterior (`painel.periodo_anterior`: em 31/10 compara 01–30/09). Regras puras em `src/domain/painel.py`
+  (`variacao`, `descrever_variacao`); recebido sobe = verde, manutenção sobe = vermelho, e o texto sempre diz "a mais"/"a menos". Sem
+  base de comparação (mês anterior zerado) mostra o aviso; os dois zerados, nada. "Em atraso" e ocupação não têm variação: são fotos do
+  momento e o sistema não guarda histórico.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.

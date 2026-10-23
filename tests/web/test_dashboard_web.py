@@ -77,3 +77,12 @@ def test_kpi_em_atraso_leva_as_cobrancas_atrasadas(cliente):
     html = cliente.get("/").text
     assert '<a href="/cobrancas?aba=atrasadas">Em atraso</a>' in html
     assert cliente.get("/cobrancas?aba=atrasadas").status_code == 200
+
+
+def test_indicadores_mostram_a_variacao_mensal_com_texto_e_tom(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'class="kpi-variacao bom"' in html
+    assert "R$ 120 a mais (+9%) que no mesmo período de setembro." in html
+    assert "R$ 40 a menos (−32%) que no mesmo período de setembro." in html
+    assert '<span aria-hidden="true">↑</span>' in html  # a seta é decorativa; o texto diz "a mais"
