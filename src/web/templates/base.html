@@ -13,6 +13,7 @@
 </head>
 <body{% if csrf_token %} hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'{% endif %}>
 {% include "_icones.html" %}
+<div id="barra-carregamento" aria-hidden="true"></div>
 {% block corpo %}{% endblock %}
 </body>
 </html>
