@@ -512,7 +512,7 @@ manutenção preventiva concluída e corretiva em aberto, e documentos vencido/a
 vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 `seed.sql`. É idempotente pela placa `EXA1A11`; não rode em produção.
 
-## Importação dos dados reais (modelo de dados pronto; carga pendente)
+## Importação dos dados reais (modelo pronto; carga parcial no dev)
 
 Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Cinco migrations
 preparam o banco para a planilha "PAGAMENTO MOTOS":
@@ -529,8 +529,13 @@ preparam o banco para a planilha "PAGAMENTO MOTOS":
   `pago_por`, `a_confirmar`, dívida `emprestimo`, `dividas_vencimentos`, aporte ligado ao veículo e `vw_capital_veiculo`.
 
 Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
-Produção só depois de backup e autorização do dono. A carga dos dados (SQL gerado, colado no SQL Editor) ainda não existe: depende dos conflitos da seção 5 do documento e do CPF/telefone dos locatários. Regra pura da agenda: `src/domain/agenda_cobrancas.py`
-(`tests/test_agenda_promessa.py`).
+Produção só depois de backup e autorização do dono. Regra pura da agenda: `src/domain/agenda_cobrancas.py` (`tests/test_agenda_promessa.py`).
+
+**Estado em 23/10/2026:** as migrations 1 a 5 estão aplicadas no dev e cinco cargas de dados já rodaram lá (veículos, despesas, multas, sócio,
+dívidas sem conflito, capital do Etios e do Celta, e 8 clientes com 5 contratos de identidade confirmada). As cargas são SQL gerado fora do
+repositório (contêm CPF, telefone e dados reais), idempotente por lote (`importacoes_lote`) e com SQL para desfazer. Faltam os demais
+locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
+`Arquivos/Importacao_Dados_Reais.md`.
 
 ## Convenções dos relatórios
 
