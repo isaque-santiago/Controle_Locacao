@@ -806,3 +806,30 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
   :root:not([data-tema]) [data-alternar-tema] .ic-sol {display: inline-block;}
   :root:not([data-tema]) [data-alternar-tema] .ic-lua {display: none;}
 }
+
+/* ---------- Impressão (contratos, vistorias, relatórios e demais páginas) ----------
+   Fora das camadas, para valer sobre qualquer tema: papel sempre claro, sem menus, botões, filtros nem diálogos. */
+@page {margin: 14mm;}
+@media print {
+  :root, :root[data-tema="escuro"], :root[data-tema="claro"] {
+    --fundo: #FFFFFF; --superficie: #FFFFFF; --superficie-elevada: #FFFFFF; --superficie-hover: #F1F2F1;
+    --linha: rgba(30,34,39,.3); --linha-sutil: rgba(30,34,39,.15); --linha-forte: rgba(30,34,39,.5);
+    --texto: #000000; --texto-2: #2B3036; --texto-3: #3C4248;
+    --sucesso-texto: #1B6F4D; --alerta-texto: #7A5A00; --perigo-texto: #B83232; --info-texto: #2F5F8A; --neutro-texto: #4A5158;
+    --seg-cheio: #1E2227; --seg-vazio: rgba(30,34,39,.15);
+    --sombra-modal: none;
+    color-scheme: light;
+  }
+  body {background: #FFFFFF; color: #000000; font-size: 11pt;}
+  .app {display: block; min-height: 0;}
+  main {max-width: none; margin: 0; padding: 0;}
+  .lateral, .topo-desktop, .topo-movel, .barra-inferior, .pular, #barra-carregamento, dialog,
+  .acoes, .voltar, .btn, .btn-icone, .chips, .filtro-opcoes, [role="tablist"], .paginacao, .por-pagina, .c-acao,
+  form[role="search"], .aplicar-periodo, .exportar-rel, .colapsavel-visao, .ordenar-seta {display: none !important;}
+  .cartao, .kpi, .tabela-caixa {box-shadow: none; break-inside: avoid;}
+  .dados tbody tr {break-inside: avoid;}
+  h1, h2, h3 {break-after: avoid;}
+  a {text-decoration: none; color: inherit;}
+  /* Selos e barras levam cor: o navegador não imprime fundos por padrão */
+  .selo, .medidor span, [class^="barra-rel"], [class*=" barra-rel"] {-webkit-print-color-adjust: exact; print-color-adjust: exact;}
+}

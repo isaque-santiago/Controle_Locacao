@@ -77,6 +77,8 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes dos 30 min de inatividade abre o diálogo de
   confirmação com "Continuar conectado" (`POST /sessao/renovar`, 204, exige CSRF); passado o prazo, avisa que expirou e leva ao login.
   Requisições do HTMX bem-sucedidas reiniciam a contagem.
+- **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
+  filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
