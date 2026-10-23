@@ -27,14 +27,14 @@
       <p class="portal-acesso-titulo">Senha</p>
       <p class="portal-acesso-desc">Gera uma nova senha. A atual deixa de funcionar.</p>
     </div>
-    {{ botao("Gerar nova senha", icone_nome="cadeado", bloco=True, extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar."') }}
+    {{ botao("Gerar nova senha", icone_nome="cadeado", bloco=True, extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar." data-confirmar-titulo="Gerar nova senha" data-confirmar-rotulo="Gerar nova senha"') }}
   </div>
   <div class="portal-acesso-bloco">
     <div>
       <p class="portal-acesso-titulo">Remoção</p>
       <p class="portal-acesso-desc">Exclui o login e impede a entrada no portal.</p>
     </div>
-    {{ botao("Remover acesso", variante="perigo", icone_nome="fechar", bloco=True, extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal. Confirmar?"') }}
+    {{ botao("Remover acesso", variante="perigo", icone_nome="fechar", bloco=True, extra='hx-post="' ~ base ~ '/portal/remover" hx-disabled-elt="this" hx-confirm="O login do locatário será excluído e ele deixará de entrar no portal." data-confirmar-titulo="Remover acesso ao portal" data-confirmar-rotulo="Remover acesso"') }}
   </div>
 </div>
 {% endif %}

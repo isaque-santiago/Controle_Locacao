@@ -20,7 +20,7 @@
     {{ botao("Editar", extra='hx-get="/motos/' ~ moto.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
     {{ botao("Atualizar km", extra='hx-get="/motos/' ~ moto.id ~ '/km" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
     {% if moto.status in ("disponivel", "inativa") %}
-    <form method="post" action="/motos/{{ moto.id }}/situacao">
+    <form method="post" action="/motos/{{ moto.id }}/situacao"{% if moto.status != "inativa" %} data-confirmar="A moto sai das disponíveis e não poderá ser alugada até ser reativada." data-confirmar-titulo="Inativar moto" data-confirmar-rotulo="Inativar"{% endif %}>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {{ botao("Reativar" if moto.status == "inativa" else "Inativar", tipo="submit") }}
     </form>
