@@ -282,6 +282,34 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
 
 ## 10. Pendências da Etapa 8
 
+- **Lighthouse no app publicado (FastAPI, 26/10/2026)** — Lighthouse 13.5.0 (CLI), Chrome 156 em janela real, `https://lamotos.duckdns.org`,
+  sessão do dono (login feito por ele no Chrome; a IA não digitou credenciais), 2 execuções por perfil, desempenho / acessibilidade /
+  boas práticas. Celular = emulação padrão (4x CPU, 4G lenta); desktop = preset desktop. Medido do computador do desenvolvedor, com a
+  latência real da VPS.
+
+  | Tela | Perfil | Desempenho | Acess. | Boas práticas | FCP | LCP | TBT | CLS |
+  |---|---|---:|---:|---:|---|---|---|---|
+  | Login (pública) | Desktop | 100 | 100 | 100 | 0,4 s | 0,4–0,5 s | 0 ms | 0,023 |
+  | Login (pública) | Celular | 100 | 100 | 100 | 1,4 s | 1,5 s | 0 ms | 0 |
+  | Dashboard | Desktop | 99–100 | 100 | 100 | 0,2 s | 0,3 s | 0 ms | 0,002 |
+  | Dashboard | Celular | 89–100 | 100 | 100 | 0,8 s | 0,9–1,1 s | 60–160 ms | 0 |
+  | Cobranças | Desktop | 98–100 | 98 | 100 | 0,2 s | 0,3 s | 0 ms | 0,002 |
+  | Cobranças | Celular | 93–100 | 98 | 100 | 0,8 s | 0,9–1,0 s | 40 ms | 0 |
+  | Motos | Desktop | 93–99 | 100 | 100 | 0,2–0,3 s | 0,3 s | 0 ms | 0,002 |
+  | Motos | Celular | 89–100 | 100 | 100 | 0,8–0,9 s | 1,0–1,1 s | 50–160 ms | 0 |
+  | Ficha da moto | Desktop | 100 | 100 | 100 | 0,2 s | 0,3 s | 0 ms | 0,002 |
+  | Ficha da moto | Celular | 95–99 | 100 | 100 | 0,8 s | 1,0–1,1 s | 120–180 ms | 0 |
+
+  Leitura: o app novo está na faixa «bom» em tudo (LCP ≤ 1,5 s, TBT ≤ 180 ms, CLS ≤ 0,023). A CLS alta herdada do Streamlit
+  (≈ 0,4 no desktop e ≈ 0,95 no celular) **deixou de existir** com a troca da camada de interface. A oscilação da nota de desempenho no
+  celular (89–100) vem do TBT, que varia entre execuções (40–180 ms). Achados: (1) Cobranças perde 2 pontos de acessibilidade por
+  `heading-order` (o `<h3>` do estado vazio, macro `estado_vazio` em `componentes/macros.html`, vem logo depois do `<h1>`, sem `<h2>`); (2) o
+  SEO da página de login tira 90 por faltar `meta description` (irrelevante para um app privado). Não houve ajuste de código.
+  Como reproduzir: Node LTS, `npm i lighthouse`, Chrome com `--remote-debugging-port=9222`, login manual e
+  `npx lighthouse <url> --port=9222 --disable-storage-reset` (`--preset=desktop` para o desktop).
+
+- **Histórico (Streamlit, antes da migração).** O Lighthouse medido na Etapa 8 dizia o seguinte:
+
 - **Lighthouse medido** (v12, Chrome headless, dashboard com dados fictícios e login contornado por script temporário;
   servidor local, então LCP absoluto não vale como número de produção; vale a comparação). `main` x esta branch:
 
@@ -303,7 +331,7 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
   Etapa 9.
 - **Pendência (decidida em 02/10/2026): CLS alta** (≈ 0,4 no desktop e ≈ 0,95 no celular, herdada da `main`). Tratar em
   etapa futura reservando altura mínima nos blocos que crescem durante o render; não bloqueia a Etapa 8.
-- Medir também Cobranças, Motos e uma ficha (o Lighthouse só carregou a rota `/`; as demais exigem navegação).
+- ~~Medir também Cobranças, Motos e uma ficha~~: medidos em 26/10/2026 no app publicado (primeiro item desta seção).
 
 ## 11. Homologação (Etapa 9)
 
@@ -361,7 +389,7 @@ real dos 10 fluxos e os aparelhos físicos ficam com o usuário (`Arquivos/Rotei
   confirmar em iPhone/iPad real.
 - **CLS alta** (≈ 0,4 desktop, ≈ 0,95 celular, herdada da `main`): **não tratada** nesta etapa. Reservar `min-height` nos
   blocos que crescem no render exige medir cada um e arrisca deslocar o layout homologado; fica como melhoria futura.
-- **Lighthouse** de Cobranças, Motos e uma ficha: não medido (exige navegação autenticada).
+- **Lighthouse** de Cobranças, Motos e uma ficha: medido em 26/10/2026 no app publicado (seção 10).
 - **Manual (usuário)**: os 10 fluxos gravando no banco de dev, Android (obrigatório) e iPhone/iPad (se houver), leitor de
   tela, zoom real do navegador, janela dividida e teclado virtual. Marcar em `Arquivos/Roteiro_Homologacao_Manual.md`.
 - **CI**: `.github/workflows/ci.yml` roda pytest e o e2e do login em 4 perfis a cada push/PR, enviando capturas e achados
