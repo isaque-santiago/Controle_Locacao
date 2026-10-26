@@ -211,6 +211,10 @@ Ver seção 3 do plano ([Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locaç�
 
 ## Status da implementação
 
+> **Histórico:** as entradas abaixo foram escritas ao longo do desenvolvimento. As anteriores à migração (até 06/10/2026) descrevem a
+> interface em Streamlit — `app.py`, `pages/`, `src/ui/`, `st.*` e `streamlit-cookies-controller` —, que foi removida na Fase 4 (parte F). Os
+> arquivos citados nelas não existem mais; o que vale hoje está nas seções «Frontend», «Publicação» e «Estilização do painel».
+
 As telas das fases 1 a 7 estão implementadas: cadastros, contratos com vistorias,
 cobranças, manutenção, documentos, Dashboard, relatórios, configurações e backup.
 As regras existentes foram complementadas com transações para entrega/devolução,
@@ -601,6 +605,6 @@ ambiente e opções em `e2e/README.md`; inventário em `Arquivos/Inventario_UI_U
 achados curados em `Arquivos/Achados_UI_UX.md`; massa de dados extremos em
 `supabase/seed_e2e.sql`.
 
-Robustez visual (Etapa 8 do plano de UI/UX): sem `nth-child` nem inversão de `st.dataframe` no modo escuro; os `style=` estáticos das páginas viraram classes do design system (só largura de barra e cor de avatar seguem inline); pilhas de fonte com fallback do sistema; inventário dos `data-testid` inevitáveis em `Arquivos/Design_UI.md` (seção 9). Protegido por `tests/test_robustez_ui.py`. As fontes agora são locais (`static/fontes/`, `src/ui/fontes.css`; exige `enableStaticServing` no `config.toml`). Lighthouse medido depois, já no app novo (seção 10 do `Design_UI.md`).
+Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-child` e com pilhas de fonte com fallback do sistema; as fontes são locais (`static/fontes/`, declaradas em `src/web/estilos/app.css`). O Lighthouse foi medido depois, já no app novo (seção 10 do `Arquivos/Design_UI.md`).
 
-Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. Correções de acessibilidade na marcação do Streamlit ficam em `src/ui/acessibilidade.py`; o contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/Roteiro_Homologacao_Manual.md`).
+Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/Roteiro_Homologacao_Manual.md`).

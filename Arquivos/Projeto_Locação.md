@@ -32,15 +32,15 @@ Portal do cliente, integração com WhatsApp, gestão de multas de trânsito, em
 
 | Camada | Escolha | Observação |
 |---|---|---|
-| Interface | **Python 3.11+ e Streamlit** (multipage) | **Será substituída** por FastAPI + Jinja2 + HTMX + Tailwind (seção 15) |
+| Interface | **Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind** | Substituiu o Streamlit original na Fase 4 (seção 15) |
 | Banco | **Supabase (PostgreSQL)** | Views para alertas, RPCs para operações atômicas |
 | Autenticação | **Supabase Auth** (e-mail e senha) | Cadastro público **desativado**; só o dono existe |
 | Arquivos | **Supabase Storage** (buckets privados) | Fotos de vistoria e comprovantes de documentos |
-| Gráficos | Plotly | Seguir as boas práticas de visualização do projeto |
+| Gráficos | SVG gerado no servidor | O Plotly saiu junto com o Streamlit |
 | Testes | pytest | Regras de negócio em módulos puros, sem dependência de banco |
-| Deploy | Streamlit Community Cloud via GitHub | Segredos em `st.secrets` |
+| Deploy | VPS com Coolify (Docker), HTTPS pelo Traefik e domínio DuckDNS | Segredos em variáveis de ambiente; CI no GitHub Actions (seção 10) |
 
-Bibliotecas: `streamlit`, `supabase`, `pandas`, `plotly`, `python-dateutil`, `pydantic`, `openpyxl`, `pytest`.
+Bibliotecas: consulte `requirements.txt` (produção) e `requirements-dev.txt` (testes). O plano original previa `streamlit`, `pandas` e `plotly`, removidos na Fase 4.
 
 ---
 
@@ -790,7 +790,7 @@ banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusã
 
 ### Fase 8: Acabamento e publicação
 - Backup manual (ZIP com CSV de todas as tabelas), tratamento de erros amigável, estados vazios, paginação das listas grandes, revisão de responsividade no celular.
-- Deploy no Streamlit Community Cloud com segredos em `st.secrets`; README com passo a passo.
+- Deploy (previsto no Streamlit Community Cloud; feito depois na VPS com Coolify, ver `Deploy_VPS.md`); README com passo a passo.
 - Script de dados de exemplo (`seed_demo.sql`) para demonstração.
 - **Aceite:** app publicado, acessível apenas com login; roteiro de teste manual completo (seção 9) executado.
 
@@ -818,7 +818,7 @@ banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusã
 
 ## 10. Deploy e operação
 
-- Repositório no GitHub; Streamlit Community Cloud apontando para `app.py`; segredos: `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+- Repositório no GitHub; deploy na VPS (Coolify) a partir do `Dockerfile`, só pela CI com o `pytest` verde; segredos por variável de ambiente: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (guia em `Deploy_VPS.md`).
 - Migrations versionadas em `supabase/migrations/`, aplicadas em ordem (SQL Editor do Supabase ou Supabase CLI).
 - Verificar os limites do plano gratuito do Supabase (por exemplo, pausa de projetos sem uso por certo período e ausência de backup automático de ponto no tempo) e decidir se o volume de dados/fotos justifica plano pago. Enquanto isso, usar o **backup manual** da Fase 7 com frequência semanal.
 
