@@ -180,7 +180,7 @@ def _registrar_km(request: Request, sessao: Sessao, moto_id: str, entrada: dict)
     def acao():
         km, confirmar = ler_km(entrada)
         acoes_motos.registrar_km(moto_id, km, confirmar, entrada["chave_operacao"])
-        aviso = mensagens.km_atualizado(formatar_placa(moto["placa"]), km)
+        aviso = mensagens.km_atualizado(formatar_placa(moto["placa"]), km, moto["km_atual"])
         return _concluir(request, sessao, f"/motos/{moto_id}", aviso)
 
     return _devolver_formulario(request, "motos/_form_km.html", contexto, acao)

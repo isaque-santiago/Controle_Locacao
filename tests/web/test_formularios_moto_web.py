@@ -183,6 +183,8 @@ def test_km_menor_so_passa_com_confirmacao(cliente, acoes_motos_falsas):
     token = _logado(cliente)
     _post(cliente, f"/motos/{MOTO}/km", {"csrf_token": token, "km": "10", "confirmar_km_menor": "on"})
     assert acoes_motos_falsas.chamadas[0][1:4] == (MOTO, 10, True)
+    ficha = cliente.get(f"/motos/{MOTO}").text
+    assert "Leitura de 10 km registrada no histórico" in ficha and "O km atual continua 1.000 km" in ficha
     acoes_motos_falsas.chamadas.clear()
     acoes_motos_falsas.falhar_com = ValueError("O km informado (10) é menor que o km atual da moto (1000).")
     resposta = _post(cliente, f"/motos/{MOTO}/km", {"csrf_token": token, "km": "10"})

@@ -65,7 +65,10 @@ def test_aba_vazia_mostra_a_mensagem_da_aba(cliente, base_cobrancas):
     base_cobrancas.cobrancas = [c for c in base_cobrancas.cobrancas if c["situacao"] != "paga"]
     assert "Nenhuma cobrança paga." in cliente.get("/cobrancas?aba=pagas").text
     base_cobrancas.cobrancas = []
-    assert "Nenhuma cobrança vence hoje." in cliente.get("/cobrancas").text
+    vazio = cliente.get("/cobrancas").text
+    assert "Nenhuma cobrança vence hoje." in vazio
+    # Título do estado vazio é h2: depois do h1 da página um h3 pularia um nível (axe: heading-order).
+    assert "<h2>Nenhuma cobrança vence hoje.</h2>" in vazio and "<h3>Nenhuma cobrança" not in vazio
 
 
 def test_paginacao_de_dez_em_dez_com_url_e_painel_parcial(cliente, base_cobrancas):

@@ -37,6 +37,7 @@ def test_formulario_em_dialogo_vem_so_com_o_formulario(cliente, base_cobrancas):
     assert "R$ 15,00" in html and "R$ 119,00" in html and "17 dia(s) de atraso" in html and "R$ 434,00" in html
     assert 'name="principal" type="text" value="300,00"' in html and 'name="extras" type="text" value="134,00"' in html
     assert 'name="chave_operacao" value="' in html and 'hx-post="/cobrancas/a2/pagar/previa"' in html
+    assert html.count('hx-disabled-elt="unset"') == 1 and html.count('hx-disabled-elt="find button[type=submit]"') == 1
 
 
 def test_sem_htmx_o_mesmo_formulario_abre_como_pagina(cliente, base_cobrancas):

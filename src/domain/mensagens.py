@@ -47,7 +47,12 @@ def moto_status_alterado(placa, inativada):
     return _toast(f"Moto {placa} inativada." if inativada else f"Moto {placa} reativada.")
 
 
-def km_atualizado(placa, km):
+def km_atualizado(placa, km, km_atual=None):
+    """`km_atual` é o km da moto antes do lançamento: se a leitura for menor, ela só entra no histórico."""
+    if km_atual is not None and km < km_atual:
+        return _toast(
+            f"Leitura de {_km(km)} registrada no histórico da moto {placa}. O km atual continua {_km(km_atual)}."
+        )
     return _toast(f"Quilometragem da moto {placa} registrada: {_km(km)}.")
 
 

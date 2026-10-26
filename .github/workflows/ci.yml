@@ -10,6 +10,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Toda segunda, 09:00 em Brasília (12:00 UTC): só a auditoria de dependências importa; um CVE novo
+    # numa dependência já publicada faz a CI ficar vermelha e o GitHub avisa por e-mail.
+    - cron: "0 12 * * 1"
   workflow_dispatch:
     inputs:
       autenticado:
@@ -21,7 +25,22 @@ permissions:
   contents: read
 
 jobs:
+  auditoria-dependencias:
+    # Vulnerabilidades conhecidas (CVE/GHSA) nas dependências de PRODUÇÃO e em toda a árvore que o pip resolve.
+    # Não bloqueia o deploy: um CVE novo não deve travar uma correção urgente. Se falhar, atualize a dependência
+    # em requirements.txt (ver Arquivos/Deploy_VPS.md, seção «Rotina de manutenção»).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt
+
   testes-python:
+    if: github.event_name != 'schedule'
     # 3.12 é a versão da imagem de produção (Dockerfile); 3.14 é a do desenvolvimento local.
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -39,6 +58,7 @@ jobs:
       - run: python -m pytest -q
 
   navegador-login:
+    if: github.event_name != 'schedule'
     # Sem credenciais: valores fictícios bastam para a tela de acesso renderizar.
     runs-on: ubuntu-latest
     timeout-minutes: 25

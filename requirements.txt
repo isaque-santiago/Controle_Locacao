@@ -3,7 +3,7 @@ supabase==2.31.0
 python-dateutil==2.9.0.post0
 pydantic==2.13.5
 openpyxl==3.1.5
-pillow==12.3.0
+pillow==13.0.0
 tzdata==2026.4
 fastapi==0.142.2
 uvicorn==0.53.0

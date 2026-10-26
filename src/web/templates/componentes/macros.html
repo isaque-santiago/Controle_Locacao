@@ -121,7 +121,7 @@
 {% macro estado_vazio(titulo, texto, simbolo="0") -%}
 <div class="cartao vazio">
   <span class="adesivo" aria-hidden="true">{{ simbolo }}</span>
-  <h3>{{ titulo }}</h3>
+  <h2>{{ titulo }}</h2>
   <p>{{ texto }}</p>
   {% if caller is defined %}{{ caller() }}{% endif %}
 </div>

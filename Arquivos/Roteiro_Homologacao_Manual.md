@@ -78,3 +78,68 @@ na pasta Downloads do computador e avise a IA com o nome dos arquivos: ela confe
 | Data | Aparelho / navegador | Fluxos 1–10 | Teclado e zoom | Celular e fotos | Problemas encontrados |
 |---|---|---|---|---|---|
 | 13/10/2026 | Desktop (aba embutida/Chrome) e POCO M6 Pro (Chrome, Android) | 1–10 feitos no desktop e no celular (relato do proprietário); clique duplo no pagamento por automação | Teclado e zoom 200%/400% só por automação (aceito) | Fotos de câmera e Portal feitos; metadados conferidos em 3 fotos guardadas pelo app (13/10/2026): sem GPS, sem aparelho, sem XMP; só data e fuso (e orientação 0). Achado: blocos Xiaomi (APP3/APP4) sobreviviam à limpeza; corrigido | Nenhum relatado. Celular: bloqueio do firewall do Windows (regras de bloqueio do python.exe) resolvido fora do app |
+
+### Aceite do Supabase Storage em produção (26/10/2026, `https://lamotos.duckdns.org`)
+
+Feito com moto, cliente e contrato de teste (TESTE / ABC-1D23), no Chrome em que o proprietário fez o login; a automação enviou os
+arquivos pelos formulários do app. Arquivos de teste: JPEG com GPS, marca, modelo e série falsos, e um PDF.
+
+| Verificação | Resultado |
+|---|---|
+| Comprovante PDF e JPEG no bucket `documentos` (Documentos > Novo) | Cadastrados; link «Comprovante» responde 303 para URL assinada do Supabase |
+| Foto de vistoria no bucket `vistorias` (Vistorias > Registrar, devolução) | Registrada; a foto carrega na página sob a CSP (640×480) |
+| URL assinada baixa o arquivo | 200, `application/pdf` e `image/jpeg`; o PDF é idêntico (SHA-256) ao original |
+| Acesso sem a assinatura | `/object/public/...` e o caminho sem token: 400 nos dois buckets |
+| Expiração (5 min) | Após 316–319 s: 400 `InvalidJWT` (`exp` vencido) |
+| Rota do comprovante sem login | 303 para `/login?proximo=...` |
+| Privacidade das fotos guardadas | JPEG baixado dos dois buckets sem GPS, marca, modelo ou série |
+
+Não coberto nesta primeira rodada: bucket `trocas_oleo` (feito logo abaixo) e envio pelo celular.
+
+### Aceite do bucket `trocas_oleo` pelo portal do locatário (26/10/2026)
+
+Moto, cliente e contrato de teste novos, acesso criado pela aba Portal da ficha do cliente (Edge Function `criar-locatario` em produção) e
+login do locatário por CPF em um segundo Chrome, com perfil separado do dono. Troca de óleo enviada com km 500 (abaixo do intervalo, sem multa) e
+duas fotos JPEG com GPS, marca, modelo e série falsos.
+
+| Verificação | Resultado |
+|---|---|
+| Envio pelo portal («Enviar troca de óleo») | «Troca de óleo registrada»; hodômetro, última troca e próxima troca atualizados |
+| Fotos do painel e da nota abertas pelo dono (ficha do cliente, aba Portal) | 303 para URL assinada; download 200, `image/jpeg` |
+| Acesso sem a assinatura | `/object/public/...` e o caminho sem token: 400 |
+| Expiração (5 min) | Após 319–321 s: 400 `InvalidJWT` (`exp` vencido) |
+| Privacidade das fotos guardadas | Sem GPS, marca, modelo ou série |
+| Isolamento do locatário (sessão dele) | 403 em `/motos`, `/contratos`, `/configuracoes`, no comprovante de documento e na foto da troca pela rota do dono; `/` redireciona para `/portal` |
+
+Não coberto: leitura direta do Storage pelo locatário com a chave anônima (o app não a expõe) e envio pelo celular.
+
+### Roteiro de aceite no app publicado (26/10/2026, `https://lamotos.duckdns.org`)
+
+Fluxos 1 a 10 do roteiro conduzidos por automação no Chrome em que o proprietário fez o login, com registros de teste (moto TST-1E55, cliente
+TESTE ROTEIRO, contrato 12/10/2026, semanal, R$ 100,00, caução R$ 200,00). Os envios de arquivo do Storage estão na seção anterior.
+
+| Fluxo | Resultado |
+|---|---|
+| 1. Sem login | As 11 páginas do menu e a ficha de moto redirecionam para `/login`; `/saude` 200; `/componentes` 404 |
+| 2. Cadastro | Placa inválida e CPF inválido recusados com mensagem; placa e CPF duplicados recusados; plano automático (9 itens) criado; CPF mascarado na lista |
+| 3. Km | 500 km registrado; leitura 300 km exige confirmação e não reduz o km atual (continua 500) |
+| 4. Contrato | Prévia (caução + 5 parcelas) igual às cobranças geradas; moto sai das disponíveis (aparece como «Alugada») |
+| 5. Pagamentos | Em dia (R$ 100 + multa R$ 15), parcial (R$ 40; saldo R$ 60 em aberto), restante com R$ 64 de encargos (15 + 7×7) e atraso de 14 dias com R$ 113 (15 + 7×14); principal maior que o saldo recusado; caução sem encargos |
+| 6. Manutenção | Alerta de óleo vencida a 1.100 km; manutenção aberta (moto em manutenção, custo R$ 75,00) e concluída; só o item de óleo reiniciou (próxima troca em 2.150 km); moto voltou a «Alugada» |
+| 7. Documento | IPVA vencido aparece no Dashboard; regularizado com comprovante PDF; cadastro do próximo ano aberto com vencimento em branco e criado |
+| 8. Encerramento | Devolução com avaria e danos de R$ 120: «Devolver R$ 80,00 de caução», 2 cobranças futuras canceladas, parcelas pagas preservadas, moto «Disponível», km rodados 660; comparação entrega × devolução marca o farol como alterado |
+| 9. Dashboard e relatórios | Recebido R$ 612 = R$ 300 de principal + R$ 192 de encargos + R$ 120 de danos retidos (a caução de R$ 200 não é receita); manutenção R$ 75; resultado R$ 487. CSV (BOM, `;`, vírgula decimal) e Excel das 4 abas abrem com acentos corretos |
+| 10. Backup | ZIP com as 15 tabelas, `manifesto.json` (contagens iguais às linhas dos CSV) e `LEIA-ME.txt`; resposta `no-store` |
+
+Não feito neste ambiente: alterar parâmetros em Configurações (afetaria os encargos reais), cobrança do excedente quando o dano passa da caução
+(só a prévia, «devolver R$ 0,00»; a regra é coberta por `tests/test_caucao.py`), Firefox e celular (com o proprietário).
+
+Achados (corrigidos no código depois da rodada, ainda sem deploy; o terceiro vem do Lighthouse de 26/10/2026):
+
+- Console: no diálogo «Encerrar contrato», cada alteração dos campos que recalculam a prévia registra `error: The selector "find button[type=submit]" on
+  hx-disabled-elt returned no matches!`. O atributo do formulário é herdado pelos campos que disparam a prévia; a prévia funciona. Corrigir com
+  `hx-disabled-elt="unset"` nesses campos.
+- Mensagem do fluxo 3: «Quilometragem registrada: 300 km» não diz que o km atual da moto segue em 500 km.
+- Estado vazio de Cobranças: o título era um `<h3>` logo depois do `<h1>` (axe `heading-order`, acessibilidade 98). O macro `estado_vazio` agora usa `<h2>`.
+- Correções: `hx-disabled-elt="unset"` nos campos da prévia do encerramento e do pagamento (reproduzido e confirmado com o htmx 2.0.11 do projeto); a mensagem do km passa a dizer «Leitura de 300 km registrada no histórico... O km atual continua 500 km».
+
