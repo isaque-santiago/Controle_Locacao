@@ -102,7 +102,7 @@ jobs:
         run: cat app.log
       - name: Capturas e achados
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-login-${{ matrix.perfil }}
           path: |
@@ -155,7 +155,7 @@ jobs:
         run: python -m pytest e2e -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito -k "not visual"
       - name: Capturas e achados
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-autenticado-${{ matrix.perfil }}
           path: |
