@@ -195,6 +195,13 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
   kernel pedir.
 - **Registro:** 26/10/2026 — `pip-audit` achou 37 vulnerabilidades no Pillow 12.3.0 (corrigidas em 13.0.0); `requirements.txt` passou para
   `pillow==13.0.0` e a árvore completa (46 pacotes) ficou sem achados. O `pytest` passou (1173 testes) com a versão nova.
+- **Registro (26/10/2026, depois dos PRs do Dependabot):** `ci.yml` em `checkout@v7`, `setup-python@v7` e `upload-artifact@v7`;
+  `requirements.txt` com `fastapi` 0.162.0, `supabase` 2.33.0, `pydantic` 2.14.1, `uvicorn` 0.54.0, `tzdata` 2026.5 e `python-dateutil` 3.0.0
+  (o `relativedelta` deu resultado idêntico ao da 2.9 em 23.013 cálculos de data). Verificação em produção depois do deploy: `/saude` 200, as 10
+  páginas do menu com 200 e console sem erros, e upload de comprovante no Storage com URL assinada (download idêntico ao original, 400 sem
+  assinatura e após 5 minutos). Dois pontos de CI para lembrar: o passo «Instalar o navegador» falha às vezes com `Could not get lock
+  /var/lib/dpkg/lock-frontend` (outro `apt-get` do runner segura o lock); basta reexecutar os jobs que falharam. E um PR do Dependabot que mexe
+  em `requirements.txt` ou `ci.yml` pode conflitar com o anterior; comente `@dependabot rebase` e espere a CI do novo head.
 
 ## 9. Problemas comuns
 
