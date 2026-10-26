@@ -94,5 +94,22 @@ arquivos pelos formulários do app. Arquivos de teste: JPEG com GPS, marca, mode
 | Rota do comprovante sem login | 303 para `/login?proximo=...` |
 | Privacidade das fotos guardadas | JPEG baixado dos dois buckets sem GPS, marca, modelo ou série |
 
-Não coberto: bucket `trocas_oleo` (portal do locatário) e envio pelo celular.
+Não coberto nesta primeira rodada: bucket `trocas_oleo` (feito logo abaixo) e envio pelo celular.
+
+### Aceite do bucket `trocas_oleo` pelo portal do locatário (26/10/2026)
+
+Moto, cliente e contrato de teste novos, acesso criado pela aba Portal da ficha do cliente (Edge Function `criar-locatario` em produção) e
+login do locatário por CPF em um segundo Chrome, com perfil separado do dono. Troca de óleo enviada com km 500 (abaixo do intervalo, sem multa) e
+duas fotos JPEG com GPS, marca, modelo e série falsos.
+
+| Verificação | Resultado |
+|---|---|
+| Envio pelo portal («Enviar troca de óleo») | «Troca de óleo registrada»; hodômetro, última troca e próxima troca atualizados |
+| Fotos do painel e da nota abertas pelo dono (ficha do cliente, aba Portal) | 303 para URL assinada; download 200, `image/jpeg` |
+| Acesso sem a assinatura | `/object/public/...` e o caminho sem token: 400 |
+| Expiração (5 min) | Após 319–321 s: 400 `InvalidJWT` (`exp` vencido) |
+| Privacidade das fotos guardadas | Sem GPS, marca, modelo ou série |
+| Isolamento do locatário (sessão dele) | 403 em `/motos`, `/contratos`, `/configuracoes`, no comprovante de documento e na foto da troca pela rota do dono; `/` redireciona para `/portal` |
+
+Não coberto: leitura direta do Storage pelo locatário com a chave anônima (o app não a expõe) e envio pelo celular.
 
