@@ -413,11 +413,10 @@ a receber `payload jsonb` (`20260922010000_finalizar_manutencao_payload_jsonb.sq
 e o roteiro `supabase/verificar_fluxos.sql` foi executado em produção (23/09) sem
 falhas; ele termina em `ROLLBACK`, então não deixa dados.
 
-**Aceite externo ainda pendente:** uploads/URLs assinadas, executar o roteiro
-manual completo (seção abaixo), revisar em celular no aplicativo publicado e
-confirmar deploy no Streamlit Community Cloud. O teste local não valida
-Supabase Storage, infraestrutura ou publicação. Nenhuma fase é declarada
-homologada apenas com base nas telas e testes isolados.
+**Aceite externo:** uploads e URLs assinadas do Supabase Storage validados em produção em 26/10/2026 (ver a seção 7 de
+`Arquivos/Roteiro_Homologacao_Manual.md`). Ainda pendentes: o bucket `trocas_oleo` do portal do locatário, executar o roteiro manual
+completo no app publicado e revisar em celular no aplicativo publicado. O teste local não valida Supabase Storage, infraestrutura
+ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas e testes isolados.
 
 ## Atualização de uma instalação existente
 

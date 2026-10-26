@@ -78,3 +78,21 @@ na pasta Downloads do computador e avise a IA com o nome dos arquivos: ela confe
 | Data | Aparelho / navegador | Fluxos 1–10 | Teclado e zoom | Celular e fotos | Problemas encontrados |
 |---|---|---|---|---|---|
 | 13/10/2026 | Desktop (aba embutida/Chrome) e POCO M6 Pro (Chrome, Android) | 1–10 feitos no desktop e no celular (relato do proprietário); clique duplo no pagamento por automação | Teclado e zoom 200%/400% só por automação (aceito) | Fotos de câmera e Portal feitos; metadados conferidos em 3 fotos guardadas pelo app (13/10/2026): sem GPS, sem aparelho, sem XMP; só data e fuso (e orientação 0). Achado: blocos Xiaomi (APP3/APP4) sobreviviam à limpeza; corrigido | Nenhum relatado. Celular: bloqueio do firewall do Windows (regras de bloqueio do python.exe) resolvido fora do app |
+
+### Aceite do Supabase Storage em produção (26/10/2026, `https://lamotos.duckdns.org`)
+
+Feito com moto, cliente e contrato de teste (TESTE / ABC-1D23), no Chrome em que o proprietário fez o login; a automação enviou os
+arquivos pelos formulários do app. Arquivos de teste: JPEG com GPS, marca, modelo e série falsos, e um PDF.
+
+| Verificação | Resultado |
+|---|---|
+| Comprovante PDF e JPEG no bucket `documentos` (Documentos > Novo) | Cadastrados; link «Comprovante» responde 303 para URL assinada do Supabase |
+| Foto de vistoria no bucket `vistorias` (Vistorias > Registrar, devolução) | Registrada; a foto carrega na página sob a CSP (640×480) |
+| URL assinada baixa o arquivo | 200, `application/pdf` e `image/jpeg`; o PDF é idêntico (SHA-256) ao original |
+| Acesso sem a assinatura | `/object/public/...` e o caminho sem token: 400 nos dois buckets |
+| Expiração (5 min) | Após 316–319 s: 400 `InvalidJWT` (`exp` vencido) |
+| Rota do comprovante sem login | 303 para `/login?proximo=...` |
+| Privacidade das fotos guardadas | JPEG baixado dos dois buckets sem GPS, marca, modelo ou série |
+
+Não coberto: bucket `trocas_oleo` (portal do locatário) e envio pelo celular.
+
