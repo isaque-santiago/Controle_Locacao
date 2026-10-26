@@ -181,6 +181,21 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
   cell-pag deve ter destino fora da VPS.
 - Fuso do servidor: UTC; o app trabalha em America/Sao_Paulo.
 
+### Rotina de manutenção (dependências e imagem)
+
+- **Dependências (CVE):** a job `auditoria-dependencias` do `ci.yml` roda `pip-audit -r requirements.txt` (árvore completa) em todo push,
+  em todo pull request e **toda segunda-feira às 09:00 (Brasília)**. Se ficar vermelha, o GitHub avisa por e-mail: suba a versão indicada
+  em `requirements.txt`, rode `pytest` e faça o push (o deploy sai pela CI). Ela não bloqueia o deploy.
+- **Atualizações:** o `.github/dependabot.yml` abre PRs semanais (pip, imagem base do Docker) e mensais (GitHub Actions). Cada PR passa
+  pelo `pytest` em Python 3.12 e 3.14; mesclar na `main` dispara o deploy. Ative também, no GitHub, *Settings > Code security > Dependabot
+  alerts* (alertas de CVE por e-mail, independentes do `pip-audit`).
+- **Imagem base e sistema:** a imagem `python:3.12-slim` só recebe correções do Debian quando o Coolify reconstrói **sem cache**. Uma vez
+  por mês (e quando houver CVE grave no Debian ou no Python), no Coolify: aplicativo > *Deploy* com **Force rebuild**. Depois confira
+  `/saude` e o login. O sistema da VPS já se atualiza sozinho (`unattended-upgrades`, seção 2); o que falta é só reiniciar quando o
+  kernel pedir.
+- **Registro:** 26/10/2026 — `pip-audit` achou 37 vulnerabilidades no Pillow 12.3.0 (corrigidas em 13.0.0); `requirements.txt` passou para
+  `pillow==13.0.0` e a árvore completa (46 pacotes) ficou sem achados. O `pytest` passou (1173 testes) com a versão nova.
+
 ## 9. Problemas comuns
 
 | Sintoma | Causa provável |

@@ -39,4 +39,4 @@ Supabase (continua sendo a proteção final dos dados) nem do servidor/Coolify (
   não são recodificados (os pixels seguem idênticos); arquivo corrompido é recusado. PDF segue sem alteração (metadados do PDF não são limpos).
 - **Sessões na memória:** reiniciar o servidor desloga todos (decisão da Fase 1).
 - **Cookie `sessao`** sem prefixo `__Host-`: ganho pequeno, fica como melhoria futura.
-- Não há verificação de dependências (CVE) nem atualização automática de imagens; incluir na rotina da VPS.
+- **Dependências (CVE) e imagens — tratado em 26/10/2026:** `pip-audit` na CI (push, PR e toda segunda) e Dependabot (`.github/dependabot.yml`); a imagem base é reconstruída sem cache uma vez por mês, à mão no Coolify (rotina em `Arquivos/Deploy_VPS.md`, seção 8). A reconstrução ainda não é automática.
