@@ -419,7 +419,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 .vazio {text-align: center; padding: var(--e7) var(--e4); display: grid; justify-items: center; gap: var(--e3);}
 .vazio .adesivo {width: 56px; height: 56px; color: var(--texto-3);}
 .vazio p {max-width: 40ch; color: var(--texto-2);}
-.vazio h3 {font-size: 18px;}
+.vazio h2 {font-size: 18px;}
 
 /* ---------- Assistente de contrato ---------- */
 .passos {list-style: none; margin: 0 0 var(--e5); padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e2);}

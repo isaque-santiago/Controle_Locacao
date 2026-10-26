@@ -134,10 +134,12 @@ TESTE ROTEIRO, contrato 12/10/2026, semanal, R$ 100,00, caução R$ 200,00). Os 
 Não feito neste ambiente: alterar parâmetros em Configurações (afetaria os encargos reais), cobrança do excedente quando o dano passa da caução
 (só a prévia, «devolver R$ 0,00»; a regra é coberta por `tests/test_caucao.py`), Firefox e celular (com o proprietário).
 
-Achados (sem correção de código nesta rodada):
+Achados (corrigidos no código depois da rodada, ainda sem deploy; o terceiro vem do Lighthouse de 26/10/2026):
 
 - Console: no diálogo «Encerrar contrato», cada alteração dos campos que recalculam a prévia registra `error: The selector "find button[type=submit]" on
   hx-disabled-elt returned no matches!`. O atributo do formulário é herdado pelos campos que disparam a prévia; a prévia funciona. Corrigir com
   `hx-disabled-elt="unset"` nesses campos.
 - Mensagem do fluxo 3: «Quilometragem registrada: 300 km» não diz que o km atual da moto segue em 500 km.
+- Estado vazio de Cobranças: o título era um `<h3>` logo depois do `<h1>` (axe `heading-order`, acessibilidade 98). O macro `estado_vazio` agora usa `<h2>`.
+- Correções: `hx-disabled-elt="unset"` nos campos da prévia do encerramento e do pagamento (reproduzido e confirmado com o htmx 2.0.11 do projeto); a mensagem do km passa a dizer «Leitura de 300 km registrada no histórico... O km atual continua 500 km».
 

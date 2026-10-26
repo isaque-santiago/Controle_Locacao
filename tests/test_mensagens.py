@@ -45,6 +45,14 @@ def test_nenhuma_mensagem_usa_o_texto_generico():
 
 def test_quilometragem_e_custo_formatados():
     assert "12.345 km" in mensagens.km_atualizado("ABC-1D23", 12345).texto
+    assert "12.345 km" in mensagens.km_atualizado("ABC-1D23", 12345, km_atual=12000).texto
+
+
+def test_leitura_historica_menor_diz_que_o_km_atual_continua():
+    texto = mensagens.km_atualizado("ABC-1D23", 300, km_atual=500).texto
+    assert "300 km" in texto and "histórico" in texto and "O km atual continua 500 km" in texto
+    igual = mensagens.km_atualizado("ABC-1D23", 500, km_atual=500).texto
+    assert "500 km" in igual and "continua" not in igual
     assert "R$ 300,00" in mensagens.manutencao_registrada("ABC-1D23", True, Decimal("300")).texto
     assert "R$" not in mensagens.manutencao_registrada("ABC-1D23", True, Decimal("0")).texto
 

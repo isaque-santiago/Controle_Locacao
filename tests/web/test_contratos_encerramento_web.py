@@ -35,6 +35,8 @@ def test_dialogo_mostra_vistoria_caucao_e_impacto(cliente, base_contratos):
     assert "Caução recebida R$ 400,00 → devolver ao cliente" in html and "R$ 400,00" in html
     assert "A cobrança abaixo será cancelada:" in html and "20/10/2026" in html
     assert f'hx-post="{_url(base_contratos, "/previa")}"' in html
+    # Os campos que recalculam a prévia não herdam o hx-disabled-elt do formulário (o seletor "find" não acha nada neles).
+    assert html.count('hx-disabled-elt="unset"') == 2 and html.count('hx-disabled-elt="find button[type=submit]"') == 1
 
 
 def test_previa_recalcula_com_danos_e_data(cliente, base_contratos):
