@@ -305,6 +305,9 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
   celular (89–100) vem do TBT, que varia entre execuções (40–180 ms). Achados: (1) Cobranças perde 2 pontos de acessibilidade por
   `heading-order` (o `<h3>` do estado vazio, macro `estado_vazio` em `componentes/macros.html`, vem logo depois do `<h1>`, sem `<h2>`); (2) o
   SEO da página de login tira 90 por faltar `meta description` (irrelevante para um app privado). Não houve ajuste de código.
+  **Depois da correção (deploy de 26/10/2026, PR #113):** Cobranças com acessibilidade **100** em desktop e celular (`heading-order` aprovado; o
+  `estado_vazio` passou a usar `<h2>`), desempenho 98–100, LCP 0,3–1,4 s, TBT 0–110 ms, CLS 0,002. O console dos diálogos «Encerrar contrato» e
+  «Pagar» não registra mais o erro do `hx-disabled-elt`, e a prévia de ambos continua recalculando.
   Como reproduzir: Node LTS, `npm i lighthouse`, Chrome com `--remote-debugging-port=9222`, login manual e
   `npx lighthouse <url> --port=9222 --disable-storage-reset` (`--preset=desktop` para o desktop).
 
