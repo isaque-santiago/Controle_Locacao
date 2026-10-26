@@ -113,3 +113,31 @@ duas fotos JPEG com GPS, marca, modelo e série falsos.
 
 Não coberto: leitura direta do Storage pelo locatário com a chave anônima (o app não a expõe) e envio pelo celular.
 
+### Roteiro de aceite no app publicado (26/10/2026, `https://lamotos.duckdns.org`)
+
+Fluxos 1 a 10 do roteiro conduzidos por automação no Chrome em que o proprietário fez o login, com registros de teste (moto TST-1E55, cliente
+TESTE ROTEIRO, contrato 12/10/2026, semanal, R$ 100,00, caução R$ 200,00). Os envios de arquivo do Storage estão na seção anterior.
+
+| Fluxo | Resultado |
+|---|---|
+| 1. Sem login | As 11 páginas do menu e a ficha de moto redirecionam para `/login`; `/saude` 200; `/componentes` 404 |
+| 2. Cadastro | Placa inválida e CPF inválido recusados com mensagem; placa e CPF duplicados recusados; plano automático (9 itens) criado; CPF mascarado na lista |
+| 3. Km | 500 km registrado; leitura 300 km exige confirmação e não reduz o km atual (continua 500) |
+| 4. Contrato | Prévia (caução + 5 parcelas) igual às cobranças geradas; moto sai das disponíveis (aparece como «Alugada») |
+| 5. Pagamentos | Em dia (R$ 100 + multa R$ 15), parcial (R$ 40; saldo R$ 60 em aberto), restante com R$ 64 de encargos (15 + 7×7) e atraso de 14 dias com R$ 113 (15 + 7×14); principal maior que o saldo recusado; caução sem encargos |
+| 6. Manutenção | Alerta de óleo vencida a 1.100 km; manutenção aberta (moto em manutenção, custo R$ 75,00) e concluída; só o item de óleo reiniciou (próxima troca em 2.150 km); moto voltou a «Alugada» |
+| 7. Documento | IPVA vencido aparece no Dashboard; regularizado com comprovante PDF; cadastro do próximo ano aberto com vencimento em branco e criado |
+| 8. Encerramento | Devolução com avaria e danos de R$ 120: «Devolver R$ 80,00 de caução», 2 cobranças futuras canceladas, parcelas pagas preservadas, moto «Disponível», km rodados 660; comparação entrega × devolução marca o farol como alterado |
+| 9. Dashboard e relatórios | Recebido R$ 612 = R$ 300 de principal + R$ 192 de encargos + R$ 120 de danos retidos (a caução de R$ 200 não é receita); manutenção R$ 75; resultado R$ 487. CSV (BOM, `;`, vírgula decimal) e Excel das 4 abas abrem com acentos corretos |
+| 10. Backup | ZIP com as 15 tabelas, `manifesto.json` (contagens iguais às linhas dos CSV) e `LEIA-ME.txt`; resposta `no-store` |
+
+Não feito neste ambiente: alterar parâmetros em Configurações (afetaria os encargos reais), cobrança do excedente quando o dano passa da caução
+(só a prévia, «devolver R$ 0,00»; a regra é coberta por `tests/test_caucao.py`), Firefox e celular (com o proprietário).
+
+Achados (sem correção de código nesta rodada):
+
+- Console: no diálogo «Encerrar contrato», cada alteração dos campos que recalculam a prévia registra `error: The selector "find button[type=submit]" on
+  hx-disabled-elt returned no matches!`. O atributo do formulário é herdado pelos campos que disparam a prévia; a prévia funciona. Corrigir com
+  `hx-disabled-elt="unset"` nesses campos.
+- Mensagem do fluxo 3: «Quilometragem registrada: 300 km» não diz que o km atual da moto segue em 500 km.
+
