@@ -168,7 +168,8 @@ Achados e o que foi feito (branch `feat/fotos-entrega-e-camera`):
   do contrato criado diz onde adicionar, e a de falha parcial manda abrir Vistorias.
 - **Câmera.** No portal do locatário os campos da foto do painel e da nota usam `accept="image/*" capture="environment"` (abrem a câmera
   direto no celular; no desktop o atributo é ignorado). Nas vistorias (campo múltiplo, onde `capture` não vale) o `accept` passou a
-  `image/*`, para o seletor do Android mostrar a câmera como opção. **A conferir no aparelho depois do deploy.**
+  `image/*`. No POCO isso abriu só a galeria (campo múltiplo usa o seletor de fotos do sistema, sem câmera); por isso cada campo múltiplo
+  (registrar vistoria, fotos da entrega e Adicionar fotos) ganhou um segundo campo `fotos` «Tirar foto agora» com `capture="environment"`, que sempre abre a câmera.
 - **Alerta «Mude sua senha»** do Gerenciador de senhas do Google ao entrar como dono: a senha apareceu em lista pública de vazamentos.
   Não é falha do app; a senha do dono foi apontada para troca (Supabase, Authentication > Users).
 - Fica como decisão: fotos de câmera de 64 MP podem passar de 10 MB; avaliar redução no navegador antes do envio.

@@ -2,6 +2,7 @@
 <div class="campo largo{{ ' com-erro' if erros.fotos else '' }}">
   <label for="f-fotos">Fotos</label>
   <input class="entrada" id="f-fotos" name="fotos" type="file" multiple accept="image/*"{% if erros.fotos %} aria-invalid="true"{% endif %} aria-describedby="f-fotos-ajuda{{ ' f-fotos-erro' if erros.fotos }}">
-  <small id="f-fotos-ajuda">Até {{ limite_fotos }} fotos JPG ou PNG por vez, de até 10 MB cada. No celular, a câmera aparece como opção. O navegador não guarda os arquivos depois de um erro: escolha as fotos de novo.</small>
+  <small id="f-fotos-ajuda">Até {{ limite_fotos }} fotos JPG ou PNG por vez, de até 10 MB cada, escolhidas da galeria. O navegador não guarda os arquivos depois de um erro: escolha as fotos de novo.</small>
   {% if erros.fotos %}<small class="msg-erro" id="f-fotos-erro">{{ erros.fotos }}</small>{% endif %}
+  {% with camera_id="f-fotos-camera" %}{% include "vistorias/_campo_camera.html" %}{% endwith %}
 </div>
