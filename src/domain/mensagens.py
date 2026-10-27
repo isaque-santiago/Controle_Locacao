@@ -70,10 +70,14 @@ def acesso_portal_removido(nome):
 # ---------------------------------------------------------------- contratos --
 
 
-def contrato_criado(nome, placa):
-    return _alerta(
-        f"Contrato de {nome} com a moto {placa} criado. Anexe as fotos da vistoria de entrega na página Vistorias."
-    )
+def contrato_criado(nome, placa, enviadas=0, falhas_fotos=0):
+    """`enviadas` fotos da entrega foram anexadas; sem fotos, o aviso diz onde adicioná-las depois."""
+    texto = f"Contrato de {nome} com a moto {placa} criado."
+    if falhas_fotos:
+        return _alerta(texto + _aviso_fotos(falhas_fotos), atencao=True)
+    if enviadas:
+        return _alerta(texto + (" Foto da vistoria de entrega anexada." if enviadas == 1 else f" {enviadas} fotos da vistoria de entrega anexadas."))
+    return _alerta(texto + " Para anexar fotos da vistoria de entrega, abra Vistorias e use “Adicionar fotos”.")
 
 
 def contrato_encerrado(nome, placa, devolucao=None, desconto=None, excedente=None):
@@ -155,7 +159,7 @@ def fotos_anexadas(quantidade, falhas_fotos=0):
 
 def _aviso_fotos(falhas):
     quantas = "1 foto não foi enviada" if falhas == 1 else f"{falhas} fotos não foram enviadas"
-    return f" Atenção: {quantas}. Use “Adicionar fotos” para tentar de novo."
+    return f" Atenção: {quantas}. Abra Vistorias e use “Adicionar fotos” para tentar de novo."
 
 
 # ------------------------------------------------------------ configurações --

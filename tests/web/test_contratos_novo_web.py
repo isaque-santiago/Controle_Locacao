@@ -131,6 +131,46 @@ def test_criar_com_vistoria_invalida_nao_grava_e_mostra_erros(cliente, base_cont
     assert 'value="4999"' in resposta.text and acoes_contratos_falsas.chamadas == []
 
 
+def test_confirmar_oferece_fotos_da_entrega_com_camera_e_envio_multipart(cliente, base_contratos):
+    _preparar(cliente, base_contratos)
+    html = cliente.get(f"{BASE}?etapa=4").text
+    assert 'enctype="multipart/form-data"' in html and 'name="fotos" type="file" multiple accept="image/*"' in html
+    assert "Fotos da entrega" in html and "As fotos da vistoria são anexadas depois" not in html
+
+
+def test_criar_com_fotos_anexa_a_vistoria_de_entrega(cliente, base_contratos, acoes_contratos_falsas, monkeypatch):
+    from src.web import acoes_vistorias
+
+    enviadas = []
+    monkeypatch.setattr(acoes_vistorias, "anexar_fotos_da_entrega",
+                        lambda contrato_id, fotos: enviadas.append((contrato_id, [f.filename for f in fotos])) or 1)
+    token = _preparar(cliente, base_contratos)
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()}, follow_redirects=False,
+                            files=[("fotos", ("a.jpg", b"\xff\xd8\xff\xe0" + b"0" * 32, "image/jpeg")),
+                                   ("fotos", ("b.png", b"\x89PNG\r\n\x1a\n" + b"0" * 32, "image/png"))])
+    assert resposta.status_code == 303 and len(acoes_contratos_falsas.chamadas) == 1
+    assert enviadas == [("00000000-0000-0000-0000-0000000000e1", ["a.jpg", "b.png"])]
+    aviso = cliente.get("/contratos").text
+    assert "1 foto da vistoria de entrega anexada" not in aviso and "Atenção: 1 foto não foi enviada" in aviso
+
+
+def test_criar_sem_fotos_nao_chama_o_storage_e_avisa_onde_adicionar(cliente, base_contratos, acoes_contratos_falsas, monkeypatch):
+    from src.web import acoes_vistorias
+
+    monkeypatch.setattr(acoes_vistorias, "anexar_fotos_da_entrega", lambda *a: pytest.fail("não deveria enviar fotos"))
+    token = _preparar(cliente, base_contratos)
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()}, follow_redirects=False)
+    assert resposta.status_code == 303 and "Adicionar fotos" in cliente.get("/contratos").text
+
+
+def test_foto_invalida_na_entrega_nao_cria_o_contrato(cliente, base_contratos, acoes_contratos_falsas):
+    token = _preparar(cliente, base_contratos)
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()},
+                            files=[("fotos", ("a.gif", b"GIF89a", "image/gif"))])
+    assert resposta.status_code == 422 and "a.gif" in resposta.text and acoes_contratos_falsas.chamadas == []
+    assert "escolha as fotos de novo" in resposta.text
+
+
 def test_erro_do_servico_ao_criar_mostra_mensagem_e_mantem_rascunho(cliente, base_contratos, acoes_contratos_falsas):
     token = _preparar(cliente, base_contratos)
     acoes_contratos_falsas.falhar_com = ValueError("A moto não está disponível.")

@@ -77,7 +77,7 @@ def test_etapa_dois_traz_valores_iniciais_e_campo_de_fotos(cliente, base_vistori
     assert 'name="contrato" value="' + SEM_VISTORIAS in html and 'value="12000"' in html
     assert 'value="' + hoje_br().isoformat() + '"' in html and 'min="2026-09-01"' in html
     assert '<option value="entrega" selected>' in html and '<option value="devolucao"' in html
-    assert '<option value="cheio" selected>' in html and 'name="fotos" type="file" multiple' in html
+    assert '<option value="cheio" selected>' in html and 'name="fotos" type="file" multiple accept="image/*"' in html
     assert "Alterar contrato" in html and 'hx-get="/vistorias/registrar"' in html
     pagina = cliente.get(f"/vistorias/registrar?contrato={SEM_VISTORIAS}").text
     assert "<html" in pagina and 'id="form-registro"' in pagina and 'enctype="multipart/form-data"' in pagina

@@ -11,11 +11,12 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
-from src.domain import contratos_lista, formulario_contrato as formulario, mensagens
+from src.domain import contratos_lista, formulario_contrato as formulario, formulario_vistoria, mensagens
 from src.domain.formulario_moto import ErroDeCampos
 from src.domain.valores import hoje_br
 from src.domain.vistorias import CHECKLIST_PADRAO, ESTADOS_ITEM, NIVEIS_COMBUSTIVEL, rotulo_item
-from src.web import acoes_contratos, dados_contratos
+from src.web import acoes_contratos, acoes_vistorias, dados_contratos
+from src.web.envio_fotos import resumo_fotos, separar_formulario
 from src.web.apresentacao import formatar_milhar, formatar_placa
 from src.web.dependencias import exigir_dono, validar_csrf
 from src.web.rotas.motos_formularios import _concluir, _devolver_formulario, _entrada
@@ -83,6 +84,7 @@ def _extra_confirmar(rascunho, moto):
         "itens_checklist": [(PREFIXO + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],
         "estados": [(e, _ESTADOS_ROTULO[e]) for e in ESTADOS_ITEM],
         "niveis": [(n, n.capitalize()) for n in NIVEIS_COMBUSTIVEL],
+        "limite_fotos": formulario_vistoria.LIMITE_FOTOS,
     }
 
 
@@ -175,7 +177,7 @@ async def enviar_condicoes(request: Request, sessao: Sessao = Depends(exigir_don
     return await run_in_threadpool(_condicoes, request, sessao, await _entrada(request))
 
 
-def _criar(request, sessao, entrada):
+def _criar(request, sessao, entrada, fotos=()):
     rascunho = sessao.rascunho_contrato
     cliente, moto = _selecionados(rascunho)
     condicoes = rascunho.get("condicoes")
@@ -191,20 +193,34 @@ def _criar(request, sessao, entrada):
     )
 
     def criar():
-        vistoria = formulario.ler_vistoria(entrada, moto["km_atual"])
+        erros = {}
+        try:
+            vistoria = formulario.ler_vistoria(entrada, moto["km_atual"])
+        except ErroDeCampos as erro:
+            erros.update(erro.erros)
+        try:
+            formulario_vistoria.validar_fotos(resumo_fotos(fotos))
+        except ErroDeCampos as erro:
+            erros.update(erro.erros)
+        if erros:
+            raise ErroDeCampos(erros)
         resultado = acoes_contratos.criar_contrato_com_vistoria(
             {"moto_id": moto["id"], "cliente_id": cliente["id"], "km_inicial": vistoria["km"], **condicoes}, vistoria,
         )
         rascunho.clear()
-        destino = f"/contratos/{resultado['contrato_id']}" if resultado and resultado.get("contrato_id") else "/contratos"
-        return _concluir(request, sessao, destino, mensagens.contrato_criado(cliente["nome"], formatar_placa(moto["placa"])))
+        contrato_id = resultado.get("contrato_id") if resultado else None
+        falhas = acoes_vistorias.anexar_fotos_da_entrega(contrato_id, fotos) if fotos else 0
+        destino = f"/contratos/{contrato_id}" if contrato_id else "/contratos"
+        aviso = mensagens.contrato_criado(cliente["nome"], formatar_placa(moto["placa"]), enviadas=len(fotos) - falhas, falhas_fotos=falhas)
+        return _concluir(request, sessao, destino, aviso)
 
     return _devolver_formulario(request, "contratos/novo/novo.html", contexto, criar)
 
 
 @router.post("/contratos/novo/criar", dependencies=[Depends(validar_csrf)])
 async def criar(request: Request, sessao: Sessao = Depends(exigir_dono)):
-    return await run_in_threadpool(_criar, request, sessao, await _entrada(request))
+    entrada, fotos = separar_formulario(await request.form())
+    return await run_in_threadpool(_criar, request, sessao, entrada, fotos)
 
 
 @router.post("/contratos/novo/cancelar", dependencies=[Depends(validar_csrf)])

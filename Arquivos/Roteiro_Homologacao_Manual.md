@@ -143,3 +143,33 @@ Achados (corrigidos no código depois da rodada, ainda sem deploy; o terceiro ve
 - Estado vazio de Cobranças: o título era um `<h3>` logo depois do `<h1>` (axe `heading-order`, acessibilidade 98). O macro `estado_vazio` agora usa `<h2>`.
 - Correções: `hx-disabled-elt="unset"` nos campos da prévia do encerramento e do pagamento (reproduzido e confirmado com o htmx 2.0.11 do projeto); a mensagem do km passa a dizer «Leitura de 300 km registrada no histórico... O km atual continua 500 km».
 
+### Rodada no celular e no app publicado (27/10/2026, POCO M6 Pro, Chrome, `https://lamotos.duckdns.org`)
+
+Feita pelo proprietário, com o app já com as dependências novas. Resultado de cada item do checklist:
+
+| Item | Resultado |
+|---|---|
+| Acesso e HTTPS | OK |
+| Instalar como app (PWA) | OK; abre sem a barra do navegador |
+| Fotos enviadas pelo celular (vistoria e portal) | Envio funcionou. A foto da **entrega** não tinha como ser anexada (ver achados) |
+| Teclado virtual aberto | Não cobriu nenhum botão |
+| Conexão ruim (modo avião por 5 s) | OK |
+| Aviso de sessão («Continuar conectado») | OK |
+| Retrato e paisagem | OK |
+| Privacidade das fotos guardadas (2 JPEG baixadas do site, conferidas pela IA) | Sem GPS, marca, modelo, `Software` nem blocos da Xiaomi/MediaTek; só Orientação e data. Tamanho de 3,16 MB contra 3,19 MB do original (só os blocos saíram; os pixels não mudam) |
+
+Foto original de 11,9 MB (6944×9248, 64 MP) passa do limite de 10 MB e não foi guardada; o envio de uma foto menor funcionou.
+
+Achados e o que foi feito (branch `feat/fotos-entrega-e-camera`):
+
+- **Foto da entrega sem caminho para anexar.** O assistente de contrato não tinha campo de foto, e Vistorias > Registrar só oferece os tipos
+  pendentes (depois do assistente sobra só a devolução). A mensagem de «Adicionar fotos» já existia, mas nenhuma rota a usava. Agora: campo de
+  fotos na etapa 4 do assistente; ação **Adicionar fotos** em cada vistoria da comparação (`/vistorias/{id}/fotos`, diálogo ou página); a mensagem
+  do contrato criado diz onde adicionar, e a de falha parcial manda abrir Vistorias.
+- **Câmera.** No portal do locatário os campos da foto do painel e da nota usam `accept="image/*" capture="environment"` (abrem a câmera
+  direto no celular; no desktop o atributo é ignorado). Nas vistorias (campo múltiplo, onde `capture` não vale) o `accept` passou a
+  `image/*`, para o seletor do Android mostrar a câmera como opção. **A conferir no aparelho depois do deploy.**
+- **Alerta «Mude sua senha»** do Gerenciador de senhas do Google ao entrar como dono: a senha apareceu em lista pública de vazamentos.
+  Não é falha do app; a senha do dono foi apontada para troca (Supabase, Authentication > Users).
+- Fica como decisão: fotos de câmera de 64 MP podem passar de 10 MB; avaliar redução no navegador antes do envio.
+

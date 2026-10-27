@@ -8,8 +8,8 @@
 {% include "contratos/_campos_vistoria.html" %}
 <div class="campo largo{{ ' com-erro' if erros.fotos else '' }}">
   <label for="v-fotos">Fotos</label>
-  <input class="entrada" id="v-fotos" name="fotos" type="file" multiple accept=".jpg,.jpeg,.png,image/jpeg,image/png"{% if erros.fotos %} aria-invalid="true"{% endif %} aria-describedby="v-fotos-ajuda{{ ' v-fotos-erro' if erros.fotos }}">
-  <small id="v-fotos-ajuda">Até {{ limite_fotos }} fotos JPG ou PNG, de até 10 MB cada.{% if erros %} O navegador não guarda os arquivos depois de um erro: escolha as fotos de novo.{% endif %}</small>
+  <input class="entrada" id="v-fotos" name="fotos" type="file" multiple accept="image/*"{% if erros.fotos %} aria-invalid="true"{% endif %} aria-describedby="v-fotos-ajuda{{ ' v-fotos-erro' if erros.fotos }}">
+  <small id="v-fotos-ajuda">Até {{ limite_fotos }} fotos JPG ou PNG, de até 10 MB cada. No celular, a câmera aparece como opção.{% if erros %} O navegador não guarda os arquivos depois de um erro: escolha as fotos de novo.{% endif %}</small>
   {% if erros.fotos %}<small class="msg-erro" id="v-fotos-erro">{{ erros.fotos }}</small>{% endif %}
 </div>
 <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>

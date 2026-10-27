@@ -27,6 +27,10 @@ def obter(vistoria_id: str):
     return vistorias.obter(vistoria_id)
 
 
+def obter_por_contrato_e_tipo(contrato_id: str, tipo: str):
+    return vistorias.obter_por_contrato_e_tipo(contrato_id, tipo)
+
+
 def checklist_padrao() -> dict:
     return checklist_inicial()
 

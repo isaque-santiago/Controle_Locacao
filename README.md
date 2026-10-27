@@ -418,8 +418,8 @@ e o roteiro `supabase/verificar_fluxos.sql` foi executado em produção (23/09) 
 falhas; ele termina em `ROLLBACK`, então não deixa dados.
 
 **Aceite externo:** uploads e URLs assinadas do Supabase Storage validados em produção em 26/10/2026 (ver a seção 7 de
-`Arquivos/Roteiro_Homologacao_Manual.md`). O bucket `trocas_oleo` do portal do locatário também foi validado no mesmo dia. O roteiro de aceite (fluxos 1 a 10) foi executado no app publicado em 26/10/2026, com achados menores listados no Roteiro de homologação. Ainda pendente:
-revisar em celular e no Firefox no aplicativo publicado. O teste local não valida Supabase Storage, infraestrutura
+`Arquivos/Roteiro_Homologacao_Manual.md`). O bucket `trocas_oleo` do portal do locatário também foi validado no mesmo dia. O roteiro de aceite (fluxos 1 a 10) foi executado no app publicado em 26/10/2026, com achados menores listados no Roteiro de homologação. A rodada no celular (POCO M6 Pro) foi feita em 27/10/2026 e gerou a correção das fotos da entrega e da câmera. Ainda pendente:
+conferir a câmera no aparelho depois do deploy e revisar no Firefox no aplicativo publicado. O teste local não valida Supabase Storage, infraestrutura
 ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas e testes isolados.
 
 ## Atualização de uma instalação existente

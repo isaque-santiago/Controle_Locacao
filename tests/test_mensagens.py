@@ -57,6 +57,16 @@ def test_leitura_historica_menor_diz_que_o_km_atual_continua():
     assert "R$" not in mensagens.manutencao_registrada("ABC-1D23", True, Decimal("0")).texto
 
 
+def test_contrato_criado_diz_o_que_aconteceu_com_as_fotos_da_entrega():
+    sem_fotos = mensagens.contrato_criado("Maria", "ABC-1D23")
+    assert "Vistorias" in sem_fotos.texto and "Adicionar fotos" in sem_fotos.texto and not sem_fotos.atencao
+    assert "1 foto" not in sem_fotos.texto and "anexadas" not in sem_fotos.texto
+    assert mensagens.contrato_criado("Maria", "ABC-1D23", enviadas=1).texto.endswith("Foto da vistoria de entrega anexada.")
+    assert "3 fotos da vistoria de entrega anexadas" in mensagens.contrato_criado("Maria", "ABC-1D23", enviadas=3).texto
+    parcial = mensagens.contrato_criado("Maria", "ABC-1D23", enviadas=1, falhas_fotos=2)
+    assert parcial.atencao and "2 fotos não foram enviadas" in parcial.texto and "Adicionar fotos" in parcial.texto
+
+
 def test_o_que_pede_proximo_passo_ou_atencao_fica_na_tela():
     criado = mensagens.contrato_criado("Maria", "ABC-1D23")
     assert criado.tom == ALERTA and not criado.atencao and "Vistorias" in criado.texto

@@ -18,6 +18,15 @@ def registrar_vistoria(contrato_id, moto_id, tipo, dia, vistoria):
     )
 
 
+def anexar_fotos_da_entrega(contrato_id, fotos):
+    """Anexa as fotos à vistoria de entrega do contrato recém-criado (a RPC do contrato só devolve o id do contrato)."""
+    try:
+        entrega = vistorias.obter_por_contrato_e_tipo(contrato_id, "entrega")
+    except Exception:
+        entrega = None
+    return anexar_fotos((entrega or {}).get("id"), fotos)
+
+
 def anexar_fotos(vistoria_id, fotos):
     """Envia cada foto (objeto com `filename` e `file`). Devolve quantas falharam: a vistoria já está salva,
     então a falha de uma foto não pode desfazê-la nem impedir as demais."""

@@ -671,6 +671,8 @@ def csrf_da_sessao(cliente) -> str:
 
 
 CONTRATO_VISTORIAS = "00000000-0000-0000-0000-0000000000d1"
+VISTORIA_ENTREGA = "00000000-0000-0000-0000-0000000000f1"
+VISTORIA_DEVOLUCAO = "00000000-0000-0000-0000-0000000000f2"
 
 
 class BaseVistorias:
@@ -685,15 +687,15 @@ class BaseVistorias:
             {"id": self.contrato_sem_vistorias, "cliente_id": "c1", "moto_id": "m1", "status": "ativo",
              "data_inicio": "2026-09-01", "data_encerramento": None},
         ]
-        self.entrega = {"id": "v1", "contrato_id": CONTRATO_VISTORIAS, "tipo": "entrega", "data": "2026-08-01", "km": 10500,
+        self.entrega = {"id": VISTORIA_ENTREGA, "moto_id": "m1", "contrato_id": CONTRATO_VISTORIAS, "tipo": "entrega", "data": "2026-08-01", "km": 10500,
                         "nivel_combustivel": "cheio", "avarias": None,
                         "checklist": {"farol_dianteiro": "ok", "freio_dianteiro": "ok", "Rack <i>extra</i>": "ok"},
                         "fotos": [{"storage_path": "v1/a.jpg", "legenda": "Lado <direito>"}, {"storage_path": "v1/quebrada.jpg"}]}
-        self.devolucao = {"id": "v2", "contrato_id": CONTRATO_VISTORIAS, "tipo": "devolucao", "data": "2026-09-01", "km": 11000,
+        self.devolucao = {"id": VISTORIA_DEVOLUCAO, "moto_id": "m1", "contrato_id": CONTRATO_VISTORIAS, "tipo": "devolucao", "data": "2026-09-01", "km": 11000,
                           "nivel_combustivel": "1/2", "avarias": None,
                           "checklist": {"farol_dianteiro": "ok", "freio_dianteiro": "avaria", "Rack <i>extra</i>": "ausente"},
                           "fotos": []}
-        self.antiga = {"id": "v3", "contrato_id": "00000000-0000-0000-0000-0000000000d2", "tipo": "entrega",
+        self.antiga = {"id": "00000000-0000-0000-0000-0000000000f3", "moto_id": "m1", "contrato_id": "00000000-0000-0000-0000-0000000000d2", "tipo": "entrega",
                        "data": "2026-01-01", "km": 8000, "nivel_combustivel": "1/4", "avarias": "Risco no tanque",
                        "checklist": {}, "fotos": []}
         self.registradas = [self.entrega, self.devolucao, self.antiga]
@@ -718,6 +720,7 @@ def base_vistorias(monkeypatch):
     monkeypatch.setattr(dados_vistorias, "vistorias", SimpleNamespace(
         listar=lambda: base.registradas, comparar_entrega_devolucao=comparar,
         listar_por_contrato=lambda id_: [v for v in base.registradas if v["contrato_id"] == id_],
+        obter=lambda id_: next((v for v in base.registradas if v["id"] == id_), None),
         url_foto=lambda caminho: _url({"storage_path": caminho})))
     monkeypatch.setattr(dados_vistorias, "contratos", SimpleNamespace(listar=lambda: base.contratos))
     monkeypatch.setattr(dados_vistorias, "clientes", SimpleNamespace(
