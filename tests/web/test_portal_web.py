@@ -38,8 +38,8 @@ def test_pagina_mostra_o_contrato_a_situacao_e_os_formularios(cliente, base_port
     assert "multa fixa de" in html and "R$ 50,00" in html
     assert f'action="/portal/troca-oleo/{CONTRATO_PORTAL}"' in html and 'enctype="multipart/form-data"' in html
     assert 'name="km"' in html and 'name="foto" type="file"' in html and 'name="nota" type="file"' in html
-    # No celular o campo abre a câmera (foto do painel e da nota tiradas na hora); no desktop o atributo é ignorado.
-    assert html.count('accept="image/*" capture="environment"') == 2
+    # No celular o seletor oferece câmera e galeria; `capture` forçaria só a câmera e esconderia o envio da galeria.
+    assert html.count('type="file" accept="image/*"') == 2 and "capture=" not in html
     assert "Últimas trocas reportadas" in html and "01/09/2026" in html and "multa aplicada" in html
     assert 'action="/portal/senha"' in html and 'type="password"' in html and "Portal em migração" not in html
 
