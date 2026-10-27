@@ -136,6 +136,7 @@ def test_confirmar_oferece_fotos_da_entrega_com_camera_e_envio_multipart(cliente
     html = cliente.get(f"{BASE}?etapa=4").text
     assert 'enctype="multipart/form-data"' in html and 'name="fotos" type="file" multiple accept="image/*"' in html
     assert "Fotos da entrega" in html and "As fotos da vistoria são anexadas depois" not in html
+    assert html.count('capture="environment"') == 1 and "Tirar foto agora" in html
 
 
 def test_criar_com_fotos_anexa_a_vistoria_de_entrega(cliente, base_contratos, acoes_contratos_falsas, monkeypatch):

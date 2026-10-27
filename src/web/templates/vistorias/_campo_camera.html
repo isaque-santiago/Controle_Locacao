@@ -1,0 +1,4 @@
+{# Segundo campo `fotos`, só com a câmera: o Android abre o seletor de fotos do sistema (sem câmera) nos campos múltiplos. #}
+<label for="{{ camera_id }}">Tirar foto agora</label>
+<input class="entrada" id="{{ camera_id }}" name="fotos" type="file" accept="image/*" capture="environment">
+<small>No celular, abre a câmera. Dá para tirar uma foto e ainda escolher outras da galeria no campo acima.</small>

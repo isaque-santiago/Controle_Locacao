@@ -50,6 +50,8 @@ def test_dialogo_conta_as_fotos_atuais_e_aceita_imagem_de_camera(cliente, base_v
     html = cliente.get(f"/vistorias/{VISTORIA_ENTREGA}/fotos", headers=HX).text
     assert "<html" not in html and 'id="form-dialogo"' in html and 'hx-encoding="multipart/form-data"' in html
     assert 'name="fotos" type="file" multiple accept="image/*"' in html and "Já tem 2 foto(s)" in html
+    # Campo múltiplo só abre a galeria no Android: o segundo campo `fotos` abre a câmera.
+    assert 'name="fotos" type="file" accept="image/*" capture="environment"' in html and "Tirar foto agora" in html
     assert "Entrega" in html and "BRA-2E19" in html and "Maria &lt;b&gt;Silva&lt;/b&gt;" in html
     assert "Ainda não tem fotos" in cliente.get(f"/vistorias/{VISTORIA_DEVOLUCAO}/fotos", headers=HX).text
     pagina = cliente.get(f"/vistorias/{VISTORIA_DEVOLUCAO}/fotos").text
