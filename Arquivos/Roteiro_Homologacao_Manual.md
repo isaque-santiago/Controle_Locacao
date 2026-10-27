@@ -166,8 +166,8 @@ Achados e o que foi feito (branch `feat/fotos-entrega-e-camera`):
   pendentes (depois do assistente sobra só a devolução). A mensagem de «Adicionar fotos» já existia, mas nenhuma rota a usava. Agora: campo de
   fotos na etapa 4 do assistente; ação **Adicionar fotos** em cada vistoria da comparação (`/vistorias/{id}/fotos`, diálogo ou página); a mensagem
   do contrato criado diz onde adicionar, e a de falha parcial manda abrir Vistorias.
-- **Câmera.** No portal do locatário os campos da foto do painel e da nota usam `accept="image/*" capture="environment"` (abrem a câmera
-  direto no celular; no desktop o atributo é ignorado). Nas vistorias (campo múltiplo, onde `capture` não vale) o `accept` passou a
+- **Câmera.** No portal do locatário os campos da foto do painel e da nota usam `accept="image/*"`; o `capture="environment"` da primeira
+  versão forçava só a câmera e tirava a opção de enviar da galeria, então foi removido (o seletor do celular oferece as duas). Nas vistorias (campo múltiplo, onde `capture` não vale) o `accept` passou a
   `image/*`, para o seletor do Android mostrar a câmera como opção. **A conferir no aparelho depois do deploy.**
 - **Alerta «Mude sua senha»** do Gerenciador de senhas do Google ao entrar como dono: a senha apareceu em lista pública de vazamentos.
   Não é falha do app; a senha do dono foi apontada para troca (Supabase, Authentication > Users).
