@@ -81,6 +81,9 @@ jobs:
       - name: Instalar o navegador
         # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
         run: |
+          # O runner às vezes ainda roda um apt-get de inicialização: o playwright falha com "Could not get lock
+          # /var/lib/dpkg/lock-frontend" (código 100) e as 3 tentativas caem em poucos segundos. Espera o lock soltar (até 3 min).
+          timeout 180 bash -c 'while sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 3; done' || true
           for tentativa in 1 2 3; do
             timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
             echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
@@ -137,6 +140,9 @@ jobs:
       - name: Instalar o navegador
         # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
         run: |
+          # O runner às vezes ainda roda um apt-get de inicialização: o playwright falha com "Could not get lock
+          # /var/lib/dpkg/lock-frontend" (código 100) e as 3 tentativas caem em poucos segundos. Espera o lock soltar (até 3 min).
+          timeout 180 bash -c 'while sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 3; done' || true
           for tentativa in 1 2 3; do
             timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
             echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."

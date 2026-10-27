@@ -175,3 +175,7 @@ Achados e o que foi feito (branch `feat/fotos-entrega-e-camera`):
   Não é falha do app; a senha do dono foi apontada para troca (Supabase, Authentication > Users).
 - Fica como decisão: fotos de câmera de 64 MP podem passar de 10 MB; avaliar redução no navegador antes do envio.
 
+Conferência no POCO depois dos PRs #122 e #123 (27/10/2026, Chrome): portal do locatário (câmera ou galeria nos dois campos), Registrar vistoria,
+fotos da entrega no assistente de contrato e Adicionar fotos (galeria múltipla + «Tirar foto agora», com fotos dos dois campos chegando juntas):
+**todos ok.** Pendentes: a revisão no Firefox desktop, a troca da senha do dono e o Dependabot alerts (precisa do dono do repositório).
+
