@@ -60,7 +60,9 @@ jobs:
   navegador-login:
     if: github.event_name != 'schedule'
     # Sem credenciais: valores fictícios bastam para a tela de acesso renderizar.
-    runs-on: ubuntu-latest
+    # Fixa o Ubuntu 24.04: o ubuntu-latest passou a ser o 26.04, que o Playwright ainda não suporta; o --with-deps puxa
+    # centenas de pacotes e estoura o timeout, deixando um apt-get órfão segurando o lock do dpkg.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -81,6 +83,9 @@ jobs:
       - name: Instalar o navegador
         # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
         run: |
+          # Um apt-get de inicialização (ou órfão da tentativa anterior) pode segurar o lock do dpkg: o playwright falha com
+          # "Could not get lock /var/lib/dpkg/lock-frontend" (código 100). Espera o lock soltar (até 3 min).
+          timeout 180 bash -c 'while sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 3; done' || true
           for tentativa in 1 2 3; do
             timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
             echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
@@ -112,7 +117,9 @@ jobs:
 
   navegador-autenticado:
     if: github.event_name == 'workflow_dispatch' && inputs.autenticado
-    runs-on: ubuntu-latest
+    # Fixa o Ubuntu 24.04: o ubuntu-latest passou a ser o 26.04, que o Playwright ainda não suporta; o --with-deps puxa
+    # centenas de pacotes e estoura o timeout, deixando um apt-get órfão segurando o lock do dpkg.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -137,6 +144,9 @@ jobs:
       - name: Instalar o navegador
         # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
         run: |
+          # Um apt-get de inicialização (ou órfão da tentativa anterior) pode segurar o lock do dpkg: o playwright falha com
+          # "Could not get lock /var/lib/dpkg/lock-frontend" (código 100). Espera o lock soltar (até 3 min).
+          timeout 180 bash -c 'while sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 3; done' || true
           for tentativa in 1 2 3; do
             timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
             echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
