@@ -8,7 +8,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
-from starlette.datastructures import UploadFile
 
 from src.domain import formulario_vistoria as formulario, mensagens
 from src.domain.formulario_moto import ErroDeCampos
@@ -16,6 +15,7 @@ from src.domain.valores import hoje_br
 from src.domain.vistorias import CHECKLIST_PADRAO, ESTADOS_ITEM, NIVEIS_COMBUSTIVEL, rotulo_item
 from src.domain.vistorias_lista import TIPO_ROTULO
 from src.web import acoes_vistorias, dados_vistorias
+from src.web.envio_fotos import resumo_fotos, separar_formulario
 from src.web.apresentacao import formatar_milhar, formatar_placa
 from src.web.dependencias import exigir_dono, validar_csrf
 from src.web.rotas.motos_formularios import _concluir, _devolver_formulario
@@ -78,16 +78,6 @@ def formulario_registro(request: Request, contrato: str | None = None, sessao: S
     return renderizar(request, _modelo_do_formulario(request), _contexto(request, registro, v))
 
 
-def _resumo_fotos(fotos):
-    """(nome, tamanho, primeiros bytes) de cada foto, sem ler o arquivo inteiro."""
-    resumo = []
-    for foto in fotos:
-        cabecalho = foto.file.read(formulario.BYTES_DA_ASSINATURA)
-        foto.file.seek(0)
-        resumo.append((foto.filename, foto.size or 0, cabecalho))
-    return resumo
-
-
 def _registrar(request, sessao, entrada, fotos):
     registro = _para_registro_ou_404(entrada.get("contrato"))
     contrato, moto = registro["contrato"], registro["moto"]
@@ -102,7 +92,7 @@ def _registrar(request, sessao, entrada, fotos):
         except ErroDeCampos as erro:
             erros.update(erro.erros)
         try:
-            formulario.validar_fotos(_resumo_fotos(fotos))
+            formulario.validar_fotos(resumo_fotos(fotos))
         except ErroDeCampos as erro:
             erros.update(erro.erros)
         if erros:
@@ -119,8 +109,5 @@ def _registrar(request, sessao, entrada, fotos):
 
 @router.post("/vistorias/registrar", dependencies=[Depends(validar_csrf)])
 async def registrar(request: Request, sessao: Sessao = Depends(exigir_dono)):
-    enviado = await request.form()
-    entrada = {chave: valor for chave, valor in enviado.items() if isinstance(valor, str)}
-    fotos = [valor for chave, valor in enviado.multi_items()
-             if chave == "fotos" and isinstance(valor, UploadFile) and valor.filename]
+    entrada, fotos = separar_formulario(await request.form())
     return await run_in_threadpool(_registrar, request, sessao, entrada, fotos)

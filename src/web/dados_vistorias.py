@@ -94,6 +94,20 @@ def contratos_pendentes():
     ]
 
 
+def vistoria_para_fotos(vistoria_id):
+    """Vistoria com o rótulo do contrato (cliente e placa) para "Adicionar fotos"; None se algo não existir."""
+    vistoria = vistorias.obter(vistoria_id)
+    if vistoria is None:
+        return None
+    moto = motos.obter(vistoria["moto_id"])
+    contrato = next((c for c in contratos.listar() if c["id"] == vistoria["contrato_id"]), None)
+    cliente = clientes.obter(contrato["cliente_id"]) if contrato else None
+    if moto is None or cliente is None:
+        return None
+    return {"vistoria": vistoria, "contrato": contrato, "moto": moto, "cliente": cliente,
+            "tipo_rotulo": vistorias_lista.TIPO_ROTULO[vistoria["tipo"]], "fotos_atuais": len(vistoria.get("fotos") or [])}
+
+
 def obter_para_registro(contrato_id):
     """Contrato com cliente, moto e os tipos de vistoria que faltam; None se algum dos três não existir."""
     contrato = next((c for c in contratos.listar() if c["id"] == contrato_id), None)

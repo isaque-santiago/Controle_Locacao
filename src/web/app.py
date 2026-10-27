@@ -41,6 +41,7 @@ from src.web.rotas import relatorios as rotas_relatorios
 from src.web.rotas import documentos_formularios as rotas_documentos_formularios
 from src.web.rotas import documentos_regularizacao as rotas_documentos_regularizacao
 from src.web.rotas import vistorias as rotas_vistorias
+from src.web.rotas import vistorias_fotos as rotas_vistorias_fotos
 from src.web.rotas import vistorias_registro as rotas_vistorias_registro
 from src.web.rotas import paginas as rotas_paginas
 from src.web.seguranca import CabecalhosSeguranca, LimiteDeCorpo
@@ -118,6 +119,7 @@ def criar_app(
     app.include_router(rotas_configuracoes.router)
     app.include_router(rotas_portal.router)
     app.include_router(rotas_vistorias_registro.router)
+    app.include_router(rotas_vistorias_fotos.router)
     app.include_router(rotas_vistorias.router)
     # Formulários antes da ficha: /motos/nova não pode cair em /motos/{moto_id}
     app.include_router(rotas_motos_formularios.router)

@@ -18,14 +18,20 @@
 {% if not condicoes.data_fim_prevista %}<p class="text-texto-2 text-[13px]">Prazo indeterminado: a prévia mostra só os primeiros 30 dias. As cobranças seguintes são geradas automaticamente enquanto o contrato estiver ativo.</p>{% endif %}
 
 <h2 class="rotulo">Vistoria de entrega</h2>
-<form class="cartao" method="post" action="{{ base }}/criar">
+<form class="cartao" method="post" action="{{ base }}/criar" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <button class="so-leitor" type="submit" name="acao" value="criar" tabindex="-1" aria-hidden="true">Criar contrato</button>
   {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
   <div class="formulario">
     {% include "contratos/_campos_vistoria.html" %}
+    <div class="campo largo{{ ' com-erro' if erros.fotos else '' }}">
+      <label for="v-fotos">Fotos da entrega</label>
+      <input class="entrada" id="v-fotos" name="fotos" type="file" multiple accept="image/*"{% if erros.fotos %} aria-invalid="true"{% endif %} aria-describedby="v-fotos-ajuda{{ ' v-fotos-erro' if erros.fotos }}">
+      <small id="v-fotos-ajuda">Opcional. Até {{ limite_fotos }} fotos JPG ou PNG, de até 10 MB cada. No celular, a câmera aparece como opção. Dá para adicionar mais depois, em Vistorias.{% if erros %} O navegador não guarda os arquivos depois de um erro: escolha as fotos de novo.{% endif %}</small>
+      {% if erros.fotos %}<small class="msg-erro" id="v-fotos-erro">{{ erros.fotos }}</small>{% endif %}
+    </div>
   </div>
-  <p class="text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. As fotos da vistoria são anexadas depois, na página Vistorias.</p>
+  <p class="text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
   <div class="rodape-acoes">
     <button class="btn" type="submit" name="acao" value="voltar" formnovalidate>Voltar</button>
     <button class="btn btn-primario" type="submit" name="acao" value="criar">Criar contrato</button>

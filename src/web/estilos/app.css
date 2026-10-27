@@ -652,7 +652,9 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .vist-cartao .dl {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3) var(--e4); margin: 0 0 var(--e4); padding-bottom: var(--e4); border-bottom: 1px solid var(--linha-sutil);}
 .vist-cartao .dl > div {min-width: 0;}
 .vist-cartao .dl > div:last-child {grid-column: 1 / -1;}
-.vist-cartao .vist-secao:last-of-type {margin-top: auto; padding-top: var(--e4);}
+.vist-cartao .vist-secao-cab {margin-top: auto; padding-top: var(--e4); margin-bottom: var(--e2);}
+.vist-secao-cab {display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--e3);}
+.vist-secao-cab .vist-secao {margin: 0;}
 .vist-secao {font-size: 13px; font-weight: 600; color: var(--texto-2); margin: var(--e4) 0 var(--e2);}
 .vist-checklist {list-style: none; margin: 0 0 var(--e4); padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--e4); align-content: start;}
 .vist-item {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); min-height: 40px; padding: var(--e1) var(--e2); border-top: 1px solid var(--linha-sutil); font-size: 13.5px;}
