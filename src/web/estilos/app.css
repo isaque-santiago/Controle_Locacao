@@ -620,6 +620,20 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .contrato-linhas .lista-cartoes .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left;}
 }
 
+/* Cartões recolhíveis (ficha do cliente): só no celular. O cabeçalho é um botão com seta; em telas largas vira texto comum e tudo fica aberto */
+.recolhe-gatilho {display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;}
+.recolhe-gatilho:disabled {cursor: default;}
+.recolhe-seta {display: none;}
+@media (max-width: 719px) {
+  .recolhe-seta {display: block; flex: none; width: 20px; height: 20px; color: var(--texto-2); transform: rotate(180deg); transition: transform 150ms ease;}
+  [data-recolhivel].aberto .recolhe-seta {transform: none;}
+  .cartao.recolhivel h2 {margin-bottom: 0;}
+  .cartao.recolhivel.aberto h2 {margin-bottom: var(--e3);}
+  .cartao.recolhivel .recolhe-gatilho {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); width: 100%; min-height: 44px; font-weight: inherit;}
+  .cartao.recolhivel:not(.aberto) > :not(h2) {display: none;}
+}
+@media (max-width: 719px) and (prefers-reduced-motion: reduce) {.recolhe-seta {transition: none;}}
+
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
 

@@ -248,6 +248,28 @@
     });
   });
 
+  // ---- Cartões recolhíveis no celular: [data-recolher] (botão do cabeçalho) abre/fecha o [data-recolhivel] que o contém ----
+  document.addEventListener('click', function (e) {
+    var gatilho = e.target.closest('[data-recolher]');
+    if (!gatilho || gatilho.disabled) return;
+    var cartao = gatilho.closest('[data-recolhivel]');
+    if (!cartao) return;
+    var aberto = cartao.classList.toggle('aberto');
+    gatilho.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+  });
+  // Em telas largas tudo fica aberto: o botão vira texto comum (desabilitado e fora da ordem de tabulação)
+  var larga = window.matchMedia('(min-width: 720px)');
+  function sincronizarRecolhiveis() {
+    document.querySelectorAll('[data-recolher]').forEach(function (b) {
+      b.disabled = larga.matches;
+      if (larga.matches) b.removeAttribute('aria-expanded');
+      else b.setAttribute('aria-expanded', b.closest('[data-recolhivel]').classList.contains('aberto') ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', sincronizarRecolhiveis);
+  document.addEventListener('htmx:afterSettle', sincronizarRecolhiveis);
+  if (larga.addEventListener) larga.addEventListener('change', sincronizarRecolhiveis);
+
   // ---- Tema: automático -> escuro -> claro. O servidor lê o cookie e já envia data-tema ----
   var ORDEM = ['', 'escuro', 'claro'];
   document.addEventListener('click', function (e) {
