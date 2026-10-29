@@ -6,5 +6,5 @@
 <div class="rodape-acoes">
   <a class="btn" href="{{ base }}?etapa=1">Voltar</a>
   {% if selecionado_id %}<a class="btn btn-primario" href="{{ base }}?etapa=3">Avançar</a>
-  {% else %}<span><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button><small id="dica-avancar" class="text-texto-2"> Selecione uma moto disponível para continuar.</small></span>{% endif %}
+  {% else %}<div class="avancar-grupo"><small id="dica-avancar" class="dica-avancar">Selecione uma moto disponível para continuar.</small><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button></div>{% endif %}
 </div>
