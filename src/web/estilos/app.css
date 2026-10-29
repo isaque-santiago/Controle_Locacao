@@ -455,6 +455,13 @@ table.dados {width: 100%; border-collapse: collapse;}
 .resumo dt {color: var(--texto-2);} .resumo dd {margin: 0; font-weight: 500; text-align: right;}
 .resumo .total {border-top: 1px solid var(--linha); padding-top: var(--e3); font-size: 16px;}
 .resumo .total dd {font: 600 20px var(--fonte-mono);}
+/* Cliente e moto escolhidos: cartão com um item por linha (texto à esquerda, botão à direita; no celular o botão desce) */
+.selecao-resumo {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin-bottom: var(--e4);}
+.selecao-item {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4); background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);}
+.selecao-texto {display: grid; gap: 2px; min-width: 0;}
+.selecao-rotulo {color: var(--texto-3); font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase;}
+.selecao-valor {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); font-weight: 500; overflow-wrap: anywhere;}
+.btn-compacto {min-height: 36px; padding: 0 var(--e4); font-size: 13px; flex: none;}
 .rodape-acoes {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--linha);}
 @media (min-width: 720px) {.so-celular {display: none;}}
 
@@ -526,6 +533,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .cartao {padding: var(--e4);}
   .medidor {gap: 2px;}
   .rodape-acoes {flex-direction: column-reverse;} .rodape-acoes .btn {width: 100%;}
+  .selecao-resumo {grid-template-columns: 1fr; gap: var(--e2);}
+  .selecao-item {flex-direction: column; align-items: stretch; gap: var(--e3);}
+  .selecao-item .btn-compacto {width: 100%; min-height: var(--alvo);}
   .so-desktop {display: none;}
   .cabecalho .acoes, .cabecalho .acoes .btn {width: 100%;}
   .filtro-pagina, .filtro-col {width: 100%;}
