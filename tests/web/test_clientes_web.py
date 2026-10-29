@@ -135,7 +135,7 @@ def test_pagamentos_pagina_de_dez_em_dez(cliente, base_clientes):
     entrar(cliente)
     base = f"/clientes/{base_clientes.id}"
     primeira = cliente.get(f"{base}?aba=pagamentos").text
-    assert "Mostrando 1 a 10 de 23" in primeira and primeira.count("<tr>") == 10 + 1
+    assert "Mostrando 1 a 10 de 23" in primeira and primeira.count("<tr data-recolhivel>") == 10
     assert f'hx-get="{base}/abas/pagamentos?pagina=2"' in primeira and f'hx-push-url="{base}?aba=pagamentos&amp;pagina=2"' in primeira
     ultima = cliente.get(f"{base}?aba=pagamentos&pagina=3").text
     assert "Mostrando 21 a 23 de 23" in ultima and "pagina=2" in ultima and "pagina=4" not in ultima

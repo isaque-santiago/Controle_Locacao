@@ -248,6 +248,8 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .portal-acesso-icone {display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--sucesso-fundo); color: var(--sucesso-texto);}
 .portal-acesso-titulo {font-weight: 600;}
 .portal-acesso-desc {color: var(--texto-2); font-size: 13px; margin-top: 2px;}
+.portal-criar {margin-top: var(--e4);}
+@media (max-width: 719px) {.portal-criar .btn {width: 100%;}}
 @media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
@@ -608,6 +610,45 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados tbody tr:hover {background: var(--superficie);}
 }
 
+/* Cartões da ficha do cliente (Contratos e Pagamentos): uma coluna, rótulo à esquerda e dado à direita (vence o grid de duas colunas de .lista-cartoes) */
+@media (max-width: 719px) {
+  .contrato-linhas .lista-cartoes .dados tbody tr,
+  .contrato-linhas .lista-cartoes .dados tbody tr:first-child {grid-template-columns: minmax(0, 1fr); gap: 0; row-gap: 0; padding: var(--e3) var(--e4);}
+  .contrato-linhas .lista-cartoes .dados td.modelo {order: -1; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha-sutil);}
+  .contrato-linhas .lista-cartoes .dados td[data-rotulo] {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-bottom: 1px solid var(--linha-sutil); text-align: right; white-space: nowrap;}
+  .contrato-linhas .lista-cartoes .dados td[data-rotulo]:last-child {border-bottom: 0;}
+  .contrato-linhas .lista-cartoes .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left;}
+}
+
+/* Cartões recolhíveis (ficha do cliente): só no celular. O cabeçalho é um botão com seta; em telas largas vira texto comum e tudo fica aberto */
+.recolhe-gatilho {display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;}
+.recolhe-gatilho:disabled {cursor: default;}
+.recolhe-seta {display: none;}
+@media (max-width: 719px) {
+  .recolhe-seta {display: block; flex: none; width: 20px; height: 20px; color: var(--texto-2); transform: rotate(180deg); transition: transform 150ms ease;}
+  [data-recolhivel].aberto .recolhe-seta {transform: none;}
+  .cartao.recolhivel h2 {margin-bottom: 0;}
+  .cartao.recolhivel.aberto h2 {margin-bottom: var(--e3);}
+  .cartao.recolhivel .recolhe-gatilho {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); width: 100%; min-height: 44px; font-weight: inherit;}
+  .cartao.recolhivel:not(.aberto) > :not(h2) {display: none !important;}
+}
+@media (max-width: 719px) and (prefers-reduced-motion: reduce) {.recolhe-seta {transition: none;}}
+
+/* Linhas de tabela recolhíveis no celular (Contratos e Pagamentos): cabeçalho = título + situação + seta; o resto abre ao tocar */
+@media (max-width: 719px) {
+  .contrato-linhas .lista-cartoes .dados tbody tr[data-recolhivel] {position: relative; grid-template-columns: minmax(0, 1fr) auto; align-items: center;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.modelo {grid-column: 1; min-height: 44px; display: flex; align-items: center; padding: 0; border-bottom: 0;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.recolhe-sit {grid-column: 2; order: -1; display: block; margin-right: 32px; padding: 0; border-bottom: 0;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.recolhe-sit::before {display: none;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.recolhe-sit) {grid-column: 1 / -1;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel]:not(.aberto) td[data-rotulo]:not(.recolhe-sit) {display: none;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel].aberto td.modelo,
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel].aberto td.recolhe-sit {margin-bottom: var(--e1);}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}
+}
+
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
 
@@ -788,10 +829,23 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .grade-dados > div {min-width: 0; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha);}
 .grade-dados dt {color: var(--texto-2); font-size: 12.5px; margin-bottom: var(--e1);}
 .grade-dados dd {margin: 0; overflow-wrap: anywhere;}
+/* Celular: dados pessoais como linhas "rótulo à esquerda, valor à direita" */
+@media (max-width: 719px) {
+  .ficha-dados {grid-template-columns: minmax(0, 1fr); gap: 0;}
+  .ficha-dados > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0;}
+  .ficha-dados dt {margin: 0; flex: none;}
+  .ficha-dados dd {text-align: right;}
+}
 /* Confirmação do contrato: os cinco dados na mesma linha (só quebram se a largura não comportar) */
 @media (min-width: 720px) {.grade-linhas {grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e4);}}
 @media (max-width: 1099px) {.ficha-resumo {grid-template-columns: minmax(0, 1fr);}}
-@media (max-width: 719px) {.kpis-compactos {grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e2);} .kpis-compactos .kpi dd {font-size: 15px;}}
+/* Celular: cada indicador vira uma linha "rótulo à esquerda, valor à direita", sem espaço vazio */
+@media (max-width: 719px) {
+  .kpis.kpis-compactos {grid-template-columns: minmax(0, 1fr); gap: var(--e2);}
+  .kpis-compactos .kpi {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4);}
+  .kpis-compactos .kpi dt {min-height: 0; font-size: 13px;}
+  .kpis-compactos .kpi dd {margin: 0; font-size: 16px; text-align: right;}
+}
 
 /* ---------- Tela de login (painel de apresentação + formulário) ---------- */
 .entrada-tela {max-width: none; margin: 0; padding: 0; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
