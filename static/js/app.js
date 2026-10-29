@@ -49,6 +49,62 @@
     if (e.target && e.target.id === 'dlg-form') e.target.removeAttribute('data-alterado');
   }, true);
 
+  // ---- Fotos grandes: reduz no navegador antes do envio (campos input[data-reduzir-foto]) ----
+  // A foto de câmera em resolução máxima (64 MP, 10 a 15 MB) passa do limite de 10 MB do servidor. Só mexe em JPEG/PNG acima de
+  // 4 MB: redesenha com no máximo 3000 px no lado maior e salva em JPEG (o redesenho aplica a orientação e não leva os metadados).
+  var FOTO_LIMITE_BYTES = 4 * 1024 * 1024, FOTO_LADO_MAXIMO = 3000, FOTO_QUALIDADE = 0.85;
+  var megas = function (bytes) { return (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB'; };
+
+  function reduzirFoto(arquivo) {
+    if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size <= FOTO_LIMITE_BYTES || !window.createImageBitmap) {
+      return Promise.resolve(arquivo);
+    }
+    return createImageBitmap(arquivo, { imageOrientation: 'from-image' }).then(function (imagem) {
+      var escala = Math.min(1, FOTO_LADO_MAXIMO / Math.max(imagem.width, imagem.height));
+      var tela = document.createElement('canvas');
+      tela.width = Math.round(imagem.width * escala);
+      tela.height = Math.round(imagem.height * escala);
+      var contexto = tela.getContext('2d');
+      contexto.fillStyle = '#fff';  // PNG com transparência vira fundo branco no JPEG
+      contexto.fillRect(0, 0, tela.width, tela.height);
+      contexto.drawImage(imagem, 0, 0, tela.width, tela.height);
+      if (imagem.close) imagem.close();
+      return new Promise(function (resolver) {
+        tela.toBlob(function (blob) {
+          if (!blob || blob.size >= arquivo.size) { resolver(arquivo); return; }
+          resolver(new File([blob], arquivo.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: arquivo.lastModified }));
+        }, 'image/jpeg', FOTO_QUALIDADE);
+      });
+    }).catch(function () { return arquivo; });  // HEIC e outros formatos que o navegador não abre seguem como estão
+  }
+
+  document.addEventListener('change', function (e) {
+    var campo = e.target;
+    if (!campo.matches || !campo.matches('input[type="file"][data-reduzir-foto]') || !campo.files || !window.DataTransfer) return;
+    var originais = Array.prototype.slice.call(campo.files);
+    if (!originais.some(function (a) { return a.size > FOTO_LIMITE_BYTES; })) return;
+    var botoes = campo.form ? Array.prototype.filter.call(campo.form.querySelectorAll('button[type="submit"]'), function (b) { return !b.disabled; }) : [];
+    var status = campo.parentNode.querySelector('[data-foto-status]');
+    if (!status) {
+      status = document.createElement('small');
+      status.setAttribute('data-foto-status', '');
+      status.setAttribute('role', 'status');
+      campo.parentNode.insertBefore(status, campo.nextSibling);
+    }
+    botoes.forEach(function (b) { b.disabled = true; });  // o envio espera a redução terminar
+    status.textContent = 'Reduzindo foto grande…';
+    Promise.all(originais.map(reduzirFoto)).then(function (novos) {
+      var lista = new DataTransfer();
+      novos.forEach(function (f) { lista.items.add(f); });
+      campo.files = lista.files;
+      var antes = originais.reduce(function (s, a) { return s + a.size; }, 0);
+      var depois = novos.reduce(function (s, a) { return s + a.size; }, 0);
+      status.textContent = depois < antes ? 'Foto reduzida de ' + megas(antes) + ' para ' + megas(depois) + '.' : '';
+    }).catch(function () { status.textContent = ''; }).then(function () {
+      botoes.forEach(function (b) { b.disabled = false; });
+    });
+  });
+
   // ---- Envio de formulário comum (página inteira): bloqueia clique duplo e mostra o indicador no botão ----
   // Formulários do HTMX usam hx-sync/hx-disabled-elt; downloads não recarregam a página, então o bloqueio expira.
   document.addEventListener('submit', function (e) {
