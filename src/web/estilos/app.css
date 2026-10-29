@@ -828,8 +828,13 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
   main {max-width: none; margin: 0; padding: 0;}
   .lateral, .topo-desktop, .topo-movel, .barra-inferior, .pular, #barra-carregamento, dialog,
   .acoes, .voltar, .btn, .btn-icone, .chips, .filtro-opcoes, [role="tablist"], .paginacao, .por-pagina, .c-acao,
-  form[role="search"], .aplicar-periodo, .exportar-rel, .colapsavel-visao, .ordenar-seta {display: none !important;}
+  /* A busca é só a barra de filtros: o formulário role="search" também embrulha o #resultado (a lista), então esconder o
+     formulário inteiro imprimia a página sem a tabela. */
+  form[role="search"] .barra-filtros, .aplicar-periodo, .exportar-rel, .colapsavel-visao, .ordenar-seta {display: none !important;}
   .cartao, .kpi, .tabela-caixa {box-shadow: none; break-inside: avoid;}
+  /* Firefox não imprime a tabela dentro de um contêiner com `container-type` e rolagem (a página sai só com o título): na folha a
+     tabela ocupa a largura toda, sem rolagem nem container queries. */
+  .tabela-caixa {overflow: visible !important; container-type: normal !important;}
   .dados tbody tr {break-inside: avoid;}
   h1, h2, h3 {break-after: avoid;}
   a {text-decoration: none; color: inherit;}
