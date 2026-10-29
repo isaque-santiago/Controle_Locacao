@@ -547,7 +547,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .selecao-item {flex-direction: column; align-items: stretch; gap: var(--e3);}
   .selecao-item .btn-compacto {width: 100%; min-height: var(--alvo);}
   .so-desktop {display: none;}
-  .cabecalho .acoes, .cabecalho .acoes .btn {width: 100%;}
+  .cabecalho .acoes, .cabecalho .acoes .btn, .cabecalho .acoes form {width: 100%;}
   .filtro-pagina, .filtro-col {width: 100%;}
   .filtro-col summary {justify-content: space-between;}
   .filtro-opcoes {left: 0; right: 0;}
