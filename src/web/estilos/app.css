@@ -642,6 +642,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados tr[data-recolhivel] td.c-acao:empty {display: none !important;}
   .lista-cartoes .dados tr[data-recolhivel] td.rc-oculto {display: none !important;}
   .rc-so-cel {display: inline;}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo].rc-quebra:not(.rc-cab) {white-space: normal; text-wrap: balance;}
   .rc-sub.rc-so-cel {display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500;}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
