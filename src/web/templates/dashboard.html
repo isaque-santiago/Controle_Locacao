@@ -12,7 +12,7 @@
   {{ kpi("Manutenção no mês", d.manutencao_mes|moeda_compacta, d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), variacao=d.variacoes.manutencao if d.variacoes else None) }}
 </dl>
 
-<div class="grade duas-colunas">
+<div class="grade duas-colunas igualar">
     <section class="cartao" aria-labelledby="t-ocupacao">
       <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>
       <div class="ocupacao-corpo">
@@ -27,9 +27,14 @@
           <span class="rosca-centro"><strong>{{ d.ocupacao }}%</strong><small>ocupação</small></span>
         </div>
         {% endif %}
-        <ul class="legenda" aria-label="Frota por situação">
+        <ul class="legenda legenda-detalhada" aria-label="Frota por situação">
           {% for seg in d.legenda %}
-          <li><i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>{{ seg.rotulo }}</li>
+          <li>
+            <i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>
+            <span class="legenda-nome">{{ seg.rotulo.split(' ', 1)[1] }}</span>
+            <strong class="mono">{{ seg.quantidade }}</strong>
+            <span class="legenda-pct mono">{{ ((100 * seg.quantidade / d.frota_total)|round|int if d.frota_total else 0) }}%</span>
+          </li>
           {% endfor %}
         </ul>
       </div>

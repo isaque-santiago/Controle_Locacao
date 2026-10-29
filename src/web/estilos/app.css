@@ -322,8 +322,15 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .medidor span {border-radius: 2px; background: var(--seg-vazio);}
 .medidor span.cheio {background: var(--seg-cheio);}
 .medidor span.oficina {background: var(--alerta);}
-.ocupacao-corpo {display: flex; align-items: center; gap: var(--e6, 32px); flex-wrap: wrap; padding: var(--e3) 0;}
-.rosca {position: relative; width: 168px; height: 168px; flex: none;}
+.duas-colunas.igualar {align-items: stretch;}
+.ocupacao-corpo {display: flex; align-items: center; gap: var(--e6, 32px); flex-wrap: wrap; padding: var(--e3) 0; min-height: calc(100% - 48px);}
+.ocupacao-corpo .legenda-detalhada {flex: 1 1 200px; min-width: 200px; gap: 0;}
+.legenda-detalhada li {display: grid; grid-template-columns: auto 1fr auto 3.2em; align-items: center; column-gap: var(--e3); padding: var(--e3) 0; border-top: 1px solid var(--linha-sutil);}
+.legenda-detalhada li:first-child {border-top: 0;}
+.legenda-detalhada i {margin-right: 0;}
+.legenda-detalhada strong {font-size: 18px; color: var(--texto);}
+.legenda-pct {text-align: right; color: var(--texto-3);}
+.rosca {position: relative; width: 200px; height: 200px; flex: none; margin-inline: auto;}
 .rosca svg {width: 100%; height: 100%; transform: rotate(-90deg);}
 .rosca circle {fill: none; stroke-width: 13;}
 .rosca .arco-fundo {stroke: var(--seg-vazio);}
@@ -331,7 +338,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .rosca .arco.oficina {stroke: var(--alerta);}
 .rosca .arco.livre {stroke: var(--seg-vazio);}
 .rosca-centro {position: absolute; inset: 0; display: grid; place-content: center; text-align: center;}
-.rosca-centro strong {font: 700 28px/1 var(--fonte-mono, inherit);}
+.rosca-centro strong {font: 700 34px/1 var(--fonte-mono, inherit);}
 .rosca-centro small {font-size: 12px; color: var(--texto-3);}
 .ocupacao-corpo .legenda {flex-direction: column; flex-wrap: nowrap; gap: var(--e3); font-size: 14px;}
 .legenda {list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
