@@ -610,6 +610,16 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados tbody tr:hover {background: var(--superficie);}
 }
 
+/* Cartões da ficha do cliente (Contratos e Pagamentos): uma coluna, rótulo à esquerda e dado à direita (vence o grid de duas colunas de .lista-cartoes) */
+@media (max-width: 719px) {
+  .contrato-linhas .lista-cartoes .dados tbody tr,
+  .contrato-linhas .lista-cartoes .dados tbody tr:first-child {grid-template-columns: minmax(0, 1fr); gap: 0; row-gap: 0; padding: var(--e3) var(--e4);}
+  .contrato-linhas .lista-cartoes .dados td.modelo {order: -1; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha-sutil);}
+  .contrato-linhas .lista-cartoes .dados td[data-rotulo] {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-bottom: 1px solid var(--linha-sutil); text-align: right; white-space: nowrap;}
+  .contrato-linhas .lista-cartoes .dados td[data-rotulo]:last-child {border-bottom: 0;}
+  .contrato-linhas .lista-cartoes .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left;}
+}
+
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
 
