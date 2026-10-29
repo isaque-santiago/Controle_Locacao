@@ -637,11 +637,12 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados tr[data-recolhivel].aberto td.rc-titulo,
   .lista-cartoes .dados tr[data-recolhivel].aberto td.rc-cab {margin-bottom: var(--e1);}
   .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab) {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-top: 1px solid var(--linha-sutil); text-align: right; white-space: nowrap;}
-  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab)::before {margin: 0; flex: none; text-align: left;}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab)::before {margin: 0; flex: none; text-align: left; font-family: var(--fonte-ui);}
   .lista-cartoes .dados tr[data-recolhivel] td.c-acao {display: block; order: 99; margin: 0; padding: var(--e3) 0 0; border-top: 1px solid var(--linha-sutil);}
   .lista-cartoes .dados tr[data-recolhivel] td.c-acao:empty {display: none !important;}
   .lista-cartoes .dados tr[data-recolhivel] td.rc-oculto {display: none !important;}
   .rc-so-cel {display: inline;}
+  .rc-sub.rc-so-cel {display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500;}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}

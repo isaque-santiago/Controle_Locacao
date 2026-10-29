@@ -79,7 +79,7 @@ def test_paginacao_de_dez_em_dez_com_url_e_painel_parcial(cliente, base_cobranca
         for i in range(23)
     ]
     primeira = cliente.get("/cobrancas?aba=atrasadas").text
-    assert "Mostrando 1 a 10 de 23" in primeira and primeira.count("<tr>") == 10 + 1
+    assert "Mostrando 1 a 10 de 23" in primeira and primeira.count("<tr data-recolhivel>") == 10
     assert 'hx-get="/cobrancas/abas/atrasadas?pagina=2"' in primeira and 'hx-push-url="/cobrancas?aba=atrasadas&amp;pagina=2"' in primeira
     ultima = cliente.get("/cobrancas/abas/atrasadas?pagina=99").text
     assert "Mostrando 21 a 23 de 23" in ultima and "pagina=2" in ultima and "pagina=4" not in ultima
