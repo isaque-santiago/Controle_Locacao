@@ -634,6 +634,21 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 }
 @media (max-width: 719px) and (prefers-reduced-motion: reduce) {.recolhe-seta {transition: none;}}
 
+/* Linhas de tabela recolhíveis no celular (Contratos e Pagamentos): cabeçalho = título + situação + seta; o resto abre ao tocar */
+@media (max-width: 719px) {
+  .contrato-linhas .lista-cartoes .dados tbody tr[data-recolhivel] {position: relative; grid-template-columns: minmax(0, 1fr) auto; align-items: center;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.modelo {grid-column: 1; min-height: 44px; display: flex; align-items: center; padding: 0; border-bottom: 0;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.recolhe-sit {grid-column: 2; order: -1; display: block; margin-right: 32px; padding: 0; border-bottom: 0;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.recolhe-sit::before {display: none;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.recolhe-sit) {grid-column: 1 / -1;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel]:not(.aberto) td[data-rotulo]:not(.recolhe-sit) {display: none;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel].aberto td.modelo,
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel].aberto td.recolhe-sit {margin-bottom: var(--e1);}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
+  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}
+}
+
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
 
