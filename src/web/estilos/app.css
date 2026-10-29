@@ -630,7 +630,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .cartao.recolhivel h2 {margin-bottom: 0;}
   .cartao.recolhivel.aberto h2 {margin-bottom: var(--e3);}
   .cartao.recolhivel .recolhe-gatilho {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); width: 100%; min-height: 44px; font-weight: inherit;}
-  .cartao.recolhivel:not(.aberto) > :not(h2) {display: none;}
+  .cartao.recolhivel:not(.aberto) > :not(h2) {display: none !important;}
 }
 @media (max-width: 719px) and (prefers-reduced-motion: reduce) {.recolhe-seta {transition: none;}}
 
