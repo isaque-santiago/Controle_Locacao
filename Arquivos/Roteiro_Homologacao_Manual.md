@@ -179,3 +179,17 @@ Conferência no POCO depois dos PRs #122 e #123 (27/10/2026, Chrome): portal do 
 fotos da entrega no assistente de contrato e Adicionar fotos (galeria múltipla + «Tirar foto agora», com fotos dos dois campos chegando juntas):
 **todos ok.** Pendentes: a revisão no Firefox desktop, a troca da senha do dono e o Dependabot alerts (precisa do dono do repositório).
 
+### Revisão no Firefox desktop (29/10/2026, Firefox 154)
+
+Feita pelo proprietário no app publicado, com gravação de tela. Navegação e visual, fluxos que gravam, teclado e zoom, e console: **ok**.
+Downloads: ok. **Impressão (Ctrl+P) nas listas: problema** — o PDF saía só com o título e a contagem, sem a tabela (Motos, Clientes e as demais
+listas com busca). Causas (reproduzidas com o Firefox 154 via Selenium, imprimindo o HTML real das páginas):
+
+1. A folha de impressão escondia `form[role="search"]`, mas esse formulário embrulha a barra de filtros **e** o `#resultado` com a lista. Agora só a
+   `.barra-filtros` some.
+2. No Firefox, a tabela dentro de `.tabela-caixa` (`container-type: inline-size` com rolagem) não é impressa. Na folha o contêiner passa a
+   `overflow: visible; container-type: normal`.
+
+Depois da correção o PDF do Firefox traz as linhas das listas (conferido pelo texto do PDF em Motos e Clientes). **A conferir no aparelho depois do deploy:** o
+visual da folha no Firefox e no Chrome.
+
