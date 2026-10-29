@@ -788,6 +788,13 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .grade-dados > div {min-width: 0; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha);}
 .grade-dados dt {color: var(--texto-2); font-size: 12.5px; margin-bottom: var(--e1);}
 .grade-dados dd {margin: 0; overflow-wrap: anywhere;}
+/* Celular: dados pessoais como linhas "rótulo à esquerda, valor à direita" */
+@media (max-width: 719px) {
+  .ficha-dados {grid-template-columns: minmax(0, 1fr); gap: 0;}
+  .ficha-dados > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0;}
+  .ficha-dados dt {margin: 0; flex: none;}
+  .ficha-dados dd {text-align: right;}
+}
 /* Confirmação do contrato: os cinco dados na mesma linha (só quebram se a largura não comportar) */
 @media (min-width: 720px) {.grade-linhas {grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e4);}}
 @media (max-width: 1099px) {.ficha-resumo {grid-template-columns: minmax(0, 1fr);}}
