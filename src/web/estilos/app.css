@@ -610,16 +610,6 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados tbody tr:hover {background: var(--superficie);}
 }
 
-/* Cartões da ficha do cliente (Contratos e Pagamentos): uma coluna, rótulo à esquerda e dado à direita (vence o grid de duas colunas de .lista-cartoes) */
-@media (max-width: 719px) {
-  .contrato-linhas .lista-cartoes .dados tbody tr,
-  .contrato-linhas .lista-cartoes .dados tbody tr:first-child {grid-template-columns: minmax(0, 1fr); gap: 0; row-gap: 0; padding: var(--e3) var(--e4);}
-  .contrato-linhas .lista-cartoes .dados td.modelo {order: -1; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha-sutil);}
-  .contrato-linhas .lista-cartoes .dados td[data-rotulo] {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-bottom: 1px solid var(--linha-sutil); text-align: right; white-space: nowrap;}
-  .contrato-linhas .lista-cartoes .dados td[data-rotulo]:last-child {border-bottom: 0;}
-  .contrato-linhas .lista-cartoes .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left;}
-}
-
 /* Cartões recolhíveis (ficha do cliente): só no celular. O cabeçalho é um botão com seta; em telas largas vira texto comum e tudo fica aberto */
 .recolhe-gatilho {display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;}
 .recolhe-gatilho:disabled {cursor: default;}
@@ -634,19 +624,24 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 }
 @media (max-width: 719px) and (prefers-reduced-motion: reduce) {.recolhe-seta {transition: none;}}
 
-/* Linhas de tabela recolhíveis no celular (Contratos e Pagamentos): cabeçalho = título + situação + seta; o resto abre ao tocar */
+/* Tabelas recolhíveis no celular (macro `tabela` com recolhivel=True): cabeçalho do cartão = título (td.rc-titulo, botão com seta)
+   + dado de destaque (td.rc-cab, à direita); o resto (td com data-rotulo e td.c-acao) abre ao tocar, em linhas "rótulo à esquerda, valor à direita" */
 @media (max-width: 719px) {
-  .contrato-linhas .lista-cartoes .dados tbody tr[data-recolhivel] {position: relative; grid-template-columns: minmax(0, 1fr) auto; align-items: center;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.modelo {grid-column: 1; min-height: 44px; display: flex; align-items: center; padding: 0; border-bottom: 0;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.recolhe-sit {grid-column: 2; order: -1; display: block; margin-right: 32px; padding: 0; border-bottom: 0;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td.recolhe-sit::before {display: none;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.recolhe-sit) {grid-column: 1 / -1;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel]:not(.aberto) td[data-rotulo]:not(.recolhe-sit) {display: none;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel].aberto td.modelo,
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel].aberto td.recolhe-sit {margin-bottom: var(--e1);}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
-  .contrato-linhas .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}
+  .lista-cartoes .dados tbody tr[data-recolhivel] {position: relative; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0; row-gap: 0; padding: var(--e3) var(--e4);}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-titulo {grid-column: 1; order: -2; display: flex; align-items: center; min-height: 44px; padding: 0; border: 0; font-size: 15px; font-weight: 600; line-height: 1.35;}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-cab {grid-column: 2; order: -1; display: block; margin-right: 32px; padding: 0; border: 0; text-align: right; font-size: 14.5px;}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-cab::before {display: none;}
+  .lista-cartoes .dados tr[data-recolhivel] td:not(.rc-titulo):not(.rc-cab) {grid-column: 1 / -1; order: 0;}
+  .lista-cartoes .dados tr[data-recolhivel]:not(.aberto) > td:not(.rc-titulo):not(.rc-cab) {display: none !important;}
+  .lista-cartoes .dados tr[data-recolhivel].aberto td.rc-titulo,
+  .lista-cartoes .dados tr[data-recolhivel].aberto td.rc-cab {margin-bottom: var(--e1);}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab) {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-top: 1px solid var(--linha-sutil); text-align: right; white-space: nowrap;}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab)::before {margin: 0; flex: none; text-align: left;}
+  .lista-cartoes .dados tr[data-recolhivel] td.c-acao {display: block; order: 99; margin: 0; padding: var(--e3) 0 0; border-top: 1px solid var(--linha-sutil);}
+  .lista-cartoes .dados tr[data-recolhivel] td.c-acao:empty {display: none !important;}
+  .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
+  .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
+  .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}
 }
 
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
