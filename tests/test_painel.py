@@ -46,6 +46,15 @@ def test_segmentos_do_medidor_so_com_motos_ativas():
     assert painel.segmentos_medidor(contagem) == ["cheio", "cheio", "oficina", ""]
 
 
+def test_segmentos_da_rosca_somam_100_e_ignoram_inativas():
+    contagem = painel.contar_por_status(_frota(alugada=2, manutencao=1, disponivel=1, inativa=5))
+    arcos = painel.segmentos_rosca(contagem)
+    assert [a["classe"] for a in arcos] == ["cheio", "oficina", "livre"]
+    assert [a["tamanho"] for a in arcos] == [50.0, 25.0, 25.0]
+    assert [a["inicio"] for a in arcos] == [0.0, 50.0, 75.0]
+    assert painel.segmentos_rosca(painel.contar_por_status(_frota(inativa=2))) == []
+
+
 def test_percentual_recebido_limita_entre_0_e_100():
     assert painel.percentual_recebido(Decimal("500"), Decimal("1000")) == 50
     assert painel.percentual_recebido(Decimal("1500"), Decimal("1000")) == 100

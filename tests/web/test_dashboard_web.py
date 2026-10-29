@@ -43,13 +43,13 @@ def test_nomes_vindos_do_banco_sao_escapados(cliente):
     assert "Joana &lt;b&gt;Prado&lt;/b&gt;" in html
 
 
-def test_medidor_tem_texto_alternativo_e_um_segmento_por_moto_ativa(cliente):
+def test_rosca_tem_texto_alternativo_e_um_arco_por_situacao(cliente):
     entrar(cliente)
     html = cliente.get("/").text
-    medidor = re.search(r'<div class="medidor" role="img" aria-label="([^"]+)">(.*?)</div>', html, re.S)
-    assert medidor and "3 alugadas" in medidor.group(1)
-    assert len(re.findall(r"<span", medidor.group(2))) == 5
-    assert medidor.group(2).count('class="cheio"') == 3
+    rosca = re.search(r'<div class="rosca" role="img" aria-label="([^"]+)">(.*?)</div>', html, re.S)
+    assert rosca and "3 alugadas" in rosca.group(1)
+    assert len(re.findall(r'<circle class="arco \w+"', rosca.group(2))) == 3
+    assert "60%" in rosca.group(2)
 
 
 def test_alertas_levam_para_a_area_certa(cliente):
@@ -63,13 +63,13 @@ def test_dashboard_sem_dados_mostra_estados_vazios(cliente, monkeypatch):
     from src.web import dados_painel
     from tests.web.conftest import DADOS_PAINEL
 
-    vazio = {**DADOS_PAINEL, "hoje": [], "alertas": [], "segmentos_medidor": [], "atrasado": 0}
+    vazio = {**DADOS_PAINEL, "hoje": [], "alertas": [], "rosca": [], "atrasado": 0}
     monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: vazio)
     entrar(cliente)
     html = cliente.get("/").text
     assert "Nenhuma cobrança vencendo hoje ou atrasada." in html
     assert "Nenhum alerta no momento." in html
-    assert 'class="medidor"' not in html
+    assert 'class="rosca"' not in html
 
 
 def test_kpi_em_atraso_leva_as_cobrancas_atrasadas(cliente):

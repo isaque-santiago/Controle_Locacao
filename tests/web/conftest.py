@@ -102,6 +102,11 @@ DADOS_PAINEL = {
     "contagem": {"alugada": 3, "disponivel": 1, "manutencao": 1, "inativa": 0},
     "ocupacao": 60,
     "segmentos_medidor": ["cheio", "cheio", "cheio", "oficina", ""],
+    "rosca": [
+        {"classe": "cheio", "inicio": 0.0, "tamanho": 60.0},
+        {"classe": "oficina", "inicio": 60.0, "tamanho": 20.0},
+        {"classe": "livre", "inicio": 80.0, "tamanho": 20.0},
+    ],
     "descricao_medidor": "Frota de 5 motos: 3 alugadas, 1 disponíveis, 1 em manutenção, 0 inativas",
     "legenda": [
         SimpleNamespace(status="alugada", quantidade=3, rotulo="3 alugadas"),
