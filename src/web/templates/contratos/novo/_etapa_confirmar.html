@@ -10,14 +10,14 @@
 </dl>
 {% endcall %}
 
-<h2 class="rotulo">Prévia da agenda de cobranças</h2>
+<h2 class="titulo-secao">Prévia da agenda de cobranças</h2>
 {% call tabela([("Item", ""), ("Vencimento", ""), ("Valor", "num")], "Cobranças previstas do contrato") %}
 {% if tem_caucao %}<tr><td>Caução</td><td class="mono" data-rotulo="Vencimento">{{ condicoes.data_inicio|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ condicoes.caucao_valor|moeda }}</td></tr>{% endif %}
 {% for parcela in agenda %}<tr><td>Parcela {{ parcela.numero }}</td><td class="mono" data-rotulo="Vencimento">{{ parcela.vencimento|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ parcela.valor|moeda }}</td></tr>{% endfor %}
 {% endcall %}
 {% if not condicoes.data_fim_prevista %}<p class="text-texto-2 text-[13px]">Prazo indeterminado: a prévia mostra só os primeiros 30 dias. As cobranças seguintes são geradas automaticamente enquanto o contrato estiver ativo.</p>{% endif %}
 
-<h2 class="rotulo">Vistoria de entrega</h2>
+<h2 class="titulo-secao">Vistoria de entrega</h2>
 <form class="cartao" method="post" action="{{ base }}/criar" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <button class="so-leitor" type="submit" name="acao" value="criar" tabindex="-1" aria-hidden="true">Criar contrato</button>

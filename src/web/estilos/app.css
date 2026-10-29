@@ -455,6 +455,8 @@ table.dados {width: 100%; border-collapse: collapse;}
 .resumo dt {color: var(--texto-2);} .resumo dd {margin: 0; font-weight: 500; text-align: right;}
 .resumo .total {border-top: 1px solid var(--linha); padding-top: var(--e3); font-size: 16px;}
 .resumo .total dd {font: 600 20px var(--fonte-mono);}
+.titulo-secao {font-size: 18px; margin: var(--e6, 32px) 0 var(--e3);}
+.cartao + .titulo-secao, .tabela-caixa + .titulo-secao {margin-top: var(--e6, 32px);}
 /* Cliente e moto escolhidos: cartão com um item por linha (texto à esquerda, botão à direita; no celular o botão desce) */
 .selecao-resumo {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin-bottom: var(--e4);}
 .selecao-item {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4); background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);}
