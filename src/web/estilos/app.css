@@ -791,7 +791,13 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 /* Confirmação do contrato: os cinco dados na mesma linha (só quebram se a largura não comportar) */
 @media (min-width: 720px) {.grade-linhas {grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e4);}}
 @media (max-width: 1099px) {.ficha-resumo {grid-template-columns: minmax(0, 1fr);}}
-@media (max-width: 719px) {.kpis-compactos {grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e2);} .kpis-compactos .kpi dd {font-size: 15px;}}
+/* Celular: cada indicador vira uma linha "rótulo à esquerda, valor à direita", sem espaço vazio */
+@media (max-width: 719px) {
+  .kpis.kpis-compactos {grid-template-columns: minmax(0, 1fr); gap: var(--e2);}
+  .kpis-compactos .kpi {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4);}
+  .kpis-compactos .kpi dt {min-height: 0; font-size: 13px;}
+  .kpis-compactos .kpi dd {margin: 0; font-size: 16px; text-align: right;}
+}
 
 /* ---------- Tela de login (painel de apresentação + formulário) ---------- */
 .entrada-tela {max-width: none; margin: 0; padding: 0; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
