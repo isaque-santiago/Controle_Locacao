@@ -6,7 +6,7 @@ Requisitos de segurança: `Revisao_Seguranca.md`, seção "Requisitos para o dep
 
 > **Estado (20/10/2026):** o app está no ar em `https://lamotos.duckdns.org`. O proprietário confirmou as seções 1 a 7 (DNS,
 > firewall e atualizações automáticas, Coolify, `FORWARDED_ALLOW_IPS` restrito ao Traefik, CI/CD, migrations e verificação
-> pós-deploy) e criou o monitor UptimeRobot da seção 8. Pendente: backup do Supabase (Fase 6).
+> pós-deploy) e criou o monitor UptimeRobot da seção 8. Backup do Supabase decidido em 29/10/2026: manual semanal (seção 8).
 
 ## 0. O que o repositório já traz
 
@@ -177,9 +177,30 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
 ## 8. Monitoramento e backups
 
 - Rota `/saude` com monitor externo gratuito (UptimeRobot ou similar) avisando por e-mail se o site cair.
-- Dados no Supabase: backup conforme a Fase 6. A VPS é ponto único de falha dos dois projetos; o backup do Postgres do
-  cell-pag deve ter destino fora da VPS.
+- Dados no Supabase: backup manual semanal, descrito abaixo («Backup do Supabase»). A VPS é ponto único de falha dos dois
+  projetos; o backup do Postgres do cell-pag deve ter destino fora da VPS.
 - Fuso do servidor: UTC; o app trabalha em America/Sao_Paulo.
+
+### Backup do Supabase (decisão do proprietário, 29/10/2026: manual semanal, sem automação)
+
+O plano gratuito do Supabase não tem backup automático nem restauração de ponto no tempo. Foram avaliados `pg_dump` agendado na CI (exige
+segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); ficou o **backup manual semanal**. O risco aceito é perder até
+7 dias de lançamentos se o projeto for perdido entre duas cópias.
+
+- **Como:** Configurações > **Gerar e baixar backup** (ZIP com um CSV de cada uma das 15 tabelas, `manifesto.json` e `LEIA-ME.txt`). Confira as
+  contagens do `manifesto.json` contra as listas do app.
+- **Quando:** toda segunda-feira (use um lembrete recorrente na agenda). Faça com o app parado de uso: a cópia não é um snapshot transacional.
+- **Onde guardar:** fora da VPS e fora do computador de uso, em pasta privada (por exemplo o Google Drive do proprietário). O ZIP tem CPF e
+  telefone dos locatários: nunca no repositório, em e-mail ou em chat. Mantenha as últimas 8 cópias e apague as mais antigas.
+- **O que não está no ZIP:** fotos e comprovantes dos buckets (`vistorias`, `documentos`, `trocas_oleo`), usuários e senhas do Auth, e o
+  código do banco (as migrations e a RLS já estão no repositório). As fotos podem ser baixadas do painel do Supabase (Storage) uma vez por mês.
+- **Efeito colateral útil:** o plano gratuito pausa o projeto depois de cerca de uma semana sem uso do banco, e o monitor `/saude` não toca no
+  banco. Gerar o backup toda semana mantém o projeto ativo.
+- **Restaurar (resumo):** crie um projeto novo, aplique as migrations em ordem e o `seed.sql`, crie o usuário do dono e ajuste o UUID em
+  `is_dono()` antes da migration de RLS. Importe os CSVs **como texto** na ordem do ZIP (`configuracoes`, `motos`, `clientes`, `contratos`,
+  `cobrancas`, `pagamentos`, `historico_km`, `itens_manutencao`, `moto_plano_manutencao`, `manutencoes`, `manutencao_itens`,
+  `documentos_moto`, `vistorias`, `vistoria_fotos`, `trocas_oleo`). Use um projeto de **desenvolvimento** para ensaiar antes de precisar. O
+  rótulo «Fase 6» usado antes para o backup era impreciso: a Fase 6 do plano é o Dashboard.
 
 ### Rotina de manutenção (dependências e imagem)
 
