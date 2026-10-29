@@ -96,6 +96,20 @@ def segmentos_medidor(contagem: dict[str, int]) -> list[str]:
     )
 
 
+def segmentos_rosca(contagem: dict[str, int]) -> list[dict]:
+    """Arcos da rosca de ocupação (escala 0-100): alugada, em manutenção e livre, só motos ativas."""
+    ativas = sum(contagem.get(s, 0) for s in ("alugada", "manutencao", "disponivel"))
+    if not ativas:
+        return []
+    arcos, inicio = [], Decimal(0)
+    for classe, status in (("cheio", "alugada"), ("oficina", "manutencao"), ("livre", "disponivel")):
+        tamanho = Decimal(100 * contagem.get(status, 0)) / ativas
+        if tamanho:
+            arcos.append({"classe": classe, "inicio": float(inicio), "tamanho": float(tamanho)})
+        inicio += tamanho
+    return arcos
+
+
 def descricao_medidor(contagem: dict[str, int]) -> str:
     """Texto alternativo do medidor para leitores de tela."""
     total = sum(contagem.values())

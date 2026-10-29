@@ -322,6 +322,18 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .medidor span {border-radius: 2px; background: var(--seg-vazio);}
 .medidor span.cheio {background: var(--seg-cheio);}
 .medidor span.oficina {background: var(--alerta);}
+.ocupacao-corpo {display: flex; align-items: center; gap: var(--e6, 32px); flex-wrap: wrap; padding: var(--e3) 0;}
+.rosca {position: relative; width: 168px; height: 168px; flex: none;}
+.rosca svg {width: 100%; height: 100%; transform: rotate(-90deg);}
+.rosca circle {fill: none; stroke-width: 13;}
+.rosca .arco-fundo {stroke: var(--seg-vazio);}
+.rosca .arco.cheio {stroke: var(--seg-cheio);}
+.rosca .arco.oficina {stroke: var(--alerta);}
+.rosca .arco.livre {stroke: var(--seg-vazio);}
+.rosca-centro {position: absolute; inset: 0; display: grid; place-content: center; text-align: center;}
+.rosca-centro strong {font: 700 28px/1 var(--fonte-mono, inherit);}
+.rosca-centro small {font-size: 12px; color: var(--texto-3);}
+.ocupacao-corpo .legenda {flex-direction: column; flex-wrap: nowrap; gap: var(--e3); font-size: 14px;}
 .legenda {list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
 .legenda i {display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--seg-cheio);}
 .legenda i.livre {background: var(--seg-vazio);} .legenda i.oficina {background: var(--alerta);}

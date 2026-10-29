@@ -47,6 +47,7 @@ def carregar(hoje: date | None = None) -> dict:
         "contagem": contagem,
         "ocupacao": painel.percentual_ocupacao(contagem),
         "segmentos_medidor": painel.segmentos_medidor(contagem),
+        "rosca": painel.segmentos_rosca(contagem),
         "descricao_medidor": painel.descricao_medidor(contagem),
         "legenda": painel.segmentos_frota(contagem),
         "recebido": dados["recebido"],
