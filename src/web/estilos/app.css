@@ -515,6 +515,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .moto-lista-cards .dados td.acao.moto-o5 {grid-column: 1 / -1;}
   /* Ficha do contrato (Cobranças e Manutenções): cartão de uma coluna, título em largura total e cada dado como linha "rótulo à esquerda, valor à direita" */
   .contrato-linhas .dados tbody tr {grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--e3) var(--e4);}
+  .contrato-linhas .dados td.modelo {order: -1;}
   .contrato-linhas .dados td.modelo {padding-bottom: var(--e3); border-bottom: 1px solid var(--linha-sutil);}
   .contrato-linhas .dados td[data-rotulo] {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-bottom: 1px solid var(--linha-sutil); text-align: right;}
   .contrato-linhas .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left; font-family: var(--fonte-ui);}
