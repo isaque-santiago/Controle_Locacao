@@ -11,8 +11,10 @@
 </dl>
 <div class="acoes">{{ botao("Fechar", extra='hx-get="' ~ base ~ '/abas/portal" hx-target="#painel-aba" hx-swap="outerHTML"') }}</div>
 {% elif not cliente.auth_user_id %}
+<div class="portal-criar-linha">
 <p>Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma senha individual gerada aqui.</p>
 <div class="portal-criar">{{ botao("Criar acesso", variante="primario", icone_nome="cadeado", extra='hx-post="' ~ base ~ '/portal/acesso" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
+</div>
 {% else %}
 <div class="portal-acesso">
   <div class="portal-acesso-bloco portal-acesso-info">

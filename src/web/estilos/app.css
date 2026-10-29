@@ -250,6 +250,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .portal-acesso-desc {color: var(--texto-2); font-size: 13px; margin-top: 2px;}
 .portal-criar {margin-top: var(--e4);}
 @media (max-width: 719px) {.portal-criar .btn {width: 100%;}}
+@media (min-width: 720px) {.portal-criar-linha {display: flex; align-items: center; justify-content: space-between; gap: var(--e4);} .portal-criar-linha .portal-criar {margin-top: 0; flex-shrink: 0;}}
 @media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
