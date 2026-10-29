@@ -193,3 +193,11 @@ listas com busca). Causas (reproduzidas com o Firefox 154 via Selenium, imprimin
 Depois da correção o PDF do Firefox traz as linhas das listas (conferido pelo texto do PDF em Motos e Clientes). **A conferir no aparelho depois do deploy:** o
 visual da folha no Firefox e no Chrome.
 
+### Foto de câmera em resolução máxima (decisão de 29/10/2026)
+
+A foto original de 64 MP do POCO (11,9 MB, 6944×9248) passava do limite de 10 MB e era recusada. Agora o navegador reduz antes do envio os JPEG/PNG
+acima de 4 MB (`static/js/app.js`, campos `data-reduzir-foto`): no máximo 3000 px no lado maior, JPEG com qualidade 0,85, orientação aplicada e sem
+metadados; fotos menores seguem intactas, e o botão de enviar espera a redução. Verificado no Firefox 154 com um JPEG de 22,6 MB em paisagem com
+orientação EXIF 6: saiu com 3,0 MB, retrato 2143×3000, e o arquivo de 0,4 MB não foi alterado. **A conferir no POCO depois do deploy:** enviar uma foto de
+64 MP pelo portal e por Adicionar fotos e ver a mensagem «Foto reduzida de X MB para Y MB» e a foto de pé.
+

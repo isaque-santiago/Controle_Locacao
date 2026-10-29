@@ -47,14 +47,14 @@
       {{ campo("km-" ~ c.contrato_id, "Hodômetro atual (km)", nome="km", valor=km_digitado if com_erro else "", mono=True, inputmode="numeric", obrigatorio=True, erro=erros.km if com_erro else "", ajuda="Ex.: 12500. Não pode ser menor que " ~ (c.km_atual|milhar) ~ " km.", autocomplete="off", largo=True) }}
       <div class="campo largo{{ ' com-erro' if com_erro and erros.foto else '' }}">
         <label for="foto-{{ c.contrato_id }}">Foto do painel (mostrando o hodômetro) <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
-        <input class="entrada" id="foto-{{ c.contrato_id }}" name="foto" type="file" accept="image/*" required{% if com_erro and erros.foto %} aria-invalid="true"{% endif %} aria-describedby="foto-{{ c.contrato_id }}-ajuda{{ ' foto-' ~ c.contrato_id ~ '-erro' if com_erro and erros.foto }}">
-        <small id="foto-{{ c.contrato_id }}-ajuda">No celular, escolha entre tirar a foto agora ou enviar da galeria. JPG ou PNG, de até 10 MB.{% if com_erro and erros %} O navegador não guarda as fotos depois de um erro: escolha-as de novo.{% endif %}</small>
+        <input class="entrada" id="foto-{{ c.contrato_id }}" name="foto" type="file" accept="image/*" data-reduzir-foto required{% if com_erro and erros.foto %} aria-invalid="true"{% endif %} aria-describedby="foto-{{ c.contrato_id }}-ajuda{{ ' foto-' ~ c.contrato_id ~ '-erro' if com_erro and erros.foto }}">
+        <small id="foto-{{ c.contrato_id }}-ajuda">No celular, escolha entre tirar a foto agora ou enviar da galeria. JPG ou PNG, de até 10 MB (acima de 4 MB a foto é reduzida antes do envio).{% if com_erro and erros %} O navegador não guarda as fotos depois de um erro: escolha-as de novo.{% endif %}</small>
         {% if com_erro and erros.foto %}<small class="msg-erro" id="foto-{{ c.contrato_id }}-erro">{{ erros.foto }}</small>{% endif %}
       </div>
       <div class="campo largo{{ ' com-erro' if com_erro and erros.nota else '' }}">
         <label for="nota-{{ c.contrato_id }}">Foto da nota fiscal do óleo <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
-        <input class="entrada" id="nota-{{ c.contrato_id }}" name="nota" type="file" accept="image/*" required{% if com_erro and erros.nota %} aria-invalid="true"{% endif %} aria-describedby="nota-{{ c.contrato_id }}-ajuda{{ ' nota-' ~ c.contrato_id ~ '-erro' if com_erro and erros.nota }}">
-        <small id="nota-{{ c.contrato_id }}-ajuda">No celular, escolha entre tirar a foto agora ou enviar da galeria. JPG ou PNG, de até 10 MB.</small>
+        <input class="entrada" id="nota-{{ c.contrato_id }}" name="nota" type="file" accept="image/*" data-reduzir-foto required{% if com_erro and erros.nota %} aria-invalid="true"{% endif %} aria-describedby="nota-{{ c.contrato_id }}-ajuda{{ ' nota-' ~ c.contrato_id ~ '-erro' if com_erro and erros.nota }}">
+        <small id="nota-{{ c.contrato_id }}-ajuda">No celular, escolha entre tirar a foto agora ou enviar da galeria. JPG ou PNG, de até 10 MB (acima de 4 MB a foto é reduzida antes do envio).</small>
         {% if com_erro and erros.nota %}<small class="msg-erro" id="nota-{{ c.contrato_id }}-erro">{{ erros.nota }}</small>{% endif %}
       </div>
     </div>
