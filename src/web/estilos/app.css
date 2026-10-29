@@ -248,6 +248,8 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .portal-acesso-icone {display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--sucesso-fundo); color: var(--sucesso-texto);}
 .portal-acesso-titulo {font-weight: 600;}
 .portal-acesso-desc {color: var(--texto-2); font-size: 13px; margin-top: 2px;}
+.portal-criar {margin-top: var(--e4);}
+@media (max-width: 719px) {.portal-criar .btn {width: 100%;}}
 @media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
