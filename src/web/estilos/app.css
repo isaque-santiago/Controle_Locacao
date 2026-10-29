@@ -455,6 +455,18 @@ table.dados {width: 100%; border-collapse: collapse;}
 .resumo dt {color: var(--texto-2);} .resumo dd {margin: 0; font-weight: 500; text-align: right;}
 .resumo .total {border-top: 1px solid var(--linha); padding-top: var(--e3); font-size: 16px;}
 .resumo .total dd {font: 600 20px var(--fonte-mono);}
+.titulo-secao {font-size: 18px; margin: var(--e6, 32px) 0 var(--e3);}
+.cartao + .titulo-secao, .tabela-caixa + .titulo-secao {margin-top: var(--e6, 32px);}
+/* Rodapé das etapas 1 e 2: dica à esquerda do botão "Avançar" bloqueado (no celular, acima dele) */
+.avancar-grupo {display: flex; align-items: center; justify-content: flex-end; gap: var(--e4); margin-left: auto;}
+.dica-avancar {color: var(--texto-2); font-size: 13px; text-align: right;}
+/* Cliente e moto escolhidos: cartão com um item por linha (texto à esquerda, botão à direita; no celular o botão desce) */
+.selecao-resumo {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin-bottom: var(--e4);}
+.selecao-item {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4); background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);}
+.selecao-texto {display: grid; gap: 2px; min-width: 0;}
+.selecao-rotulo {color: var(--texto-3); font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase;}
+.selecao-valor {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); font-weight: 500; overflow-wrap: anywhere;}
+.btn-compacto {min-height: 36px; padding: 0 var(--e4); font-size: 13px; flex: none;}
 .rodape-acoes {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--linha);}
 @media (min-width: 720px) {.so-celular {display: none;}}
 
@@ -506,6 +518,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .moto-lista-cards .dados td.acao.moto-o5 {grid-column: 1 / -1;}
   /* Ficha do contrato (Cobranças e Manutenções): cartão de uma coluna, título em largura total e cada dado como linha "rótulo à esquerda, valor à direita" */
   .contrato-linhas .dados tbody tr {grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--e3) var(--e4);}
+  .contrato-linhas .dados td.modelo {order: -1;}
   .contrato-linhas .dados td.modelo {padding-bottom: var(--e3); border-bottom: 1px solid var(--linha-sutil);}
   .contrato-linhas .dados td[data-rotulo] {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-bottom: 1px solid var(--linha-sutil); text-align: right;}
   .contrato-linhas .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left; font-family: var(--fonte-ui);}
@@ -526,6 +539,11 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .cartao {padding: var(--e4);}
   .medidor {gap: 2px;}
   .rodape-acoes {flex-direction: column-reverse;} .rodape-acoes .btn {width: 100%;}
+  .avancar-grupo {flex-direction: column; align-items: stretch; gap: var(--e2); margin-left: 0;}
+  .dica-avancar {text-align: center;}
+  .selecao-resumo {grid-template-columns: 1fr; gap: var(--e2);}
+  .selecao-item {flex-direction: column; align-items: stretch; gap: var(--e3);}
+  .selecao-item .btn-compacto {width: 100%; min-height: var(--alvo);}
   .so-desktop {display: none;}
   .cabecalho .acoes, .cabecalho .acoes .btn {width: 100%;}
   .filtro-pagina, .filtro-col {width: 100%;}
@@ -691,6 +709,10 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
   .vistoria-dados {grid-template-columns: minmax(0, 1fr);}
   .vistoria-dados > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-right: 0 !important;}
   .vistoria-dados dd {margin: 0; text-align: right;}
+  .grade-linhas {grid-template-columns: minmax(0, 1fr); gap: 0;}
+  .grade-linhas > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0;}
+  .grade-linhas dt {margin: 0;}
+  .grade-linhas dd {text-align: right;}
 }
 
 /* ---------- Relatórios ---------- */
@@ -766,6 +788,8 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .grade-dados > div {min-width: 0; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha);}
 .grade-dados dt {color: var(--texto-2); font-size: 12.5px; margin-bottom: var(--e1);}
 .grade-dados dd {margin: 0; overflow-wrap: anywhere;}
+/* Confirmação do contrato: os cinco dados na mesma linha (só quebram se a largura não comportar) */
+@media (min-width: 720px) {.grade-linhas {grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e4);}}
 @media (max-width: 1099px) {.ficha-resumo {grid-template-columns: minmax(0, 1fr);}}
 @media (max-width: 719px) {.kpis-compactos {grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e2);} .kpis-compactos .kpi dd {font-size: 15px;}}
 

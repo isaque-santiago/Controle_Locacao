@@ -5,5 +5,5 @@
 <div class="rodape-acoes">
   <form method="post" action="{{ base }}/cancelar" data-confirmar="O que já foi preenchido neste contrato será descartado." data-confirmar-titulo="Cancelar novo contrato" data-confirmar-rotulo="Descartar"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn" type="submit">Cancelar</button></form>
   {% if selecionado_id %}<a class="btn btn-primario" href="{{ base }}?etapa=2">Avançar</a>
-  {% else %}<span><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button><small id="dica-avancar" class="text-texto-2"> Selecione um cliente para continuar.</small></span>{% endif %}
+  {% else %}<div class="avancar-grupo"><small id="dica-avancar" class="dica-avancar">Selecione um cliente para continuar.</small><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button></div>{% endif %}
 </div>
