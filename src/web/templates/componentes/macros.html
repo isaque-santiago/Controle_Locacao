@@ -138,14 +138,20 @@
    `ordenacao` (opcional, vem de `domain.ordenacao.cabecalhos`) torna os cabeçalhos listados clicáveis (`aria-sort`); no celular o
    cabeçalho some junto com a tabela. `cartoes=True` usa o cartão padronizado no celular (ver `.lista-cartoes` no CSS): a 1ª célula é o título, as demais
    formam pares esquerda/direita (a da direita leva a classe `k-d`; o selo de situação, `k-d k-selo`, fica no cabeçalho sem rótulo) e a célula `c-acao` ocupa a última linha, de ponta a ponta. #}
-{% macro tabela(colunas, descricao, cartoes=False, ordenacao=None) -%}
-<div class="tabela-caixa{{ ' lista-cartoes' if cartoes else '' }}">
+{% macro tabela(colunas, descricao, cartoes=False, ordenacao=None, recolhivel=False) -%}
+<div class="tabela-caixa{{ ' lista-cartoes' if (cartoes or recolhivel) else '' }}">
   <table class="dados">
     <caption class="so-leitor">{{ descricao }}</caption>
     <thead><tr>{% for rotulo, classe in colunas %}{% set ord = ordenacao[rotulo] if ordenacao and rotulo in ordenacao else None %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}{% if ord %} aria-sort="{{ ord.estado }}"{% endif %}>{% if ord %}<a class="ordenar" id="ord-{{ ord.campo }}" href="{{ ord.url }}" hx-get="{{ ord.url }}" hx-target="#resultado" hx-push-url="true">{{ rotulo }}{{ icone('chevron', 'ordenar-seta') }}</a>{% elif rotulo %}{{ rotulo }}{% else %}<span class="so-leitor">Proporção</span>{% endif %}</th>{% endfor %}</tr></thead>
     <tbody>{{ caller() }}</tbody>
   </table>
 </div>
+{%- endmacro %}
+
+{# Título da linha recolhível (tabela com recolhivel=True; a <tr> leva data-recolhivel): no celular é o botão que abre/fecha o cartão, com a seta.
+   O dado de destaque do cabeçalho é a <td class="rc-cab" data-rotulo="...">. #}
+{% macro rc_titulo(classe="") -%}
+<td class="rc-titulo {{ classe }}"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">{{ caller() }}{{ icone("chevron", "recolhe-seta") }}</button></td>
 {%- endmacro %}
 
 {# Abas acessíveis (setas, Home e End funcionam via app.js). itens: lista de (id, rotulo); a primeira abre selecionada. #}

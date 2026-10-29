@@ -1,3 +1,4 @@
+{% from "componentes/macros.html" import icone %}
 {% set c = a.contrato %}
 <div class="grade duas-colunas motos-resumo-grade{% if c %} motos-resumo-igual{% endif %}">
   <section class="cartao" aria-labelledby="t-contrato">
@@ -46,9 +47,9 @@
   </section>
 </div>
 
-<section class="cartao mt-4" aria-labelledby="t-dados">
-  <div class="cartao-cab"><h2 id="t-dados">Dados da moto</h2></div>
-  <dl class="dl">
+<section class="cartao recolhivel mt-4" data-recolhivel aria-labelledby="t-dados">
+  <div class="cartao-cab"><h2 id="t-dados"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">Dados da moto{{ icone("chevron", "recolhe-seta") }}</button></h2></div>
+  <dl class="dl ficha-dados">
     <div><dt>Renavam</dt><dd class="mono">{{ moto.renavam or "—" }}</dd></div>
     <div><dt>Chassi</dt><dd class="mono">{{ moto.chassi or "—" }}</dd></div>
     <div><dt>Placa</dt><dd class="mono">{{ moto.placa|placa_br }}</dd></div>

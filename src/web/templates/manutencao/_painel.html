@@ -1,15 +1,15 @@
-{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, icone, botao %}
+{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, icone, botao, rc_titulo %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
 {% if aba == "alertas" %}
 {% if d.alertas.itens %}
-{% call tabela([("Moto", ""), ("Item", ""), ("Km atual", "num"), ("Próxima", ""), ("Restante", ""), ("Situação", "")], "Alertas de manutenção", cartoes=True) %}
-{% for a in d.alertas.itens %}<tr>
-<td class="o1">{% if a.placa %}{{ placa(a.placa|placa_br) }}{% else %}—{% endif %}</td>
-<td class="modelo o3 k-larga" data-rotulo="Item">{{ a.item }}</td>
+{% call tabela([("Moto", ""), ("Item", ""), ("Km atual", "num"), ("Próxima", ""), ("Restante", ""), ("Situação", "")], "Alertas de manutenção", recolhivel=True) %}
+{% for a in d.alertas.itens %}<tr data-recolhivel>
+{% call rc_titulo("o1") %}{% if a.placa %}{{ placa(a.placa|placa_br) }}{% else %}—{% endif %}<span class="rc-sub rc-so-cel">{{ a.item }}</span>{% endcall %}
+<td class="modelo o3 rc-oculto" data-rotulo="Item">{{ a.item }}</td>
 <td class="num mono o4" data-rotulo="Km atual">{{ a.km_atual|milhar }} km</td>
-<td class="mono o5 k-d" data-rotulo="Próxima">{% if a.proxima_km is not none %}{{ a.proxima_km|milhar }} km{% endif %}{% if a.proxima_km is not none and a.proxima_data %} / {% endif %}{% if a.proxima_data %}{{ a.proxima_data|data_br }}{% endif %}</td>
-<td class="mono o6 k-larga{{ ' text-perigo' if (a.km_restantes is not none and a.km_restantes < 0) or (a.dias_restantes is not none and a.dias_restantes < 0) else '' }}" data-rotulo="Restante">{% if a.km_restantes is not none %}{{ a.km_restantes|milhar }} km{% endif %}{% if a.km_restantes is not none and a.dias_restantes is not none %} / {% endif %}{% if a.dias_restantes is not none %}{{ a.dias_restantes }} dias{% endif %}</td>
-<td class="o2 k-d k-selo" data-rotulo="Situação">{{ selo("Vencida" if a.situacao == "vencida" else "Próxima", "perigo" if a.situacao == "vencida" else "atencao") }}</td>
+<td class="mono o5" data-rotulo="Próxima">{% if a.proxima_km is not none %}{{ a.proxima_km|milhar }} km{% endif %}{% if a.proxima_km is not none and a.proxima_data %} / {% endif %}{% if a.proxima_data %}{{ a.proxima_data|data_br }}{% endif %}</td>
+<td class="mono o6{{ ' text-perigo' if (a.km_restantes is not none and a.km_restantes < 0) or (a.dias_restantes is not none and a.dias_restantes < 0) else '' }}" data-rotulo="Restante">{% if a.km_restantes is not none %}{{ a.km_restantes|milhar }} km{% endif %}{% if a.km_restantes is not none and a.dias_restantes is not none %} / {% endif %}{% if a.dias_restantes is not none %}{{ a.dias_restantes }} dias{% endif %}</td>
+<td class="o2 rc-cab" data-rotulo="Situação">{{ selo("Vencida" if a.situacao == "vencida" else "Próxima", "perigo" if a.situacao == "vencida" else "atencao") }}</td>
 </tr>{% endfor %}
 {% endcall %}
 {% else %}{{ estado_vazio("Nenhum alerta neste filtro", "Nenhuma manutenção vencida ou próxima aparece neste filtro.", "0") }}{% endif %}
@@ -20,12 +20,12 @@
 </form>
 <p class="so-leitor" role="status" aria-live="polite">{{ d.historico.pagina.resumo() }}</p>
 {% if d.historico.itens %}
-{% call tabela([("Moto", ""), ("Data", ""), ("Tipo", ""), ("Oficina", ""), ("Custo", "num"), ("Descrição", ""), ("Situação", ""), ("Ações", "col-acoes")], "Histórico de manutenções", cartoes=True) %}
-{% for m in d.historico.itens %}<tr>
-<td class="o1">{% if m.moto %}{{ placa(m.moto.placa|placa_br) }}{% else %}—{% endif %}</td><td class="mono o4" data-rotulo="Data">{{ m.data_entrada|data_br }}</td>
-<td class="o5 k-d" data-rotulo="Tipo">{{ m.tipo|capitalize }}</td><td class="o6" data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
-<td class="num mono o7 k-d" data-rotulo="Custo">{{ m.custo_total|moeda }}</td><td class="modelo o3 k-larga" data-rotulo="Descrição">{{ m.descricao }}</td>
-<td class="o2 k-d k-selo" data-rotulo="Situação">{{ selo(status_rotulo[m.status], "ok" if m.status == "concluida" else ("neutro" if m.status == "cancelada" else "info")) }}</td>
+{% call tabela([("Moto", ""), ("Data", ""), ("Tipo", ""), ("Oficina", ""), ("Custo", "num"), ("Descrição", ""), ("Situação", ""), ("Ações", "col-acoes")], "Histórico de manutenções", recolhivel=True) %}
+{% for m in d.historico.itens %}<tr data-recolhivel>
+{% call rc_titulo("o1") %}{% if m.moto %}{{ placa(m.moto.placa|placa_br) }}{% else %}—{% endif %}{% endcall %}<td class="mono o4 rc-cab" data-rotulo="Data">{{ m.data_entrada|data_br }}</td>
+<td class="o5" data-rotulo="Tipo">{{ m.tipo|capitalize }}</td><td class="o6 rc-quebra" data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
+<td class="num mono o7" data-rotulo="Custo">{{ m.custo_total|moeda }}</td><td class="modelo o3 rc-quebra" data-rotulo="Descrição">{{ m.descricao }}</td>
+<td class="o2" data-rotulo="Situação">{{ selo(status_rotulo[m.status], "ok" if m.status == "concluida" else ("neutro" if m.status == "cancelada" else "info")) }}</td>
 <td class="c-acao">{% if m.status == "aberta" and m.moto %}<div class="flex gap-2 acoes-manutencao">{{ botao("Concluir", href="/manutencao/" ~ m.id ~ "/concluir", aria="Concluir manutenção da moto " ~ (m.moto.placa|placa_br), extra='hx-get="/manutencao/' ~ m.id ~ '/concluir" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Cancelar", href="/manutencao/" ~ m.id ~ "/cancelar", aria="Cancelar manutenção da moto " ~ (m.moto.placa|placa_br), extra='hx-get="/manutencao/' ~ m.id ~ '/cancelar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div>{% endif %}</td>
 </tr>{% endfor %}
 {% endcall %}
@@ -33,11 +33,11 @@
 {% else %}{{ estado_vazio("Nenhuma manutenção encontrada", "Nenhuma manutenção atende à busca ou ao filtro escolhido.", "0") }}{% endif %}
 {% else %}
 {% if d.catalogo %}
-{% call tabela([("Item", ""), ("Intervalo km", "num"), ("Alerta a partir de", "num"), ("Intervalo dias", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Catálogo de manutenção", cartoes=True) %}
-{% for item in d.catalogo %}<tr><td class="modelo o1">{{ item.nome }}</td>
+{% call tabela([("Item", ""), ("Intervalo km", "num"), ("Alerta a partir de", "num"), ("Intervalo dias", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Catálogo de manutenção", recolhivel=True) %}
+{% for item in d.catalogo %}<tr data-recolhivel>{% call rc_titulo("modelo o1") %}{{ item.nome }}{% endcall %}
 <td class="num mono o3" data-rotulo="Intervalo km">{% if item.intervalo_km %}{{ item.intervalo_km|milhar }} km{% else %}—{% endif %}</td>
-<td class="num mono o4 k-d" data-rotulo="Alerta a partir de">{% if item.intervalo_minimo_km %}{{ item.intervalo_minimo_km|milhar }} km{% else %}—{% endif %}</td>
-<td class="num mono o5 k-larga" data-rotulo="Intervalo dias">{{ item.intervalo_dias or "—" }}</td><td class="o2 k-d k-selo" data-rotulo="Situação">{{ selo("Ativo" if item.ativo else "Inativo", "ok" if item.ativo else "neutro") }}</td>
+<td class="num mono o4" data-rotulo="Alerta a partir de">{% if item.intervalo_minimo_km %}{{ item.intervalo_minimo_km|milhar }} km{% else %}—{% endif %}</td>
+<td class="num mono o5" data-rotulo="Intervalo dias">{{ item.intervalo_dias or "—" }}</td><td class="o2 rc-cab" data-rotulo="Situação">{{ selo("Ativo" if item.ativo else "Inativo", "ok" if item.ativo else "neutro") }}</td>
 <td class="c-acao">{{ botao("Editar", href="/manutencao/catalogo/" ~ item.id ~ "/editar", aria="Editar o item " ~ item.nome, extra='hx-get="/manutencao/catalogo/' ~ item.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</td></tr>{% endfor %}
 {% endcall %}
 {% else %}{{ estado_vazio("Nenhum item no catálogo", "Os itens de manutenção aparecem aqui assim que forem cadastrados.", "0") }}{% endif %}
