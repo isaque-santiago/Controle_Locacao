@@ -160,7 +160,7 @@ Confirmado: DNS (DuckDNS), `ufw` só com 22, 80 e 443, `unattended-upgrades` ati
 desligados, limite de memória), `FORWARDED_ALLOW_IPS` restrito ao IP do Traefik, segredos do GitHub, migrations aplicadas no Supabase de
 produção, `/saude`, HSTS/CSP, HTTP→HTTPS, `/componentes` com 404, login e portal do locatário, e monitor UptimeRobot em `/saude`.
 Lighthouse medido em 26/10/2026 no app publicado (login, Dashboard, Cobranças, Motos e ficha: desempenho 89–100, acessibilidade 98–100, boas práticas 100, CLS ≤ 0,023; detalhes na seção 10 de `Arquivos/Design_UI.md`).
-Pendentes: backup do Supabase (Fase 6) e roteiro de homologação manual no app publicado.
+Backup do Supabase: manual semanal (decisão de 29/10/2026; ver `Arquivos/Deploy_VPS.md`, seção 8). Pendente: roteiro de homologação manual no app publicado.
 
 Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
 `SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):

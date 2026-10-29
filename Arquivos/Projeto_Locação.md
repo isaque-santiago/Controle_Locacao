@@ -820,7 +820,7 @@ banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusã
 
 - Repositório no GitHub; deploy na VPS (Coolify) a partir do `Dockerfile`, só pela CI com o `pytest` verde; segredos por variável de ambiente: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (guia em `Deploy_VPS.md`).
 - Migrations versionadas em `supabase/migrations/`, aplicadas em ordem (SQL Editor do Supabase ou Supabase CLI).
-- Verificar os limites do plano gratuito do Supabase (por exemplo, pausa de projetos sem uso por certo período e ausência de backup automático de ponto no tempo) e decidir se o volume de dados/fotos justifica plano pago. Enquanto isso, usar o **backup manual** da Fase 7 com frequência semanal.
+- Verificar os limites do plano gratuito do Supabase (por exemplo, pausa de projetos sem uso por certo período e ausência de backup automático de ponto no tempo) e decidir se o volume de dados/fotos justifica plano pago. Enquanto isso, usar o **backup manual** da Fase 7 com frequência semanal. **Decidido em 29/10/2026:** ficar só com o backup manual semanal (sem `pg_dump` agendado nem plano pago); rotina em `Deploy_VPS.md`, seção 8.
 
 ---
 
