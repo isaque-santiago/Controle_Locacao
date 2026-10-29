@@ -614,6 +614,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .recolhe-gatilho {display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;}
 .recolhe-gatilho:disabled {cursor: default;}
 .recolhe-seta {display: none;}
+.rc-so-cel {display: none;}
 @media (max-width: 719px) {
   .recolhe-seta {display: block; flex: none; width: 20px; height: 20px; color: var(--texto-2); transform: rotate(180deg); transition: transform 150ms ease;}
   [data-recolhivel].aberto .recolhe-seta {transform: none;}
@@ -639,6 +640,8 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab)::before {margin: 0; flex: none; text-align: left;}
   .lista-cartoes .dados tr[data-recolhivel] td.c-acao {display: block; order: 99; margin: 0; padding: var(--e3) 0 0; border-top: 1px solid var(--linha-sutil);}
   .lista-cartoes .dados tr[data-recolhivel] td.c-acao:empty {display: none !important;}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-oculto {display: none !important;}
+  .rc-so-cel {display: inline;}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
   .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}
