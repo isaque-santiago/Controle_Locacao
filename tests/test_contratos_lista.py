@@ -46,3 +46,19 @@ def test_filtrar_motos_por_placa_com_ou_sem_hifen_e_por_modelo():
     assert [m["placa"] for m in regras.filtrar_motos(motos, "factor")] == ["QRS4T21"]
     assert [m["placa"] for m in regras.filtrar_motos(motos, "honda cg")] == ["BRA2E19"]
     assert regras.filtrar_motos(motos, "---") == []
+
+
+def test_resumo_promessa_soma_pagas_do_cadastro_e_quitadas_no_sistema():
+    contrato = {"tipo_contrato": "promessa_compra", "numero_parcelas": 10, "parcelas_pagas_inicial": 3,
+                "valor_total": 8200, "valor_entrada": 5000}
+    cobrancas = [{"tipo": "locacao", "situacao": "paga"}, {"tipo": "locacao", "situacao": "aberta"},
+                 {"tipo": "caucao", "situacao": "paga"}, {"tipo": "outros", "situacao": "paga"}]
+    r = regras.resumo_promessa(contrato, cobrancas)
+    assert r["parcelas_pagas"] == 4 and r["parcelas_restantes"] == 6 and r["valor_total"] == 8200
+
+
+def test_resumo_promessa_limita_ao_total_e_ignora_locacao_comum():
+    contrato = {"tipo_contrato": "promessa_compra", "numero_parcelas": 2, "parcelas_pagas_inicial": 2}
+    assert regras.resumo_promessa(contrato, [{"tipo": "locacao", "situacao": "paga"}])["parcelas_pagas"] == 2
+    assert regras.resumo_promessa({"tipo_contrato": "locacao"}, []) is None
+    assert regras.resumo_promessa({}, []) is None
