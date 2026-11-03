@@ -62,6 +62,19 @@ def obter(contrato_id: str):
     return resposta.data if resposta else None
 
 
+def listar_motos_do_contrato(contrato_id: str) -> list:
+    """Motos do contrato (view `vw_contrato_motos`), a principal primeiro."""
+    linhas = (
+        get_client()
+        .table("vw_contrato_motos")
+        .select("*")
+        .eq("contrato_id", contrato_id)
+        .execute()
+        .data
+    )
+    return sorted(linhas, key=lambda m: (not m["principal"], m["placa"]))
+
+
 @invalida_cache
 def atualizar(contrato_id: str, dados: dict):
     resposta = get_client().table(TABELA).update(dados).eq("id", contrato_id).execute()
