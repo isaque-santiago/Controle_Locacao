@@ -9,7 +9,12 @@
 - Dinheiro sempre com Decimal / numeric(12,2); nunca float.
 - Datas no fuso America/Sao_Paulo; formatos dd/mm/aaaa e R$ 1.234,56.
 - Nunca commitar segredos. Nunca usar a service_role key no app.
-- Ao terminar cada fase: rodar pytest, atualizar o README e fazer commit com mensagem descritiva.
+- Toda tarefa que altere arquivos é feita em uma branch própria, criada a partir da `main` atualizada, com nome curto em kebab-case e prefixo
+  `feat/`, `fix/`, `docs/` ou `ajuste/`. Nunca altere nem faça commit direto na `main`. Se já estiver na branch da tarefa, continue nela.
+- Faça um commit por alteração, logo depois de fazê-la, com mensagem descritiva em português (o quê e por quê). Uma alteração é uma unidade
+  lógica: uma migration, uma regra de `src/domain` com os seus testes, um ajuste de tela, uma atualização de documentação. Não junte várias
+  alterações em um commit só e não termine a tarefa com alterações sem commit.
+- Ao terminar cada fase: rodar pytest e atualizar o README (os commits já saem por alteração, conforme a regra acima).
 - Se uma regra do plano for ambígua, pergunte antes de decidir.
 
 # Como a IA acessa o app em execução (ambiente de preview)
