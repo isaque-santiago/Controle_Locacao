@@ -1,0 +1,13 @@
+{% from "componentes/macros.html" import kpi, estado_vazio %}
+{% set f = a.financeiro %}
+{% if f %}
+<dl class="grade kpis">
+  {{ kpi("Receita recebida", f.receita_recebida|moeda_compacta) }}
+  {{ kpi("Custo de manutenção", f.custo_manutencao|moeda_compacta) }}
+  {{ kpi("Custo de documentos", f.custo_documentos|moeda_compacta) }}
+  {{ kpi("Resultado", f.resultado|moeda_compacta, atencao=(f.resultado < 0)) }}
+</dl>
+<p class="text-texto-2">Custo por km rodado desde a aquisição: <span class="mono text-texto font-medium">{% if f.custo_por_km is not none %}{{ f.custo_por_km|moeda }}{% else %}—{% endif %}</span></p>
+{% else %}
+{% call estado_vazio("Sem dados financeiros", "Quando esta moto tiver recebimentos ou custos, o resultado aparece aqui.", "0") %}{% endcall %}
+{% endif %}

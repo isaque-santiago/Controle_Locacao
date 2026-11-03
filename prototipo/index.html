@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controle de Locação — protótipo do layout</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<!-- Ícones (traço único, 24x24) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-painel" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></symbol>
+  <symbol id="i-contrato" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-cobranca" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v.01M17.5 14.5v.01"/></symbol>
+  <symbol id="i-moto" viewBox="0 0 24 24"><circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3-6h5l2 6M9 10l-1.5-2.5H5M14 10l1-3h3"/></symbol>
+  <symbol id="i-cliente" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></symbol>
+  <symbol id="i-manutencao" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5 5L3.5 17.5a1.8 1.8 0 0 0 2.5 2.5l6.2-6.2a4 4 0 0 0 5-5l-2.5 2.5-2.2-.6-.6-2.2z"/></symbol>
+  <symbol id="i-documento" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></symbol>
+  <symbol id="i-vistoria" viewBox="0 0 24 24"><path d="M9 4h6l1.5 2H20a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3.5z"/><circle cx="12" cy="12.5" r="3.5"/></symbol>
+  <symbol id="i-relatorio" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/></symbol>
+  <symbol id="i-config" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></symbol>
+  <symbol id="i-busca" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-novo" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-voltar" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-tema" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-fechar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-sair" viewBox="0 0 24 24"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<div class="app">
+
+  <!-- ============ DESKTOP (≥1100): barra lateral · TABLET (720–1099): trilho ============ -->
+  <aside class="lateral" aria-label="Menu principal">
+    <a class="marca" href="#/dashboard">
+      <span class="marca-simbolo" aria-hidden="true">CL</span>
+      <div><strong>Controle de Locação</strong><span class="sub">frota de motos</span></div>
+    </a>
+    <nav>
+      <div class="nav-grupo"><h2>Operação</h2><ul class="nav-lista">
+        <li><a class="nav-item" href="#/dashboard" data-rota="dashboard" title="Dashboard"><svg class="i"><use href="#i-painel"/></svg><span class="rotulo">Dashboard</span></a></li>
+        <li><a class="nav-item" href="#/contratos" data-rota="contratos" title="Contratos"><svg class="i"><use href="#i-contrato"/></svg><span class="rotulo">Contratos</span></a></li>
+        <li><a class="nav-item" href="#/cobrancas" data-rota="cobrancas" title="Cobranças"><svg class="i"><use href="#i-cobranca"/></svg><span class="rotulo">Cobranças</span><span class="nav-contagem" aria-label="4 em atraso">4</span></a></li>
+      </ul></div>
+      <div class="nav-grupo"><h2>Cadastros</h2><ul class="nav-lista">
+        <li><a class="nav-item" href="#/motos" data-rota="motos" title="Motos"><svg class="i"><use href="#i-moto"/></svg><span class="rotulo">Motos</span></a></li>
+        <li><a class="nav-item" href="#/clientes" data-rota="clientes" title="Clientes"><svg class="i"><use href="#i-cliente"/></svg><span class="rotulo">Clientes</span></a></li>
+      </ul></div>
+      <div class="nav-grupo"><h2>Frota</h2><ul class="nav-lista">
+        <li><a class="nav-item" href="#/manutencao" data-rota="manutencao" title="Manutenção"><svg class="i"><use href="#i-manutencao"/></svg><span class="rotulo">Manutenção</span></a></li>
+        <li><a class="nav-item" href="#/documentos" data-rota="documentos" title="Documentos"><svg class="i"><use href="#i-documento"/></svg><span class="rotulo">Documentos</span></a></li>
+        <li><a class="nav-item" href="#/vistorias" data-rota="vistorias" title="Vistorias"><svg class="i"><use href="#i-vistoria"/></svg><span class="rotulo">Vistorias</span></a></li>
+      </ul></div>
+      <div class="nav-grupo"><h2>Gestão e sistema</h2><ul class="nav-lista">
+        <li><a class="nav-item" href="#/relatorios" data-rota="relatorios" title="Relatórios"><svg class="i"><use href="#i-relatorio"/></svg><span class="rotulo">Relatórios</span></a></li>
+        <li><a class="nav-item" href="#/config" data-rota="config" title="Configurações"><svg class="i"><use href="#i-config"/></svg><span class="rotulo">Configurações</span></a></li>
+      </ul></div>
+    </nav>
+    <div class="lateral-rodape">
+      <button class="btn-lateral" type="button" data-alternar-tema title="Alternar tema"><svg class="i"><use href="#i-tema"/></svg><span>Alternar tema</span></button>
+      <div class="usuario"><span class="avatar" aria-hidden="true">R</span><div>Ricardo Menezes</div></div>
+      <button class="btn-lateral" type="button" title="Sair"><svg class="i"><use href="#i-sair"/></svg><span>Sair</span></button>
+    </div>
+  </aside>
+
+  <div class="coluna">
+    <!-- ============ CELULAR (<720): topo enxuto ============ -->
+    <header class="topo-movel">
+      <a class="marca" href="#/dashboard"><span class="marca-simbolo" aria-hidden="true">CL</span><div><strong>Controle de Locação</strong></div></a>
+      <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema"><svg class="i"><use href="#i-tema"/></svg></button>
+    </header>
+
+    <main id="conteudo" tabindex="-1">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="tela" data-tela="dashboard" data-titulo="Dashboard" hidden>
+        <header class="cabecalho">
+          <div class="cabecalho-texto"><h1>Dashboard</h1><p>Hoje, 5 de outubro: 4 cobranças em atraso e 3 motos precisando de manutenção.</p></div>
+          <div class="acoes"><a class="btn btn-primario" href="#/contrato-novo"><svg class="i"><use href="#i-novo"/></svg>Novo contrato</a></div>
+        </header>
+
+        <dl class="grade kpis">
+          <div class="kpi"><dt>Motos alugadas</dt><dd>18 / 24<small>6 disponíveis para alugar</small></dd></div>
+          <div class="kpi"><dt>Recebido em outubro</dt><dd>R$ 21.480,00<small>de R$ 26.200,00 previstos</small></dd></div>
+          <div class="kpi atencao"><dt>Em atraso</dt><dd>R$ 2.310,00<small>4 cobranças, 3 clientes</small></dd></div>
+          <div class="kpi"><dt>Na oficina</dt><dd>3<small>1 com previsão para amanhã</small></dd></div>
+        </dl>
+
+        <div class="grade duas-colunas">
+          <div class="cartao">
+            <div class="cartao-cab"><h2>Ocupação da frota</h2><span class="mono">75%</span></div>
+            <div class="medidor" role="img" aria-label="18 motos alugadas, 3 na oficina e 3 livres, de 24">
+              <span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span>
+              <span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span>
+              <span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span><span class="cheio"></span>
+              <span class="oficina"></span><span class="oficina"></span><span class="oficina"></span><span></span><span></span><span></span>
+            </div>
+            <div class="legenda"><span><i></i>18 alugadas</span><span><i class="oficina"></i>3 na oficina</span><span><i class="livre"></i>3 livres</span></div>
+
+            <div class="cartao-cab" style="margin-top:var(--e6)"><h2>Vencem nos próximos 7 dias</h2><a href="#/cobrancas">Ver cobranças</a></div>
+            <div class="tabela-caixa" style="border-radius:var(--raio-md)">
+              <table class="dados">
+                <thead><tr><th>Cliente</th><th>Moto</th><th>Vence em</th><th class="num">Valor</th></tr></thead>
+                <tbody>
+                  <tr><td class="c-moto" data-rotulo="Cliente">Joana Prado</td><td class="c-km" data-rotulo="Moto"><span class="placa">QRS-4T21</span></td><td class="c-man" data-rotulo="Vence em">07/10/2026</td><td class="num mono c-loc" data-rotulo="Valor">R$ 320,00</td></tr>
+                  <tr><td class="c-moto" data-rotulo="Cliente">Marcos Teles</td><td class="c-km" data-rotulo="Moto"><span class="placa">BRA-2E19</span></td><td class="c-man" data-rotulo="Vence em">08/10/2026</td><td class="num mono c-loc" data-rotulo="Valor">R$ 290,00</td></tr>
+                  <tr><td class="c-moto" data-rotulo="Cliente">Paulo Vieira</td><td class="c-km" data-rotulo="Moto"><span class="placa">FLM-7K03</span></td><td class="c-man" data-rotulo="Vence em">10/10/2026</td><td class="num mono c-loc" data-rotulo="Valor">R$ 320,00</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="cartao">
+            <div class="cartao-cab"><h2>Precisa de atenção</h2></div>
+            <ul class="pendencias">
+              <li class="pendencia"><span class="adesivo perigo" aria-hidden="true">4</span><div><strong>Cobranças em atraso</strong><span class="det">Mais antiga: 9 dias, Rafael Souza</span></div><a class="btn" href="#/cobrancas">Abrir</a></li>
+              <li class="pendencia"><span class="adesivo atencao" aria-hidden="true">3</span><div><strong>Manutenção vencendo</strong><span class="det">Troca de óleo em até 200 km</span></div><a class="btn" href="#/manutencao">Abrir</a></li>
+              <li class="pendencia"><span class="adesivo info" aria-hidden="true">2</span><div><strong>Documentos a vencer</strong><span class="det">Licenciamento em 12 dias</span></div><a class="btn" href="#/documentos">Abrir</a></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= MOTOS (lista) ================= -->
+      <section class="tela" data-tela="motos" data-titulo="Motos" hidden>
+        <header class="cabecalho">
+          <div class="cabecalho-texto"><h1>Motos</h1><p>24 motos na frota: 18 alugadas, 3 na oficina e 3 livres.</p></div>
+          <div class="acoes"><button class="btn btn-primario" type="button"><svg class="i"><use href="#i-novo"/></svg>Nova moto</button></div>
+        </header>
+
+        <div class="barra-filtros">
+          <div class="entrada-icone"><svg class="i"><use href="#i-busca"/></svg><input class="entrada" type="search" placeholder="Buscar por placa, modelo ou locatário" aria-label="Buscar motos"></div>
+        </div>
+        <div class="chips" role="group" aria-label="Filtrar por situação">
+          <button class="chip" type="button" aria-pressed="true">Todas <b>24</b></button>
+          <button class="chip" type="button" aria-pressed="false">Alugadas <b>18</b></button>
+          <button class="chip" type="button" aria-pressed="false">Livres <b>3</b></button>
+          <button class="chip" type="button" aria-pressed="false">Na oficina <b>3</b></button>
+        </div>
+
+        <div class="tabela-caixa">
+          <table class="dados">
+            <thead><tr><th>Placa</th><th>Moto</th><th>Situação</th><th class="num">Km</th><th>Locatário</th><th>Próxima manutenção</th><th><span class="so-leitor">Ações</span></th></tr></thead>
+            <tbody>
+              <tr><td class="c-placa"><span class="placa">QRS-4T21</span></td><td class="c-moto modelo">Honda CG 160 Fan<span class="sub">2023, vermelha</span></td><td class="c-sit"><span class="selo ok">Alugada</span></td><td class="c-km num mono" data-rotulo="Km">18.420</td><td class="c-loc" data-rotulo="Locatário">Joana Prado</td><td class="c-man" data-rotulo="Próxima manutenção">em 580 km</td><td class="c-acao"><a class="btn" href="#/moto">Abrir ficha</a></td></tr>
+              <tr><td class="c-placa"><span class="placa">BRA-2E19</span></td><td class="c-moto modelo">Yamaha Factor 150<span class="sub">2022, preta</span></td><td class="c-sit"><span class="selo ok">Alugada</span></td><td class="c-km num mono" data-rotulo="Km">31.905</td><td class="c-loc" data-rotulo="Locatário">Marcos Teles</td><td class="c-man" data-rotulo="Próxima manutenção">em 95 km</td><td class="c-acao"><a class="btn" href="#/moto">Abrir ficha</a></td></tr>
+              <tr><td class="c-placa"><span class="placa">FLM-7K03</span></td><td class="c-moto modelo">Honda CG 160 Start<span class="sub">2024, azul</span></td><td class="c-sit"><span class="selo atencao">Na oficina</span></td><td class="c-km num mono" data-rotulo="Km">9.870</td><td class="c-loc" data-rotulo="Locatário">Sem locatário</td><td class="c-man" data-rotulo="Próxima manutenção">em andamento</td><td class="c-acao"><a class="btn" href="#/moto">Abrir ficha</a></td></tr>
+              <tr><td class="c-placa"><span class="placa">KTD-9B77</span></td><td class="c-moto modelo">Honda Biz 125<span class="sub">2021, prata</span></td><td class="c-sit"><span class="selo neutro">Livre</span></td><td class="c-km num mono" data-rotulo="Km">44.310</td><td class="c-loc" data-rotulo="Locatário">Sem locatário</td><td class="c-man" data-rotulo="Próxima manutenção">vencida há 120 km</td><td class="c-acao"><a class="btn" href="#/moto">Abrir ficha</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="paginacao"><span>Mostrando 1 a 4 de 24</span><div><button class="btn" type="button" disabled>Anterior</button><button class="btn" type="button">Próxima</button></div></div>
+      </section>
+
+      <!-- ================= FICHA DA MOTO ================= -->
+      <section class="tela" data-tela="moto" data-titulo="Ficha da moto" hidden>
+        <a class="voltar" href="#/motos"><svg class="i"><use href="#i-voltar"/></svg>Voltar para motos</a>
+        <header class="cabecalho">
+          <div class="cabecalho-texto">
+            <div class="ficha-titulo"><h1 class="so-leitor">Moto QRS-4T21</h1><span class="placa" aria-hidden="true">QRS-4T21</span><span class="selo ok">Alugada</span></div>
+            <p style="margin-top:var(--e3)">Honda CG 160 Fan, 2023, vermelha. Locada para Joana Prado desde 12/03/2026.</p>
+          </div>
+          <div class="acoes"><button class="btn" type="button">Editar</button><button class="btn btn-primario" type="button" data-abrir="dlg-manutencao"><svg class="i"><use href="#i-manutencao"/></svg>Registrar manutenção</button></div>
+        </header>
+
+        <div class="abas" role="tablist" aria-label="Seções da ficha">
+          <button role="tab" id="aba-resumo" aria-selected="true" aria-controls="p-resumo">Resumo</button>
+          <button role="tab" id="aba-manut" aria-selected="false" aria-controls="p-manut" tabindex="-1">Manutenção</button>
+          <button role="tab" id="aba-docs" aria-selected="false" aria-controls="p-docs" tabindex="-1">Documentos</button>
+          <button role="tab" id="aba-vist" aria-selected="false" aria-controls="p-vist" tabindex="-1">Vistorias</button>
+        </div>
+
+        <div class="painel" id="p-resumo" role="tabpanel" aria-labelledby="aba-resumo">
+          <div class="grade duas-colunas">
+            <div class="cartao"><h2>Dados da moto</h2>
+              <dl class="dl">
+                <div><dt>Modelo</dt><dd>Honda CG 160 Fan</dd></div><div><dt>Ano</dt><dd class="mono">2023</dd></div>
+                <div><dt>Cor</dt><dd>Vermelha</dd></div><div><dt>Quilometragem</dt><dd class="mono">18.420 km</dd></div>
+                <div><dt>Renavam</dt><dd class="mono">01234567890</dd></div><div><dt>Valor da semana</dt><dd class="mono">R$ 320,00</dd></div>
+              </dl>
+            </div>
+            <div class="cartao"><h2>Próxima troca de óleo</h2>
+              <p><span class="mono" style="font-size:22px;font-weight:600">em 580 km</span></p>
+              <div class="progresso" role="img" aria-label="Faltam 580 km de 3.000"><span style="width:81%"></span></div>
+              <p style="color:var(--texto-2);font-size:13px">Última troca aos 15.998 km. Próxima aos 19.000 km.</p>
+            </div>
+          </div>
+        </div>
+        <div class="painel" id="p-manut" role="tabpanel" aria-labelledby="aba-manut" hidden>
+          <div class="tabela-caixa"><table class="dados">
+            <thead><tr><th>Data</th><th>Serviço</th><th class="num">Km</th><th class="num">Valor</th></tr></thead>
+            <tbody>
+              <tr><td class="c-placa mono">28/08/2026</td><td class="c-moto modelo">Troca de óleo e filtro</td><td class="c-km num mono" data-rotulo="Km">15.998</td><td class="c-man num mono" data-rotulo="Valor">R$ 85,00</td></tr>
+              <tr><td class="c-placa mono">02/06/2026</td><td class="c-moto modelo">Kit de transmissão</td><td class="c-km num mono" data-rotulo="Km">12.410</td><td class="c-man num mono" data-rotulo="Valor">R$ 240,00</td></tr>
+            </tbody></table></div>
+        </div>
+        <div class="painel" id="p-docs" role="tabpanel" aria-labelledby="aba-docs" hidden>
+          <div class="cartao"><ul class="pendencias">
+            <li class="pendencia" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>CRLV 2026</strong><span class="det">Vence em 12/10/2026</span></div><span class="selo atencao">Vence em 12 dias</span></li>
+            <li class="pendencia" style="grid-template-columns:minmax(0,1fr) auto"><div><strong>Seguro</strong><span class="det">Vence em 03/02/2027</span></div><span class="selo ok">Em dia</span></li>
+          </ul></div>
+        </div>
+        <div class="painel" id="p-vist" role="tabpanel" aria-labelledby="aba-vist" hidden>
+          <div class="cartao vazio"><span class="adesivo" aria-hidden="true">0</span><h3>Nenhuma vistoria registrada</h3><p>As vistorias de entrega e de devolução aparecem aqui, com as fotos de cada uma.</p><button class="btn btn-primario" type="button">Registrar vistoria</button></div>
+        </div>
+      </section>
+
+      <!-- ================= NOVO CONTRATO (assistente, passo 3) ================= -->
+      <section class="tela" data-tela="contrato-novo" data-titulo="Novo contrato" hidden>
+        <a class="voltar" href="#/contratos"><svg class="i"><use href="#i-voltar"/></svg>Voltar para contratos</a>
+        <header class="cabecalho">
+          <div class="cabecalho-texto"><h1>Novo contrato</h1><p>Passo 3 de 4: defina o prazo e os valores.</p></div>
+        </header>
+        <ol class="passos" aria-label="Etapas do contrato">
+          <li class="passo feito"><b>Cliente</b><span>Joana Prado</span></li>
+          <li class="passo feito"><b>Moto</b><span>QRS-4T21</span></li>
+          <li class="passo atual" aria-current="step"><b>Condições</b><span>Prazo e valores</span></li>
+          <li class="passo"><b>Vistoria</b><span>Entrega da moto</span></li>
+        </ol>
+
+        <div class="contrato-layout">
+          <form class="cartao" onsubmit="return false">
+            <div class="formulario">
+              <div class="campo"><label for="c-inicio">Início</label><input class="entrada" id="c-inicio" type="text" inputmode="numeric" value="06/10/2026"></div>
+              <div class="campo"><label for="c-prazo">Duração em semanas</label><input class="entrada mono" id="c-prazo" type="text" inputmode="numeric" value="12"></div>
+              <div class="campo"><label for="c-valor">Valor da semana</label><div class="prefixo"><span>R$</span><input class="entrada mono" id="c-valor" type="text" inputmode="decimal" value="320,00"></div></div>
+              <div class="campo"><label for="c-caucao">Caução</label><div class="prefixo"><span>R$</span><input class="entrada mono" id="c-caucao" type="text" inputmode="decimal" value="500,00"></div><small>Devolvida ao encerrar o contrato, se não houver pendências.</small></div>
+              <div class="campo largo"><label for="c-dia">Dia de vencimento</label>
+                <select class="entrada" id="c-dia"><option>Segunda-feira</option><option selected>Quarta-feira</option><option>Sexta-feira</option></select></div>
+            </div>
+            <div class="rodape-acoes"><button class="btn" type="button"><svg class="i"><use href="#i-voltar"/></svg>Voltar</button><button class="btn btn-primario" type="submit">Continuar para a vistoria</button></div>
+          </form>
+
+          <aside class="cartao resumo" aria-label="Resumo do contrato">
+            <h2>Resumo</h2>
+            <dl>
+              <div><dt>Cliente</dt><dd>Joana Prado</dd></div>
+              <div><dt>Moto</dt><dd><span class="placa">QRS-4T21</span></dd></div>
+              <div><dt>Prazo</dt><dd>12 semanas</dd></div>
+              <div><dt>Término</dt><dd class="mono">28/12/2026</dd></div>
+              <div><dt>Caução</dt><dd class="mono">R$ 500,00</dd></div>
+              <div class="total"><dt>Total do contrato</dt><dd>R$ 3.840,00</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ================= PÁGINAS AINDA SEM DESENHO ================= -->
+      <section class="tela" data-tela="generica" hidden>
+        <header class="cabecalho"><div class="cabecalho-texto"><h1 data-titulo-generico>Página</h1><p>Esta página usaria o mesmo padrão de lista, filtros, ficha e formulário mostrado em Motos e Novo contrato.</p></div></header>
+        <div class="cartao vazio"><span class="adesivo" aria-hidden="true">·</span><h3>Fora do protótipo</h3><p>O protótipo cobre quatro telas para validar o layout e a navegação. As demais seguem os mesmos blocos.</p><a class="btn btn-primario" href="#/motos">Ver a lista de motos</a></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============ CELULAR: barra inferior ============ -->
+  <nav class="barra-inferior" aria-label="Navegação principal">
+    <a href="#/dashboard" data-rota="dashboard"><svg class="i"><use href="#i-painel"/></svg>Início</a>
+    <a href="#/contratos" data-rota="contratos"><svg class="i"><use href="#i-contrato"/></svg>Contratos</a>
+    <a href="#/cobrancas" data-rota="cobrancas"><svg class="i"><use href="#i-cobranca"/></svg>Cobranças<span class="nav-contagem" aria-label="4 em atraso">4</span></a>
+    <a href="#/motos" data-rota="motos"><svg class="i"><use href="#i-moto"/></svg>Motos</a>
+    <button type="button" data-abrir="dlg-mais" data-rota-mais><svg class="i"><use href="#i-mais"/></svg>Mais</button>
+  </nav>
+</div>
+
+<!-- Folha "Mais" (celular) -->
+<dialog class="folha" id="dlg-mais" aria-labelledby="t-mais">
+  <div class="dialogo-cab"><h2 id="t-mais">Mais opções</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar"><svg class="i"><use href="#i-fechar"/></svg></button></div>
+  <ul class="folha-lista">
+    <li><a href="#/clientes" data-fechar><svg class="i"><use href="#i-cliente"/></svg>Clientes</a></li>
+    <li><a href="#/manutencao" data-fechar><svg class="i"><use href="#i-manutencao"/></svg>Manutenção</a></li>
+    <li><a href="#/documentos" data-fechar><svg class="i"><use href="#i-documento"/></svg>Documentos</a></li>
+    <li><a href="#/vistorias" data-fechar><svg class="i"><use href="#i-vistoria"/></svg>Vistorias</a></li>
+    <li><a href="#/relatorios" data-fechar><svg class="i"><use href="#i-relatorio"/></svg>Relatórios</a></li>
+    <li><a href="#/config" data-fechar><svg class="i"><use href="#i-config"/></svg>Configurações</a></li>
+    <li><button type="button"><svg class="i"><use href="#i-sair"/></svg>Sair</button></li>
+  </ul>
+</dialog>
+
+<!-- Diálogo de formulário: janela no desktop, tela cheia no celular -->
+<dialog class="cheio" id="dlg-manutencao" aria-labelledby="t-manut">
+  <form method="dialog" onsubmit="return false">
+    <div class="dialogo-cab"><h2 id="t-manut">Registrar manutenção</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar"><svg class="i"><use href="#i-fechar"/></svg></button></div>
+    <div class="dialogo-corpo"><div class="formulario">
+      <div class="campo"><label for="m-data">Data</label><input class="entrada" id="m-data" value="05/10/2026"></div>
+      <div class="campo"><label for="m-km">Quilometragem</label><input class="entrada mono" id="m-km" value="18.420"></div>
+      <div class="campo largo"><label for="m-serv">Serviço</label><select class="entrada" id="m-serv"><option>Troca de óleo e filtro</option><option>Kit de transmissão</option><option>Pastilhas de freio</option></select></div>
+      <div class="campo"><label for="m-valor">Valor</label><div class="prefixo"><span>R$</span><input class="entrada mono" id="m-valor" value="85,00"></div></div>
+    </div></div>
+    <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-primario" type="button" data-fechar>Salvar manutenção</button></div>
+  </form>
+</dialog>
+
+<script>
+(function () {
+  var TITULOS = {dashboard: 'Dashboard', contratos: 'Contratos', cobrancas: 'Cobranças', motos: 'Motos', clientes: 'Clientes',
+    manutencao: 'Manutenção', documentos: 'Documentos', vistorias: 'Vistorias', relatorios: 'Relatórios', config: 'Configurações'};
+  var PAI = {moto: 'motos', 'contrato-novo': 'contratos'};
+  var telas = document.querySelectorAll('.tela');
+
+  function rotear() {
+    var rota = (location.hash.replace('#/', '') || 'dashboard');
+    var alvo = document.querySelector('.tela[data-tela="' + rota + '"]');
+    var nome = alvo ? alvo.getAttribute('data-titulo') : TITULOS[rota];
+    if (!alvo) {
+      alvo = document.querySelector('.tela[data-tela="generica"]');
+      alvo.querySelector('[data-titulo-generico]').textContent = nome || 'Página';
+    }
+    telas.forEach(function (t) { t.hidden = t !== alvo; });
+    var ativa = PAI[rota] || rota;
+    document.querySelectorAll('[data-rota]').forEach(function (a) {
+      if (a.getAttribute('data-rota') === ativa) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    var maisAtivo = !document.querySelector('.barra-inferior a[aria-current="page"]');
+    var mais = document.querySelector('[data-rota-mais]');
+    if (maisAtivo) mais.setAttribute('aria-current', 'page'); else mais.removeAttribute('aria-current');
+    document.title = (nome || 'Página') + ' — Controle de Locação';
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', function () { rotear(); document.getElementById('conteudo').focus({preventScroll: true}); });
+  rotear();
+
+  // Diálogos
+  document.addEventListener('click', function (e) {
+    var abrir = e.target.closest('[data-abrir]');
+    if (abrir) { document.getElementById(abrir.getAttribute('data-abrir')).showModal(); return; }
+    var fechar = e.target.closest('[data-fechar]');
+    if (fechar) { var d = fechar.closest('dialog'); if (d) d.close(); }
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+  });
+
+  // Abas
+  document.querySelectorAll('[role="tablist"]').forEach(function (lista) {
+    var abas = Array.from(lista.querySelectorAll('[role="tab"]'));
+    function ir(aba) {
+      abas.forEach(function (a) {
+        var sel = a === aba;
+        a.setAttribute('aria-selected', sel); a.tabIndex = sel ? 0 : -1;
+        document.getElementById(a.getAttribute('aria-controls')).hidden = !sel;
+      });
+      aba.focus();
+    }
+    abas.forEach(function (aba, i) {
+      aba.addEventListener('click', function () { ir(aba); });
+      aba.addEventListener('keydown', function (e) {
+        var n = {ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: abas.length - 1}[e.key];
+        if (n !== undefined) { e.preventDefault(); ir(abas[(n + abas.length) % abas.length]); }
+      });
+    });
+  });
+
+  // Filtros (chips)
+  document.querySelectorAll('.chips').forEach(function (g) {
+    g.addEventListener('click', function (e) {
+      var c = e.target.closest('.chip'); if (!c) return;
+      g.querySelectorAll('.chip').forEach(function (x) { x.setAttribute('aria-pressed', x === c); });
+    });
+  });
+
+  // Tema: automático → escuro → claro
+  var raiz = document.documentElement, ordem = ['', 'escuro', 'claro'];
+  try { var salvo = localStorage.getItem('proto-tema'); if (salvo) raiz.setAttribute('data-tema', salvo); } catch (e) {}
+  document.querySelectorAll('[data-alternar-tema]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var atual = raiz.getAttribute('data-tema') || '';
+      var prox = ordem[(ordem.indexOf(atual) + 1) % ordem.length];
+      if (prox) raiz.setAttribute('data-tema', prox); else raiz.removeAttribute('data-tema');
+      try { localStorage.setItem('proto-tema', prox); } catch (e) {}
+    });
+  });
+})();
+</script>
+</body>
+</html>

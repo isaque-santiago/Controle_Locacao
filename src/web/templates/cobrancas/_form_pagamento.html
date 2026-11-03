@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo("Registrar pagamento", acao, "Confirmar pagamento", csrf_token, erro_geral) %}
+{% include "cobrancas/_campos_pagamento.html" %}
+{% endcall %}

@@ -1,0 +1,22 @@
+{# O que o encerramento faz: caução, danos e cobranças canceladas. Recalculado pelo HTMX ao mudar a data ou os danos. #}
+{% set d = resumo.devolucao %}
+<div id="previa-encerramento" class="largo" aria-live="polite">
+  {% if resumo.caucao_recebida > 0 or d.danos > 0 %}
+  <p><b>Caução recebida {{ resumo.caucao_recebida|moeda }}{% if d.danos > 0 %} − danos {{ d.danos|moeda }}{% endif %} → devolver ao cliente <span class="mono">{{ d.devolucao|moeda }}</span></b></p>
+  {% endif %}
+  <div class="impacto" role="group" aria-label="O que o encerramento altera">
+    <p><b>O que acontece ao encerrar</b></p>
+    <ul>
+      <li>O contrato passa a Encerrado e a moto volta a ficar disponível.</li>
+      {% if d.excedente > 0 %}<li>Os danos passam da caução: será criada uma cobrança de <span class="mono">{{ d.excedente|moeda }}</span> contra o cliente.</li>{% endif %}
+      <li>{% if resumo.afetadas|length > 1 %}As {{ resumo.afetadas|length }} cobranças abaixo serão canceladas:{% elif resumo.afetadas %}A cobrança abaixo será cancelada:{% else %}Nenhuma cobrança será cancelada.{% endif %}</li>
+    </ul>
+    {% if resumo.afetadas %}
+    <ul>
+      {% for c in resumo.afetadas[:limite_impacto] %}<li>{{ c.tipo|tipo_cobranca }} · vence <span class="mono">{{ c.vencimento|data_br }}</span> · <span class="mono">{{ c.saldo|moeda }}</span></li>{% endfor %}
+      {% if resumo.afetadas|length > limite_impacto %}<li>e mais {{ resumo.afetadas|length - limite_impacto }} cobrança(s)</li>{% endif %}
+    </ul>
+    {% endif %}
+    <p class="text-texto-2 text-[13px]">Cobranças já vencidas até a data, ou com pagamento parcial, continuam em aberto.</p>
+  </div>
+</div>

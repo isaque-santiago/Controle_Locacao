@@ -1,0 +1,5 @@
+{# Campo de busca das etapas 1 e 2: o HTMX troca só #resultado; sem JavaScript o formulário recarrega a etapa. #}
+<form role="search" action="{{ base }}" method="get" hx-get="{{ base }}" hx-target="#resultado" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">
+  <input type="hidden" name="etapa" value="{{ etapa }}">
+  <div class="barra-filtros"><div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca">{{ rotulo_busca }}</label><input class="entrada" id="busca" name="q" type="search" value="{{ busca }}" maxlength="80" placeholder="{{ rotulo_busca }}" autocomplete="off"></div></div>
+</form>

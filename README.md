@@ -6,24 +6,26 @@ Ver plano completo em [Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação
 
 ## Stack
 
-Python 3.11+, Streamlit, Supabase (PostgreSQL + Auth + Storage), Plotly, pytest.
+Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + Storage), pytest.
 
 ## Setup
 
 1. Crie um projeto no Supabase. As migrations em `supabase/migrations/` seguem o formato `AAAAMMDDHHMMSS_descricao.sql` (exigido pela integração Supabase ↔ GitHub, que aplica cada push automaticamente); ao adicionar uma nova, use um timestamp maior que o da última. `supabase/seed.sql` **não** é aplicado por essa integração — rode-o manualmente no SQL Editor após a primeira aplicação das migrations.
 2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users) e troque o UUID dentro de `is_dono()` na migration `20260922000000_restringe_rls_ao_dono.sql` **antes de aplicá-la** — a RLS libera o acesso somente a esse usuário; com um UUID errado, ninguém consegue ler nem gravar dados.
-3. Copie `.streamlit/secrets.toml.example` para `.streamlit/secrets.toml` e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Preencha também a seção `[locador]` (dados da empresa que aparecem no contrato em PDF); sem ela o contrato sai com linhas em branco no lugar do locador.
+3. Copie `.env.example` para `.env` (só em desenvolvimento; ignorado pelo git) e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Em produção use variáveis de ambiente.
 4. Instale as dependências:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt   # desenvolvimento e testes (requirements.txt = só produção)
 ```
 
 5. Rode o app:
 
 ```bash
-streamlit run app.py
+python executar_web.py
 ```
+
+Abre em `http://localhost:8000` (detalhes na seção abaixo).
 
 ## Contrato em PDF
 
@@ -49,11 +51,187 @@ modelo usado pela empresa (10 cláusulas), com os dados do cliente, da moto e do
 pytest
 ```
 
+## Frontend (FastAPI + Jinja2 + HTMX + Tailwind)
+
+O Streamlit foi removido (Fase 4, parte F). Plano, fases e decisões em
+[Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
+papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
+Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 (demais páginas) concluída (08/10/2026):** Clientes (`/clientes`, `/clientes/{id}`), Contratos
+(`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`), Manutenção (`/manutencao`), Vistorias
+(`/vistorias`), Documentos (`/documentos`), Relatórios (`/relatorios`), Configurações (`/configuracoes`) e Portal do
+Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fase 4.
+
+**Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
+- **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
+  o HTMX troca só `#resultado` (e a restauração do histórico recebe a página inteira); chips são links, então
+  funcionam sem JS. A tabela vira cartões conforme a largura **da própria caixa** (container query), não da tela.
+- **Ficha com abas** (`macros.abas_remotas`): cada aba carrega o painel por HTMX, com URL própria
+  (`/motos/{id}?aba=plano`); o servidor devolve as abas junto do painel (swap fora de banda), então o botão
+  voltar do navegador fica coerente. Setas movem o foco, Enter abre.
+- **Falha de rede do HTMX** (`static/js/app.js`): `htmx:sendError` e `htmx:timeout` (limite de 60 s, em `htmx-config`)
+  mostram um aviso de erro em `#avisos` (ou dentro do diálogo aberto) e ele some na próxima requisição bem-sucedida.
+- **Confirmação de ações destrutivas** (`#dlg-confirmar` em `layout_painel.html`, lógica em `static/js/app.js`): em vez do
+  `confirm()` do navegador, `hx-confirm="texto"` (HTMX) e `data-confirmar="texto"` (formulário comum) abrem um diálogo próprio;
+  `data-confirmar-titulo`, `data-confirmar-rotulo` e `data-confirmar-neutro` personalizam. Usado em: gerar nova senha e remover
+  acesso do portal, inativar moto e cancelar o novo contrato.
+- **Formulário em diálogo seguro** (`#dlg-form`, `static/js/app.js`): qualquer alteração marca `data-alterado` no diálogo; fechar
+  (Cancelar, X, fundo ou Esc) com alterações pede "Descartar alterações?" no diálogo de confirmação. No envio, `form_dialogo` usa
+  `hx-sync="this:drop"` e `hx-disabled-elt` (ignora cliques repetidos); formulários comuns recebem `data-enviando` (bloqueio por
+  10 s, para não travar downloads) e o botão mostra um anel girando.
+- **Ordenação por coluna** (Motos, Clientes e Contratos): `?ordem=campo` (crescente) ou `?ordem=-campo` (decrescente); cada clique no
+  cabeçalho cicla crescente → decrescente → ordem padrão. Regras puras em `src/domain/ordenacao.py` (valores ausentes ficam no
+  fim) e `COLUNAS_ORDENAVEIS` de cada `*_lista.py`; a macro `tabela(..., ordenacao=)` põe `aria-sort` e o link no `<th>`. O
+  cabeçalho some em cartões, então no celular a ordem só vem da URL. Busca, chips e paginação preservam a ordem.
+- **Filtros lembrados** (Motos, Clientes, Contratos, Vistorias e Documentos; `<form id="filtros" data-lembrar-filtros>`): o `app.js`
+  guarda na aba (`sessionStorage`) a query da URL (busca, filtro, ordem, "por página"). Voltar da ficha pelo "Voltar" ou pelo menu
+  para o endereço puro da lista reabre com ela. "Limpar filtros" apaga o guardado; sair da conta apaga tudo.
+- **Atalhos de teclado** (`static/js/app.js`): `/` foca a busca da página e `n` aciona o botão marcado com `data-atalho-novo`
+  (o "Novo ..." de Motos, Clientes, Contratos, Documentos e do catálogo de Manutenção; `aria-keyshortcuts="n"`). Só valem sem
+  Ctrl/Alt/Cmd, fora de campos de texto e com nenhum diálogo aberto.
+- **App instalável (PWA básico)**: `static/manifest.webmanifest` (modo `standalone`, `start_url` `/`), ícones em `static/icones/`
+  (gerados por `python scripts/gerar_icones_pwa.py`, com Pillow; versionados) e, no `<head>` de `base.html`, `manifest`,
+  `apple-touch-icon` e `theme-color` claro/escuro. **Sem service worker**: a sessão fica na memória do servidor, então o app não
+  funciona offline e não há cache de páginas autenticadas. No Android/Chrome aparece "Instalar app"; no iOS, "Adicionar à Tela de Início".
+- **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes dos 30 min de inatividade abre o diálogo de
+  confirmação com "Continuar conectado" (`POST /sessao/renovar`, 204, exige CSRF); passado o prazo, avisa que expirou e leva ao login.
+  Requisições do HTMX bem-sucedidas reiniciam a contagem.
+- **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
+  filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
+- **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com
+  3:1 (`--borda-campo`); alvos de toque ≥ 44 px medidos em 13 páginas (390 e 1280 px), sem exceções; `/favicon.ico` deixou de dar 404.
+- **Variação mês a mês no Dashboard** ("Recebido no mês" e "Manutenção no mês"): compara o acumulado do mês (dia 1 até hoje) com o *mesmo
+  intervalo* do mês anterior (`painel.periodo_anterior`: em 31/10 compara 01–30/09). Regras puras em `src/domain/painel.py`
+  (`variacao`, `descrever_variacao`); recebido sobe = verde, manutenção sobe = vermelho, e o texto sempre diz "a mais"/"a menos". Sem
+  base de comparação (mês anterior zerado) mostra o aviso; os dois zerados, nada. "Em atraso" e ocupação não têm variação: são fotos do
+  momento e o sistema não guarda histórico.
+- **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
+  `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
+  `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
+- **Formulário em diálogo** (`macros.form_dialogo`, `rotas/motos_formularios.py`): o diálogo `#dlg-form` abre ao
+  chegar o conteúdo; a validação é no servidor, campo a campo (`src/domain/formulario_moto.py`): com erro o mesmo
+  formulário volta com a mensagem ao lado do campo; com sucesso vem `HX-Redirect` e um aviso de confirmação
+  (uma vez só, guardado na sessão). Operações repetíveis levam `chave_operacao`.
+- **Camadas:** a rota chama `dados_*.py` (leitura) e `acoes_*.py` (gravação), que chamam os serviços e o
+  `src/domain`; os testes de rota trocam esses dois módulos por dados fictícios (`tests/web/conftest.py`).
+- **Cache** de leituras (`repositories/consultas.py`): por usuário e por dia, 60 s; sem usuário identificado não
+  há cache. O limite de "gerar cobranças uma vez por hora" também é por usuário.
+
+**Fase 3, andamento: Clientes concluída (07/10/2026).** Lista, ficha com quatro abas (Resumo com cartão de
+contrato ativo, Contratos, Pagamentos paginados de 10 em 10 e Portal), cadastro e edição em diálogo, em
+`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A aba Portal cria o acesso do locatário, gera nova
+senha e remove o acesso; a senha só existe na resposta do POST (sem sessão, URL ou cache, `Cache-Control: no-store`)
+e as fotos das trocas abrem por redirecionamento para URL assinada de 5 minutos. Foi aceita sem a comparação lado a
+lado com o Streamlit nos passos finais (decisão do proprietário).
+
+**Fase 3, andamento: Contratos concluída (07/10/2026).** Lista (abre nos ativos; filtro por situação, busca por
+cliente ou placa, paginação) e ficha com faixa de dados e abas Cobranças, Vistorias e Manutenções
+(`rotas/contratos.py`, `templates/contratos/`). **Novo contrato** é um assistente de quatro etapas (Cliente, Moto,
+Condições, Confirmar) em `rotas/contratos_novo.py`: cada etapa tem URL própria (`/contratos/novo?etapa=N`), funciona
+sem JavaScript e o rascunho (escolhas e texto digitado, mesmo inválido) fica em `sessao.rascunho_contrato`, então dá
+para voltar e revisar; a criação usa a RPC única de contrato com vistoria de entrega. **Encerrar contrato**
+(`rotas/contratos_encerramento.py`) abre um diálogo com a vistoria de devolução, danos descontados da caução e uma
+prévia (caução a devolver, excedente cobrado, cobranças canceladas) recalculada pelo servidor ao mudar a data ou os
+danos. Regras puras em `src/domain/contratos_lista.py`, `formulario_contrato.py` e `encerramento.py`. Fotos da
+vistoria continuam sendo anexadas na página Vistorias (como no Streamlit).
+
+**Fase 3, andamento: Cobranças concluída (07/10/2026).** Abas Hoje, Atrasadas, Próximos 7 dias e Pagas com contagem
+e URL própria (`?aba=`), resumo de atraso no cabeçalho, encargos por cobrança atrasada e paginação de 10 em 10
+(`rotas/cobrancas.py`, `templates/cobrancas/`; regras puras em `src/domain/cobrancas_lista.py`). **Registrar pagamento**
+(`rotas/cobrancas_pagamento.py`) abre em diálogo pelo HTMX e também como página sem JavaScript (é para onde o "Pagar" do
+Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a data muda, a validação é por campo
+(`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
+mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
+texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
+**Fase 3, andamento: Manutenção concluída (07/10/2026).** Abas Alertas, Histórico e Catálogo; filtros, busca e
+paginação; registro com itens do plano, peças adicionais, prévia de custos e idempotência; conclusão e cancelamento
+de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
+por campo. Homologada no banco de desenvolvimento e em 320, 390 e 1440 px; 981 testes passaram.
+
+**Fase 3, andamento: Vistorias concluída (08/10/2026).** Lista (filtro por tipo, busca, paginação) e comparação entrega x
+devolução com checklist e galeria de fotos por URL assinada (o CSP libera em `img-src` só a origem do Supabase); registro em
+duas etapas, em diálogo e em página sem JavaScript, com até 10 fotos de 10 MB (validadas por extensão, tamanho e formato
+antes de gravar). Adicionar fotos depois do registro ficou de fora por decisão do proprietário.
+**Documentos:** lista com situação, busca por placa e comprovante por link assinado na hora do clique; novo, editar e
+regularizar (com comprovante opcional e o cadastro do ano seguinte). **Relatórios:** quatro abas com período na URL, barras
+em SVG e exportação CSV e Excel dos mesmos dados da tabela. **Configurações:** encargos, alertas e backup manual (ZIP
+baixado por POST, só o dono). **Portal do Locatário** (`rotas/portal.py`): o locatário vê só o contrato ativo dele,
+reporta a troca de óleo com a foto do painel e a da nota fiscal e troca a própria senha (`ServicoAutenticacao.alterar_senha`,
+PUT em `/auth/v1/user` com o token dele). O contrato do formulário é sempre procurado entre os que a RPC devolve para o
+locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de desenvolvimento e em 320, 390 e 1440 px;
+a suíte inteira passa (1168 testes, em 08/10/2026; os de Cobranças usam relógio congelado em 07/10/2026).
+
+**Recarga automática resolvida (08/10/2026):** em desenvolvimento o armazém de sessões espelha as sessões no arquivo
+`.sessoes_dev.json` (ignorado pelo git; só `executar_web.py` o configura, por `LOCACAO_SESSOES_ARQUIVO`, e só vale com
+`LOCACAO_AMBIENTE=dev`), então salvar um `.py` reinicia o servidor sem derrubar o login. A recarga é do próprio
+`executar_web.py` (o servidor roda como processo filho, reiniciado a cada `.py` salvo em `src/`), e não do `--reload` do
+uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console (preview do Claude). Em produção nada vai a disco.
+
+**Fase 4 concluída** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
+Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`), C (CI do app novo), D (revisão de segurança:
+`Arquivos/Revisao_Seguranca.md`), E (homologação com o proprietário: `Arquivos/Roteiro_Homologacao_Manual.md`) e F (remoção do Streamlit:
+`app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
+`plotly` e `watchdog`).
+
+**Fase 5 (deploy) publicada em `https://lamotos.duckdns.org` (verificada em 20/10/2026):** `Dockerfile`, `.dockerignore`, dependências de
+produção separadas (`requirements.txt`; testes em `requirements-dev.txt`) e job `deploy` na CI (passo a passo em `Arquivos/Deploy_VPS.md`).
+Confirmado: DNS (DuckDNS), `ufw` só com 22, 80 e 443, `unattended-upgrades` ativo, SSH só por chave, app no Coolify (Auto Deploy e webhook
+desligados, limite de memória), `FORWARDED_ALLOW_IPS` restrito ao IP do Traefik, segredos do GitHub, migrations aplicadas no Supabase de
+produção, `/saude`, HSTS/CSP, HTTP→HTTPS, `/componentes` com 404, login e portal do locatário, e monitor UptimeRobot em `/saude`.
+Lighthouse medido em 26/10/2026 no app publicado (login, Dashboard, Cobranças, Motos e ficha: desempenho 89–100, acessibilidade 98–100, boas práticas 100, CLS ≤ 0,023; detalhes na seção 10 de `Arquivos/Design_UI.md`).
+Backup do Supabase: manual semanal (decisão de 29/10/2026; ver `Arquivos/Deploy_VPS.md`, seção 8). Pendente: roteiro de homologação manual no app publicado.
+
+Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
+`SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
+
+```bash
+.venv\Scripts\python.exe executar_web.py
+```
+
+Abre em `http://localhost:8000`. O servidor reinicia ao salvar um `.py` de `src/` e o login continua valendo (as sessões de
+desenvolvimento ficam também em `.sessoes_dev.json`, que contém tokens: não compartilhe nem versione; apagá-lo encerra as
+sessões). `executar_web.py --sem-recarga` sobe sem recarga automática (no preview, a configuração `locacao-web-estavel`). Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
+script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
+
+Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macros dos componentes em
+`templates/componentes/macros.html`, estilos em `estilos/app.css`), `static/` (CSS compilado, fontes,
+`htmx.min.js` e `app.js`). Regras de negócio seguem em `src/domain`; o acesso ao Supabase, em
+`src/services/autenticacao.py` e nos repositórios (o cliente da requisição entra por
+`src.db.get_client()`).
+
+**Sessão e segurança.**
+- A sessão vive na **memória do processo**: o cookie leva só um identificador aleatório (`httpOnly`,
+  `SameSite=Lax`, `Secure` em HTTPS) e os tokens do Supabase ficam no servidor. Expira após 30 min sem
+  atividade; o F5 mantém a sessão; sem "lembrar de mim". Reiniciar o app ou fazer deploy encerra
+  todas as sessões.
+- **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
+  atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
+  sessões e o usuário seria deslogado ao acaso.
+- Todo POST exige token CSRF (campo `csrf_token` ou cabeçalho `X-CSRF-Token`, que o HTMX envia sozinho).
+- Login limitado a 5 falhas por e-mail/CPF e 20 por IP em 15 min (também em memória).
+- Cabeçalhos de segurança (CSP sem inline, HSTS em HTTPS, `X-Frame-Options`) saem da aplicação. Por
+  causa da CSP não há `style=` nem `<script>` inline nos templates; há testes que garantem isso.
+
+**CSS (Tailwind).** O `static/css/app.css` é gerado a partir de `src/web/estilos/app.css` e **fica
+versionado** (a VPS não precisa do Tailwind). Depois de mudar templates ou estilos, recompile:
+
+```bash
+.venv\Scripts\python.exe scripts/construir_css.py            # uma vez
+.venv\Scripts\python.exe scripts/construir_css.py --watch    # ao salvar
+```
+
+Precisa do Tailwind CLI standalone (sem Node) em `tools/tailwindcss.exe` (ou `tools/tailwindcss` no
+Linux), baixado de https://github.com/tailwindlabs/tailwindcss/releases. A pasta `tools/` não vai para
+o git. Os testes de `tests/web/` ficam em `pytest` normalmente.
+
 ## Estrutura
 
 Ver seção 3 do plano ([Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md)).
 
 ## Status da implementação
+
+> **Histórico:** as entradas abaixo foram escritas ao longo do desenvolvimento. As anteriores à migração (até 06/10/2026) descrevem a
+> interface em Streamlit — `app.py`, `pages/`, `src/ui/`, `st.*` e `streamlit-cookies-controller` —, que foi removida na Fase 4 (parte F). Os
+> arquivos citados nelas não existem mais; o que vale hoje está nas seções «Frontend», «Publicação» e «Estilização do painel».
 
 As telas das fases 1 a 7 estão implementadas: cadastros, contratos com vistorias,
 cobranças, manutenção, documentos, Dashboard, relatórios, configurações e backup.
@@ -153,16 +331,21 @@ cartões selecionáveis (cliente bloqueado/inativo aparece desabilitado, "já
 aluga X" como aviso), periodicidade em pílulas e etapa final com resumo,
 prévia da agenda e a vistoria de entrega exigida pela Fase 5; ficha com
 faixa de dados, abas Cobranças/Vistorias/Manutenções e encerramento em
-modal. **Limitação conhecida:** o mockup mostra "Prazo indeterminado", mas
-`rpc_criar_contrato_com_vistoria` exige `data_fim_prevista` — por isso o
-"Fim previsto" continua obrigatório no assistente.
+modal. O contrato é por **prazo indeterminado** por padrão (decisão de negócio,
+seção 14.4 do plano): o assistente começa com "Prazo indeterminado" marcado e a
+periodicidade **semanal**; desmarcar mostra o "Fim previsto" para o caso de data final
+combinada. Sem data final a prévia mostra só os 30 primeiros dias e as cobranças
+seguintes são geradas por `rpc_gerar_cobrancas_pendentes` enquanto o contrato estiver ativo.
+No encerramento o dono informa os **danos**, que são descontados da caução recebida
+(`src/domain/caucao.py`, espelhado na RPC): caução R$ 1.000 − dano R$ 300 = devolver
+R$ 700; dano acima da caução zera a devolução e gera uma cobrança de dano com o excedente. O diálogo mostra as avarias anotadas na vistoria de devolução como base para o valor dos danos.
 
 Reconstrução de Cobranças (23/09/2026), conferida contra `Cobrancas.dc.html`:
 subtítulo com total em atraso e nº de clientes; abas Hoje, Atrasadas, Próximos 7
 dias e Pagas (com contagem); Atrasadas mostra atraso, original, encargos e total;
 ações por linha: mensagem de cobrança para copiar (popover) e registrar
-pagamento em diálogo, com multa/juros recalculados ao mudar a data. O pagamento
-mantém principal e "multa e juros" em campos separados (como grava a tabela
+pagamento em diálogo, com multa e adicional diário recalculados ao mudar a data. O pagamento
+mantém principal e "multa e adicional" em campos separados (como grava a tabela
 `pagamentos`), em vez do campo único "Valor a pagar" do mockup. A aba Pagas
 mostra as 30 mais recentes. Regras de abas/resumo/mensagem em
 `src/domain/painel_cobrancas.py`, testadas em `tests/test_painel_cobrancas.py`.
@@ -194,10 +377,10 @@ Cálculos em `src/domain/relatorios.py`, testados em
 `tests/test_relatorios_dominio.py`.
 
 Reconstrução de Configurações (23/09/2026), conferida contra `Configuracoes.dc.html`:
-quatro cartões em largura total (até 25/09/2026 eram de 780px) — Encargos por atraso (multa, juros mensal e carência,
-com exemplo calculado: R$ 500,00 vencida há 5 dias), Alertas de manutenção,
+quatro cartões em largura total (até 25/09/2026 eram de 780px) — Encargos por atraso (multa de atraso e adicional por dia, em reais,
+com exemplo calculado: locação de R$ 500,00 vencida há 5 dias), Alertas de manutenção,
 Alertas de documentos e CNH e Backup manual (ZIP de CSVs) — e botão "Salvar
-alterações" no cabeçalho. Percentuais entre 0 e 100 com até duas casas; demais
+alterações" no cabeçalho. Valores em reais com até duas casas, não negativos; demais
 campos, inteiros não negativos; erros aparecem em português sem gravar nada.
 O backup é gerado em dois passos (Gerar → Baixar) para não consultar as 14
 tabelas a cada interação. **Decisão a confirmar:** o mockup mostra "Último backup"
@@ -252,11 +435,10 @@ a receber `payload jsonb` (`20260922010000_finalizar_manutencao_payload_jsonb.sq
 e o roteiro `supabase/verificar_fluxos.sql` foi executado em produção (23/09) sem
 falhas; ele termina em `ROLLBACK`, então não deixa dados.
 
-**Aceite externo ainda pendente:** uploads/URLs assinadas, executar o roteiro
-manual completo (seção abaixo), revisar em celular no aplicativo publicado e
-confirmar deploy no Streamlit Community Cloud. O teste local não valida
-Supabase Storage, infraestrutura ou publicação. Nenhuma fase é declarada
-homologada apenas com base nas telas e testes isolados.
+**Aceite externo:** uploads e URLs assinadas do Supabase Storage validados em produção em 26/10/2026 (ver a seção 7 de
+`Arquivos/Roteiro_Homologacao_Manual.md`). O bucket `trocas_oleo` do portal do locatário também foi validado no mesmo dia. O roteiro de aceite (fluxos 1 a 10) foi executado no app publicado em 26/10/2026, com achados menores listados no Roteiro de homologação. A rodada no celular (POCO M6 Pro) foi feita em 27/10/2026 e gerou a correção das fotos da entrega e da câmera. Ainda pendente:
+conferir a câmera no aparelho depois do deploy e revisar no Firefox no aplicativo publicado. O teste local não valida Supabase Storage, infraestrutura
+ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas e testes isolados.
 
 ## Atualização de uma instalação existente
 
@@ -271,12 +453,17 @@ homologada apenas com base nas telas e testes isolados.
    - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
    - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
    - `20261002120000_idempotencia_operacoes.sql`: coluna `chave_operacao` e índice único em `pagamentos`, `manutencoes`, `documentos_moto` e `historico_km`, e `rpc_registrar_manutencao` passa a devolver o resultado do primeiro envio quando a chave se repete (Etapa 7 do plano de UI/UX). Rode `supabase/verificar_fluxos.sql` no projeto de homologação depois de aplicar.
+   - `20261005120000_encargos_fixos.sql`: encargo de atraso fixo (decisão de negócio, seção 14.1 do plano) — `configuracoes` ganha `multa_atraso_valor` (R$ 15,00) e `encargo_diario_valor` (R$ 7,00) e perde `multa_atraso_percentual`, `juros_mensal_percentual` e `carencia_dias`. **Aplique antes de publicar esta versão do app**, que já não lê as colunas antigas.
+   - `20261005130000_contrato_indeterminado.sql`: `rpc_criar_contrato_com_vistoria` deixa de exigir `data_fim_prevista` (contrato por prazo indeterminado, seção 14.4 do plano).
+   - `20261005140000_caucao_danos.sql`: danos descontados da caução no encerramento (seção 14.3) — `contratos` ganha `caucao_desconto_danos`, `caucao_valor_devolvido` e `descricao_danos`; `rpc_encerrar_contrato` e `rpc_encerrar_contrato_com_vistoria` trocam `p_caucao_devolvida` por `p_valor_danos` e `p_descricao_danos` (as versões antigas são removidas). **Aplique antes de publicar esta versão do app.**
+   - `20261005150000_manutencao_faixa_km.sql`: faixa de km nos itens de manutenção (seção 14.5) — `itens_manutencao` e `moto_plano_manutencao` ganham `intervalo_minimo_km` (início do alerta; `intervalo_km` continua sendo o máximo, em que o item vence), a view `vw_alertas_manutencao` é recriada e o catálogo padrão passa a ter "Kit de tração" e "Patins de freio" de 3.000 a 5.000 km (renomeia os itens genéricos antigos só se ainda estiverem no valor original).
+   - `20261005160000_receita_caucao_retida.sql`: a parte da caução retida para danos (`contratos.caucao_desconto_danos`) passa a contar como receita da moto em `vw_resultado_moto`, como já faz `domain/relatorios.py` nos relatórios (seção 14.3).
 3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
    executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
    projeto conectado com `supabase link` e use `supabase db push`.
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
-5. Em homologação, execute `supabase/verificar_fluxos.sql` e `supabase/verificar_portal_locatario.sql`. Os roteiros usam `ROLLBACK`.
-6. Reinicie o aplicativo com as dependências de `requirements.txt`.
+5. Em homologação, execute `supabase/verificar_fluxos.sql`, `supabase/verificar_portal_locatario.sql` e `supabase/verificar_regras_negocio.sql`. Os roteiros usam `ROLLBACK`.
+6. Reinicie o aplicativo com as dependências de `requirements-dev.txt`.
 
 Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
 
@@ -326,25 +513,20 @@ Sem publicar a função, "Criar acesso" mostra um erro. Confira no painel: Edge 
 uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o
 km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
 padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
-Configurações > "Multa por troca de óleo fora do intervalo". Valor 0,00 (padrão) não cobra
-multa. O app ainda não tem tela para cancelar cobrança: se a foto não confirmar o km, a
+Configurações > "Multa por troca de óleo fora do intervalo". O valor padrão é R$ 12,50;
+valor 0,00 desativa a cobrança da multa. O app ainda não tem tela para cancelar cobrança:
+se a foto não confirmar o km, a
 multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
 
-## Publicação no Streamlit Community Cloud
+## Publicação
 
-1. Envie o código revisado ao repositório GitHub conectado à sua conta.
-2. Em [Streamlit Community Cloud](https://share.streamlit.io), escolha **Create app**,
-   selecione o repositório, a branch desejada e o arquivo principal `app.py`.
-3. Em configurações avançadas, selecione Python 3.11 ou superior e configure os
-   segredos conforme `.streamlit/secrets.toml.example`. Use `SUPABASE_URL` e
-   `SUPABASE_ANON_KEY`; não use a chave `service_role`.
-4. Confirme que as migrations foram aplicadas, o cadastro público do Supabase foi
-   desativado e o usuário do dono foi criado. Os buckets devem continuar privados.
-5. Publique. Em janela anônima, todas as páginas devem exibir somente o login.
-6. Entre com o usuário do dono e execute o roteiro abaixo. Registre a URL e os
-   resultados da homologação antes de considerar a implantação concluída.
-
-Referência: [guia oficial de deploy](https://docs.streamlit.io/deploy/streamlit-community-cloud/deploy-your-app/deploy).
+O deploy do app FastAPI (Fase 5) usa o `Dockerfile` do repositório no Coolify da VPS; o passo a passo está em
+`Arquivos/Deploy_VPS.md`. O deploy só sai pela CI, no push para a `main`, depois do `pytest` verde (job `deploy` de `.github/workflows/ci.yml`;
+segredos `COOLIFY_URL`, `COOLIFY_TOKEN` e `COOLIFY_APP_UUID` no GitHub); a reversão é o Rollback do Coolify. A imagem já sobe com 1 worker,
+`--proxy-headers` e `LOCACAO_AMBIENTE=producao`. Requisitos da revisão de segurança na revisão de segurança (`Arquivos/Revisao_Seguranca.md`):
+`uvicorn --factory src.web.app:criar_app` com `--proxy-headers` e `--forwarded-allow-ips` do proxy, **1 worker**, `LOCACAO_AMBIENTE`
+diferente de `dev`, `SUPABASE_URL` e `SUPABASE_ANON_KEY` por variável de ambiente (nunca a chave `service_role`). Antes de publicar:
+migrations aplicadas, cadastro público do Supabase desativado, usuário do dono criado e buckets privados.
 
 ## Roteiro manual de aceite
 
@@ -354,15 +536,19 @@ Use um projeto de homologação; os passos criam dados.
 2. Cadastre uma moto e um cliente. Confira o plano automático e o histórico inicial.
    Confira recusa de placa/CPF duplicados e inválidos; confira CPF mascarado nas listas.
 3. Atualize o km. Uma leitura histórica menor exige confirmação e não reduz o km atual.
-4. Crie contrato com caução e vistoria. Compare a prévia com as parcelas geradas;
-   confira que a moto deixa de aparecer entre as disponíveis.
+4. Crie contrato com caução e vistoria (prazo indeterminado, semanal). Compare a prévia
+   com as parcelas geradas (caução e 1ª semana vencem na data de início); confira que a
+   moto deixa de aparecer entre as disponíveis.
 5. Registre pagamentos em dia, atrasado, parcial e total. Confira principal separado
-   dos encargos, saldo residual e recusa de pagamento superior ao saldo.
+   dos encargos (R$ 15 no vencimento + R$ 7 por dia, só locação), saldo residual e
+   recusa de pagamento superior ao saldo.
 6. Suba o km até o limite preventivo. Abra manutenção com peças e mão de obra; conclua
    o serviço. Confira custo total, status da moto e reinício apenas dos itens marcados.
 7. Cadastre documento vencido e confira destaque no Dashboard. Anexe comprovante,
    abra a URL assinada, regularize e crie o próximo ano pela sugestão de vencimento vazio.
-8. Anexe fotos à entrega. Encerre contrato com devolução e avaria; compare checklists.
+8. Anexe fotos à entrega. Encerre contrato com devolução e avaria, informando o dano
+   (confira o valor a devolver da caução e, com dano maior que a caução, a cobrança do
+   excedente); compare checklists.
    Confira preservação de dívida parcial, cancelamento das futuras sem pagamento e km final.
 9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
    Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente
@@ -387,6 +573,37 @@ manutenção preventiva concluída e corretiva em aberto, e documentos vencido/a
 vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 `seed.sql`. É idempotente pela placa `EXA1A11`; não rode em produção.
 
+## Importação dos dados reais (modelo pronto; carga parcial no dev)
+
+Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Oito migrations
+preparam o banco para a planilha "PAGAMENTO MOTOS":
+
+- `20261022120000_importacao_veiculos_contratos.sql`: tipo/dono/rastreador/seguro em `motos`; promessa de compra em `contratos`
+  (`tipo_contrato`, `numero_parcelas`, `valor_total`, `valor_entrada`, `parcelas_pagas_inicial`, `dia_cobranca`,
+  `primeira_cobranca`); `contas`; `conta_id`, `data_estimada` e a forma `abatimento` em `pagamentos`; `rpc_criar_contrato` e
+  `rpc_gerar_cobrancas_pendentes` respeitam a promessa (a janela móvel nasce em `primeira_cobranca`, não na data antiga de início).
+- `20261022130000_importacao_despesas_socio_dividas.sql`: `fornecedores`, `despesas`, `movimentos_socio`, `dividas`,
+  `pagamentos_divida`, `vw_saldo_dividas` e as colunas `custo_despesas` e `resultado_com_despesas` em `vw_resultado_moto`.
+- `20261022140000_importacao_multas.sql`: `multas_transito` e `vw_multas_locatario`.
+- `20261022150000_importacao_rastreio_lotes.sql`: `importacoes_lote` (idempotência e desfazer por lote).
+- `20261022160000_importacao_capital_veiculos.sql`: capital em veículos sem operação (Etios, Celta): `placa_provisoria`, categoria `aquisicao`,
+  `pago_por`, `a_confirmar`, dívida `emprestimo`, `dividas_vencimentos`, aporte ligado ao veículo e `vw_capital_veiculo`.
+
+- `20261103120000_contrato_varias_motos.sql`: contrato com mais de uma moto (`contrato_motos`, moto principal em `contratos.moto_id`,
+  `motos_vinculadas` em `rpc_criar_contrato`); `supabase/verificar_contrato_varias_motos.sql`.
+- `20261103130000_compra_parcelada.sql`: dívida `compra_parcelada` com entrada, calendário de parcelas, `rpc_criar_compra_parcelada`,
+  `rpc_pagar_parcela_divida` e `vw_parcelas_divida`; `supabase/verificar_compra_parcelada.sql`.
+- `20261103140000_capital_inclui_compra_parcelada.sql`: `vw_capital_veiculo` soma também as compras parceladas.
+
+Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
+Produção só depois de backup e autorização do dono. Regra pura da agenda: `src/domain/agenda_cobrancas.py` (`tests/test_agenda_promessa.py`).
+
+**Estado em 23/10/2026:** as migrations 1 a 5 estão aplicadas no dev e cinco cargas de dados já rodaram lá (veículos, despesas, multas, sócio,
+dívidas sem conflito, capital do Etios e do Celta, e 8 clientes com 5 contratos de identidade confirmada). As cargas são SQL gerado fora do
+repositório (contêm CPF, telefone e dados reais), idempotente por lote (`importacoes_lote`) e com SQL para desfazer. Faltam os demais
+locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
+`Arquivos/Importacao_Dados_Reais.md`.
+
 ## Convenções dos relatórios
 
 Receita usa a data de pagamento e exclui caução. Custo de manutenção considera
@@ -397,30 +614,10 @@ registrada. Os cálculos financeiros usam `Decimal`; as células do Excel são n
 
 ## Estilização do painel
 
-A interface segue um design system em camadas: **tokens → `estilos.css` → componentes → páginas**.
-
-- `src/ui/estilos.css` é o design system: tokens (`:root` com cores, espaçamento 4–48px, raios 6/8/10/14/18px, sombras, tipografia) e, na ordem, base, tipografia, layout, barra lateral, cartões, KPI, botões, campos, tabelas, selos, alertas, modais, estados vazios, login e responsivo.
-- `src/ui/estilos_escuro.css` só redefine os tokens e ajusta os widgets nativos do Streamlit; regras novas devem usar `var(--…)`, nunca cores fixas.
-- `src/ui/tema.py` carrega os dois arquivos e decide o modo (claro, escuro ou o do sistema).
-- `src/ui/componentes.py` monta o HTML com classes do design system: `cabecalho_pagina`, `kpi`/`kpi_grade`, `cartao_html`, `selo_situacao`, `chip_placa`, `item_alerta`, `estado_vazio`/`mostrar_vazio`, `tabela_html`, barras de ocupação e proporção.
-
-Botões: primário (grafite no claro, amarelo no escuro), secundário, terciário e destrutivo (contorno vermelho; use a chave `perigo_*` no `st.button`). Estados de status usam sempre bolinha + texto, sem depender só da cor.
-
-Ações por linha usam `botao_acao(alvo, acao, chave, ajuda=...)` (`componentes.py`): ícone Material + texto real (nome acessível), alvo de 44 × 44 px (`--alvo-min`), com o texto sempre visível (nenhuma ação depende só de ícone ou dica). O vocabulário fica em `ACOES` (Abrir, Editar, Pagar, Concluir, Cancelar, Regularizar, Comprovante, Atualizar km, Comparar); não use glifos como `→ ✓ ✎ ›` em rótulos. O retorno das fichas é `botao_voltar("motos", chave)`. Detalhes em `Arquivos/Design_UI.md`.
-
-Listas e abas seguem um padrão único em `src/ui/listas.py`: `barra_filtros(prefixo, opcoes, padrao, contagens=..., busca="Buscar por ...")` (pílulas que quebram de linha + busca + `.resumo(n)` com resultados, filtros ativos e "Limpar filtros"), `paginar`/`rodape_paginacao` (Anterior, informação da página, Próxima e itens por página; aritmética em `src/domain/paginacao.py`) e `abas`/`aba_ativa` (abas nativas que quebram de linha, lembram a aba ativa e só executam a aba aberta). Filtro, busca, página e aba sobrevivem a abrir uma ficha e voltar. O menu do dono é agrupado por área (Operação, Cadastros, Frota, Gestão, Sistema) em `app.py`, sem mudar as rotas. Nenhuma página monta pílulas, abas ou paginação na mão (`tests/test_listas_ui.py`).
-
-Listas interativas (com ações) são cartões de `src/ui/registros.py`, e dados somente leitura são `tabela_html`. Cada registro é `with registro(prefixo, id, titulo, [campo("Vencimento", html), ...], selo=...) as acoes:` dentro de `with lista_registros(prefixo, acoes=N):`; as ações são `botao_acao(acoes, ...)`. O significado vem de classes (`.registro__id`, `.registro__campo`, `<dl>` com `<dt>` rótulo e `<dd>` valor) e de chaves (`lista_`, `reg_`, `regacoes_`), nunca da posição da coluna, então mudar a ordem de um campo no Python não troca o rótulo. A quebra em telas estreitas usa container query (largura da lista, não da janela): ≤ 1000 px as ações ficam ao lado da identidade e os dados abaixo; ≤ 560 px tudo empilha, com as ações logo abaixo da identidade. Não use `st.columns` para montar linhas de lista, nem `st.dataframe`/`st.data_editor` (canvas, sem tema nem celular); as peças e serviços extras de Manutenção são linhas de campos com `Remover`. `tabela_html(cabecalhos, linhas, legenda="...")` tem `<th scope="col">`, papéis ARIA explícitos (valem quando o CSS vira cartões no celular) e nome para leitor de tela; cabeçalho `""` marca coluna decorativa. Protegido por `tests/test_registros_ui.py`.
-
-Formulários usam os campos tipados de `src/ui/formularios.py` e as regras de entrada de `src/domain/entradas.py` (funções puras, `tests/test_entradas.py`). `campo_moeda` mostra o prefixo `R$` e o valor no padrão `1.234,56`; `campo_percentual` e `campo_inteiro(sufixo="%"|"km"|"dias")` desenham a unidade dentro da moldura do campo (CSS pela chave do container, sem alterar o valor digitado); `campo_cpf`, `campo_telefone` e `campo_placa` pedem teclado numérico quando cabe, mostram a máscara (`000.000.000-00`, `(11) 91234-5678`, `ABC-1D23`) e usam a validação do navegador (`validate=`), que mostra o erro ao lado do campo sem apagar nada. A validação de verdade continua no servidor: `decimal_campo(texto, "Rótulo")` e `inteiro_campo` levantam erros que dizem o campo e como corrigir (aceitam `1.234,56`, `1234,56`, `1234.56` e `1.500`). Campos de dinheiro **fora de `st.form`** usam `ao_vivo=True`: o navegador não envia um valor inválido, então o servidor ficaria com o anterior enquanto a tela mostra outro. Obrigatórios levam `*` no rótulo e `legenda_obrigatorios()`.
-
-Linhas de campos usam `with linha_campos([1, 1], "chave") as (a, b):` (cada campo mantém ~12 rem; abaixo disso a linha quebra e empilha na ordem de leitura) e todo rodapé é `rodape_formulario("Salvar", "chave", formulario=..., desabilitado=..., motivo=..., perigo=...)`: Cancelar e a ação principal à direita, a principal por último; em contêiner estreito (≤ 22 rem, vale também dentro de diálogos) empilham em largura total. Dentro de `st.form` os valores só chegam ao enviar, então o motivo vem da validação do envio; fora de formulário o botão fica desabilitado **e o motivo aparece escrito acima dele** (`Descrição: informe o serviço realizado.`). Ações destrutivas (encerrar contrato, cancelar manutenção) listam o que será alterado (`src/domain/encerramento.py` espelha a RPC e lista as cobranças canceladas), exigem marcar a confirmação e oferecem o botão neutro de voltar. O assistente de Novo contrato tem `indicador_etapas` (lista ordenada com `aria-current`; no celular só a etapa atual mostra o rótulo e a linha “Etapa N de 4” cobre o resto), resumo de cliente e moto com `Alterar` e rascunho das condições (`contrato_rascunho`): voltar ou alterar etapas anteriores não perde o que foi digitado. Nenhum formulário é esvaziado após erro (no portal, o formulário só é recriado depois de um envio bem-sucedido). Protegido por `tests/test_formularios_ui.py`.
-
-Todas as páginas montam o cabeçalho com `cabecalho_pagina(titulo, sub=..., acao={"rotulo": "Nova moto", "chave": "motos_nova"})`: a ação primária (no máximo uma, botão do Streamlit com ícone) fica à direita do título no desktop e, quando o cabeçalho estreita, vai para depois da descrição em largura total; a função devolve `True` quando o botão é clicado (`"formulario": True` dentro de `st.form`). Listas vazias usam `vazio_lista(...)`, que informa o motivo (filtro/busca ou ainda sem cadastros) e o próximo passo.
-
-Feedback, carregamento e recuperação (Etapa 7 do plano de UI/UX): nenhuma tela usa mais `Alterações salvas.`. Cada operação confirma o que mudou (`Moto ABC-1D23 cadastrada.`, `Pagamento de R$ 450,00 registrado. Cobrança quitada.`, `Contrato de Maria encerrado. A moto ABC-1D23 está disponível.`), com os textos em `src/domain/mensagens.py` (funções puras). `feedback.concluir(aviso)` (`src/ui/feedback.py`) guarda a mensagem e reexecuta a página: confirmação simples vira **toast** (embaixo e centralizado, inteiro, sem cobrir a ação do cabeçalho e deixando passar o clique) e o que pede atenção ou próximo passo (contrato criado, foto que falhou) vira **alerta** que fica na tela. Falhas passam por `src/domain/erros.py` (`classificar_erro`) e `proteger()` mostra cada categoria com ícone e ação próprios: validação (corrigir o campo), sessão expirada (`Entrar novamente`), sem permissão, indisponibilidade do serviço (`Tentar novamente` nas consultas; em formulários o que foi digitado continua nos campos). Ao confirmar, o botão do rodapé (e os de chave `ocupa_*`) vira `Salvando…` no instante do clique e não aceita outro clique até a execução terminar (script em `feedback.py`, estilo `button[data-ocupado]`). A proteção de verdade contra duplicidade é a **chave de operação**: cada envio leva um uuid (`feedback.chave_operacao(nome, conteúdo)`; a mesma chave vale enquanto o conteúdo for o mesmo) e o banco recusa a segunda gravação (pagamentos, manutenções, documentos e leituras de km; motos, clientes, contratos e vistorias já têm chave natural). Uploads (fotos, comprovantes) mostram `st.spinner`. Protegido por `tests/test_feedback_ui.py`, `tests/test_erros.py`, `tests/test_mensagens.py` e `tests/test_operacoes.py`.
-
-Fichas e painéis (Etapa 6 do plano de UI/UX): Moto, Cliente, Contrato e a comparação de vistorias usam `cabecalho_ficha(ficha_identidade(...), acoes)` e `faixa_dados([...])` (`src/ui/componentes.py`); painéis lado a lado são `with paineis("chave") as (principal, lateral):` e empilham quando o contêiner perde largura (também o par Hoje/Alertas do Dashboard). KPIs encolhem o valor com a largura do cartão. Ao voltar de uma ficha, a lista mantém página, filtro e busca e traz o registro de origem à vista (`lembrar_registro`/`restaurar_posicao` em `src/ui/listas.py`). Cada aba de Relatórios tem um resumo em texto (`destaques`, `src/domain/relatorios.py`) além das barras. Protegido por `tests/test_fichas_ui.py`.
+Os tokens (cores, espaçamento, tipografia, modo escuro) e as regras ficam em `src/web/estilos/app.css`; `static/css/app.css` é o arquivo
+gerado por `python scripts/construir_css.py` (Tailwind), então edite só o de `src/web/estilos`. Fontes locais em `static/fontes`. Regras
+novas devem usar `var(--…)`, nunca cores fixas. O contraste mínimo de 4,5:1 dos tokens nos dois temas é protegido por
+`tests/test_contraste_tokens.py`. Os componentes são macros Jinja em `src/web/templates/`.
 
 ## Testes de navegador (UI/UX)
 
@@ -432,4 +629,6 @@ ambiente e opções em `e2e/README.md`; inventário em `Arquivos/Inventario_UI_U
 achados curados em `Arquivos/Achados_UI_UX.md`; massa de dados extremos em
 `supabase/seed_e2e.sql`.
 
-Robustez visual (Etapa 8 do plano de UI/UX): sem `nth-child` nem inversão de `st.dataframe` no modo escuro; os `style=` estáticos das páginas viraram classes do design system (só largura de barra e cor de avatar seguem inline); pilhas de fonte com fallback do sistema; inventário dos `data-testid` inevitáveis em `Arquivos/Design_UI.md` (seção 9). Protegido por `tests/test_robustez_ui.py`. As fontes agora são locais (`static/fontes/`, `src/ui/fontes.css`; exige `enableStaticServing` no `config.toml`). Pendente: medição com Lighthouse (seção 10 do `Design_UI.md`).
+Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-child` e com pilhas de fonte com fallback do sistema; as fontes são locais (`static/fontes/`, declaradas em `src/web/estilos/app.css`). O Lighthouse foi medido depois, já no app novo (seção 10 do `Arquivos/Design_UI.md`).
+
+Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/Roteiro_Homologacao_Manual.md`).

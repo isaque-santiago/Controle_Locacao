@@ -1,0 +1,8 @@
+{% from "componentes/macros.html" import campo_lista, estado_vazio %}
+{# Etapa 1 do registro: escolher o contrato que ainda não tem as duas vistorias. Contexto: contratos (lista de (id, rótulo)). #}
+{% if contratos %}
+<p class="largo text-texto-2">Escolha o contrato. Só aparecem contratos que ainda não têm as vistorias de entrega e de devolução.</p>
+{{ campo_lista("v-contrato", "Contrato", contratos, nome="contrato", largo=True) }}
+{% else %}
+<p class="largo text-texto-2">Todos os contratos já têm vistoria de entrega e de devolução.</p>
+{% endif %}

@@ -1,0 +1,12 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/vistorias", "Voltar para vistorias") }}
+{{ cabecalho_pagina("Registrar vistoria", "Informe a leitura da moto, o checklist e as fotos.") }}
+<form class="cartao" id="form-registro" method="post" action="{{ acao }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">{% include "vistorias/_campos_registro.html" %}</div>
+  <div class="rodape-acoes"><a class="btn" href="/vistorias">Cancelar</a><button class="btn btn-primario" type="submit">Salvar vistoria</button></div>
+</form>
+{% endblock %}

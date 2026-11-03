@@ -1,0 +1,7 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, abas_remotas %}
+{% block conteudo %}
+{{ cabecalho_pagina("Cobranças", (d.total_atraso|moeda ~ " em atraso · " ~ d.clientes_atrasados ~ (" cliente" if d.clientes_atrasados == 1 else " clientes")) if d.clientes_atrasados else "Nenhuma cobrança em atraso") }}
+{{ abas_remotas("Situação das cobranças", abas_da_lista, aba) }}
+{% include "cobrancas/_painel.html" %}
+{% endblock %}

@@ -31,3 +31,32 @@ def test_aceita_data_como_texto_iso_e_cobranca_atrasada_sem_pagamento():
 
 def test_sem_cobrancas_nada_a_cancelar():
     assert cobrancas_a_cancelar([], date(2026, 9, 15)) == []
+
+
+def test_resumo_encerramento_junta_caucao_danos_e_cobrancas_canceladas():
+    from decimal import Decimal
+
+    from src.domain.encerramento import resumo_encerramento
+
+    parcelas = [
+        {"tipo": "caucao", "valor_pago": "400", "situacao": "paga", "vencimento": "2026-08-01"},
+        {"tipo": "locacao", "valor_pago": "0", "situacao": "aberta", "vencimento": "2026-10-20"},
+        {"tipo": "locacao", "valor_pago": "0", "situacao": "atrasada", "vencimento": "2026-09-01"},
+    ]
+    resumo = resumo_encerramento(parcelas, "2026-10-10", Decimal("150"))
+    assert resumo["caucao_recebida"] == Decimal("400.00")
+    assert resumo["devolucao"]["devolucao"] == Decimal("250.00") and resumo["devolucao"]["excedente"] == Decimal("0.00")
+    assert [c["vencimento"] for c in resumo["afetadas"]] == ["2026-10-20"]
+    excedente = resumo_encerramento(parcelas, "2026-10-10", Decimal("500"))["devolucao"]
+    assert excedente["devolucao"] == Decimal("0.00") and excedente["excedente"] == Decimal("100.00")
+
+
+def test_resumo_encerramento_sem_data_ou_sem_danos_nao_cancela_nem_desconta():
+    from decimal import Decimal
+
+    from src.domain.encerramento import resumo_encerramento
+
+    parcelas = [{"tipo": "locacao", "valor_pago": "0", "situacao": "aberta", "vencimento": "2026-10-20"}]
+    resumo = resumo_encerramento(parcelas, None, None)
+    assert resumo["afetadas"] == [] and resumo["caucao_recebida"] == Decimal("0.00")
+    assert resumo["devolucao"]["danos"] == Decimal("0.00")

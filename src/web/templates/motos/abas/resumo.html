@@ -1,0 +1,61 @@
+{% from "componentes/macros.html" import icone %}
+{% set c = a.contrato %}
+<div class="grade duas-colunas motos-resumo-grade{% if c %} motos-resumo-igual{% endif %}">
+  <section class="cartao" aria-labelledby="t-contrato">
+    <div class="cartao-cab"><h2 id="t-contrato">Contrato ativo</h2>{% if c %}<a href="/contratos" aria-label="Ver contratos de {{ c.cliente }}">Ver contrato</a>{% endif %}</div>
+    {% if c %}
+    <div class="flex items-center gap-3 mb-4">
+      <span class="avatar text-white" aria-hidden="true">{{ c.cliente[:1]|upper }}</span>
+      <div class="min-w-0">
+        <strong class="block">{{ c.cliente }}</strong>
+        <span class="text-texto-2 text-[13px]">desde {{ c.data_inicio|data_br }} · {{ c.periodicidade }}</span>
+      </div>
+    </div>
+    <dl class="dl">
+      <div><dt>Valor / período</dt><dd class="mono">{{ c.valor_periodo|moeda }}</dd></div>
+      <div><dt>Próxima cobrança</dt><dd class="mono">{{ c.proxima_cobranca|data_br }}</dd></div>
+      <div><dt>Caução</dt><dd class="mono">{{ c.caucao|moeda }}</dd></div>
+    </dl>
+    {% else %}
+    <p class="text-texto-2">Nenhum contrato ativo para esta moto.</p>
+    {% endif %}
+  </section>
+
+  <section class="cartao" aria-labelledby="t-km">
+    <div class="cartao-cab"><h2 id="t-km">Quilometragem</h2></div>
+    {% if a.leituras %}
+    {% set visiveis = a.leituras[:2] %}
+    {% set ocultas = a.leituras[2:] %}
+    <ul class="quilometragem-lista">
+      {% for h in visiveis %}
+      <li class="quilometragem-item"><span class="mono">{{ h.km|milhar }} km</span><span class="quilometragem-detalhe">{{ h.data|data_br }} · {{ h.origem }}</span></li>
+      {% endfor %}
+    </ul>
+    {% if ocultas %}
+    <details class="quilometragem-mais">
+      <summary>Ver mais {{ ocultas|length }} {{ "leitura" if ocultas|length == 1 else "leituras" }}</summary>
+      <ul class="quilometragem-lista">
+        {% for h in ocultas %}
+        <li class="quilometragem-item"><span class="mono">{{ h.km|milhar }} km</span><span class="quilometragem-detalhe">{{ h.data|data_br }} · {{ h.origem }}</span></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+    {% else %}
+    <p class="text-texto-2">Nenhuma leitura registrada.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="cartao recolhivel mt-4" data-recolhivel aria-labelledby="t-dados">
+  <div class="cartao-cab"><h2 id="t-dados"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">Dados da moto{{ icone("chevron", "recolhe-seta") }}</button></h2></div>
+  <dl class="dl ficha-dados">
+    <div><dt>Renavam</dt><dd class="mono">{{ moto.renavam or "—" }}</dd></div>
+    <div><dt>Chassi</dt><dd class="mono">{{ moto.chassi or "—" }}</dd></div>
+    <div><dt>Placa</dt><dd class="mono">{{ moto.placa|placa_br }}</dd></div>
+    <div><dt>Valor de aquisição</dt><dd class="mono">{{ moto.valor_aquisicao|moeda }}</dd></div>
+    <div><dt>Data de aquisição</dt><dd class="mono">{{ moto.data_aquisicao|data_br }}</dd></div>
+    <div><dt>Situação</dt><dd>{{ status_rotulo[moto.status] }}</dd></div>
+  </dl>
+  {% if moto.observacoes %}<p class="mt-4 text-texto-2">{{ moto.observacoes }}</p>{% endif %}
+</section>

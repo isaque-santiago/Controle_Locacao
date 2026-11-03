@@ -1,0 +1,12 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/documentos", "Voltar para documentos") }}
+{{ cabecalho_pagina(titulo, "Informe o vencimento, o valor e, se tiver, o comprovante.") }}
+<form class="cartao" id="form-documento" method="post" action="{{ acao }}" enctype="multipart/form-data" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">{% include "documentos/_campos_documento.html" %}</div>
+  <div class="rodape-acoes"><a class="btn" href="/documentos">Cancelar</a><button class="btn btn-primario" type="submit">Salvar documento</button></div>
+</form>
+{% endblock %}

@@ -1,0 +1,944 @@
+/* Estilos do app web (Tailwind v4 sobre os tokens do Design_UI.md).
+   Origem: prototipo/estilos.css (aprovado). Gerar com: python scripts/construir_css.py
+   Os tokens são variáveis CSS; o modo escuro só as redefine (automático ou forçado). */
+@import "tailwindcss";
+@source "../templates";
+
+@font-face {font-family: 'Barlow Semi Condensed'; font-weight: 600; font-display: swap; src: url('/static/fontes/barlow-semi-condensed-600.woff2') format('woff2');}
+@font-face {font-family: 'Barlow Semi Condensed'; font-weight: 700; font-display: swap; src: url('/static/fontes/barlow-semi-condensed-700.woff2') format('woff2');}
+@font-face {font-family: 'IBM Plex Mono'; font-weight: 500; font-display: swap; src: url('/static/fontes/ibm-plex-mono-500.woff2') format('woff2');}
+@font-face {font-family: 'IBM Plex Mono'; font-weight: 600; font-display: swap; src: url('/static/fontes/ibm-plex-mono-600.woff2') format('woff2');}
+@font-face {font-family: 'IBM Plex Sans'; font-weight: 400; font-display: swap; src: url('/static/fontes/ibm-plex-sans-400.woff2') format('woff2');}
+@font-face {font-family: 'IBM Plex Sans'; font-weight: 500; font-display: swap; src: url('/static/fontes/ibm-plex-sans-500.woff2') format('woff2');}
+@font-face {font-family: 'IBM Plex Sans'; font-weight: 600; font-display: swap; src: url('/static/fontes/ibm-plex-sans-600.woff2') format('woff2');}
+
+@theme inline {
+  --color-marca: var(--marca);
+  --color-fundo: var(--fundo);
+  --color-superficie: var(--superficie);
+  --color-elevada: var(--superficie-elevada);
+  --color-texto: var(--texto);
+  --color-texto-2: var(--texto-2);
+  --color-texto-3: var(--texto-3);
+  --color-linha: var(--linha);
+  --color-sucesso: var(--sucesso-texto);
+  --color-alerta: var(--alerta-texto);
+  --color-perigo: var(--perigo-texto);
+  --color-info: var(--info-texto);
+  --font-titulo: var(--fonte-titulo);
+  --font-sans: var(--fonte-ui);
+  --font-mono: var(--fonte-mono);
+  --radius-sm: var(--raio-sm);
+  --radius-md: var(--raio-md);
+  --radius-lg: var(--raio-lg);
+}
+
+@layer base {
+:root {
+  --marca: #F2B705; --marca-hover: #FFC933; --grafite: #1E2227; --grafite-700: #2B3036;
+  --fundo: #EEF0F0; --superficie: #FAFAF9; --superficie-elevada: #FFFFFF; --superficie-hover: #F1F2F1;
+  --linha: rgba(30,34,39,.12); --linha-sutil: rgba(30,34,39,.07); --linha-forte: rgba(30,34,39,.28);
+  --borda-campo: #8A9096; /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
+  --texto: #1E2227; --texto-2: #585F66; --texto-3: #646B72; --texto-invertido: #FAFAF9;
+  --sucesso: #2F9E6E; --sucesso-texto: #1B6F4D; --sucesso-fundo: rgba(47,158,110,.12);
+  --alerta: #F2B705;  --alerta-texto: #7A5A00;  --alerta-fundo: rgba(242,183,5,.18);
+  --perigo: #D64545;  --perigo-texto: #B83232;  --perigo-fundo: rgba(214,69,69,.10);
+  --info: #3F6E9C;    --info-texto: #2F5F8A;    --info-fundo: rgba(63,110,156,.12);
+  --neutro: #9AA0A6;  --neutro-texto: #4A5158;  --neutro-fundo: rgba(30,34,39,.07);
+  --btn: #1E2227; --btn-hover: #2B3036; --btn-texto: #FAFAF9;
+  --foco: #B88A00; --foco-halo: rgba(184,138,0,.22);
+  --lateral-fundo: #FFFFFF; --lateral-texto: #585F66; --lateral-ativo: rgba(30,34,39,.07);
+  --lateral-forte: #1E2227; --lateral-sub: #646B72; --lateral-linha: rgba(30,34,39,.12); --lateral-avatar: #E6E8EA;
+  --chip-fundo: #1E2227; --chip-texto: #FAFAF9;
+  --seg-cheio: #1E2227; --seg-vazio: rgba(30,34,39,.12);
+  --sombra-modal: 0 24px 60px rgba(21,24,28,.34);
+
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 40px;
+  --alvo: 44px;
+  --pad: clamp(16px, 4vw, 32px);
+  --raio-sm: 6px; --raio-campo: 8px; --raio-md: 10px; --raio-lg: 14px;
+  --fonte-titulo: 'Barlow Semi Condensed', 'Arial Narrow', system-ui, sans-serif;
+  --fonte-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fonte-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --lateral-larg: 240px;
+  --barra-inferior: 64px;
+  color-scheme: light;
+}
+
+/* Modo escuro: só redefine tokens. Automático pelo sistema, ou forçado pelo botão. */
+:root[data-tema="escuro"] {
+  --fundo: #121518; --superficie: #1A1E22; --superficie-elevada: #21262B; --superficie-hover: #272D33;
+  --linha: rgba(255,255,255,.12); --linha-sutil: rgba(255,255,255,.07); --linha-forte: rgba(255,255,255,.3);
+  --borda-campo: #7C858D;
+  --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
+  --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
+  --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
+  --perigo-texto: #FF8A8A; --perigo-fundo: rgba(214,69,69,.18);
+  --info-texto: #8DB7E0; --info-fundo: rgba(63,110,156,.22);
+  --neutro-texto: #C0C5CA; --neutro-fundo: rgba(255,255,255,.08);
+  --btn: #F2B705; --btn-hover: #FFC933; --btn-texto: #1E2227;
+  --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
+  --lateral-fundo: #0D0F11; --lateral-texto: #C9CED2; --lateral-ativo: rgba(255,255,255,.08);
+  --lateral-forte: #fff; --lateral-sub: #9AA0A6; --lateral-linha: rgba(255,255,255,.1); --lateral-avatar: var(--grafite-700);
+  --chip-fundo: #ECEEEE; --chip-texto: #1E2227;
+  --seg-cheio: #F2B705; --seg-vazio: rgba(255,255,255,.12);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --fundo: #121518; --superficie: #1A1E22; --superficie-elevada: #21262B; --superficie-hover: #272D33;
+    --linha: rgba(255,255,255,.12); --linha-sutil: rgba(255,255,255,.07); --linha-forte: rgba(255,255,255,.3);
+    --borda-campo: #7C858D;
+    --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
+    --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
+    --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
+    --perigo-texto: #FF8A8A; --perigo-fundo: rgba(214,69,69,.18);
+    --info-texto: #8DB7E0; --info-fundo: rgba(63,110,156,.22);
+    --neutro-texto: #C0C5CA; --neutro-fundo: rgba(255,255,255,.08);
+    --btn: #F2B705; --btn-hover: #FFC933; --btn-texto: #1E2227;
+    --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
+    --lateral-fundo: #0D0F11; --lateral-texto: #C9CED2; --lateral-ativo: rgba(255,255,255,.08);
+  --lateral-forte: #fff; --lateral-sub: #9AA0A6; --lateral-linha: rgba(255,255,255,.1); --lateral-avatar: var(--grafite-700);
+  --chip-fundo: #ECEEEE; --chip-texto: #1E2227;
+    --seg-cheio: #F2B705; --seg-vazio: rgba(255,255,255,.12);
+    color-scheme: dark;
+  }
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after {box-sizing: border-box;}
+html {-webkit-text-size-adjust: 100%;}
+/* No celular a barra inferior é fixa: o que recebe foco por teclado não pode ficar atrás dela. */
+@media (max-width: 719px) {html {scroll-padding-bottom: calc(var(--alvo) + 40px + env(safe-area-inset-bottom, 0px));}}
+body {margin: 0; background: var(--fundo); color: var(--texto); font: 400 14.5px/1.5 var(--fonte-ui);}
+h1, h2, h3, p {margin: 0;}
+h1, h2, h3 {font-family: var(--fonte-titulo); font-weight: 700; letter-spacing: .005em; line-height: 1.15; font-size: revert;}
+button, input, select, textarea {font: inherit; color: inherit;}
+a {color: inherit;}
+:focus-visible {outline: 3px solid var(--foco); outline-offset: 2px; border-radius: var(--raio-sm);}
+/* Contêineres focados só por código (tabindex=-1) não são controles: sem contorno */
+[tabindex="-1"]:focus:not(:focus-visible) {outline: none;}
+}
+
+@layer components {
+.mono {font-family: var(--fonte-mono); font-variant-numeric: tabular-nums; white-space: nowrap;}
+.i {width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: inline-block;}
+.icones-sprite {position: absolute; width: 0; height: 0;}
+.so-leitor {position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;}
+.pular {position: absolute; left: var(--e3); top: -60px; z-index: 100; background: var(--btn); color: var(--btn-texto); padding: var(--e3) var(--e4); border-radius: var(--raio-campo); text-decoration: none;}
+.pular:focus {top: var(--e3);}
+/* ---------- Estrutura: três faixas ---------- */
+.app {min-height: 100dvh; display: grid; grid-template-columns: var(--lateral-larg) minmax(0, 1fr);}
+.coluna {min-width: 0; display: flex; flex-direction: column;}
+main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word; padding: clamp(24px, 4vw, 40px) var(--pad) 48px;}
+
+/* Barra lateral (desktop) / trilho (tablet) */
+.lateral {position: sticky; top: 0; height: 100dvh; background: var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; border-right: 1px solid var(--lateral-linha);}
+.marca {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e2) var(--e5); text-decoration: none; color: var(--lateral-forte);}
+.marca-simbolo {width: 36px; height: 36px; border-radius: var(--raio-md); background: var(--marca); color: var(--grafite); display: grid; place-items: center; font: 700 15px var(--fonte-titulo); letter-spacing: .02em; flex: none;}
+.marca strong {display: block; font: 700 17px/1.1 var(--fonte-titulo); color: var(--lateral-forte);}
+.marca span.sub {display: block; font-size: 12px; color: var(--lateral-sub);}
+.nav-grupo {margin-bottom: var(--e4);}
+.nav-grupo h2 {font: 600 12px/1 var(--fonte-ui); color: var(--lateral-sub); padding: 0 var(--e3) var(--e2);}
+.nav-lista {list-style: none; margin: 0; padding: 0; display: grid; gap: 2px;}
+.nav-item {position: relative; display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); color: var(--lateral-texto); text-decoration: none; font-weight: 500; transition: background 150ms ease, color 150ms ease;}
+.nav-item:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+.nav-item[aria-current="page"] {background: var(--lateral-ativo); color: var(--lateral-forte);}
+.nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
+.nav-item .i {opacity: .9;}
+.lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
+.topo-desktop {display: flex; justify-content: flex-end; padding: var(--e3) var(--pad) 0;}
+.conta {position: relative;}
+.conta summary {list-style: none; cursor: pointer;}
+.conta summary::-webkit-details-marker {display: none;}
+.conta-cartao {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e3); border-radius: var(--raio-campo); color: var(--lateral-forte);}
+.conta-cartao:hover, .conta[open] > .conta-cartao {background: var(--lateral-ativo);}
+.conta-textos {display: grid; min-width: 0; flex: 1; line-height: 1.25;}
+.conta-textos strong {font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.conta-textos span {font-size: 12px; color: var(--lateral-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.conta-seta {width: 16px; height: 16px; color: var(--lateral-sub); transition: transform 150ms ease;}
+.conta[open] .conta-seta {transform: rotate(180deg);}
+.conta-menu {position: absolute; z-index: 40; left: 0; right: 0; bottom: calc(100% + var(--e2)); padding: var(--e2); border-radius: var(--raio-md); background: var(--lateral-fundo); border: 1px solid var(--lateral-linha); box-shadow: 0 8px 24px rgba(0,0,0,.25); display: grid; gap: 2px;}
+.conta-menu form {display: contents;}
+.conta-menu button, .conta-item {display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--lateral-texto); cursor: pointer; width: 100%; text-align: left;}
+.conta-menu button:hover, .conta-item:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+.conta-item {text-decoration: none;}
+.conta-id {display: grid; padding: var(--e2) var(--e3); line-height: 1.25; color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha); margin-bottom: var(--e1);}
+.conta-id span {font-size: 12px; color: var(--lateral-sub); overflow-wrap: anywhere;}
+.conta-movel .avatar {cursor: pointer; width: var(--alvo); height: var(--alvo);}
+.avatar {width: 32px; height: 32px; border-radius: 50%; background: var(--lateral-avatar); border: 1px solid var(--lateral-linha); display: grid; place-items: center; font: 600 13px var(--fonte-ui); flex: none;}
+
+/* Topo do celular e barra inferior: ocultos fora do celular */
+.topo-movel, .barra-inferior, .conta-movel {display: none;}
+
+/* Tablet: trilho de ícones, rótulos viram dica acessível */
+@media (max-width: 1099px) and (min-width: 720px) {
+  .app {grid-template-columns: 72px minmax(0, 1fr);}
+  .lateral {padding: var(--e4) var(--e2); align-items: center; scrollbar-width: none;}
+  .lateral nav, .lateral-rodape {width: 100%;}
+  .marca {width: 100%; justify-content: center; padding: var(--e2) 0 var(--e5);}
+  /* No trilho o nome da marca sai da vista mas continua sendo lido (o link só com «CL» ficaria sem nome acessível). */
+  .marca > div {position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;}
+  .nav-grupo {width: 100%;} .nav-grupo h2 {display: none;}
+  .nav-grupo + .nav-grupo {border-top: 1px solid rgba(255,255,255,.1); padding-top: var(--e3);}
+  .nav-item {justify-content: center; padding: 0;}
+  .nav-item span.rotulo, .conta-textos, .conta-seta {display: none;}
+  .conta-cartao {justify-content: center; padding: var(--e2) 0;}
+  .conta-menu {left: 0; right: auto; min-width: 140px;}
+  .nav-item[aria-current="page"]::before {left: -8px;}
+}
+
+/* Celular: topo enxuto + barra inferior com polegar */
+@media (max-width: 719px) {
+  .app {display: block;}
+  .lateral, .topo-desktop {display: none;}
+  .conta-movel {display: block;}
+  .conta-movel .conta-menu {left: auto; right: 0; bottom: auto; top: calc(100% + var(--e2)); min-width: 220px;}
+  .topo-movel {position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha);}
+  .topo-movel .marca {padding: 0; flex: 1; min-width: 0;}
+  .topo-movel .marca-simbolo {width: 32px; height: 32px; font-size: 13px;}
+  .topo-movel .btn-icone {color: var(--lateral-forte); border-color: var(--lateral-linha);}
+  main {padding-bottom: calc(var(--barra-inferior) + 32px + env(safe-area-inset-bottom));}
+  .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--superficie-elevada); border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom);}
+  .barra-inferior a, .barra-inferior button {position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--barra-inferior); padding: var(--e2) 2px; border: 0; background: none; color: var(--texto-2); text-decoration: none; font-size: 12px; font-weight: 500; cursor: pointer;}
+  .barra-inferior [aria-current="page"] {color: var(--texto); font-weight: 600;}
+  .barra-inferior [aria-current="page"]::before {content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--marca);}
+  .barra-inferior .i {width: 22px; height: 22px;}
+}
+
+/* ---------- Cabeçalho de página ---------- */
+.cabecalho {display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--e4) var(--e5); padding-bottom: var(--e4); margin-bottom: var(--e5); border-bottom: 1px solid var(--linha);}
+.cabecalho-texto {flex: 1 1 280px; min-width: 0;}
+.cabecalho h1 {font-size: clamp(26px, 5vw, 32px);}
+.cabecalho p {margin-top: var(--e2); color: var(--texto-2); max-width: 60ch;}
+.cabecalho .acoes {display: flex; flex-wrap: wrap; gap: var(--e2);}
+.cabecalho .acoes {align-items: center;}
+.filtro-pagina:empty {display: none;}
+.filtro-col {position: relative;}
+.filtro-col summary {list-style: none;}
+.filtro-col summary::-webkit-details-marker {display: none;}
+.filtro-col summary b {font-weight: 600;}
+.filtro-col .seta-filtro {transition: transform 180ms ease;}
+.filtro-col[open] .seta-filtro {transform: rotate(180deg);}
+.filtro-opcoes {position: absolute; z-index: 20; top: calc(100% + var(--e2)); right: 0; min-width: 220px; flex-direction: column; overflow: visible; margin: 0; padding: var(--e2); gap: var(--e1); border: 1px solid var(--linha-forte); border-radius: var(--raio-md); background: var(--superficie-elevada); box-shadow: 0 8px 24px rgba(21,24,28,.16);}
+.filtro-opcoes .chip {justify-content: space-between; border-color: transparent; background: transparent; border-radius: var(--raio-sm);}
+.filtro-opcoes .chip:hover {background: var(--superficie-hover);}
+.filtro-opcoes .chip[aria-current="true"] {background: var(--btn); color: var(--btn-texto);}
+.voltar {display: inline-flex; align-items: center; gap: var(--e1); min-height: var(--alvo); margin: calc(var(--e2) * -1) 0 var(--e2) calc(var(--e2) * -1); padding: 0 var(--e3) 0 var(--e2); border-radius: var(--raio-campo); color: var(--texto-2); text-decoration: none; font-weight: 500;}
+.voltar:hover {background: var(--superficie-hover); color: var(--texto);}
+
+/* ---------- Botões e campos ---------- */
+.btn {white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e5); border-radius: var(--raio-md); border: 1px solid var(--linha-forte); background: linear-gradient(180deg, var(--superficie-elevada), var(--superficie-hover)); color: var(--texto); font-weight: 600; letter-spacing: .01em; text-decoration: none; cursor: pointer; box-shadow: 0 1px 2px rgba(21,24,28,.08), inset 0 1px 0 rgba(255,255,255,.35); transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;}
+.btn:hover {background: var(--superficie-hover); border-color: var(--texto-3); box-shadow: 0 4px 10px -2px rgba(21,24,28,.18), inset 0 1px 0 rgba(255,255,255,.35); transform: translateY(-1px);}
+.btn:active {transform: translateY(0); box-shadow: inset 0 2px 4px rgba(21,24,28,.18);}
+.btn:disabled, .btn[aria-disabled="true"] {opacity: .5; cursor: not-allowed; transform: none; box-shadow: none;}
+.btn .i {transition: transform 180ms ease;}
+.btn-primario {background: linear-gradient(180deg, color-mix(in srgb, var(--btn) 88%, #fff), var(--btn)); border-color: var(--btn); color: var(--btn-texto); box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--btn) 55%, transparent), inset 0 1px 0 rgba(255,255,255,.22);}
+.btn-primario:hover {background: linear-gradient(180deg, color-mix(in srgb, var(--btn-hover) 88%, #fff), var(--btn-hover)); border-color: var(--btn-hover); box-shadow: 0 8px 18px -6px color-mix(in srgb, var(--btn) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.22);}
+.btn-primario:active {box-shadow: inset 0 2px 5px rgba(0,0,0,.3);}
+.btn-perigo {border-color: var(--perigo); color: var(--perigo-texto); background: var(--superficie-elevada);}
+.btn-perigo:hover {background: var(--perigo-fundo); border-color: var(--perigo); box-shadow: 0 4px 10px -2px rgba(214,69,69,.28);}
+@media (prefers-reduced-motion: reduce) {.btn, .btn .i {transition: none;} .btn:hover {transform: none;}}
+.btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-md); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer; transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;}
+.btn-icone:hover {background: var(--superficie-hover); border-color: var(--texto-3); box-shadow: 0 2px 6px -1px rgba(21,24,28,.18);}
+.btn-bloco {width: 100%;}
+.portal-acesso {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3);}
+.portal-acesso-bloco {display: flex; flex-direction: column; justify-content: space-between; gap: var(--e4); padding: var(--e4); border: 1px solid var(--linha); border-radius: var(--raio-campo); background: var(--superficie-elevada);}
+.portal-acesso-info {flex-direction: row; justify-content: flex-start; align-items: flex-start; gap: var(--e3);}
+.portal-acesso-icone {display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--sucesso-fundo); color: var(--sucesso-texto);}
+.portal-acesso-titulo {font-weight: 600;}
+.portal-acesso-desc {color: var(--texto-2); font-size: 13px; margin-top: 2px;}
+.portal-criar {margin-top: var(--e4);}
+@media (max-width: 719px) {.portal-criar .btn {width: 100%;}}
+@media (min-width: 720px) {.portal-criar-linha {display: flex; align-items: center; justify-content: space-between; gap: var(--e4);} .portal-criar-linha .portal-criar {margin-top: 0; flex-shrink: 0;}}
+@media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
+.campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
+.campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
+.campo small {color: var(--texto-3); font-size: 12px;}
+.entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--borda-campo); background: var(--superficie-elevada);}
+.entrada:hover {border-color: var(--texto-2);}
+.entrada:focus {outline: 3px solid var(--foco-halo); border-color: var(--foco);}
+.entrada-icone {position: relative;}
+.entrada-icone .i {position: absolute; left: var(--e3); top: 12px; color: var(--texto-3); pointer-events: none;}
+.entrada-icone .entrada {padding-left: 40px;}
+.prefixo {display: grid; grid-template-columns: auto 1fr; align-items: stretch;}
+.prefixo > span {display: grid; place-items: center; padding: 0 var(--e3); border: 1px solid var(--linha-forte); border-right: 0; border-radius: var(--raio-campo) 0 0 var(--raio-campo); background: var(--neutro-fundo); color: var(--texto-2); font-family: var(--fonte-mono);}
+.prefixo .entrada {border-radius: 0 var(--raio-campo) var(--raio-campo) 0;}
+
+/* ---------- Cartões, KPIs, selos ---------- */
+.cartao {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); padding: var(--e5);}
+.cartao > h2 {font-size: 18px; margin-bottom: var(--e4);}
+/* Tabela dentro de um cartão: o próprio cartão é o contêiner, sem segunda borda */
+.cartao > .tabela-caixa {background: transparent; border: 0; border-radius: 0;}
+.painel > .cartao + .cartao {margin-top: var(--e4);}
+.cartao-cab {display: flex; align-items: baseline; justify-content: space-between; gap: var(--e3); margin-bottom: var(--e4);}
+.cartao-cab h2 {font-size: 18px;}
+.cartao-cab a {color: var(--texto-2); font-size: 13px;}
+.grade {display: grid; gap: var(--e4);}
+.kpis {grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: var(--e4);}
+.kpi {background: var(--superficie); border: 1px solid var(--linha); border-top: 3px solid var(--texto); border-radius: var(--raio-md); padding: var(--e4) var(--e4) var(--e3);}
+.kpi.atencao {border-top-color: var(--perigo);}
+.kpi dt {color: var(--texto-2); font-size: 13px;}
+.kpi dd {margin: var(--e2) 0 0; font: 600 clamp(22px, 2.2vw, 26px)/1.1 var(--fonte-mono); letter-spacing: -.02em; overflow-wrap: anywhere;}
+.kpi {min-width: 0;}
+/* Variação em relação ao mês anterior: verde = melhorou, vermelho = piorou (o texto diz "a mais"/"a menos", a cor não é a única pista) */
+.kpi dd small.kpi-variacao {font-weight: 500;}
+.kpi-variacao.bom {color: var(--sucesso-texto);}
+.kpi-variacao.ruim {color: var(--perigo-texto);}
+/* KPI que leva a outra página: o link do rótulo cobre o cartão inteiro (sem mudar o layout) */
+.kpi-link {position: relative; transition: border-color 150ms ease, box-shadow 150ms ease;}
+.kpi-link a {color: inherit; text-decoration: none;}
+.kpi-link a::after {content: ""; position: absolute; inset: 0; border-radius: inherit;}
+.kpi-link:hover {border-color: var(--linha-forte); box-shadow: 0 4px 12px -6px rgba(0, 0, 0, .25);}
+.kpi-link:focus-within {outline: 2px solid var(--btn); outline-offset: 2px;}
+@media (prefers-reduced-motion: reduce) {.kpi-link {transition: none;}}
+.kpi dd small {display: block; margin-top: var(--e2); font: 400 12.5px/1.3 var(--fonte-ui); color: var(--texto-3); letter-spacing: 0;}
+.duas-colunas {grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start;}
+.motos-resumo-grade {align-items: start;}
+.motos-resumo-igual {align-items: stretch;}
+@media (min-width: 1100px) {
+  .motos-resumo-igual > .cartao:has(.quilometragem-mais:not([open])) {contain: size; overflow: hidden;}
+}
+.quilometragem-lista {list-style: none; margin: 0; padding: 0;}
+.quilometragem-item {display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: var(--e3); padding: var(--e2) 0; border-top: 1px solid var(--linha-sutil);}
+.quilometragem-item:first-child {padding-top: 0; border-top: 0;}
+.quilometragem-item:last-child {padding-bottom: 0;}
+.quilometragem-detalhe {justify-self: end; color: var(--texto-2); font-size: 13px; text-align: right; overflow-wrap: anywhere;}
+.quilometragem-mais {margin-top: var(--e2); border-top: 1px solid var(--linha-sutil);}
+.quilometragem-mais > summary {list-style: none; cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--texto-2); font-size: 13px; font-weight: 600;}
+.quilometragem-mais > summary::-webkit-details-marker {display: none;}
+.quilometragem-mais > summary::after {content: "▾"; margin-left: var(--e2);}
+.quilometragem-mais[open] > summary::after {content: "▴";}
+.quilometragem-mais[open] > summary {margin-bottom: var(--e1, 4px);}
+.quilometragem-mais .quilometragem-item:first-child {padding-top: var(--e2); border-top: 1px solid var(--linha-sutil);}
+.selo {display: inline-flex; align-items: center; gap: 7px; padding: 2px 10px 2px 8px; min-height: 26px; border-radius: 99px; font-size: 12.5px; font-weight: 500; white-space: nowrap;}
+.selo::before {content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;}
+.selo.ok {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
+.selo.atencao {background: var(--alerta-fundo); color: var(--alerta-texto);}
+.selo.perigo {background: var(--perigo-fundo); color: var(--perigo-texto);}
+.selo.info {background: var(--info-fundo); color: var(--info-texto);}
+.selo.neutro {background: var(--neutro-fundo); color: var(--neutro-texto);}
+.placa {display: inline-block; white-space: nowrap; padding: 3px 9px; border-radius: var(--raio-sm); background: var(--chip-fundo); color: var(--chip-texto); font: 600 13.5px/1.3 var(--fonte-mono); letter-spacing: .06em;}
+
+/* Medidor de ocupação: 24 segmentos, um por moto */
+.medidor {display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; height: 28px; margin: var(--e3) 0;}
+.medidor span {border-radius: 2px; background: var(--seg-vazio);}
+.medidor span.cheio {background: var(--seg-cheio);}
+.medidor span.oficina {background: var(--alerta);}
+.duas-colunas.igualar {align-items: stretch;}
+.ocupacao-corpo {display: flex; align-items: center; gap: var(--e6, 32px); flex-wrap: wrap; padding: var(--e3) 0; min-height: calc(100% - 48px);}
+.ocupacao-corpo .legenda-detalhada {flex: 1 1 200px; min-width: 200px; gap: 0;}
+.legenda-detalhada li {display: grid; grid-template-columns: auto 1fr auto 3.2em; align-items: center; column-gap: var(--e3); padding: var(--e3) 0; border-top: 1px solid var(--linha-sutil);}
+.legenda-detalhada li:first-child {border-top: 0;}
+.legenda-detalhada i {margin-right: 0;}
+.legenda-detalhada strong {font-size: 18px; color: var(--texto);}
+.legenda-pct {text-align: right; color: var(--texto-3);}
+.rosca {position: relative; width: 200px; height: 200px; flex: none; margin-inline: auto;}
+.rosca svg {width: 100%; height: 100%; transform: rotate(-90deg);}
+.rosca circle {fill: none; stroke-width: 13;}
+.rosca .arco-fundo {stroke: var(--seg-vazio);}
+.rosca .arco.cheio {stroke: var(--seg-cheio);}
+.rosca .arco.oficina {stroke: var(--alerta);}
+.rosca .arco.livre {stroke: var(--seg-vazio);}
+.rosca-centro {position: absolute; inset: 0; display: grid; place-content: center; text-align: center;}
+.rosca-centro strong {font: 700 34px/1 var(--fonte-mono, inherit);}
+.rosca-centro small {font-size: 12px; color: var(--texto-3);}
+.ocupacao-corpo .legenda {flex-direction: column; flex-wrap: nowrap; gap: var(--e3); font-size: 14px;}
+.legenda {list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
+.legenda i {display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--seg-cheio);}
+.legenda i.livre {background: var(--seg-vazio);} .legenda i.oficina {background: var(--alerta);}
+
+/* Pendências: selo circular tracejado, como adesivo de vistoria */
+.pendencias {list-style: none; margin: 0; padding: 0; display: grid;}
+.pendencia {display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: var(--e3); padding: var(--e3) 0; border-top: 1px solid var(--linha-sutil);}
+.pendencia:first-child {border-top: 0; padding-top: 0;}
+.adesivo {width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 600 17px var(--fonte-mono); border: 2px dashed currentColor;}
+.adesivo.perigo {color: var(--perigo-texto);} .adesivo.atencao {color: var(--alerta-texto);} .adesivo.info {color: var(--info-texto);}
+.pendencia strong {display: block; font-weight: 600;}
+.pendencia span.det {color: var(--texto-2); font-size: 13px;}
+
+/* ---------- Lista de motos: tabela no desktop, cartões no celular ---------- */
+.barra-filtros {display: grid; grid-template-columns: minmax(200px, 1fr) auto; gap: var(--e3); margin-bottom: var(--e3);}
+.chips {display: flex; gap: var(--e2); overflow-x: auto; padding-bottom: var(--e1); margin-bottom: var(--e4); scrollbar-width: thin;}
+.chip {flex: none; display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e4); border-radius: 99px; border: 1px solid var(--linha-forte); background: var(--superficie-elevada); cursor: pointer; font-weight: 500;}
+.chip {text-decoration: none; color: inherit;}
+.chip[aria-pressed="true"], .chip[aria-current="true"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
+.chip b {font: 600 12.5px var(--fonte-mono);}
+.tabela-caixa {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); overflow-x: auto; overflow-y: hidden; container-type: inline-size;}
+table.dados {width: 100%; border-collapse: collapse;}
+.dados th {text-align: left; font-weight: 600; font-size: 12.5px; color: var(--texto-2); padding: var(--e3) var(--e4); background: var(--superficie-hover); border-bottom: 1px solid var(--linha);}
+.dados td {padding: var(--e3) var(--e4); border-top: 1px solid var(--linha-sutil); vertical-align: middle;}
+/* Cabeçalho ordenável (só aparece na tabela; em cartões o thead some) */
+.dados th a.ordenar {display: inline-flex; align-items: center; gap: var(--e1); min-height: var(--alvo); margin-block: calc(var(--e3) * -1); color: inherit; text-decoration: none; border-radius: var(--raio-campo);}
+.dados th a.ordenar:hover {color: var(--texto);}
+.dados th .ordenar-seta {width: 14px; height: 14px; opacity: 0; transition: opacity 150ms ease, transform 150ms ease;}
+.dados th:hover .ordenar-seta, .dados th a.ordenar:focus-visible .ordenar-seta {opacity: .45;}
+.dados th[aria-sort="ascending"] .ordenar-seta, .dados th[aria-sort="descending"] .ordenar-seta {opacity: 1;}
+.dados th[aria-sort="descending"] .ordenar-seta {transform: rotate(180deg);}
+@media (prefers-reduced-motion: reduce) {.dados th .ordenar-seta {transition: none;}}
+.dados tbody tr:first-child td {border-top: 0;}
+.dados tbody tr:hover {background: var(--superficie-hover);}
+.dados td.num, .dados th.num {text-align: right;}
+/* Cabeçalho da coluna de ações: some da vista, mas continua lido pelos leitores de tela e mantém o fundo do cabeçalho */
+.dados th.col-acoes {font-size: 0;}
+/* Ações da linha: comprovante (link discreto) à esquerda e botões compactos alinhados à direita, sempre numa linha só */
+.acoes-linha {display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--e2) var(--e3);}
+.acoes-linha .comprovante {font-size: 13px; color: var(--texto-3); white-space: nowrap; margin-right: var(--e1);}
+.acoes-linha a.comprovante {display: inline-flex; align-items: center; justify-content: center; min-height: var(--alvo); color: var(--texto-2); text-decoration: underline; text-underline-offset: 3px;}
+.acoes-linha a.comprovante:hover {color: var(--texto);}
+.acoes-linha .botoes {display: flex; gap: var(--e2);}
+/* Histórico de manutenção: Concluir e Cancelar centralizados na coluna, com a mesma largura */
+.acoes-manutencao {justify-content: center;}
+.acoes-manutencao .btn {min-width: 92px; justify-content: center;}
+.acoes-linha .btn {min-height: 36px; padding: 0 var(--e3); font-size: 13px;}
+@media (min-width: 960px) {.acoes-linha {flex-wrap: nowrap;}}
+.dados .modelo {font-weight: 500;} .dados .sub {display: block; font-size: 12.5px; color: var(--texto-3);}
+.paginacao {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); margin-top: var(--e4); color: var(--texto-2); font-size: 13px;}
+.paginacao div {display: flex; gap: var(--e2);}
+.por-pagina {max-width: 12rem; margin-top: var(--e3);}
+
+/* Tabela vira cartões conforme a largura da caixa dela (e não da tela): vale com a barra lateral, o trilho e o celular */
+@container (max-width: 959px) {
+  .dados thead {display: none;}
+  .dados, .dados tbody {display: block;}
+  .dados tbody tr {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e2) var(--e4); padding: var(--e4); border-top: 1px solid var(--linha);}
+  .dados tbody tr:first-child {border-top: 0;}
+  .dados td {display: block; padding: 0; border: 0; min-width: 0; overflow-wrap: anywhere;}
+  .dados td .mono, .dados td.mono {white-space: normal;}
+  .dados td[data-rotulo]::before {content: attr(data-rotulo); display: block; font-size: 12px; color: var(--texto-3); margin-bottom: 1px;}
+  .dados td.topo {grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: var(--e3);}
+  .dados td.topo::before {display: none;}
+  .dados td.total {grid-column: 1 / -1;}
+  .dados td.acao {grid-column: 1 / -1; margin-top: var(--e1);}
+  .dados td.num {text-align: left;}
+
+  /* Em caixas muito estreitas (320 px de viewport), duas colunas cortavam CPF e telefone. */
+  @container (max-width: 340px) {
+    .dados tbody tr {grid-template-columns: minmax(0, 1fr);}
+    .dados td {min-width: 0; overflow-wrap: anywhere;}
+    .dados td .mono, .dados td.mono {white-space: normal;}
+  }
+
+@media (max-width: 719px) {
+  .barra-filtros {grid-template-columns: 1fr;}
+}
+}
+
+/* ---------- Abas ---------- */
+.abas {display: flex; gap: var(--e1); overflow-x: auto; border-bottom: 1px solid var(--linha); margin-bottom: var(--e5); scrollbar-width: none;}
+.abas button {flex: none; min-height: var(--alvo); padding: 0 var(--e4); border: 0; border-bottom: 3px solid transparent; background: none; color: var(--texto-2); font-weight: 500; cursor: pointer; margin-bottom: -1px;}
+.abas button:hover {color: var(--texto);}
+.abas button[aria-selected="true"] {color: var(--texto); border-bottom-color: var(--marca); font-weight: 600;}
+.painel[hidden] {display: none;}
+
+/* ---------- Ficha ---------- */
+.ficha-titulo {display: flex; align-items: center; flex-wrap: wrap; gap: var(--e3);}
+.ficha-titulo .placa {font-size: 18px; padding: 4px 12px;}
+.dl {display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--e4) var(--e5); margin: 0;}
+.dl dt {color: var(--texto-3); font-size: 12.5px;} .dl dd {margin: 2px 0 0; font-weight: 500;}
+.progresso {height: 10px; border-radius: 99px; background: var(--seg-vazio); overflow: hidden; margin: var(--e3) 0 var(--e2);}
+.progresso span {display: block; height: 100%; background: var(--alerta); border-radius: 99px;}
+.vazio {text-align: center; padding: var(--e7) var(--e4); display: grid; justify-items: center; gap: var(--e3);}
+.vazio .adesivo {width: 56px; height: 56px; color: var(--texto-3);}
+.vazio p {max-width: 40ch; color: var(--texto-2);}
+.vazio h2 {font-size: 18px;}
+
+/* ---------- Assistente de contrato ---------- */
+.passos {list-style: none; margin: 0 0 var(--e5); padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e2);}
+.passo {display: grid; gap: var(--e2); padding-top: var(--e3); border-top: 4px solid var(--linha); color: var(--texto-3); font-size: 13px;}
+.passo b {font: 600 13px var(--fonte-mono); color: inherit;} .passo span {font-weight: 500;}
+.passo.feito {border-top-color: var(--sucesso); color: var(--sucesso-texto);}
+.passo.atual {border-top-color: var(--marca); color: var(--texto); font-weight: 600;}
+.formulario {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e4);}
+.formulario .largo {grid-column: 1 / -1;}
+.contrato-layout {display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--e4); align-items: start;}
+.resumo {position: sticky; top: var(--e5);}
+.resumo dl {margin: 0; display: grid; gap: var(--e3);}
+.resumo dl div {display: flex; justify-content: space-between; gap: var(--e3);}
+.resumo dt {color: var(--texto-2);} .resumo dd {margin: 0; font-weight: 500; text-align: right;}
+.resumo .total {border-top: 1px solid var(--linha); padding-top: var(--e3); font-size: 16px;}
+.resumo .total dd {font: 600 20px var(--fonte-mono);}
+.titulo-secao {font-size: 18px; margin: var(--e6, 32px) 0 var(--e3);}
+.cartao + .titulo-secao, .tabela-caixa + .titulo-secao {margin-top: var(--e6, 32px);}
+/* Rodapé das etapas 1 e 2: dica à esquerda do botão "Avançar" bloqueado (no celular, acima dele) */
+.avancar-grupo {display: flex; align-items: center; justify-content: flex-end; gap: var(--e4); margin-left: auto;}
+.dica-avancar {color: var(--texto-2); font-size: 13px; text-align: right;}
+/* Cliente e moto escolhidos: cartão com um item por linha (texto à esquerda, botão à direita; no celular o botão desce) */
+.selecao-resumo {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin-bottom: var(--e4);}
+.selecao-item {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4); background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg);}
+.selecao-texto {display: grid; gap: 2px; min-width: 0;}
+.selecao-rotulo {color: var(--texto-3); font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase;}
+.selecao-valor {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); font-weight: 500; overflow-wrap: anywhere;}
+.btn-compacto {min-height: 36px; padding: 0 var(--e4); font-size: 13px; flex: none;}
+.rodape-acoes {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e5); padding-top: var(--e4); border-top: 1px solid var(--linha);}
+@media (min-width: 720px) {.so-celular {display: none;}}
+
+/* ---------- Diálogos ---------- */
+dialog {margin: auto; border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
+dialog::backdrop {background: rgba(21,24,28,.55);}
+.dialogo-cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
+.dialogo-cab h2 {font-size: 20px;}
+.dialogo-corpo {padding: var(--e5); overflow-y: auto;}
+dialog.confirmar {width: min(26rem, calc(100vw - 32px));}
+dialog.confirmar .dialogo-corpo {white-space: pre-line;}
+.dialogo-rodape {display: flex; justify-content: flex-end; gap: var(--e2); padding: var(--e4) var(--e5); border-top: 1px solid var(--linha);}
+dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32px);}
+@media (max-width: 719px) {
+  dialog.folha {margin: auto 0 0; width: 100%; max-width: none; border-radius: var(--raio-lg) var(--raio-lg) 0 0;}
+  dialog.cheio {width: 100%; max-width: none; height: 100dvh; max-height: none; margin: 0; border-radius: 0;}
+  dialog.cheio form {height: 100dvh; max-height: none;}
+  dialog.cheio .dialogo-corpo {flex: 1;}
+  dialog.cheio .dialogo-rodape {flex-direction: column-reverse; padding-bottom: calc(var(--e4) + env(safe-area-inset-bottom));}
+  dialog.cheio .dialogo-rodape .btn {width: 100%;}
+}
+.folha-lista {list-style: none; margin: 0; padding: var(--e2) var(--e3) var(--e4); display: grid; gap: 2px;}
+.folha-lista a, .folha-lista button {display: flex; align-items: center; gap: var(--e3); width: 100%; min-height: 48px; padding: 0 var(--e3); border: 0; border-radius: var(--raio-campo); background: none; text-decoration: none; text-align: left; cursor: pointer; font-weight: 500;}
+.folha-lista a:hover, .folha-lista button:hover {background: var(--superficie-hover);}
+
+/* ---------- Ajustes de grade por largura ---------- */
+@media (max-width: 1099px) {
+  .kpis {grid-template-columns: repeat(2, minmax(0, 1fr));}
+  .duas-colunas, .contrato-layout {grid-template-columns: minmax(0, 1fr);}
+  .resumo {position: static;}
+}
+@media (max-width: 719px) {
+  .kpis {gap: var(--e3);}
+  .kpi dd {font-size: clamp(18px, 5.4vw, 22px);}
+  .moto-lista-cards .tabela-caixa {background: transparent; border: 0; border-radius: 0; overflow: visible;}
+  .moto-lista-cards .dados tbody {display: grid; gap: var(--e3);}
+  .moto-lista-cards .dados tbody tr,
+  .moto-lista-cards .dados tbody tr:first-child {padding: var(--e4); border: 1px solid var(--linha); border-left: 3px solid var(--marca); border-radius: var(--raio-lg); background: var(--superficie); gap: var(--e3) var(--e4);}
+  .moto-lista-cards .dados tbody tr:hover {background: var(--superficie);}
+  .moto-lista-cards .dados td.topo {font-size: 15px; font-weight: 600; line-height: 1.35;}
+  .moto-lista-cards .dados td[data-rotulo]::before {margin-bottom: var(--e1); color: var(--texto-3); font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase;}
+  .moto-lista-cards .dados td.moto-card-destaque {color: var(--texto); font-weight: 600;}
+  .moto-lista-cards .dados td.acao {padding-top: var(--e3); border-top: 1px solid var(--linha-sutil); margin-top: 0;}
+  .moto-lista-cards .dados td.acao:empty {display: none;}
+  .moto-lista-cards .dados td.acao .btn {width: 100%;}
+  /* Ordem dos campos nos cartões da moto (Histórico e Documentos): título e descrição em largura total, o resto em pares sem lacunas */
+  .moto-lista-cards .dados td.moto-o1 {order: 1;} .moto-lista-cards .dados td.moto-o2 {order: 2;} .moto-lista-cards .dados td.moto-o3 {order: 3;}
+  .moto-lista-cards .dados td.moto-o4 {order: 4;} .moto-lista-cards .dados td.moto-o5 {order: 5;} .moto-lista-cards .dados td.moto-o6 {order: 6;}
+  .moto-lista-cards .dados td.acao.moto-o5 {grid-column: 1 / -1;}
+  /* Ficha do contrato (Cobranças e Manutenções): cartão de uma coluna, título em largura total e cada dado como linha "rótulo à esquerda, valor à direita" */
+  .contrato-linhas .dados tbody tr {grid-template-columns: minmax(0, 1fr); gap: 0; padding: var(--e3) var(--e4);}
+  .contrato-linhas .dados td.modelo {order: -1;}
+  .contrato-linhas .dados td.modelo {padding-bottom: var(--e3); border-bottom: 1px solid var(--linha-sutil);}
+  .contrato-linhas .dados td[data-rotulo] {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-bottom: 1px solid var(--linha-sutil); text-align: right;}
+  .contrato-linhas .dados td[data-rotulo]::before {margin: 0; flex: none; text-align: left; font-family: var(--fonte-ui);}
+  /* Dashboard, "Hoje": cartão compacto em grade 2x3 (cliente | situação, moto | vencimento, valor | ação), sem linhas vazias */
+  .hoje-lista .dados tbody tr,
+  .hoje-lista .dados tbody tr:first-child {grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--e3) var(--e3);}
+  .hoje-lista .dados td:nth-child(1) {grid-column: 1; grid-row: 1;}
+  .hoje-lista .dados td:nth-child(5) {grid-column: 2; grid-row: 1; justify-self: end;}
+  .hoje-lista .dados td:nth-child(5)::before {display: none;}
+  .hoje-lista .dados td:nth-child(2) {grid-column: 1; grid-row: 2;}
+  .hoje-lista .dados td:nth-child(3) {grid-column: 2; grid-row: 2; justify-self: end; text-align: right;}
+  .hoje-lista .dados td:nth-child(4) {grid-column: 1; grid-row: 3; font-size: 17px; font-weight: 600; color: var(--texto);}
+  .hoje-lista .dados td.acao {grid-column: 2; grid-row: 3; padding: 0; border-top: 0; justify-self: end;}
+  .hoje-lista .dados td.acao .btn {width: auto; min-width: 96px;}
+  .formulario {grid-template-columns: 1fr;}
+  .passo span {display: none;} .passo.atual span {display: block;}
+  .passos {grid-template-columns: repeat(4, 1fr);}
+  .cartao {padding: var(--e4);}
+  .medidor {gap: 2px;}
+  .rodape-acoes {flex-direction: column-reverse;} .rodape-acoes .btn {width: 100%;}
+  .avancar-grupo {flex-direction: column; align-items: stretch; gap: var(--e2); margin-left: 0;}
+  .dica-avancar {text-align: center;}
+  .selecao-resumo {grid-template-columns: 1fr; gap: var(--e2);}
+  .selecao-item {flex-direction: column; align-items: stretch; gap: var(--e3);}
+  .selecao-item .btn-compacto {width: 100%; min-height: var(--alvo);}
+  .so-desktop {display: none;}
+  .cabecalho .acoes, .cabecalho .acoes .btn, .cabecalho .acoes form {width: 100%;}
+  .filtro-pagina, .filtro-col {width: 100%;}
+  .filtro-col summary {justify-content: space-between;}
+  .filtro-opcoes {left: 0; right: 0;}
+  .pendencia {grid-template-columns: 44px minmax(0, 1fr);} .pendencia .btn {grid-column: 1 / -1;}
+}
+@media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}
+
+/* Lista de motos em cartões: a ordem de leitura difere da ordem das colunas */
+@container (max-width: 859px) {
+  .dados td.c-placa {order: 1;} .dados td.c-sit {order: 2; justify-self: end; text-align: right;}
+  .dados td.c-moto {order: 3; grid-column: 1 / -1;} .dados td.c-km {order: 4;} .dados td.c-man {order: 5;}
+  .dados td.c-loc {order: 6; grid-column: 1 / -1;} .dados td.c-acao {order: 7; grid-column: 1 / -1; margin-top: var(--e1);}
+  .dados td.c-placa::before, .dados td.c-sit::before, .dados td.c-moto::before, .dados td.c-acao::before {display: none;}
+  .dados td.c-acao .btn {width: 100%;}
+}
+
+/* Tabelas em cartões padronizados (macro `tabela` com cartoes=True): título (1ª célula) em destaque, dados em pares
+   esquerda/direita com rótulo, ação em largura total no pé do cartão. Sem linhas vazias nem elementos soltos. */
+@container (max-width: 959px) {
+  .lista-cartoes .dados tbody tr {grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; row-gap: var(--e4);}
+  .lista-cartoes .dados td:first-child {font-size: 15px; font-weight: 600; line-height: 1.35;}
+  /* Dados alinhados à esquerda em duas colunas fixas (rótulo em cima, valor embaixo); só o selo de situação vai à direita */
+  .lista-cartoes .dados td.k-d {justify-self: stretch; text-align: left;}
+  .lista-cartoes .dados td.k-selo {justify-self: end; align-self: center;}
+  .lista-cartoes .dados td:first-child {align-self: center;}
+  .lista-cartoes .dados td[data-rotulo] {font-size: 14.5px; line-height: 1.35;}
+  .lista-cartoes .dados td.k-larga {grid-column: 1 / -1;}
+  .lista-cartoes .dados td.k-selo::before {display: none;}
+  .lista-cartoes .dados td.c-barra {grid-column: 1 / -1; padding-top: var(--e1);}
+  /* Com número ímpar de dados, a barra divide a última linha com o dado (barra à direita) */
+  .lista-cartoes .dados td.c-barra.k-lado {grid-column: auto; padding-top: 0; justify-self: end; width: 110px;}
+  .lista-cartoes .dados td[data-rotulo]::before {font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 3px;}
+  .lista-cartoes .dados td.c-acao {grid-column: 1 / -1; order: 99; margin-top: var(--e1); padding-top: var(--e3); border-top: 1px solid var(--linha-sutil);}
+  .lista-cartoes .dados td.c-acao:empty {display: none;}
+  .lista-cartoes .dados td.c-acao::before {display: none;}
+  .lista-cartoes .dados td.c-acao > a:not(.btn) {display: inline-block; padding-block: var(--e2);}
+  .lista-cartoes .dados td.c-acao > .btn {width: 100%;}
+  /* Ordem de leitura explícita quando difere da ordem das colunas (o1 = título, o2 = selo, ...) */
+  .lista-cartoes .dados td.o1 {order: 1;} .lista-cartoes .dados td.o2 {order: 2;} .lista-cartoes .dados td.o3 {order: 3;}
+  .lista-cartoes .dados td.o4 {order: 4;} .lista-cartoes .dados td.o5 {order: 5;} .lista-cartoes .dados td.o6 {order: 6;}
+  .lista-cartoes .dados td.o7 {order: 7;}
+  /* Vários botões na ação: dividem a largura do cartão */
+  .lista-cartoes .dados td.c-acao > .flex {flex-wrap: nowrap;}
+  .lista-cartoes .dados td.c-acao > .flex .btn {flex: 1;}
+  /* Documentos: a ordem de leitura difere da ordem das colunas (moto | situação, tipo | vencimento, referência | valor) */
+  .lista-cartoes .dados td.d-placa {order: 1;} .lista-cartoes .dados td.d-sit {order: 2;}
+  .lista-cartoes .dados td.d-tipo {order: 3;} .lista-cartoes .dados td.d-venc {order: 4;}
+  .lista-cartoes .dados td.d-ref {order: 5;} .lista-cartoes .dados td.d-valor {order: 6;}
+  /* Ações do documento: botões lado a lado em largura total, comprovante centralizado logo abaixo */
+  .lista-cartoes .dados td.c-acao .acoes-linha {flex-direction: column; align-items: stretch; gap: var(--e3);}
+  .lista-cartoes .dados td.c-acao .acoes-linha .botoes {order: 1;}
+  .lista-cartoes .dados td.c-acao .acoes-linha .botoes .btn {flex: 1; min-height: var(--alvo);}
+  .lista-cartoes .dados td.c-acao .acoes-linha .comprovante {order: 2; margin: 0; text-align: center;}
+}
+@media (max-width: 719px) {
+  .tabela-caixa.lista-cartoes {background: transparent; border: 0; border-radius: 0; overflow: visible;}
+  .lista-cartoes .dados tbody {display: grid; gap: var(--e3);}
+  .lista-cartoes .dados tbody tr,
+  .lista-cartoes .dados tbody tr:first-child {padding: var(--e4); border: 1px solid var(--linha); border-left: 3px solid var(--marca); border-radius: var(--raio-lg); background: var(--superficie); gap: var(--e3) var(--e4);}
+  .lista-cartoes .dados tbody tr:hover {background: var(--superficie);}
+}
+
+/* Cartões recolhíveis (ficha do cliente): só no celular. O cabeçalho é um botão com seta; em telas largas vira texto comum e tudo fica aberto */
+.recolhe-gatilho {display: inline; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;}
+.recolhe-gatilho:disabled {cursor: default;}
+.recolhe-seta {display: none;}
+.rc-so-cel {display: none;}
+@media (max-width: 719px) {
+  .recolhe-seta {display: block; flex: none; width: 20px; height: 20px; color: var(--texto-2); transform: rotate(180deg); transition: transform 150ms ease;}
+  [data-recolhivel].aberto .recolhe-seta {transform: none;}
+  .cartao.recolhivel h2 {margin-bottom: 0;}
+  .cartao.recolhivel.aberto h2 {margin-bottom: var(--e3);}
+  .cartao.recolhivel .recolhe-gatilho {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); width: 100%; min-height: 44px; font-weight: inherit;}
+  .cartao.recolhivel:not(.aberto) > :not(h2):not(.cartao-cab) {display: none !important;}
+  .cartao.recolhivel .cartao-cab {margin-bottom: var(--e3);}
+  .cartao.recolhivel:not(.aberto) .cartao-cab {margin-bottom: 0;}
+  .cartao.recolhivel .cartao-cab h2 {flex: 1; min-width: 0;}
+}
+@media (max-width: 719px) and (prefers-reduced-motion: reduce) {.recolhe-seta {transition: none;}}
+
+/* Tabelas recolhíveis no celular (macro `tabela` com recolhivel=True): cabeçalho do cartão = título (td.rc-titulo, botão com seta)
+   + dado de destaque (td.rc-cab, à direita); o resto (td com data-rotulo e td.c-acao) abre ao tocar, em linhas "rótulo à esquerda, valor à direita" */
+@media (max-width: 719px) {
+  .lista-cartoes .dados tbody tr[data-recolhivel] {position: relative; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0; row-gap: 0; padding: var(--e3) var(--e4);}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-titulo {grid-column: 1; order: -2; display: flex; align-items: center; min-height: 44px; padding: 0; border: 0; font-size: 15px; font-weight: 600; line-height: 1.35;}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-cab {grid-column: 2; order: -1; display: block; margin-right: 32px; padding: 0; border: 0; text-align: right; font-size: 14.5px;}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-cab::before {display: none;}
+  .lista-cartoes .dados tr[data-recolhivel] td:not(.rc-titulo):not(.rc-cab) {grid-column: 1 / -1; order: 0;}
+  .lista-cartoes .dados tr[data-recolhivel]:not(.aberto) > td:not(.rc-titulo):not(.rc-cab) {display: none !important;}
+  .lista-cartoes .dados tr[data-recolhivel].aberto td.rc-titulo,
+  .lista-cartoes .dados tr[data-recolhivel].aberto td.rc-cab {margin-bottom: var(--e1);}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab) {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-top: 1px solid var(--linha-sutil); text-align: right; white-space: nowrap;}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo]:not(.rc-cab)::before {margin: 0; flex: none; text-align: left; font-family: var(--fonte-ui);}
+  .lista-cartoes .dados tr[data-recolhivel] td.c-acao {display: block; order: 99; margin: 0; padding: var(--e3) 0 0; border-top: 1px solid var(--linha-sutil);}
+  .lista-cartoes .dados tr[data-recolhivel] td.c-acao:empty {display: none !important;}
+  .lista-cartoes .dados tr[data-recolhivel] td.rc-oculto {display: none !important;}
+  .rc-so-cel {display: inline;}
+  .lista-cartoes .dados tr[data-recolhivel] td[data-rotulo].rc-quebra:not(.rc-cab) {white-space: normal; text-wrap: balance;}
+  .rc-sub.rc-so-cel {display: block; margin-top: 2px; font-size: 12.5px; font-weight: 500;}
+  .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho {display: block; width: 100%; font-weight: 600; line-height: 1.35;}
+  .lista-cartoes .dados tr[data-recolhivel] .recolhe-gatilho::after {content: ""; position: absolute; top: 0; left: 0; right: 0; height: calc(var(--e3) * 2 + 44px);}
+  .lista-cartoes .dados tr[data-recolhivel] .recolhe-seta {position: absolute; right: var(--e4); top: calc(var(--e3) + 22px); margin-top: -10px;}
+}
+
+/* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
+.medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
+
+/* Alvos mínimos de 44 px */
+.topo-movel .marca {min-height: var(--alvo);}
+.cartao-cab a {display: inline-flex; align-items: center; min-height: var(--alvo); padding: 0 var(--e2); margin: calc(var(--e3) * -1) calc(var(--e2) * -1) calc(var(--e3) * -1) 0;}
+
+/* ---------- Avisos ---------- */
+.aviso {display: flex; align-items: flex-start; gap: var(--e3); padding: var(--e3) var(--e4); border-radius: var(--raio-md); background: var(--neutro-fundo); color: var(--texto);}
+.aviso .i {margin-top: 1px;}
+.aviso.erro {background: var(--perigo-fundo); color: var(--perigo-texto);}
+.aviso.sucesso {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
+.aviso.atencao {background: var(--alerta-fundo); color: var(--alerta-texto);}
+.aviso.info {background: var(--info-fundo); color: var(--info-texto);}
+#avisos:empty {display: none;}
+#avisos {display: grid; gap: var(--e2); margin-bottom: var(--e4);}
+
+/* ---------- Acesso (login, erros) e portal ---------- */
+.acesso {min-height: 100dvh; display: grid; place-items: center; padding: var(--pad);}
+.acesso-caixa {width: min(26rem, 100%); display: grid; gap: var(--e5);}
+.acesso .marca, .acesso .marca strong {color: var(--texto); padding: 0;}
+.acesso .marca span.sub {color: var(--texto-3);}
+/* Na tela de acesso a marca mostra sempre o nome (o trilho de 720–1099 px esconde o texto só no painel) e tem alvo de toque. */
+.acesso .marca {min-height: var(--alvo); align-items: center; justify-content: flex-start;}
+.acesso .marca > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
+.acesso .cartao {display: grid; gap: var(--e4);}
+.acesso h1 {font-size: 26px;}
+.acesso-erro .adesivo {width: 64px; height: 64px; font-size: 22px; color: var(--texto-3);}
+.portal-topo {display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha);}
+.portal-topo .marca {padding: 0; flex: 1; min-width: 0;}
+.portal-topo .btn-icone, .portal-topo .btn-texto {color: var(--lateral-forte); border: 1px solid var(--lateral-linha); background: transparent;}
+.portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer;}
+.entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
+.campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
+.campo.caixa input[type="checkbox"] {width: 22px; height: 22px; accent-color: var(--btn);}
+/* Caixas soltas em grade (itens do plano na manutenção): o rótulo inteiro é o alvo de toque. */
+label.caixa {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
+label.caixa input[type="checkbox"] {width: 22px; height: 22px; flex: none; accent-color: var(--btn);}
+form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {pointer-events: none; opacity: .6;}
+/* Indicador de envio no botão (anel girando) */
+form.htmx-request button[type="submit"]::after, form[data-enviando] button[type="submit"]::after {content: ""; display: inline-block; width: 14px; height: 14px; margin-left: var(--e2); border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: girar .7s linear infinite;}
+@keyframes girar {to {transform: rotate(360deg);}}
+.campo.com-erro .entrada {border-color: var(--perigo);}
+.campo .msg-erro {color: var(--perigo-texto); font-size: 12.5px;}
+.lateral-rodape form {display: contents;}
+
+/* Indicador de carregamento do HTMX (as classes são adicionadas pela biblioteca) */
+.indicador {opacity: 0; transition: opacity 150ms ease;}
+.htmx-request .indicador, .htmx-request.indicador {opacity: 1;}
+
+/* Barra fina no topo durante qualquer requisição do HTMX (a classe "carregando" vai no <html>, via app.js).
+   O atraso evita piscar em respostas rápidas. */
+#barra-carregamento {position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 3px; background: var(--btn); transform: scaleX(0); transform-origin: left; opacity: 0; pointer-events: none;}
+.carregando #barra-carregamento {opacity: 1; animation: barra-carregamento 8s cubic-bezier(.1, .6, .2, 1) 150ms forwards;}
+/* Lista ou painel em atualização: esmaece depois de um instante, sem bloquear a leitura */
+#resultado, #painel-aba {transition: opacity 150ms ease;}
+#resultado[aria-busy="true"], #painel-aba[aria-busy="true"] {opacity: .55; transition-delay: 150ms; cursor: progress;}
+@media (prefers-reduced-motion: reduce) {#resultado, #painel-aba {transition: none;}}
+@keyframes barra-carregamento {from {transform: scaleX(0);} to {transform: scaleX(.92);}}
+@media (prefers-reduced-motion: reduce) {.carregando #barra-carregamento {animation: none; transform: scaleX(1); opacity: .6;}}
+}
+
+/* ---------- Vistorias ---------- */
+.cols-2 {grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch;}
+.kpis.kpis-3 {grid-template-columns: repeat(3, minmax(0, 1fr));}
+/* Ficha do contrato: 5 cards ocupam a linha toda (sem espaço vazio) */
+.kpis.kpis-5 {grid-template-columns: repeat(5, minmax(0, 1fr));}
+@media (max-width: 1099px) {.kpis.kpis-5 {grid-template-columns: repeat(2, minmax(0, 1fr));} .kpis.kpis-5 .kpi:last-child {grid-column: 1 / -1;}}
+.cartao.tracejado {border-style: dashed; background: transparent;}
+.vistoria-resumo {padding-bottom: var(--e4);}
+.vistoria-resumo > h2 {margin-bottom: var(--e3);}
+.vistoria-dados {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid var(--linha-sutil);}
+.vistoria-dados > div {min-width: 0; padding: var(--e3) var(--e4); border-bottom: 1px solid var(--linha-sutil);}
+.vistoria-dados > div:nth-child(odd) {padding-left: 0; border-right: 1px solid var(--linha-sutil);}
+.vistoria-dados > div:nth-child(even) {padding-right: 0;}
+.vistoria-dados dt {color: var(--texto-3); font-size: 12.5px;}
+.vistoria-dados dd {margin: var(--e1) 0 0; font-size: 15px; font-weight: 500; overflow-wrap: anywhere;}
+.vist-cartao {display: flex; flex-direction: column;}
+.vist-cartao .dl {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3) var(--e4); margin: 0 0 var(--e4); padding-bottom: var(--e4); border-bottom: 1px solid var(--linha-sutil);}
+.vist-cartao .dl > div {min-width: 0;}
+.vist-cartao .dl > div:last-child {grid-column: 1 / -1;}
+.vist-cartao .vist-secao-cab {margin-top: auto; padding-top: var(--e4); margin-bottom: var(--e2);}
+.vist-secao-cab {display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--e3);}
+.vist-secao-cab .vist-secao {margin: 0;}
+.vist-secao {font-size: 13px; font-weight: 600; color: var(--texto-2); margin: var(--e4) 0 var(--e2);}
+.vist-checklist {list-style: none; margin: 0 0 var(--e4); padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--e4); align-content: start;}
+.vist-item {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); min-height: 40px; padding: var(--e1) var(--e2); border-top: 1px solid var(--linha-sutil); font-size: 13.5px;}
+.vist-item:nth-child(-n+2) {border-top: 0;}
+.vist-item.alterado {background: var(--alerta-fundo); border-radius: var(--raio-campo);}
+.vist-aviso {font-size: 12px; font-weight: 600; color: var(--alerta-texto);}
+.galeria {list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--e3);}
+.galeria-foto {display: flex; align-items: center; justify-content: center; aspect-ratio: 4 / 3; min-height: var(--alvo); border: 1px solid var(--linha); border-radius: var(--raio-campo); background: var(--superficie-hover); overflow: hidden;}
+.galeria-foto img {width: 100%; height: 100%; object-fit: contain;}
+.galeria-foto.vazia {font-size: 12.5px; color: var(--texto-3); text-align: center; padding: var(--e2);}
+@media (max-width: 1099px) {.cols-2 {grid-template-columns: minmax(0, 1fr);}}
+@media (max-width: 1399px) {.vist-checklist {grid-template-columns: minmax(0, 1fr);} .vist-item:nth-child(2) {border-top: 1px solid var(--linha-sutil);}}
+@media (max-width: 719px) {
+  .kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}
+  .vistoria-dados {grid-template-columns: minmax(0, 1fr);}
+  .vistoria-dados > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0; border-right: 0 !important;}
+  .vistoria-dados dd {margin: 0; text-align: right;}
+  .grade-linhas {grid-template-columns: minmax(0, 1fr); gap: 0;}
+  .grade-linhas > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0;}
+  .grade-linhas dt {margin: 0;}
+  .grade-linhas dd {text-align: right;}
+}
+
+/* ---------- Relatórios ---------- */
+.cabecalho:has(.acoes-rel) {flex-wrap: nowrap; align-items: center; gap: var(--e4) var(--e6);}
+.cabecalho:has(.acoes-rel) .cabecalho-texto {flex: 0 0 auto;}
+.cabecalho:has(.acoes-rel) .acoes {flex: 1 1 auto; min-width: 0;}
+.acoes-rel {display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: var(--e3); width: 100%;}
+.acoes-rel .barra-periodo, .acoes-rel .exportar-rel {flex-wrap: nowrap;}
+.acoes-rel .btn, .acoes-rel .chip {white-space: nowrap;}
+.acoes-rel .exportar-rel {margin-left: auto;}
+.aplicar-periodo {white-space: nowrap; min-height: var(--alvo); padding: 0 var(--e1); border: 0; background: none; color: var(--btn); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer;}
+.aplicar-periodo:hover {text-decoration-thickness: 2px;}
+.acoes-rel:not(:has(.barra-periodo)), .acoes-rel-resultado, .acoes-rel-fluxo {justify-content: space-between;}
+.acoes-rel:not(:has(.barra-periodo)) {justify-content: flex-end;}
+.acoes-rel .barra-periodo .campo {flex: 0 0 auto; width: auto;}
+.acoes-rel .barra-periodo .entrada {width: 10.5rem; min-width: 10.5rem;}
+@media (max-width: 1279px) {.cabecalho:has(.acoes-rel) {flex-wrap: wrap;} .acoes-rel, .acoes-rel .barra-periodo {flex-wrap: wrap;}}
+.barra-periodo {display: flex; flex-wrap: wrap; align-items: center; gap: var(--e3);}
+.barra-periodo .campo {display: flex; align-items: center; gap: var(--e2); max-width: 220px;}
+.barra-periodo .campo > label {font-size: 15px; white-space: nowrap;}
+.colapsavel-visao {position: relative;}
+.colapsavel-visao > summary {list-style: none; user-select: none; background: var(--btn); border-color: var(--btn); color: var(--btn-texto);}
+.colapsavel-visao > summary::-webkit-details-marker {display: none;}
+.colapsavel-visao .seta {width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s;}
+.colapsavel-visao[open] .seta {transform: translateY(2px) rotate(-135deg);}
+.colapsavel-visao .opcoes {position: absolute; z-index: 10; top: calc(100% + var(--e2)); left: 0; display: grid; gap: var(--e1); min-width: max(100%, 170px); padding: var(--e2); border: 1px solid var(--linha-forte); border-radius: 14px; background: var(--superficie-elevada); box-shadow: 0 8px 24px rgb(0 0 0 / .25);}
+.colapsavel-visao .opcoes .chip {white-space: nowrap; width: 100%; justify-content: flex-start; border: 0; border-radius: 10px; background: transparent; padding: 0 var(--e4);}
+.colapsavel-visao .opcoes .chip:hover {background: var(--superficie-hover);}
+.colapsavel-visao .opcoes .chip[aria-current="true"] {background: var(--superficie-hover); color: inherit; font-weight: 600;}
+.exportar-rel {display: flex; flex-wrap: wrap; gap: var(--e2);}
+/* Linhas mais altas só na tabela; em cartões (caixa estreita) o espaçamento vem do cartão */
+@container (min-width: 960px) {#painel-aba .dados td {padding-block: var(--e4);}}
+.barra-rel {display: block; width: 100px; height: 6px;}
+@container (max-width: 959px) {.lista-cartoes .dados td.c-barra .barra-rel {width: 100%;}}
+.barra-rel-fundo {fill: var(--seg-vazio);}
+.barra-rel-ok {fill: var(--sucesso);}
+.barra-rel-perigo {fill: var(--perigo);}
+.barra-rel-neutro {fill: var(--seg-cheio);}
+.resumo-relatorio {margin: 0 0 var(--e4); color: var(--texto-2);}
+.resumo-relatorio strong {color: var(--texto); font-weight: 600;}
+/* Celular: grade de duas colunas (datas lado a lado, rótulo em cima), ações logo abaixo, sem sobras de espaço */
+@media (max-width: 719px) {
+  .cabecalho:has(.acoes-rel) {gap: var(--e3); padding-bottom: var(--e3); margin-bottom: var(--e3);}
+  .acoes-rel {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); align-items: end;}
+  .acoes-rel .barra-periodo {display: contents;}
+  .acoes-rel .barra-periodo .campo {display: grid; gap: var(--e1); max-width: none; width: auto;}
+  .acoes-rel .barra-periodo .campo > label {font-size: 13px;}
+  .acoes-rel .barra-periodo .entrada {width: 100%; min-width: 0;}
+  .acoes-rel .aplicar-periodo {display: inline-flex; align-items: center; justify-content: center; min-height: var(--alvo); padding: 0 var(--e4); border-radius: var(--raio-md); background: var(--btn); color: var(--btn-texto); text-decoration: none; font-weight: 600;}
+  .acoes-rel:not(.acoes-rel-custo) .aplicar-periodo {grid-column: 1 / -1;}
+  .colapsavel-visao > summary {width: 100%; min-height: var(--alvo); justify-content: space-between;}
+  .colapsavel-visao .opcoes {left: 0; right: 0; min-width: 0;}
+  .acoes-rel .exportar-rel {grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin-left: 0; width: 100%;}
+  .acoes-rel .exportar-rel .btn {width: 100%; padding: 0 var(--e3);}
+}
+/* Cartões: a barra ocupa a linha toda (sem lacuna ao lado dos números) */
+@container (max-width: 959px) {#painel-aba .dados td.c-barra.k-lado {grid-column: 1 / -1; width: auto; justify-self: stretch; padding-top: var(--e1);}}
+.portal-topo .marca {min-height: var(--alvo); align-items: center;}
+
+/* ---------- Ficha do cliente (aba Resumo) ---------- */
+.ficha-resumo {grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; margin-bottom: var(--e4);}
+.ficha-resumo > .cartao {display: flex; flex-direction: column;}
+.ficha-resumo .kpis {margin-bottom: 0; margin-top: auto;}
+.ficha-resumo .cartao-cab {align-items: center; min-height: 3.5rem;}
+.kpis-compactos {gap: var(--e3);}
+.kpis-compactos .kpi {padding: var(--e3);}
+.kpis-compactos .kpi dt {font-size: 12px; line-height: 1.3; min-height: 2.6em;}
+.kpis-compactos .kpi dd {font-size: clamp(16px, 1.6vw, 20px); white-space: nowrap; overflow-wrap: normal;}
+.ficha-moto {display: flex; align-items: center; flex-wrap: wrap; gap: var(--e1) var(--e2); flex: 1 1 100%; order: 3; min-width: 0; margin: 0;}
+.cartao-cab-ficha {align-items: center; flex-wrap: wrap;}
+.ficha-sub {color: var(--texto-2); font-size: 13px; margin: 0;}
+.grade-dados {display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--e4) var(--e5); margin: 0;}
+.grade-dados > div {min-width: 0; padding-bottom: var(--e3); border-bottom: 1px solid var(--linha);}
+.grade-dados dt {color: var(--texto-2); font-size: 12.5px; margin-bottom: var(--e1);}
+.grade-dados dd {margin: 0; overflow-wrap: anywhere;}
+/* Celular: dados pessoais como linhas "rótulo à esquerda, valor à direita" */
+@media (max-width: 719px) {
+  .ficha-dados {grid-template-columns: minmax(0, 1fr); gap: 0;}
+  .ficha-dados > div {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) 0;}
+  .ficha-dados dt {margin: 0; flex: none;}
+  .ficha-dados dd {text-align: right;}
+}
+/* Confirmação do contrato: os cinco dados na mesma linha (só quebram se a largura não comportar) */
+@media (min-width: 720px) {.grade-linhas {grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e4);}}
+@media (max-width: 1099px) {.ficha-resumo {grid-template-columns: minmax(0, 1fr);}}
+/* Celular: cada indicador vira uma linha "rótulo à esquerda, valor à direita", sem espaço vazio */
+@media (max-width: 719px) {
+  .kpis.kpis-compactos {grid-template-columns: minmax(0, 1fr); gap: var(--e2);}
+  .kpis-compactos .kpi {display: flex; align-items: center; justify-content: space-between; gap: var(--e4); padding: var(--e3) var(--e4);}
+  .kpis-compactos .kpi dt {min-height: 0; font-size: 13px;}
+  .kpis-compactos .kpi dd {margin: 0; font-size: 16px; text-align: right;}
+}
+
+/* ---------- Tela de login (painel de apresentação + formulário) ---------- */
+.entrada-tela {max-width: none; margin: 0; padding: 0; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
+.entrada-vitrine {position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--e6); padding: clamp(28px, 4vw, 56px); padding-left: clamp(28px, 12vw, 240px); padding-right: max(22%, clamp(28px, 4vw, 56px)); color: #ECEEEE; background: linear-gradient(90deg, transparent 52%, color-mix(in srgb, var(--fundo) 10%, transparent) 64%, color-mix(in srgb, var(--fundo) 35%, transparent) 76%, color-mix(in srgb, var(--fundo) 68%, transparent) 87%, color-mix(in srgb, var(--fundo) 90%, transparent) 95%, var(--fundo) 100%), radial-gradient(120% 80% at 0% 0%, #2B3036 0%, #1E2227 45%, #121518 100%);}
+.entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid rgba(242,183,5,.10); pointer-events: none; mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%); -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%);}
+.entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); mask-composite: intersect; -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-composite: source-in; pointer-events: none;}
+.entrada-vitrine > * {position: relative; z-index: 1;}
+.entrada-vitrine .marca {padding: 0; min-height: var(--alvo);}
+.entrada-vitrine .marca {width: auto; justify-content: flex-start;}
+.entrada-vitrine .marca > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
+.vitrine-texto {display: grid; gap: var(--e5); max-width: 34rem;}
+.vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: rgba(242,183,5,.14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
+.entrada-vitrine h2 {font-size: clamp(30px, 3.4vw, 46px); line-height: 1.08; color: #fff;}
+.entrada-vitrine h2 em {font-style: normal; color: var(--marca);}
+.vitrine-lista {list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e4);}
+.vitrine-lista li {display: flex; align-items: flex-start; gap: var(--e3);}
+.vitrine-lista strong {display: block; font-weight: 600; color: #fff;}
+.vitrine-lista li span:not(.vitrine-icone) {display: block; font-size: 13px; color: #AEB4BA;}
+.vitrine-icone {flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--raio-md); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); color: var(--marca);}
+.vitrine-faixa {height: 6px; border-radius: 3px; background: repeating-linear-gradient(90deg, var(--marca) 0 28px, transparent 28px 48px); opacity: .85; mask-image: linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 100%);}
+.entrada-painel {display: grid; place-items: center; padding: var(--pad);}
+.entrada-conteudo {width: min(24rem, 100%); display: grid; gap: var(--e5);}
+.marca-compacta {display: none;}
+.entrada-cab {display: grid; gap: var(--e2);}
+.entrada-selo {display: inline-flex; align-items: center; gap: var(--e2); width: fit-content; margin: 0; padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--neutro-fundo); color: var(--texto-2); font-size: 12px; font-weight: 500;}
+.entrada-selo .i {width: 14px; height: 14px;}
+.entrada-cab h1 {margin: 0; font-size: 34px;}
+.entrada-sub {margin: 0; color: var(--texto-2);}
+.entrada-form {display: grid; gap: var(--e4);}
+.entrada-form .entrada {min-height: 48px; padding-left: 42px; background: var(--superficie);}
+.entrada-form .entrada-icone .i {top: 15px;}
+.entrada-form .btn-primario {min-height: 50px; font-size: 15px; margin-top: var(--e2); box-shadow: 0 6px 18px -8px rgba(30,34,39,.55);}
+.entrada-form .btn-primario .i {transition: transform .15s ease;}
+.entrada-form .btn-primario:hover .i {transform: translateX(3px);}
+.entrada-form .entrada-icone .senha-alternar {position: absolute; right: 4px; top: 2px; left: auto; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: var(--raio-campo); background: transparent; color: var(--texto-3); cursor: pointer;}
+.senha-alternar .i {position: static; pointer-events: none;}
+.senha-alternar:hover {color: var(--texto); background: var(--superficie-hover);}
+.senha-alternar .ico-ocultar, .senha-alternar[aria-pressed="true"] .ico-mostrar {display: none;}
+.senha-alternar[aria-pressed="true"] .ico-ocultar {display: block;}
+.entrada-form .entrada-icone:has(.senha-alternar) .entrada {padding-right: 48px;}
+.entrada-rodape {margin: 0; text-align: center; font-size: 13px; color: var(--texto-3);}
+@media (max-width: 899px) {
+  .entrada-tela {grid-template-columns: 1fr;}
+  .entrada-vitrine {display: none;}
+  .marca-compacta {display: flex; padding: 0; min-height: var(--alvo); color: var(--texto);}
+  .marca-compacta strong {color: var(--texto);}
+  .marca-compacta span.sub {color: var(--texto-3);}
+  .marca-compacta > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
+  .entrada-cab h1 {font-size: 30px;}
+}
+@media (prefers-reduced-motion: reduce) {.entrada-form .btn-primario .i {transition: none;}}
+
+/* Ícone de tema: sol no tema claro (forçado ou automático com o sistema claro), lua no escuro; sempre só contorno */
+[data-alternar-tema] .ic-sol {display: none;}
+:root[data-tema="claro"] [data-alternar-tema] .ic-sol {display: inline-block;}
+:root[data-tema="claro"] [data-alternar-tema] .ic-lua {display: none;}
+@media (prefers-color-scheme: light) {
+  :root:not([data-tema]) [data-alternar-tema] .ic-sol {display: inline-block;}
+  :root:not([data-tema]) [data-alternar-tema] .ic-lua {display: none;}
+}
+
+/* ---------- Impressão (contratos, vistorias, relatórios e demais páginas) ----------
+   Fora das camadas, para valer sobre qualquer tema: papel sempre claro, sem menus, botões, filtros nem diálogos. */
+@page {margin: 14mm;}
+@media print {
+  :root, :root[data-tema="escuro"], :root[data-tema="claro"] {
+    --fundo: #FFFFFF; --superficie: #FFFFFF; --superficie-elevada: #FFFFFF; --superficie-hover: #F1F2F1;
+    --linha: rgba(30,34,39,.3); --linha-sutil: rgba(30,34,39,.15); --linha-forte: rgba(30,34,39,.5);
+    --texto: #000000; --texto-2: #2B3036; --texto-3: #3C4248;
+    --sucesso-texto: #1B6F4D; --alerta-texto: #7A5A00; --perigo-texto: #B83232; --info-texto: #2F5F8A; --neutro-texto: #4A5158;
+    --seg-cheio: #1E2227; --seg-vazio: rgba(30,34,39,.15);
+    --sombra-modal: none;
+    color-scheme: light;
+  }
+  body {background: #FFFFFF; color: #000000; font-size: 11pt;}
+  .app {display: block; min-height: 0;}
+  main {max-width: none; margin: 0; padding: 0;}
+  .lateral, .topo-desktop, .topo-movel, .barra-inferior, .pular, #barra-carregamento, dialog,
+  .acoes, .voltar, .btn, .btn-icone, .chips, .filtro-opcoes, [role="tablist"], .paginacao, .por-pagina, .c-acao,
+  /* A busca é só a barra de filtros: o formulário role="search" também embrulha o #resultado (a lista), então esconder o
+     formulário inteiro imprimia a página sem a tabela. */
+  form[role="search"] .barra-filtros, .aplicar-periodo, .exportar-rel, .colapsavel-visao, .ordenar-seta {display: none !important;}
+  .cartao, .kpi, .tabela-caixa {box-shadow: none; break-inside: avoid;}
+  /* Firefox não imprime a tabela dentro de um contêiner com `container-type` e rolagem (a página sai só com o título): na folha a
+     tabela ocupa a largura toda, sem rolagem nem container queries. */
+  .tabela-caixa {overflow: visible !important; container-type: normal !important;}
+  .dados tbody tr {break-inside: avoid;}
+  h1, h2, h3 {break-after: avoid;}
+  a {text-decoration: none; color: inherit;}
+  /* Selos e barras levam cor: o navegador não imprime fundos por padrão */
+  .selo, .medidor span, [class^="barra-rel"], [class*=" barra-rel"] {-webkit-print-color-adjust: exact; print-color-adjust: exact;}
+}

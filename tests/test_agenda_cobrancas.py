@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from src.domain.agenda_cobrancas import gerar_agenda
+from src.domain.agenda_cobrancas import HORIZONTE_INDETERMINADO_DIAS, gerar_agenda
 
 _VALOR = Decimal("100.00")
 
@@ -74,3 +74,42 @@ class TestGerarAgenda:
     def test_data_fim_anterior_ao_inicio_levanta_erro(self):
         with pytest.raises(ValueError):
             gerar_agenda(date(2026, 1, 10), "mensal", _VALOR, date(2026, 1, 1))
+
+
+class TestContratoIndeterminado:
+    """Sem data final (regra da operação): só a janela inicial de 30 dias é gerada."""
+
+    def test_semanal_gera_a_janela_de_30_dias(self):
+        agenda = gerar_agenda(date(2026, 10, 5), "semanal", _VALOR)
+        assert [p["vencimento"] for p in agenda] == [
+            date(2026, 10, 5),
+            date(2026, 10, 12),
+            date(2026, 10, 19),
+            date(2026, 10, 26),
+            date(2026, 11, 2),
+        ]
+        assert [p["numero"] for p in agenda] == [1, 2, 3, 4, 5]
+
+    def test_primeira_cobranca_vence_na_data_de_inicio(self):
+        agenda = gerar_agenda(date(2026, 10, 5), "semanal", _VALOR, None)
+        assert agenda[0] == {"numero": 1, "vencimento": date(2026, 10, 5), "valor": _VALOR}
+
+    def test_limite_da_janela_e_inclusivo(self):
+        # início + 30 dias cai exatamente num vencimento diário: entra na agenda
+        agenda = gerar_agenda(date(2026, 10, 1), "diario", _VALOR)
+        assert len(agenda) == HORIZONTE_INDETERMINADO_DIAS + 1
+        assert agenda[-1]["vencimento"] == date(2026, 10, 31)
+
+    def test_mensal_gera_inicio_e_proximo_mes_quando_cabe(self):
+        agenda = gerar_agenda(date(2026, 10, 5), "mensal", _VALOR)
+        assert [p["vencimento"] for p in agenda] == [date(2026, 10, 5)]
+        agenda = gerar_agenda(date(2026, 2, 1), "mensal", _VALOR)
+        assert [p["vencimento"] for p in agenda] == [date(2026, 2, 1), date(2026, 3, 1)]
+
+    def test_periodicidade_invalida_continua_levantando_erro(self):
+        with pytest.raises(ValueError):
+            gerar_agenda(date(2026, 10, 5), "anual", _VALOR)
+
+    def test_com_data_final_o_comportamento_nao_muda(self):
+        agenda = gerar_agenda(date(2026, 10, 5), "semanal", _VALOR, date(2026, 10, 19))
+        assert [p["vencimento"] for p in agenda] == [date(2026, 10, 5), date(2026, 10, 12), date(2026, 10, 19)]

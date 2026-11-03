@@ -282,6 +282,37 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
 
 ## 10. Pendências da Etapa 8
 
+- **Lighthouse no app publicado (FastAPI, 26/10/2026)** — Lighthouse 13.5.0 (CLI), Chrome 156 em janela real, `https://lamotos.duckdns.org`,
+  sessão do dono (login feito por ele no Chrome; a IA não digitou credenciais), 2 execuções por perfil, desempenho / acessibilidade /
+  boas práticas. Celular = emulação padrão (4x CPU, 4G lenta); desktop = preset desktop. Medido do computador do desenvolvedor, com a
+  latência real da VPS.
+
+  | Tela | Perfil | Desempenho | Acess. | Boas práticas | FCP | LCP | TBT | CLS |
+  |---|---|---:|---:|---:|---|---|---|---|
+  | Login (pública) | Desktop | 100 | 100 | 100 | 0,4 s | 0,4–0,5 s | 0 ms | 0,023 |
+  | Login (pública) | Celular | 100 | 100 | 100 | 1,4 s | 1,5 s | 0 ms | 0 |
+  | Dashboard | Desktop | 99–100 | 100 | 100 | 0,2 s | 0,3 s | 0 ms | 0,002 |
+  | Dashboard | Celular | 89–100 | 100 | 100 | 0,8 s | 0,9–1,1 s | 60–160 ms | 0 |
+  | Cobranças | Desktop | 98–100 | 98 | 100 | 0,2 s | 0,3 s | 0 ms | 0,002 |
+  | Cobranças | Celular | 93–100 | 98 | 100 | 0,8 s | 0,9–1,0 s | 40 ms | 0 |
+  | Motos | Desktop | 93–99 | 100 | 100 | 0,2–0,3 s | 0,3 s | 0 ms | 0,002 |
+  | Motos | Celular | 89–100 | 100 | 100 | 0,8–0,9 s | 1,0–1,1 s | 50–160 ms | 0 |
+  | Ficha da moto | Desktop | 100 | 100 | 100 | 0,2 s | 0,3 s | 0 ms | 0,002 |
+  | Ficha da moto | Celular | 95–99 | 100 | 100 | 0,8 s | 1,0–1,1 s | 120–180 ms | 0 |
+
+  Leitura: o app novo está na faixa «bom» em tudo (LCP ≤ 1,5 s, TBT ≤ 180 ms, CLS ≤ 0,023). A CLS alta herdada do Streamlit
+  (≈ 0,4 no desktop e ≈ 0,95 no celular) **deixou de existir** com a troca da camada de interface. A oscilação da nota de desempenho no
+  celular (89–100) vem do TBT, que varia entre execuções (40–180 ms). Achados: (1) Cobranças perde 2 pontos de acessibilidade por
+  `heading-order` (o `<h3>` do estado vazio, macro `estado_vazio` em `componentes/macros.html`, vem logo depois do `<h1>`, sem `<h2>`); (2) o
+  SEO da página de login tira 90 por faltar `meta description` (irrelevante para um app privado). Não houve ajuste de código.
+  **Depois da correção (deploy de 26/10/2026, PR #113):** Cobranças com acessibilidade **100** em desktop e celular (`heading-order` aprovado; o
+  `estado_vazio` passou a usar `<h2>`), desempenho 98–100, LCP 0,3–1,4 s, TBT 0–110 ms, CLS 0,002. O console dos diálogos «Encerrar contrato» e
+  «Pagar» não registra mais o erro do `hx-disabled-elt`, e a prévia de ambos continua recalculando.
+  Como reproduzir: Node LTS, `npm i lighthouse`, Chrome com `--remote-debugging-port=9222`, login manual e
+  `npx lighthouse <url> --port=9222 --disable-storage-reset` (`--preset=desktop` para o desktop).
+
+- **Histórico (Streamlit, antes da migração).** O Lighthouse medido na Etapa 8 dizia o seguinte:
+
 - **Lighthouse medido** (v12, Chrome headless, dashboard com dados fictícios e login contornado por script temporário;
   servidor local, então LCP absoluto não vale como número de produção; vale a comparação). `main` x esta branch:
 
@@ -303,4 +334,68 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
   Etapa 9.
 - **Pendência (decidida em 02/10/2026): CLS alta** (≈ 0,4 no desktop e ≈ 0,95 no celular, herdada da `main`). Tratar em
   etapa futura reservando altura mínima nos blocos que crescem durante o render; não bloqueia a Etapa 8.
-- Medir também Cobranças, Motos e uma ficha (o Lighthouse só carregou a rota `/`; as demais exigem navegação).
+- ~~Medir também Cobranças, Motos e uma ficha~~: medidos em 26/10/2026 no app publicado (primeiro item desta seção).
+
+## 11. Homologação (Etapa 9)
+
+Evidência produzida em 05/10/2026. **Limite honesto**: a automação rodou no preview com serviços simulados (sem login,
+dados fictícios fixos), em Chromium, Firefox e WebKit; a rodada autenticada contra o banco de desenvolvimento, a gravação
+real dos 10 fluxos e os aparelhos físicos ficam com o usuário (`Arquivos/Roteiro_Homologacao_Manual.md`).
+
+### O que a suíte mede (`e2e/`)
+
+| Verificação | Onde |
+|---|---|
+| Overflow do documento, controles fora da janela, alvos < 44 px, diálogos | `verificar_layout`, `verificar_dialogo` |
+| axe-core (WCAG 2.1 A/AA + boas práticas): crítica = P0, grave = P1 (as duas reprovam em `--e2e-estrito`) | `verificar_acessibilidade` |
+| Teclado: Tab pela página, foco visível, dentro da janela, nome acessível, armadilha, ordem | `verificar_teclado` |
+| Zoom 200% (720×450), reflow a 320 CSS px (400%), paisagem, texto a 200%, espaçamento WCAG 1.4.12 | `e2e/test_homologacao.py` |
+| Rede (~1,6 Mbps, 150 ms) e CPU 4× mais lentas (Chromium) | `test_rede_e_cpu_reduzidas` |
+| Regressão visual (login e páginas) contra a referência aprovada | `e2e/test_regressao_visual.py`, `e2e/visual.py` |
+| Contraste 4,5:1 dos tokens nos dois temas | `tests/test_contraste_tokens.py` |
+
+### Resultado
+
+- **pytest**: 546 testes passando (523 antes da etapa).
+- **axe-core**: sem violações críticas ou graves nas 10 páginas (Chromium, 5 larguras × 2 temas) e nos diálogos e no
+  assistente abertos pelos fluxos (390 e 1440 px), também em Chromium móvel, Firefox e WebKit (390 e 1440 px). Restam só achados
+  moderados/leves do próprio Streamlit (ver abaixo).
+- **Login**: estrito (P0 e axe crítico/grave) aprovado em Chromium desktop e móvel, Firefox e WebKit, 5 larguras × 2 temas.
+- **Teclado**: sem armadilhas; foco visível em todos os controles medidos.
+- **Regressão visual** (referência = `main`, mesmo preview): login sem diferença; Relatórios e Configurações com
+  diferenças pequenas e intencionais (legenda sem opacidade reduzida; texto terciário mais escuro). Configurações a 320 px
+  ficou ~3% mais curta (o título de cartão agora é `h2` com o respiro do antigo `h3`).
+- **Capturas**: geradas com `--capturas` em `e2e/capturas/<dados>/<perfil>/<tema>/<largura>/` (ignoradas pelo git).
+
+### Correções feitas na homologação
+
+| Achado | Correção |
+|---|---|
+| `aria-expanded` inválido na barra lateral e no campo de data (crítico) | `src/ui/acessibilidade.py` |
+| Lista de navegação sem semântica válida (grave) | idem |
+| Barra lateral recolhida continuava na tabulação, fora da tela | idem (`inert`) |
+| iframe invisível dos cookies como parada de Tab | idem (`tabindex=-1`, `aria-hidden`) |
+| Sem marcos de página | idem (`main`, `complementary`) |
+| Selo de sucesso 4,46:1; texto terciário 4,2:1 sobre o fundo; selo de perigo no escuro 4,31:1 | tokens `--sucesso-texto`, `--texto-3`, `--perigo-texto` |
+| Legenda a 60% de opacidade (2,5:1) | `[data-testid="stCaptionContainer"] {opacity: 1}` |
+| "Pagar" claro sobre amarelo no escuro (1,56:1) | `estilos_escuro.css` |
+| Região principal focável sem indicador | `[data-testid="stMain"]:focus-visible` |
+| Ordem de títulos em Configurações (h1 → h3) | `h2` |
+| Altura da página +16 px (um `st.html` a mais) | os dois scripts agora num único `st.html` (`tema.aplicar`) |
+
+### Pendências e exceções documentadas
+
+- **Framework (sem correção no app)**: `region` (conteúdo fora de marcos) foi resolvido pelo script; resta o 404 no
+  console ao abrir uma URL profunda (`/<página>/_stcore/health`), comportamento do Streamlit com caminhos relativos
+  (A-006); `presentation-role-conflict` (leve) nos diálogos.
+- **WebKit**: o campo focado por Tab pode ficar rente à borda inferior (achado P2 `foco-fora-da-janela` parcial);
+  confirmar em iPhone/iPad real.
+- **CLS alta** (≈ 0,4 desktop, ≈ 0,95 celular, herdada da `main`): **não tratada** nesta etapa. Reservar `min-height` nos
+  blocos que crescem no render exige medir cada um e arrisca deslocar o layout homologado; fica como melhoria futura.
+- **Lighthouse** de Cobranças, Motos e uma ficha: medido em 26/10/2026 no app publicado (seção 10).
+- **Manual (usuário)**: os 10 fluxos gravando no banco de dev, Android (obrigatório) e iPhone/iPad (se houver), leitor de
+  tela, zoom real do navegador, janela dividida e teclado virtual. Marcar em `Arquivos/Roteiro_Homologacao_Manual.md`.
+- **CI**: `.github/workflows/ci.yml` roda pytest e o e2e do login em 4 perfis a cada push/PR, enviando capturas e achados
+  como artefatos; as páginas autenticadas rodam sob demanda (`workflow_dispatch`) com segredos do projeto de **dev**
+  (`SUPABASE_DEV_URL`, `SUPABASE_DEV_ANON_KEY`, `E2E_EMAIL`, `E2E_SENHA`). A comparação de pixels fica local (as
+  referências dependem do sistema operacional).

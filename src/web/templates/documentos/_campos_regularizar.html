@@ -1,0 +1,13 @@
+{% from "componentes/macros.html" import campo, caixa, placa %}
+{# Campos da regularização (diálogo e página). Contexto: registro, v, erros, tipo_rotulo, proximo. #}
+{% set documento = registro.documento %}
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(registro.moto.placa|placa_br) }}<span>{{ tipo_rotulo }} {{ documento.ano_referencia or documento.descricao or "" }} · vence <span class="mono">{{ documento.vencimento|data_br }}</span></span></div>
+{{ campo("r-data", "Data de regularização", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True) }}
+<div class="campo largo{{ ' com-erro' if erros.comprovante else '' }}">
+  <label for="r-comprovante">Comprovante (opcional)</label>
+  <input class="entrada" id="r-comprovante" name="comprovante" type="file" accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"{% if erros.comprovante %} aria-invalid="true"{% endif %} aria-describedby="r-comprovante-ajuda{{ ' r-comprovante-erro' if erros.comprovante }}">
+  <small id="r-comprovante-ajuda">PDF, PNG ou JPG, de até 10 MB.{% if documento.arquivo_path %} Já existe um comprovante anexado; enviar outro arquivo o substitui.{% endif %}{% if erros %} O navegador não guarda o arquivo depois de um erro: escolha-o de novo.{% endif %}</small>
+  {% if erros.comprovante %}<small class="msg-erro" id="r-comprovante-erro">{{ erros.comprovante }}</small>{% endif %}
+</div>
+{% if proximo %}{{ caixa("r-proximo", "Cadastrar em seguida o documento de " ~ proximo.ano_referencia, nome="criar_proximo", marcada=v.criar_proximo, ajuda="Abre o cadastro já preenchido, com o vencimento em branco para você informar.") }}{% endif %}
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>

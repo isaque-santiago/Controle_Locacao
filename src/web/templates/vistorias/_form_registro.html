@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo("Registrar vistoria", acao, "Salvar vistoria", csrf_token, erro_geral, multipart=True) %}
+{% include "vistorias/_campos_registro.html" %}
+{% endcall %}

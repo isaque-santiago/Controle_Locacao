@@ -1,0 +1,4 @@
+{# Painel da aba ativa da ficha. O HTMX troca este elemento inteiro, então o rótulo (aria-labelledby) acompanha a aba. #}
+<div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}" tabindex="0">
+  {% include "motos/abas/" ~ aba ~ ".html" %}
+</div>

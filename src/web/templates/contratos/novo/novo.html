@@ -1,0 +1,14 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina %}
+{% set descricoes = {1: "Escolha o cliente que vai alugar.", 2: "Escolha uma moto disponível.", 3: "Defina o prazo e os valores.", 4: "Confira o resumo e registre a vistoria de entrega."} %}
+{% block conteudo %}
+{{ voltar("/contratos", "Voltar para contratos") }}
+{{ cabecalho_pagina("Novo contrato", "Etapa " ~ etapa ~ " de " ~ total_etapas ~ ": " ~ descricoes[etapa]) }}
+<ol class="passos" aria-label="Etapas do novo contrato">
+  {% for p in passos %}<li class="passo {{ p.estado }}"{% if p.estado == "atual" %} aria-current="step"{% endif %}><b>{{ p.titulo }}</b><span>{{ p.detalhe }}</span></li>{% endfor %}
+</ol>
+{% if etapa == 1 %}{% include "contratos/novo/_etapa_cliente.html" %}
+{% elif etapa == 2 %}{% include "contratos/novo/_etapa_moto.html" %}
+{% elif etapa == 3 %}{% include "contratos/novo/_etapa_condicoes.html" %}
+{% else %}{% include "contratos/novo/_etapa_confirmar.html" %}{% endif %}
+{% endblock %}

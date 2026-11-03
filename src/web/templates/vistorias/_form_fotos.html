@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo("Adicionar fotos", acao, "Enviar fotos", csrf_token, erro_geral, multipart=True) %}
+{% include "vistorias/_campos_fotos.html" %}
+{% endcall %}

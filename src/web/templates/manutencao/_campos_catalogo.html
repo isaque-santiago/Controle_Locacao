@@ -1,0 +1,7 @@
+{% from "componentes/macros.html" import campo, caixa %}
+{{ campo("f-item-nome", "Nome", nome="nome", valor=v.nome, obrigatorio=True, erro=erros.nome, largo=True, autocomplete="off") }}
+{{ campo("f-item-km", "Intervalo em km", nome="intervalo_km", valor=v.intervalo_km, tipo="number", mono=True, inputmode="numeric", erro=erros.intervalo_km, ajuda="Use zero quando o item não tiver limite em km.", extra='min="0"') }}
+{{ campo("f-item-dias", "Intervalo em dias", nome="intervalo_dias", valor=v.intervalo_dias, tipo="number", mono=True, inputmode="numeric", erro=erros.intervalo_dias, ajuda="Use zero quando o item não tiver limite em dias.", extra='min="0"') }}
+{{ campo("f-item-minimo", "Alerta a partir de", nome="intervalo_minimo_km", valor=v.intervalo_minimo_km, tipo="number", mono=True, inputmode="numeric", erro=erros.intervalo_minimo_km, ajuda="Início da faixa em km. Deve ser menor que o intervalo em km; use zero para aplicar a antecedência das Configurações.", largo=True, extra='min="0"') }}
+{{ caixa("f-item-ativo", "Item ativo", nome="ativo", marcada=v.ativo) }}
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>

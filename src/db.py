@@ -1,201 +1,83 @@
 """Fábrica do cliente Supabase (com sessão do usuário, para valer o RLS)."""
 
-from time import monotonic
+from contextlib import contextmanager
+from contextvars import ContextVar
 
-import streamlit as st
-from streamlit_cookies_controller import CookieController
-from supabase import Client, create_client
+from supabase import Client, ClientOptions, create_client
 
 from src.config import get_supabase_anon_key, get_supabase_url
 
-_CHAVE_CLIENTE = "supabase_client"
-_CHAVE_COOKIES = "cookie_controller"
-_COOKIE_REFRESH_TOKEN = "sb_refresh_token"
-_COOKIE_ULTIMA_ATIVIDADE = "sb_ultima_atividade"
-_COOKIE_TEMA_ESCURO = "tema_escuro"
-_VALIDADE_TEMA_SEGUNDOS = 60 * 60 * 24 * 365
-_LIMITE_INATIVIDADE_SEGUNDOS = 1800
-# Cada .set() monta um componente novo no navegador (iframe + rerun extra); por isso
-# o cookie de atividade só é regravado de tempos em tempos, bem antes de expirar.
-_RENOVACAO_ATIVIDADE_SEGUNDOS = 300
-_CHAVE_RENOVACAO_ATIVIDADE = "cookie_atividade_gravado_em"
-_CHAVE_REFRESH_GRAVADO = "cookie_refresh_token_gravado"
-_VALIDADE_LEMBRAR_SEGUNDOS = 60 * 60 * 24 * 7
+# Cliente da requisição web (FastAPI).
+_CLIENTE_REQUISICAO: ContextVar[Client | None] = ContextVar(
+    "cliente_requisicao", default=None
+)
 
+# Id do usuário da requisição web: chave do cache e dos controles por usuário.
+_USUARIO_REQUISICAO: ContextVar[str | None] = ContextVar(
+    "usuario_requisicao", default=None
+)
 
-def _conexao_https() -> bool:
-    """True quando a requisição chegou por HTTPS (direto ou atrás de proxy).
+def criar_cliente_anonimo() -> Client:
+    """Cliente novo, sem usuário (anon key), para entrar ou renovar a sessão.
 
-    O Streamlit Cloud atende atrás de um proxy que informa o protocolo em
-    x-forwarded-proto; em localhost (HTTP) devolve False.
-    """
-    try:
-        contexto = st.context
-        protocolo = str(contexto.headers.get("x-forwarded-proto") or "")
-        if protocolo.split(",")[0].strip().lower() == "https":
-            return True
-        return str(contexto.url or "").lower().startswith("https://")
-    except Exception:
-        return False
-
-
-def _opcoes_cookie() -> dict:
-    """Atributos dos cookies de sessão: SameSite=lax e Secure quando em HTTPS."""
-    opcoes = {"same_site": "lax"}
-    if _conexao_https():
-        opcoes["secure"] = True
-    return opcoes
-
-
-def get_client() -> Client:
-    """Retorna o cliente Supabase da sessão atual, criando se necessário."""
-    if _CHAVE_CLIENTE not in st.session_state:
-        st.session_state[_CHAVE_CLIENTE] = create_client(
-            get_supabase_url(), get_supabase_anon_key()
-        )
-    return st.session_state[_CHAVE_CLIENTE]
-
-
-def _get_cookie_controller() -> CookieController:
-    """Retorna o controlador de cookies do navegador (persiste entre refreshes)."""
-    if _CHAVE_COOKIES not in st.session_state:
-        st.session_state[_CHAVE_COOKIES] = CookieController()
-    return st.session_state[_CHAVE_COOKIES]
-
-
-def set_session_tokens(access_token: str, refresh_token: str) -> None:
-    """Aplica os tokens do usuário logado ao cliente, para o RLS valer.
-
-    Usa apenas quando o cliente AINDA NÃO está autenticado com esses tokens (ex.: um
-    cliente novo recriado a partir de tokens salvos em outro lugar). `auth.set_session`
-    faz uma chamada de rede extra (`GET /auth/v1/user`) para validar o token — no login
-    e na restauração de sessão por cookie essa chamada é redundante (instável no projeto
-    de desenvolvimento) porque `sign_in_with_password`/`refresh_session` já deixam o
-    cliente autenticado sozinhos; nesses dois casos use `gravar_sessao_ja_autenticada`."""
-    get_client().auth.set_session(access_token, refresh_token)
-    _gravar_refresh_token_cookie(refresh_token)
-
-
-def gravar_sessao_ja_autenticada(refresh_token: str) -> None:
-    """Grava só o cookie, para quando o cliente Supabase já está autenticado.
-
-    `sign_in_with_password` (login) e `refresh_session` (restaurar sessão pelo cookie,
-    no F5) já deixam o cliente com a sessão válida e os cabeçalhos de autorização
-    atualizados por conta própria (evento SIGNED_IN/TOKEN_REFRESHED); chamar
-    `set_session_tokens` depois delas só adicionaria uma segunda chamada de rede
-    (`auth.set_session` → `GET /auth/v1/user`) para revalidar um token que acabou de
-    ser emitido — redundante, e foi a causa de logins e F5 travando no projeto de
-    desenvolvimento."""
-    _gravar_refresh_token_cookie(refresh_token)
-
-
-def _gravar_refresh_token_cookie(refresh_token: str) -> None:
-    _get_cookie_controller().set(
-        _COOKIE_REFRESH_TOKEN,
-        refresh_token,
-        max_age=_VALIDADE_LEMBRAR_SEGUNDOS,
-        **_opcoes_cookie(),
-    )
-    st.session_state[_CHAVE_REFRESH_GRAVADO] = refresh_token
-
-
-def sincronizar_refresh_token_cookie() -> None:
-    """Regrava o cookie quando o Supabase rotacionou o refresh token.
-
-    O cliente renova o access token sozinho (cerca de 1 h) e o refresh token é de uso
-    único; sem esta sincronização o cookie ficaria com um token já consumido e o F5
-    devolveria o usuário ao login."""
-    try:
-        sessao = get_client().auth.get_session()
-    except Exception:
-        return
-    if not sessao or not sessao.refresh_token:
-        return
-    if st.session_state.get(_CHAVE_REFRESH_GRAVADO) == sessao.refresh_token:
-        return
-    _gravar_refresh_token_cookie(sessao.refresh_token)
-
-
-def clear_session_tokens() -> None:
-    """Descarta o cliente autenticado e os cookies de sessão do navegador."""
-    st.session_state.pop(_CHAVE_CLIENTE, None)
-    st.session_state.pop(_CHAVE_REFRESH_GRAVADO, None)
-    controlador = _get_cookie_controller()
-    for nome in (_COOKIE_REFRESH_TOKEN, _COOKIE_ULTIMA_ATIVIDADE):
-        try:
-            controlador.remove(nome)
-        except KeyError:
-            # A remoção já foi enviada ao navegador; só faltava o item no cache
-            # interno do componente (comum logo após um F5).
-            pass
-
-
-def _ler_cookie_da_requisicao(nome: str) -> tuple[bool, str | None]:
-    """Lê um cookie enviado no handshake, sem depender do componente assíncrono."""
-    try:
-        cookies = st.context.cookies
-    except AttributeError:
-        return False, None
-
-    try:
-        valor = cookies[nome]
-    except KeyError:
-        return True, None
-    return True, valor if isinstance(valor, str) else None
-
-
-def get_refresh_token_cookie() -> str | None:
-    """Lê o refresh token guardado no cookie do navegador, se existir."""
-    contexto_disponivel, valor = _ler_cookie_da_requisicao(_COOKIE_REFRESH_TOKEN)
-    if contexto_disponivel:
-        return valor
-    return _get_cookie_controller().get(_COOKIE_REFRESH_TOKEN)
-
-
-def marcar_atividade_cookie() -> None:
-    """Renova o cookie de atividade (expira sozinho após inatividade).
-
-    A gravação é espaçada (a cada 5 min): a inatividade real de 30 min continua
-    valendo, com tolerância de até 5 min a mais após um F5."""
-    agora = monotonic()
-    ultima = st.session_state.get(_CHAVE_RENOVACAO_ATIVIDADE)
-    if ultima is not None and agora - ultima < _RENOVACAO_ATIVIDADE_SEGUNDOS:
-        return
-    st.session_state[_CHAVE_RENOVACAO_ATIVIDADE] = agora
-    _get_cookie_controller().set(
-        _COOKIE_ULTIMA_ATIVIDADE,
-        "1",
-        max_age=_LIMITE_INATIVIDADE_SEGUNDOS,
-        **_opcoes_cookie(),
+    Sem renovação automática nem persistência: no app web quem guarda e renova os
+    tokens é o servidor de sessões."""
+    return create_client(
+        get_supabase_url(),
+        get_supabase_anon_key(),
+        ClientOptions(auto_refresh_token=False, persist_session=False),
     )
 
 
-def ler_tema_escuro_cookie() -> bool | None:
-    """Preferência guardada no navegador: True (escuro), False (claro) ou None (automático)."""
-    _, valor = _ler_cookie_da_requisicao(_COOKIE_TEMA_ESCURO)
-    if valor == "1":
-        return True
-    if valor == "0":
-        return False
+def criar_cliente_autenticado(access_token: str) -> Client:
+    """Cliente com o token do usuário (a RLS vale), sem chamada de rede extra.
+
+    Usa a anon key; a service_role nunca é usada no app."""
+    return create_client(
+        get_supabase_url(),
+        get_supabase_anon_key(),
+        ClientOptions(
+            headers={"Authorization": f"Bearer {access_token}"},
+            auto_refresh_token=False,
+            persist_session=False,
+        ),
+    )
+
+
+def definir_cliente_da_requisicao(cliente: Client | None) -> None:
+    """Define o cliente que `get_client()` devolve no contexto atual (requisição web)."""
+    _CLIENTE_REQUISICAO.set(cliente)
+
+
+def definir_usuario_da_requisicao(usuario_id: str | None) -> None:
+    """Define o usuário da requisição web (usado por `usuario_id_atual`)."""
+    _USUARIO_REQUISICAO.set(usuario_id)
+
+
+def usuario_id_atual() -> str | None:
+    """Id do usuário logado na requisição web. None sem login.
+
+    Quem guarda dados que dependem da RLS (cache, controles) deve usar este id na chave e,
+    sem ele, não guardar nada: assim dois usuários nunca compartilham a mesma entrada."""
+    da_requisicao = _USUARIO_REQUISICAO.get()
+    if da_requisicao:
+        return da_requisicao
     return None
 
 
-def salvar_tema_escuro_cookie(escuro: bool | None) -> None:
-    """Guarda a preferência de tema no navegador (None = seguir o sistema), para sobreviver ao F5."""
-    valor = "auto" if escuro is None else ("1" if escuro else "0")
-    _get_cookie_controller().set(
-        _COOKIE_TEMA_ESCURO,
-        valor,
-        max_age=_VALIDADE_TEMA_SEGUNDOS,
-        **_opcoes_cookie(),
-    )
+@contextmanager
+def usar_cliente(cliente: Client):
+    """Usa `cliente` como o `get_client()` do bloco (ex.: consultar o papel no login)."""
+    marca = _CLIENTE_REQUISICAO.set(cliente)
+    try:
+        yield cliente
+    finally:
+        _CLIENTE_REQUISICAO.reset(marca)
 
 
-def sessao_ativa_no_cookie() -> bool:
-    """True se o cookie de atividade ainda não expirou (sem inatividade > limite)."""
-    contexto_disponivel, valor = _ler_cookie_da_requisicao(
-        _COOKIE_ULTIMA_ATIVIDADE
-    )
-    if contexto_disponivel:
-        return valor is not None
-    return _get_cookie_controller().get(_COOKIE_ULTIMA_ATIVIDADE) is not None
+def get_client() -> Client:
+    """Retorna o cliente Supabase do contexto atual (a requisição web)."""
+    cliente_da_requisicao = _CLIENTE_REQUISICAO.get()
+    if cliente_da_requisicao is not None:
+        return cliente_da_requisicao
+    raise RuntimeError("Não há cliente Supabase no contexto atual.")

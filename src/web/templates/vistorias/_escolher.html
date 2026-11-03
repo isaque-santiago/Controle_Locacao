@@ -1,0 +1,7 @@
+{% from "componentes/macros.html" import icone %}
+{# Diálogo, etapa 1: GET que troca este mesmo formulário pela etapa 2 (a etapa 2 também tem id="form-dialogo"). #}
+<form id="form-dialogo" method="get" action="/vistorias/registrar" hx-get="/vistorias/registrar" hx-target="#form-dialogo" hx-swap="outerHTML">
+  <div class="dialogo-cab"><h2 id="dlg-form-titulo">Registrar vistoria</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
+  <div class="dialogo-corpo"><div class="formulario">{% include "vistorias/_campos_escolher.html" %}</div></div>
+  <div class="dialogo-rodape"><button class="btn" type="button" data-fechar>Cancelar</button>{% if contratos %}<button class="btn btn-primario" type="submit">Continuar</button>{% endif %}</div>
+</form>

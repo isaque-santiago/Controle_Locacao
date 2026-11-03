@@ -32,15 +32,15 @@ Portal do cliente, integração com WhatsApp, gestão de multas de trânsito, em
 
 | Camada | Escolha | Observação |
 |---|---|---|
-| Interface | **Python 3.11+ e Streamlit** (multipage) | Mesmo padrão do LeilãoCE |
+| Interface | **Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind** | Substituiu o Streamlit original na Fase 4 (seção 15) |
 | Banco | **Supabase (PostgreSQL)** | Views para alertas, RPCs para operações atômicas |
 | Autenticação | **Supabase Auth** (e-mail e senha) | Cadastro público **desativado**; só o dono existe |
 | Arquivos | **Supabase Storage** (buckets privados) | Fotos de vistoria e comprovantes de documentos |
-| Gráficos | Plotly | Seguir as boas práticas de visualização do projeto |
+| Gráficos | SVG gerado no servidor | O Plotly saiu junto com o Streamlit |
 | Testes | pytest | Regras de negócio em módulos puros, sem dependência de banco |
-| Deploy | Streamlit Community Cloud via GitHub | Segredos em `st.secrets` |
+| Deploy | VPS com Coolify (Docker), HTTPS pelo Traefik e domínio DuckDNS | Segredos em variáveis de ambiente; CI no GitHub Actions (seção 10) |
 
-Bibliotecas: `streamlit`, `supabase`, `pandas`, `plotly`, `python-dateutil`, `pydantic`, `openpyxl`, `pytest`.
+Bibliotecas: consulte `requirements.txt` (produção) e `requirements-dev.txt` (testes). O plano original previa `streamlit`, `pandas` e `plotly`, removidos na Fase 4.
 
 ---
 
@@ -67,7 +67,7 @@ locacao-motos/
 │   ├── domain/                 # REGRAS PURAS (sem streamlit, sem supabase)
 │   │   ├── validadores.py      # CPF, placa (antiga e Mercosul), telefone
 │   │   ├── agenda_cobrancas.py # geração das datas/valores das cobranças
-│   │   ├── encargos.py         # multa e juros por atraso
+│   │   ├── encargos.py         # encargo fixo por atraso (R$ 15 + R$ 7/dia)
 │   │   └── manutencao_regras.py# próxima manutenção, situação do alerta
 │   ├── repositories/           # 1 arquivo por tabela: CRUD simples
 │   ├── services/               # orquestram repositórios + RPCs
@@ -135,9 +135,8 @@ end $$;
 -- ---------- Configurações (linha única) ----------
 create table configuracoes (
   id                        int primary key default 1 check (id = 1),
-  multa_atraso_percentual   numeric(5,2) not null default 2.00,   -- multa única sobre o valor em atraso
-  juros_mensal_percentual   numeric(5,2) not null default 1.00,   -- juros simples, pro rata por dia
-  carencia_dias             int          not null default 0,      -- dias sem encargos após o vencimento
+  multa_atraso_valor        numeric(12,2) not null default 15.00 check (multa_atraso_valor >= 0),    -- valor fixo cobrado já no dia do vencimento
+  encargo_diario_valor      numeric(12,2) not null default 7.00  check (encargo_diario_valor >= 0),  -- valor fixo por dia após o vencimento
   alerta_manutencao_km      int          not null default 300,    -- avisar X km antes
   alerta_manutencao_dias    int          not null default 15,     -- avisar X dias antes
   alerta_documento_dias     int          not null default 30,
@@ -192,12 +191,15 @@ create table contratos (
   moto_id              uuid not null references motos(id),
   cliente_id           uuid not null references clientes(id),
   data_inicio          date not null,
-  data_fim_prevista    date,                        -- null = prazo indeterminado
+  data_fim_prevista    date,                        -- null = prazo indeterminado (regra da operação, ver seção 14.4)
   data_encerramento    date,
   periodicidade        text not null check (periodicidade in ('diario','semanal','quinzenal','mensal')),
   valor_periodo        numeric(12,2) not null check (valor_periodo > 0),
   caucao_valor         numeric(12,2) not null default 0 check (caucao_valor >= 0),
   caucao_devolvida     boolean not null default false,
+  caucao_desconto_danos numeric(12,2) not null default 0 check (caucao_desconto_danos >= 0),  -- danos abatidos da caução no encerramento
+  caucao_valor_devolvido numeric(12,2) check (caucao_valor_devolvido >= 0),                   -- caução − danos (mínimo 0), preenchido no encerramento
+  descricao_danos      text,                                                                  -- descrição dos danos abatidos
   km_inicial           int not null check (km_inicial >= 0),
   km_final             int,
   status               text not null default 'ativo' check (status in ('ativo','encerrado','cancelado')),
@@ -290,10 +292,12 @@ for each row execute function fn_sync_km_moto();
 create table itens_manutencao (
   id              uuid primary key default gen_random_uuid(),
   nome            text not null unique,
-  intervalo_km    int check (intervalo_km > 0),
+  intervalo_km    int check (intervalo_km > 0),            -- máximo: vencida ao ultrapassar
+  intervalo_minimo_km int check (intervalo_minimo_km > 0), -- mínimo: alerta a partir daqui (null = usa alerta_manutencao_km)
   intervalo_dias  int check (intervalo_dias > 0),
   ativo           boolean not null default true,
-  check (intervalo_km is not null or intervalo_dias is not null)
+  check (intervalo_km is not null or intervalo_dias is not null),
+  check (intervalo_minimo_km is null or (intervalo_km is not null and intervalo_minimo_km < intervalo_km))
 );
 
 -- Plano de cada moto: intervalo pode ser sobrescrito por moto
@@ -302,6 +306,7 @@ create table moto_plano_manutencao (
   moto_id         uuid not null references motos(id) on delete cascade,
   item_id         uuid not null references itens_manutencao(id),
   intervalo_km    int check (intervalo_km > 0),      -- null = usa o do catálogo
+  intervalo_minimo_km int check (intervalo_minimo_km > 0), -- null = usa o do catálogo
   intervalo_dias  int check (intervalo_dias > 0),    -- null = usa o do catálogo
   ultima_km       int,
   ultima_data     date,
@@ -434,8 +439,9 @@ with base as (
     i.nome as item,
     pl.ultima_km,
     pl.ultima_data,
-    coalesce(pl.intervalo_km,   i.intervalo_km)   as intervalo_km,
-    coalesce(pl.intervalo_dias, i.intervalo_dias) as intervalo_dias
+    coalesce(pl.intervalo_km,        i.intervalo_km)        as intervalo_km,
+    coalesce(pl.intervalo_minimo_km, i.intervalo_minimo_km) as intervalo_minimo_km,
+    coalesce(pl.intervalo_dias,      i.intervalo_dias)      as intervalo_dias
   from moto_plano_manutencao pl
   join motos m            on m.id = pl.moto_id and m.status <> 'inativa'
   join itens_manutencao i on i.id = pl.item_id and i.ativo
@@ -457,6 +463,8 @@ select
       or (c.proxima_data is not null and hoje_br() >= c.proxima_data)
       then 'vencida'
     when (c.proxima_km   is not null and c.proxima_km - c.km_atual   <= cfg.alerta_manutencao_km)
+      or (c.proxima_km   is not null and c.intervalo_minimo_km is not null
+          and c.km_atual >= coalesce(c.ultima_km, 0) + c.intervalo_minimo_km)
       or (c.proxima_data is not null and c.proxima_data - hoje_br() <= cfg.alerta_manutencao_dias)
       then 'proxima'
     else 'em_dia'
@@ -569,8 +577,8 @@ Operações que mexem em várias tabelas devem ser **funções PL/pgSQL** (trans
 
 | Função | O que faz (tudo atômico) |
 |---|---|
-| `rpc_criar_contrato(payload jsonb)` | Valida que a moto está `disponivel` e o cliente `ativo`; insere o contrato com `km_inicial = motos.km_atual` (ou o informado, se maior); grava `historico_km` (origem `contrato`); muda a moto para `alugada`; gera a cobrança da caução (se houver) e as cobranças da agenda inicial (regra 6.2). |
-| `rpc_encerrar_contrato(contrato_id, data, km_final, caucao_devolvida)` | Exige `km_final >= km_inicial`; fecha o contrato; cancela cobranças `aberta` com vencimento posterior à data de encerramento e sem pagamento; grava `historico_km`; muda a moto para `disponivel`. |
+| `rpc_criar_contrato(payload jsonb)` | Valida que a moto está `disponivel` e o cliente `ativo`; insere o contrato com `km_inicial = motos.km_atual` (ou o informado, se maior); grava `historico_km` (origem `contrato`); muda a moto para `alugada`; gera, na `data_inicio`, a cobrança da caução (se houver) e a da primeira semana, e as demais cobranças da agenda (regra 5.2; contrato indeterminado usa janela móvel). |
+| `rpc_encerrar_contrato(contrato_id, data, km_final, valor_danos, descricao_danos)` | Exige `km_final >= km_inicial`; fecha o contrato; cancela cobranças `aberta` com vencimento posterior à data de encerramento e sem pagamento; **calcula a devolução da caução** (`max(caução recebida − valor_danos, 0)`), grava `caucao_desconto_danos`, `caucao_valor_devolvido` e `caucao_devolvida`; se `valor_danos` exceder a caução, cria cobrança `tipo = 'dano'` com o excedente (regra 5.2); grava `historico_km`; muda a moto para `disponivel`. |
 | `rpc_gerar_cobrancas_pendentes(horizonte_dias int default 30)` | Idempotente. Para contratos ativos, cria as cobranças que faltam até `hoje + horizonte`, sem duplicar (chave contrato + número). Chamada ao abrir o Dashboard. |
 | `rpc_registrar_manutencao(payload jsonb)` | Insere a manutenção e seus itens; soma `custo_pecas`; se `concluida`, atualiza `ultima_km`/`ultima_data` em `moto_plano_manutencao` para cada item com `item_id`; grava `historico_km` (só se `km >= km_atual`); se `aberta`, moto vai para `manutencao`; ao concluir, volta para `alugada` (se houver contrato ativo) ou `disponivel`; se `cobrar_do_cliente`, cria cobrança tipo `dano` no contrato vigente. |
 | `rpc_aplicar_plano_padrao(moto_id)` | Cria as linhas de `moto_plano_manutencao` para todos os itens ativos do catálogo, com **baseline**: `ultima_km = km_atual` e `ultima_data = hoje` (evita moto nova nascer com tudo "vencido"). O usuário pode ajustar para o histórico real. |
@@ -579,17 +587,19 @@ Operações que mexem em várias tabelas devem ser **funções PL/pgSQL** (trans
 
 Valores iniciais para o dono ajustar por modelo em Configurações (referência comum para motos de 125-160cc; conferir o manual de cada modelo):
 
-| Item | Intervalo km | Intervalo dias |
-|---|---|---|
-| Troca de óleo do motor | 1.000 | 90 |
-| Filtro de ar | 6.000 | 180 |
-| Kit relação (corrente, coroa, pinhão) | 15.000 | — |
-| Pastilhas / lonas de freio | 8.000 | — |
-| Pneu dianteiro | 15.000 | — |
-| Pneu traseiro | 10.000 | — |
-| Vela de ignição | 8.000 | — |
-| Fluido de freio | — | 365 |
-| Revisão geral | 5.000 | 180 |
+| Item | Alerta a partir de (km mín.) | Intervalo km (máx.) | Intervalo dias |
+|---|---|---|---|
+| Troca de óleo do motor | — (usa `alerta_manutencao_km`) | 1.000 | 90 |
+| Kit de tração (corrente, coroa, pinhão) | 3.000 | 5.000 | — |
+| Patins de freio | 3.000 | 5.000 | — |
+| Filtro de ar | — | 6.000 | 180 |
+| Pneu dianteiro | — | 15.000 | — |
+| Pneu traseiro | — | 10.000 | — |
+| Vela de ignição | — | 8.000 | — |
+| Fluido de freio | — | — | 365 |
+| Revisão geral | — | 5.000 | 180 |
+
+Óleo, kit de tração e patins de freio vêm da operação real (seção 14.5); os demais itens são referência genérica a conferir.
 
 ---
 
@@ -606,23 +616,28 @@ Valores iniciais para o dono ajustar por modelo em Configurações (referência 
 ### 5.2 Agenda de cobranças
 
 - Periodicidade soma ao vencimento anterior: diário +1 dia, semanal +7 dias, quinzenal +15 dias, mensal +1 mês (`relativedelta`, preservando o dia; em meses curtos usa o último dia do mês).
-- **Primeira cobrança vence na `data_inicio`** (pagamento antecipado do período). Deixar como parâmetro do contrato se o dono preferir pagamento postecipado.
-- Contrato com prazo definido: gera todas as parcelas até `data_fim_prevista`.
-- Contrato indeterminado: gera janela móvel (30 dias à frente) via `rpc_gerar_cobrancas_pendentes`, chamada ao abrir o Dashboard.
-- Caução é uma cobrança `tipo = 'caucao'`, não entra em receita e é marcada como devolvida no encerramento.
+- A locação é, em regra, **semanal**, com pagamento **antecipado** (seção 14.2).
+- **Na `data_inicio` o cliente paga a caução e a primeira semana**: a primeira cobrança de locação vence na própria `data_inicio`, junto com a cobrança da caução.
+- **Contrato indeterminado é a regra** (seção 14.4): gera janela móvel (30 dias à frente) via `rpc_gerar_cobrancas_pendentes`, chamada ao abrir o Dashboard. A cobrança só deixa de ser gerada quando o contrato é encerrado.
+- Contrato com prazo definido (exceção): gera todas as parcelas até `data_fim_prevista`.
+- Caução é uma cobrança `tipo = 'caucao'` e não entra em receita.
+- **Devolução da caução no encerramento:** `devolução = max(caução recebida − danos, 0)`. A base é a caução efetivamente recebida (soma dos pagamentos da cobrança de caução): caução não paga não se devolve. Se os danos excederem a caução, a devolução é R$ 0,00 e o excedente é cobrado do cliente em uma cobrança `tipo = 'dano'`.
 
 ### 5.3 Encargos por atraso (`domain/encargos.py`)
 
-Padrão (configurável em `configuracoes`): **multa de 2% única** + **juros simples de 1% ao mês, proporcional aos dias** (pro rata), após a carência.
+Regra da operação (seção 14.1), com os valores configuráveis em `configuracoes`: **R$ 15,00 fixos já no dia do vencimento** + **R$ 7,00 fixos por dia** a partir do dia seguinte. Sem carência. Incide **apenas sobre cobranças `tipo = 'locacao'`** e não depende do saldo. As parcelas de **promessa de compra** também são cobranças `tipo = 'locacao'` (decisão D3, 22/10/2026), portanto também pagam encargos; entrada, caução e saldo anterior (`outros`/`caucao`) não.
 
 ```
-dias = max(hoje - vencimento - carencia, 0)
-multa = saldo * multa% se dias > 0 senão 0
-juros = saldo * (juros_mensal% / 30) * dias
-total = saldo + multa + juros
+se cobranca.tipo != 'locacao' ou saldo == 0 ou hoje < vencimento: encargo = 0
+senão:
+  dias = max(hoje - vencimento, 0)
+  encargo = multa_atraso_valor + encargo_diario_valor * dias
+total = saldo + encargo
 ```
 
-Os encargos são **calculados na tela** e gravados em `pagamentos.multa_juros` quando o pagamento é registrado (o dono pode editar o valor, por exemplo para dar desconto). Função pura, com testes de arredondamento (2 casas, `Decimal`).
+Exemplo: vencimento → R$ 15,00; 1 dia → R$ 22,00; 2 dias → R$ 29,00; 3 dias → R$ 36,00.
+
+Os encargos são **calculados na tela** e gravados em `pagamentos.multa_juros` quando o pagamento é registrado (o dono pode editar o valor, por exemplo para dar desconto). Função pura, com testes em `Decimal` (valores fixos, sem percentual).
 
 ### 5.4 Manutenção preventiva (`domain/manutencao_regras.py`)
 
@@ -647,13 +662,13 @@ Os encargos são **calculados na tela** e gravados em `pagamentos.multa_juros` q
 | **Dashboard** | KPIs: motos por status e % de ocupação; recebido x previsto no mês; total em atraso e maiores devedores; manutenções vencidas/próximas; documentos a vencer; CNHs a vencer; custo de manutenção do mês. Lista "Hoje": cobranças que vencem hoje e atrasadas. |
 | **Motos** | Lista com filtros (status, modelo). **Ficha da moto** com abas: Resumo, Plano de manutenção, Histórico de manutenções, Documentos, Contratos, Financeiro (resultado e custo por km). Atualização rápida de km. |
 | **Clientes** | Lista e cadastro; CPF mascarado na listagem; histórico de contratos e pagamentos; alerta de CNH. |
-| **Contratos** | Novo contrato (assistente: cliente, moto, condições, prévia da agenda de cobranças); encerrar; ficha com cobranças, vistorias e manutenções do período. |
-| **Cobranças** | Abas "Hoje", "Atrasadas", "Próximos 7 dias", "Pagas". Registrar pagamento (total ou parcial) com encargos calculados. Botão "Copiar mensagem de cobrança" (texto pronto para colar no WhatsApp; o envio automático fica para a v2). |
+| **Contratos** | Novo contrato (assistente: cliente, moto, condições, prévia da agenda de cobranças; prazo indeterminado por padrão); encerrar (com registro de danos e cálculo da devolução da caução); ficha com cobranças, vistorias e manutenções do período. |
+| **Cobranças** | Abas "Hoje", "Atrasadas", "Próximos 7 dias", "Pagas". Registrar pagamento (total ou parcial) com encargos calculados (R$ 15 + R$ 7/dia, só locação). Botão "Copiar mensagem de cobrança" (texto pronto para colar no WhatsApp; o envio automático fica para a v2). |
 | **Manutenção** | Painel de alertas (vencidas/próximas); registrar manutenção (preventiva/corretiva, itens, custos, oficina); catálogo de itens e intervalos; histórico filtrável. |
 | **Documentos** | Lista por vencimento; cadastro com anexo de comprovante; marcar como regularizado. |
 | **Vistorias** | Checklist padrão, nível de combustível, km, avarias e upload de fotos; visualização por contrato. |
 | **Relatórios** | Resultado por moto; custo de manutenção por moto/modelo/período; inadimplência; fluxo de caixa mensal. Exportar CSV/Excel. |
-| **Configurações** | Multa, juros, carência, limites de alerta, backup manual (ZIP de CSVs). |
+| **Configurações** | Multa fixa de atraso (R$ 15,00), valor diário de atraso (R$ 7,00), limites de alerta, backup manual (ZIP de CSVs). |
 
 Padrão visual: layout `wide`, tema escuro/claro do Streamlit, cores de status consistentes em todo o app (verde = ok, amarelo = próxima/a vencer, vermelho = vencida/atrasada, cinza = inativa).
 
@@ -677,13 +692,13 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 - **Aceite:** placa e CPF duplicados/inválidos são recusados com mensagem clara; km nunca diminui.
 
 ### Fase 2: Contratos e cobranças
-- `domain/agenda_cobrancas.py` e `domain/encargos.py` com testes (viradas de mês, 29/02, 31 de cada mês, arredondamento).
+- `domain/agenda_cobrancas.py` e `domain/encargos.py` com testes (agenda semanal com caução + 1ª semana na `data_inicio`, contrato indeterminado, viradas de mês, 29/02, 31 de cada mês; encargo fixo R$ 15 + R$ 7/dia, só locação).
 - Migration 0004 com `rpc_criar_contrato`, `rpc_encerrar_contrato`, `rpc_gerar_cobrancas_pendentes`.
-- Páginas Contratos e Cobranças; registro de pagamento total/parcial com encargos; caução.
-- **Aceite:** não é possível criar dois contratos ativos para a mesma moto; agenda prévia bate com as cobranças geradas; pagamento parcial mantém a cobrança em aberto com saldo correto; encerrar cancela cobranças futuras.
+- Páginas Contratos e Cobranças; registro de pagamento total/parcial com encargos; caução, com devolução já descontando os danos informados no encerramento.
+- **Aceite:** não é possível criar dois contratos ativos para a mesma moto; agenda prévia bate com as cobranças geradas; pagamento parcial mantém a cobrança em aberto com saldo correto; encerrar cancela cobranças futuras; contrato sem `data_fim_prevista` gera a janela móvel; encerrar com dano de R$ 300 sobre caução de R$ 1.000 devolve R$ 700 e, com dano maior que a caução, devolve R$ 0 e gera cobrança do excedente.
 
 ### Fase 3: Manutenção
-- `domain/manutencao_regras.py` com testes.
+- `domain/manutencao_regras.py` com testes (inclui a faixa mínimo/máximo: kit de tração e patins alertam a partir de 3.000 km e vencem em 5.000 km).
 - RPCs `rpc_registrar_manutencao` e `rpc_aplicar_plano_padrao` (aplicada automaticamente ao cadastrar moto).
 - Página Manutenção (alertas, registro, catálogo) e aba de plano na ficha da moto.
 - **Aceite:** registrar troca de óleo zera o contador só daquele item; alerta muda de `em_dia` para `proxima` e `vencida` conforme o km sobe; manutenção aberta coloca a moto em `manutencao`; custo total = mão de obra + peças.
@@ -695,7 +710,7 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
 
 ### Fase 5: Vistorias
 - Checklist padrão configurável, upload de várias fotos (bucket `vistorias`), comparação entrega x devolução.
-- Integração com Contratos: vistoria de entrega no assistente de novo contrato; devolução no encerramento.
+- Integração com Contratos: vistoria de entrega no assistente de novo contrato; devolução no encerramento, onde as avarias registradas servem de base para o valor de danos descontado da caução (seção 14.3).
 - **Aceite:** uma vistoria de cada tipo por contrato; fotos exibidas por URL assinada; km da vistoria entra no histórico.
 
 ### Fase 6: Dashboard e relatórios
@@ -749,8 +764,8 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
     (tabela `cobrancas`, novo tipo `multa_manutencao` — é `cobrancas` que guarda
     o tipo, não `pagamentos`), **cobrada direto**, sem conferência prévia do dono.
 - **Multa: valor fixo único**, definido em Configurações
-  (`configuracoes.multa_troca_oleo_valor`). O valor em reais ainda será informado
-  pelo dono; enquanto for 0,00 (padrão) o excesso é registrado, mas nada é cobrado.
+  (`configuracoes.multa_troca_oleo_valor`), com padrão de **R$ 12,50**. O dono pode
+  alterá-lo; enquanto for 0,00 o excesso é registrado, mas nada é cobrado.
   Como o hodômetro é informado pelo próprio locatário, a foto é a evidência.
 - Bucket de fotos privado `trocas_oleo` (só imagem, até 10 MB), acesso do dono
   por URL assinada — mesmo padrão da Fase 5. O locatário só insere na própria
@@ -775,7 +790,7 @@ banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusã
 
 ### Fase 8: Acabamento e publicação
 - Backup manual (ZIP com CSV de todas as tabelas), tratamento de erros amigável, estados vazios, paginação das listas grandes, revisão de responsividade no celular.
-- Deploy no Streamlit Community Cloud com segredos em `st.secrets`; README com passo a passo.
+- Deploy (previsto no Streamlit Community Cloud; feito depois na VPS com Coolify, ver `Deploy_VPS.md`); README com passo a passo.
 - Script de dados de exemplo (`seed_demo.sql`) para demonstração.
 - **Aceite:** app publicado, acessível apenas com login; roteiro de teste manual completo (seção 9) executado.
 
@@ -797,15 +812,15 @@ banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusã
 
 - **Unitários (pytest)** para tudo em `src/domain/`: validadores, agenda de cobranças, encargos e regras de manutenção. Meta: cobertura alta nessa camada, pois é onde estão os erros que custam dinheiro.
 - **Banco:** roteiro SQL de verificação para as RPCs e triggers (criar contrato duplicado deve falhar; pagamento parcial e total; manutenção zera plano; encerramento cancela futuras).
-- **Roteiro manual de ponta a ponta** (executar antes do deploy): cadastrar moto → aplicar plano → cadastrar cliente → criar contrato com caução e vistoria → registrar pagamentos (em dia, atrasado, parcial) → subir o km até disparar alerta → registrar manutenção → cadastrar IPVA a vencer → encerrar contrato com vistoria de devolução → conferir Dashboard e Relatórios.
+- **Roteiro manual de ponta a ponta** (executar antes do deploy): cadastrar moto → aplicar plano → cadastrar cliente → criar contrato com caução e vistoria → registrar pagamentos (em dia, atrasado, parcial) → subir o km até disparar alerta → registrar manutenção → cadastrar IPVA a vencer → encerrar contrato com vistoria de devolução e desconto de dano na caução → conferir Dashboard e Relatórios.
 
 ---
 
 ## 10. Deploy e operação
 
-- Repositório no GitHub; Streamlit Community Cloud apontando para `app.py`; segredos: `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+- Repositório no GitHub; deploy na VPS (Coolify) a partir do `Dockerfile`, só pela CI com o `pytest` verde; segredos por variável de ambiente: `SUPABASE_URL`, `SUPABASE_ANON_KEY` (guia em `Deploy_VPS.md`).
 - Migrations versionadas em `supabase/migrations/`, aplicadas em ordem (SQL Editor do Supabase ou Supabase CLI).
-- Verificar os limites do plano gratuito do Supabase (por exemplo, pausa de projetos sem uso por certo período e ausência de backup automático de ponto no tempo) e decidir se o volume de dados/fotos justifica plano pago. Enquanto isso, usar o **backup manual** da Fase 7 com frequência semanal.
+- Verificar os limites do plano gratuito do Supabase (por exemplo, pausa de projetos sem uso por certo período e ausência de backup automático de ponto no tempo) e decidir se o volume de dados/fotos justifica plano pago. Enquanto isso, usar o **backup manual** da Fase 7 com frequência semanal. **Decidido em 29/10/2026:** ficar só com o backup manual semanal (sem `pg_dump` agendado nem plano pago); rotina em `Deploy_VPS.md`, seção 8.
 
 ---
 
@@ -861,12 +876,92 @@ liste em poucas linhas o que vai criar e me diga o que preciso fazer no Supabase
 
 ---
 
-## 14. Pontos para confirmar antes da Fase 2
+## 14. Decisões de negócio confirmadas com o responsável
 
-Padrões assumidos neste plano; ajuste o que não bater com a sua operação:
+As cinco perguntas desta seção foram respondidas pelo responsável pela operação. As respostas abaixo **substituem os padrões assumidos antes** (multa de 2% + juros de 1% ao mês, etc.). As seções 4 (modelo de dados), 5 (regras de negócio), 6 (telas) e 7 (fases) foram alinhadas a estas decisões; se algum trecho divergir, vale esta seção.
 
-1. **Encargos de atraso:** multa de 2% + juros simples de 1% ao mês (pro rata). Se você usa outra regra (por exemplo, multa diária fixa ou juros compostos por dia), é só trocar a função `encargos.py` e os parâmetros em `configuracoes`.
-2. **Primeiro vencimento na data de início** (pagamento antecipado). Se cobra no fim do período, ajustar a agenda.
-3. **Caução:** modelada como cobrança separada, devolvida no encerramento. Há desconto de danos sobre a caução? Se sim, incluir na Fase 5.
-4. **Contrato indeterminado** é a regra na sua operação, ou quase sempre há prazo definido?
-5. **Frota mista:** intervalos de manutenção por modelo (CG 160, Fan, Biz etc.) precisam de planos distintos? O plano já permite sobrescrever por moto; se for comum, vale criar "planos por modelo" na Fase 3.
+### 14.1 Encargos de atraso — CONFIRMADO (substitui a regra de 2% + 1% a.m.)
+
+- **R$ 15,00 fixos** já no **dia do vencimento** (dia 0, ainda sem atraso corrido);
+- **+ R$ 7,00 fixos por dia** a partir do dia seguinte ao vencimento;
+- **sem carência**: o encargo começa no próprio dia do vencimento;
+- incide **somente sobre cobranças de locação** (`tipo = 'locacao'`).
+
+Fórmula: `encargo = 15,00 + 7,00 × dias_após_vencimento`, com `dias_após_vencimento = max(hoje − vencimento, 0)`. Exemplo (valores acumulados): vencimento → R$ 15,00; +1 dia → R$ 22,00; +2 dias → R$ 29,00; +3 dias → R$ 36,00.
+
+Impacto: reescrever `src/domain/encargos.py` e seus testes (valores fixos em `Decimal`, sem percentual nem carência); em `configuracoes`, trocar `multa_atraso_percentual` e `juros_mensal_percentual` por valores em reais (`multa_atraso_valor numeric(12,2)` = 15,00 e `encargo_diario_valor numeric(12,2)` = 7,00) e remover `carencia_dias`; ajustar a tela de Configurações. O modelo e as regras já estão refletidos nas seções 4.2 e 5.3.
+
+**Observação:** a restrição "só sobre a locação" foi respondida com incerteza ("acho que"); confirmar com o responsável quando houver oportunidade. Até lá vale a regra acima, e é coerente com a caução não ser receita (seção 5.2).
+
+### 14.2 Primeiro vencimento — CONFIRMADO
+
+O pagamento é **antecipado**: no dia do início do contrato o cliente já paga a **caução + a primeira semana** de locação. A periodicidade da locação é semanal. A agenda continua começando em `data_inicio`.
+
+### 14.3 Caução e danos — CONFIRMADO
+
+A caução é cobrança separada (`tipo = 'caucao'`) e **o valor dos danos é descontado dela** na devolução (sobre a caução efetivamente recebida). Exemplo: caução R$ 1.000,00, dano R$ 300,00 → devolução de R$ 700,00.
+
+Impacto (Fase 5): o encerramento deve registrar o(s) dano(s) e calcular o valor a devolver (`caução − danos`) numa única RPC transacional (`rpc_encerrar_contrato`); regra pura em `src/domain` com testes.
+
+Se o dano for **maior que a caução**, a caução é inteiramente consumida (devolução = R$ 0,00) e o **excedente é cobrado do cliente** em uma cobrança `tipo = 'dano'`. Exemplo: caução R$ 1.000,00, dano R$ 1.300,00 → devolução R$ 0,00 e cobrança de R$ 300,00.
+
+### 14.4 Duração do contrato — CONFIRMADO
+
+O contrato é **por prazo indeterminado**: segue aberto enquanto o cliente estiver com a moto e pagando, até o encerramento. `data_fim_prevista = null` passa a ser o caso normal, e as cobranças devem ser geradas pela janela móvel da seção 5.2 (não por uma data final).
+
+Impacto: conferir se o fluxo de criação de contrato e a prévia da agenda funcionam sem `data_fim_prevista` (a data final não pode ser obrigatória).
+
+### 14.5 Manutenção — CONFIRMADO
+
+| Item | Alerta a partir de (mín.) | Limite / vencido em (máx.) |
+| --- | --- | --- |
+| Troca de óleo | 700 km (limite − `alerta_manutencao_km` padrão de 300) | 1.000 km |
+| Kit de tração | 3.000 km | 5.000 km |
+| Patins de freio | 3.000 km | 5.000 km |
+
+Os intervalos foram dados sem distinção de modelo; portanto o plano padrão com sobrescrita por moto continua suficiente, sem "planos por modelo" por ora.
+
+**Decisão de modelagem (delegada ao desenvolvimento):** a faixa de 3.000 a 5.000 km é tratada como **mínimo = início do alerta** e **máximo = km previsto/limite** (o item fica "vencido" ao ultrapassar o máximo desde a última troca). Para isso, `itens_manutencao` e `moto_plano_manutencao` ganham a coluna opcional `intervalo_minimo_km` (null = usa a antecedência global `alerta_manutencao_km`); `intervalo_km` continua sendo o máximo, e `proxima_km = ultima_km + intervalo_km`. A view `vw_alertas_manutencao` e `manutencao_regras.py` passam a considerar `intervalo_minimo_km` quando preenchido. A troca de óleo segue só com `intervalo_km = 1000`.
+
+---
+
+## 15. Migração da camada de interface (aprovada em 05/10/2026)
+
+A interface em Streamlit será **substituída por inteiro** por **FastAPI + Jinja2 + HTMX + Tailwind**, em Python.
+Motivo: limites de layout, navegação e responsividade do Streamlit. Detalhes, arquitetura-alvo, plano por fases,
+decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md). Protótipo aprovado do layout: pasta `prototipo/`.
+
+- **Mantidos sem alteração de regra:** `src/domain`, `src/repositories`, `src/services` (salvo os ajustes de
+  acoplamento listados na seção 4 do documento de migração), `supabase/` (migrations, RPCs, seeds) e a RLS.
+- **Substituídos:** `src/ui`, `pages/`, `app.py`, `src/auth.py` e `src/db.py` (sessão passa a ser cookie `httpOnly` no
+  servidor), `.streamlit/` e as dependências do Streamlit.
+- O Portal do Locatário (Fase 7) fica **no mesmo app**, com login por CPF e papel separado.
+- As regras de trabalho do `CLAUDE.md` continuam valendo (fase por fase, `pytest`, README, commit por fase).
+- Hospedagem decidida: **VPS com acesso público e HTTPS** (os locatários usam o portal pelo celular). Provedor: KingHost (VPS pequena); domínio gratuito (DuckDNS, confirmado); contratação da VPS (a partir de R$ 32,90/mês) adiada para antes do primeiro deploy; deploy automático por GitHub Actions; administração: Alisson (seção 10.1 do documento de migração).
+
+---
+
+## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; migrations 1 a 5 e carga parcial aplicadas no dev em 22 e 23/10/2026; produção pendente)
+
+Os dados reais da operação estão na planilha "PAGAMENTO MOTOS" (Google Sheets). O desenho completo, a lista de conflitos
+e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_Reais.md). Resumo do que muda no modelo:
+
+- **Promessa de compra** passa a existir: `contratos` ganha `tipo_contrato` (`locacao` ou `promessa_compra`), `numero_parcelas`,
+  `valor_total`, `valor_entrada`, `parcelas_pagas_inicial`, `dia_cobranca` e `primeira_cobranca`. A agenda (seção 5.2) passa a ancorar
+  no dia da semana ou do mês, respeitar o número de parcelas e começar após as parcelas já pagas.
+- **Veículos:** `motos` ganha `tipo` (`moto` ou `carro`), `proprietario_documento`, `link_documento`, `possui_rastreador` e dados de seguro.
+- **Pagamentos:** `conta_id`, `data_estimada` e a forma `abatimento` (desconto sem dinheiro). Nova tabela `contas`.
+- **Tabelas novas:** `fornecedores`, `despesas`, `movimentos_socio` (retiradas e aportes), `dividas`, `pagamentos_divida`,
+  `multas_transito` e `importacoes_lote`; views `vw_saldo_dividas` e a de locatário na data da multa. `vw_resultado_moto` passa a somar as despesas.
+- **Início do controle de cobrança:** 12/10/2026. O que veio antes entra como cobrança única de "saldo anterior".
+- **Decisões:** promessa como coluna de `contratos`; pagamento sem data fica em 12/10/2026 com `data_estimada`; `km_inicial` = 0 com
+  observação; ex-locatários sem CPF só como texto em `multas_transito`; escopo inicial só banco e carga em dev (telas depois).
+- **Capital em veículos sem operação (Etios, Celta; aprovado em 22/10/2026):** `motos.placa_provisoria`; `despesas` com categoria `aquisicao`,
+  `pago_por` e `a_confirmar`; dívida `emprestimo`; `dividas_vencimentos`; aporte ligado ao veículo e a view `vw_capital_veiculo`.
+- **Contrato com várias motos e compra a prazo (03/11/2026; banco, regras e testes, sem telas):** `contrato_motos` (moto principal em
+  `contratos.moto_id`, receita toda na principal) e dívida `compra_parcelada` com entrada, calendário de parcelas e pagamento por parcela.
+  Ver `Arquivos/Importacao_Dados_Reais.md` (migrations 6 e 7).
+- **D3 (decidida em 22/10/2026):** os encargos de atraso (seção 5.3) também valem para as parcelas de promessa de compra. Como elas são cobranças `tipo = 'locacao'`, não houve mudança de código.
+- **CPF e telefone** não existem na planilha: a carga de `clientes` e `contratos` espera a planilha ser completada.
+- **Ensaio** sempre no banco de dev; produção só depois de backup e autorização do dono. A carga é um SQL colado no SQL Editor
+  (sem `service_role`), idempotente e numa transação única.

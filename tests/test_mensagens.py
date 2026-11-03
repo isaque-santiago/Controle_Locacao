@@ -45,8 +45,26 @@ def test_nenhuma_mensagem_usa_o_texto_generico():
 
 def test_quilometragem_e_custo_formatados():
     assert "12.345 km" in mensagens.km_atualizado("ABC-1D23", 12345).texto
+    assert "12.345 km" in mensagens.km_atualizado("ABC-1D23", 12345, km_atual=12000).texto
+
+
+def test_leitura_historica_menor_diz_que_o_km_atual_continua():
+    texto = mensagens.km_atualizado("ABC-1D23", 300, km_atual=500).texto
+    assert "300 km" in texto and "histórico" in texto and "O km atual continua 500 km" in texto
+    igual = mensagens.km_atualizado("ABC-1D23", 500, km_atual=500).texto
+    assert "500 km" in igual and "continua" not in igual
     assert "R$ 300,00" in mensagens.manutencao_registrada("ABC-1D23", True, Decimal("300")).texto
     assert "R$" not in mensagens.manutencao_registrada("ABC-1D23", True, Decimal("0")).texto
+
+
+def test_contrato_criado_diz_o_que_aconteceu_com_as_fotos_da_entrega():
+    sem_fotos = mensagens.contrato_criado("Maria", "ABC-1D23")
+    assert "Vistorias" in sem_fotos.texto and "Adicionar fotos" in sem_fotos.texto and not sem_fotos.atencao
+    assert "1 foto" not in sem_fotos.texto and "anexadas" not in sem_fotos.texto
+    assert mensagens.contrato_criado("Maria", "ABC-1D23", enviadas=1).texto.endswith("Foto da vistoria de entrega anexada.")
+    assert "3 fotos da vistoria de entrega anexadas" in mensagens.contrato_criado("Maria", "ABC-1D23", enviadas=3).texto
+    parcial = mensagens.contrato_criado("Maria", "ABC-1D23", enviadas=1, falhas_fotos=2)
+    assert parcial.atencao and "2 fotos não foram enviadas" in parcial.texto and "Adicionar fotos" in parcial.texto
 
 
 def test_o_que_pede_proximo_passo_ou_atencao_fica_na_tela():
@@ -68,14 +86,34 @@ def test_documento_regularizado_avisa_do_proximo_cadastro():
 
 @pytest.mark.parametrize(
     "alterados,trecho",
-    [([], "Nenhum valor foi alterado"), (["Carência", "Juros mensal"], "Carência, Juros mensal")],
+    [([], "Nenhum valor foi alterado"), (["Multa de atraso", "Adicional por dia"], "Multa de atraso, Adicional por dia")],
 )
 def test_configuracoes_dizem_o_que_mudou(alterados, trecho):
     assert trecho in mensagens.configuracoes_salvas(alterados).texto
 
 
 def test_campos_alterados_compara_numeros_e_ignora_ausentes():
-    antes = {"carencia_dias": 0, "juros_mensal_percentual": "1.50", "alerta_cnh_dias": 30}
-    depois = {"carencia_dias": 3, "juros_mensal_percentual": "1.5", "alerta_cnh_dias": 30}
-    assert campos_alterados(antes, depois) == ["Carência"]
+    antes = {"multa_atraso_valor": "15.00", "encargo_diario_valor": "7.00", "alerta_cnh_dias": 30}
+    depois = {"multa_atraso_valor": "20.00", "encargo_diario_valor": "7", "alerta_cnh_dias": 30}
+    assert campos_alterados(antes, depois) == ["Multa de atraso (no vencimento)"]
     assert campos_alterados(antes, {}) == []
+
+
+def test_encerramento_diz_quanto_devolver_da_caucao_e_o_que_foi_descontado():
+    simples = mensagens.contrato_encerrado("Maria", "ABC-1D23")
+    assert simples.texto == "Contrato de Maria encerrado. A moto ABC-1D23 está disponível."
+    assert simples.tom == TOAST
+    com_desconto = mensagens.contrato_encerrado(
+        "Maria", "ABC-1D23", devolucao=Decimal("700"), desconto=Decimal("300"), excedente=Decimal("0")
+    )
+    assert "Devolver R$ 700,00 de caução ao cliente." in com_desconto.texto
+    assert "Danos descontados da caução: R$ 300,00." in com_desconto.texto
+    assert com_desconto.tom == TOAST
+
+
+def test_encerramento_com_danos_acima_da_caucao_gera_alerta_com_a_cobranca():
+    aviso = mensagens.contrato_encerrado(
+        "Maria", "ABC-1D23", devolucao=Decimal("0"), desconto=Decimal("1000"), excedente=Decimal("300")
+    )
+    assert aviso.tom == ALERTA
+    assert "cobrança de R$ 300,00" in aviso.texto

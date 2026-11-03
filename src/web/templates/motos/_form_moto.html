@@ -1,0 +1,22 @@
+{% from "componentes/macros.html" import campo, area_texto, form_dialogo %}
+{# Formulário de cadastro/edição de moto, dentro do diálogo. `valores` é o texto de cada campo; `erros`, a mensagem por campo. #}
+{% set v = valores %}
+{% set e = erros %}
+{% call form_dialogo("Nova moto" if nova else "Editar dados da moto", acao, "Salvar moto", csrf_token, erro_geral) %}
+  {{ campo("f-placa", "Placa", nome="placa", valor=v.placa, obrigatorio=True, mono=True, erro=e.placa, autocomplete="off", extra='maxlength="8" placeholder="ABC-1D23" autocapitalize="characters" spellcheck="false"', largo=True) }}
+  {{ campo("f-marca", "Marca", nome="marca", valor=v.marca, obrigatorio=True, erro=e.marca, autocomplete="off") }}
+  {{ campo("f-modelo", "Modelo", nome="modelo", valor=v.modelo, obrigatorio=True, erro=e.modelo, autocomplete="off") }}
+  {{ campo("f-renavam", "Renavam", nome="renavam", valor=v.renavam, mono=True, inputmode="numeric", erro=e.renavam, autocomplete="off") }}
+  {{ campo("f-chassi", "Chassi", nome="chassi", valor=v.chassi, mono=True, erro=e.chassi, autocomplete="off") }}
+  {{ campo("f-cor", "Cor", nome="cor", valor=v.cor, erro=e.cor, autocomplete="off", largo=True) }}
+  {{ campo("f-ano-fab", "Ano de fabricação", nome="ano_fabricacao", valor=v.ano_fabricacao, obrigatorio=True, mono=True, inputmode="numeric", erro=e.ano_fabricacao, autocomplete="off") }}
+  {{ campo("f-ano-mod", "Ano do modelo", nome="ano_modelo", valor=v.ano_modelo, obrigatorio=True, mono=True, inputmode="numeric", erro=e.ano_modelo, autocomplete="off") }}
+  {% if nova %}
+  {{ campo("f-km", "Quilometragem inicial", nome="km_atual", valor=v.km_atual, mono=True, inputmode="numeric", erro=e.km_atual, ajuda="Em km. Depois, o km muda só pelo registro de leitura.", autocomplete="off", largo=True) }}
+  {% endif %}
+  {{ campo("f-aquisicao", "Valor de aquisição", nome="valor_aquisicao", valor=v.valor_aquisicao, prefixo="R$", mono=True, inputmode="decimal", erro=e.valor_aquisicao, obrigatorio=True, autocomplete="off") }}
+  {{ campo("f-locacao", "Locação sugerida", nome="valor_locacao_sugerido", valor=v.valor_locacao_sugerido, prefixo="R$", mono=True, inputmode="decimal", erro=e.valor_locacao_sugerido, obrigatorio=True, ajuda="Valor mensal sugerido ao criar contratos; cada contrato pode usar outro valor.", autocomplete="off") }}
+  {{ campo("f-data-aquisicao", "Data de aquisição", nome="data_aquisicao", valor=v.data_aquisicao, tipo="date", erro=e.data_aquisicao, largo=True) }}
+  {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, erro=e.observacoes, largo=True, maximo=1000) }}
+  <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
+{% endcall %}

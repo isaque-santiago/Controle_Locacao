@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{# Páginas sem menu: login e erros. Conteúdo centralizado numa caixa estreita. #}
+{% block corpo %}
+<main class="acesso" id="conteudo">
+  <div class="acesso-caixa">
+    <a class="marca" href="/">
+      <span class="marca-simbolo" aria-hidden="true">CL</span>
+      <div><strong>Controle de Locação</strong><span class="sub">frota de motos</span></div>
+    </a>
+    {% block caixa %}{% endblock %}
+  </div>
+</main>
+{% endblock %}

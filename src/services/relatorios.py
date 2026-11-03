@@ -2,7 +2,7 @@
 
 import csv
 from io import StringIO, BytesIO
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from openpyxl import Workbook
 from src.domain.relatorios import analisar_inadimplencia, consolidar
 from src.repositories import clientes, cobrancas, configuracoes, motos, relatorios
@@ -25,6 +25,15 @@ def resultado_por_moto(inicio, fim):
     )
 
 
+def resultados_por_periodos(periodos):
+    """`resultado_por_moto` para vários (inicio, fim), lendo os dados do banco uma só vez."""
+    d = relatorios.dados()
+    return [
+        consolidar(d["motos"], d["contratos"], d["cobrancas"], d["pagamentos"], d["manutencoes"], d["documentos_moto"], d["historico_km"], inicio, fim)
+        for inicio, fim in periodos
+    ]
+
+
 def inadimplencia(hoje):
     """Posição atual de cobranças em atraso, independente do período do relatório."""
     return analisar_inadimplencia(
@@ -34,6 +43,11 @@ def inadimplencia(hoje):
         configuracoes.obter(),
         hoje,
     )
+
+
+def _dinheiro(valor: Decimal) -> str:
+    """Duas casas decimais e vírgula (97,90), nunca 97,9."""
+    return str(valor.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)).replace(".", ",")
 
 
 def _seguro(valor):
@@ -51,7 +65,7 @@ def exportar_csv(linhas):
             escritor.writerow(
                 {
                     k: (
-                        str(v).replace(".", ",")
+                        _dinheiro(v)
                         if isinstance(v, Decimal)
                         else _seguro(v)
                     )

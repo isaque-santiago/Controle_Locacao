@@ -1,0 +1,10 @@
+{% from "componentes/macros.html" import campo, caixa, placa, aviso %}
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(moto.placa|placa_br) }}<span><b>{{ manutencao.descricao }}</b> · entrada <span class="mono">{{ manutencao.data_entrada|data_br }}</span></span></div>
+{% if acao_nome == "concluir" %}
+{{ aviso("info", "Ao concluir, a quilometragem é registrada, o plano dos itens feitos é reiniciado e a moto sai de manutenção quando não houver outro serviço aberto.") }}
+{% else %}
+{{ aviso("atencao", "O serviço deixa de ser contado: o plano não é reiniciado e nada é cobrado do cliente. A moto sai de manutenção quando não houver outro serviço aberto. Não é possível reabrir a manutenção depois.", "O que acontece ao cancelar") }}
+{% endif %}
+{{ campo("f-data-final", "Data de conclusão" if acao_nome == "concluir" else "Data do cancelamento", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True, extra='min="' ~ manutencao.data_entrada|string|truncate(10, True, '') ~ '"') }}
+{{ campo("f-km-final", "Km na conclusão" if acao_nome == "concluir" else "Km atual da moto", nome="km", valor=v.km, tipo="number", mono=True, inputmode="numeric", obrigatorio=True, erro=erros.km, largo=True, ajuda="O menor valor aceito é " ~ km_minimo|milhar ~ " km.", extra='min="' ~ km_minimo ~ '"') }}
+{% if acao_nome == "cancelar" %}{{ caixa("f-confirmar-cancelamento", "Entendo que o cancelamento não pode ser desfeito.", nome="confirmar", marcada=v.confirmar, erro=erros.confirmar) }}{% endif %}

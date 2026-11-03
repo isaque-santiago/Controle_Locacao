@@ -1,0 +1,12 @@
+{% from "componentes/macros.html" import campo %}
+{# Resumo dos encargos e os dois valores do pagamento; o HTMX troca este bloco quando a data muda (valores voltam ao sugerido). #}
+<div id="bloco-pagamento" class="contents">
+  <dl class="largo grade-dados" aria-live="polite">
+    <div><dt>Valor original (saldo)</dt><dd class="mono">{{ c.saldo|moeda }}</dd></div>
+    <div><dt>Multa de atraso</dt><dd class="mono">{{ enc.multa|moeda }}</dd></div>
+    <div><dt>Adicional diário ({{ enc.dias_atraso }} dia(s) de atraso)</dt><dd class="mono">{{ enc.adicional_diario|moeda }}</dd></div>
+    <div><dt><b>Total</b></dt><dd class="mono"><b>{{ enc.total|moeda }}</b></dd></div>
+  </dl>
+  {{ campo("f-principal", "Principal recebido", nome="principal", valor=v.principal, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.principal, ajuda="Principal menor que o saldo deixa a cobrança em aberto com o restante.", autocomplete="off") }}
+  {{ campo("f-extras", "Multa e adicional recebidos", nome="extras", valor=v.extras, prefixo="R$", mono=True, inputmode="decimal", erro=erros.extras, autocomplete="off") }}
+</div>

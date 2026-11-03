@@ -1,0 +1,12 @@
+{% from "componentes/macros.html" import placa %}
+{# Cliente e moto já escolhidos, com o caminho para revisar cada etapa. #}
+<div class="selecao-resumo">
+  {% if cliente %}<div class="selecao-item">
+    <div class="selecao-texto"><span class="selecao-rotulo">Cliente</span><span class="selecao-valor">{{ cliente.nome }}</span></div>
+    <a class="btn btn-compacto" href="{{ base }}?etapa=1">Alterar cliente</a>
+  </div>{% endif %}
+  {% if moto %}<div class="selecao-item">
+    <div class="selecao-texto"><span class="selecao-rotulo">Moto</span><span class="selecao-valor">{{ placa(moto.placa|placa_br) }} {{ moto.marca }} {{ moto.modelo }}</span></div>
+    <a class="btn btn-compacto" href="{{ base }}?etapa=2">Alterar moto</a>
+  </div>{% endif %}
+</div>

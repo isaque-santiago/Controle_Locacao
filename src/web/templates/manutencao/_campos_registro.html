@@ -1,0 +1,41 @@
+{% from "componentes/macros.html" import campo, campo_lista, area_texto, caixa, botao, placa %}
+{% set atualizar = 'hx-post="' ~ acao_previa ~ '" hx-target="#campos-registro" hx-swap="outerHTML" hx-include="closest form" hx-sync="closest form:replace"' %}
+<div id="campos-registro" class="contents">
+<input type="hidden" name="chave_operacao" value="{{ v.chave_operacao }}">
+<input type="hidden" name="extras_ids" value="{{ v.extras_ids }}">
+<input type="hidden" name="moto_id_referencia" value="{{ v.moto_id_referencia }}">
+{% if not frota %}
+<div class="largo aviso info" role="status"><div>Cadastre uma moto ativa antes de registrar manutenções.</div></div>
+{% else %}
+<div class="campo largo{{ ' com-erro' if erros.moto_id else '' }}"><label for="f-moto">Moto <span aria-hidden="true">*</span></label><select class="entrada" id="f-moto" name="moto_id" required{% if erros.moto_id %} aria-invalid="true"{% endif %} {{ atualizar|safe }} hx-trigger="change" hx-vals='{"alteracao":"moto"}'>{% for m in frota %}<option value="{{ m.id }}"{% if m.id == v.moto_id %} selected{% endif %}>{{ m.placa|placa_br }} · {{ m.marca }} {{ m.modelo }}</option>{% endfor %}</select>{% if erros.moto_id %}<small class="msg-erro">{{ erros.moto_id }}</small>{% endif %}</div>
+<div class="campo{{ ' com-erro' if erros.tipo else '' }}"><label for="f-tipo">Tipo</label><select class="entrada" id="f-tipo" name="tipo"{% if erros.tipo %} aria-invalid="true"{% endif %}><option value="preventiva"{{ ' selected' if v.tipo == 'preventiva' else '' }}>Preventiva</option><option value="corretiva"{{ ' selected' if v.tipo == 'corretiva' else '' }}>Corretiva</option></select>{% if erros.tipo %}<small class="msg-erro">{{ erros.tipo }}</small>{% endif %}</div>
+<div class="campo{{ ' com-erro' if erros.status else '' }}"><label for="f-status">Status</label><select class="entrada" id="f-status" name="status" {{ atualizar|safe }} hx-trigger="change"{% if erros.status %} aria-invalid="true"{% endif %}><option value="concluida"{{ ' selected' if v.status == 'concluida' else '' }}>Concluída</option><option value="aberta"{{ ' selected' if v.status == 'aberta' else '' }}>Aberta</option></select>{% if erros.status %}<small class="msg-erro">{{ erros.status }}</small>{% endif %}</div>
+{{ campo("f-entrada", "Data de entrada", nome="data_entrada", valor=v.data_entrada, tipo="date", obrigatorio=True, erro=erros.data_entrada) }}
+{% if v.status == "concluida" %}{{ campo("f-saida", "Data de saída", nome="data_saida", valor=v.data_saida, tipo="date", obrigatorio=True, erro=erros.data_saida) }}{% else %}<input type="hidden" name="data_saida" value="{{ v.data_saida }}">{% endif %}
+{{ campo("f-km", "Quilometragem", nome="km", valor=v.km, tipo="number", obrigatorio=True, mono=True, inputmode="numeric", erro=erros.km, ajuda="A leitura não pode ser menor que os " ~ moto.km_atual|milhar ~ " km atuais.") }}
+{{ campo("f-oficina", "Oficina", nome="oficina", valor=v.oficina, autocomplete="organization") }}
+{{ area_texto("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, largo=True, linhas=3) }}
+
+<fieldset class="largo"><legend><b>Itens do plano substituídos ou revisados</b></legend><p class="text-texto-2 text-[13px] mb-3">Itens marcados reiniciam o contador do plano da moto.</p>
+{% if catalogo %}<div class="grade-dados">{% for item in catalogo %}<label class="caixa"><input type="checkbox" name="item_{{ item.id }}" value="1"{{ ' checked' if v.get('item_' ~ item.id) else '' }} {{ atualizar|safe }} hx-trigger="change"> {{ item.nome }}</label>{% endfor %}</div>{% else %}<p>Nenhum item ativo no catálogo.</p>{% endif %}</fieldset>
+
+{% for selecionado in previa.selecionados %}{% set item = selecionado.item %}<section class="largo cartao"><h3>{{ item.nome }} <span class="sub">(plano)</span></h3><div class="formulario mt-3">
+{{ campo("f-qtd-" ~ item.id, "Quantidade", nome="qtd_" ~ item.id, valor=v.get('qtd_' ~ item.id, '1'), inputmode="decimal", erro=erros.get('qtd_' ~ item.id), extra=atualizar ~ ' hx-trigger="input changed delay:300ms"') }}
+{{ campo("f-valor-" ~ item.id, "Valor unitário", nome="valor_" ~ item.id, valor=v.get('valor_' ~ item.id, '0,00'), prefixo="R$", mono=True, inputmode="decimal", erro=erros.get('valor_' ~ item.id), extra=atualizar ~ ' hx-trigger="input changed delay:300ms"') }}
+<dl class="grade-dados"><div><dt>Subtotal</dt><dd class="mono">{{ selecionado.subtotal|moeda }}</dd></div></dl>
+</div></section>{% endfor %}
+
+<div class="largo"><h3>Outras peças ou serviços</h3></div>
+{% for numero in extras_ids %}<section class="largo cartao"><div class="formulario">
+{{ campo("f-extra-desc-" ~ numero, "Descrição", nome="extra_descricao_" ~ numero, valor=v.get('extra_descricao_' ~ numero, ''), erro=erros.get('extra_descricao_' ~ numero), largo=True) }}
+{{ campo("f-extra-qtd-" ~ numero, "Quantidade", nome="extra_qtd_" ~ numero, valor=v.get('extra_qtd_' ~ numero, '1'), inputmode="decimal", erro=erros.get('extra_qtd_' ~ numero), extra=atualizar ~ ' hx-trigger="input changed delay:300ms"') }}
+{{ campo("f-extra-valor-" ~ numero, "Valor unitário", nome="extra_valor_" ~ numero, valor=v.get('extra_valor_' ~ numero, '0,00'), prefixo="R$", mono=True, inputmode="decimal", erro=erros.get('extra_valor_' ~ numero), extra=atualizar ~ ' hx-trigger="input changed delay:300ms"') }}
+<button class="btn" type="button" name="acao_linha" value="remover:{{ numero }}" {{ atualizar|safe }}>Remover</button>
+</div></section>{% endfor %}
+<div class="largo"><button class="btn" type="button" name="acao_linha" value="adicionar" {{ atualizar|safe }}>Adicionar peça ou serviço</button></div>
+{{ campo("f-mao-obra", "Custo de mão de obra", nome="custo_mao_obra", valor=v.custo_mao_obra, prefixo="R$", mono=True, inputmode="decimal", erro=erros.custo_mao_obra, extra=atualizar ~ ' hx-trigger="input changed delay:300ms"') }}
+<dl class="largo grade-dados" aria-live="polite"><div><dt>Custo de peças</dt><dd class="mono">{{ previa.pecas|moeda }}</dd></div><div><dt><b>Custo total</b></dt><dd class="mono"><b>{{ previa.total|moeda }}</b></dd></div></dl>
+{{ caixa("f-cobrar", "Cobrar do cliente (gera cobrança de dano no contrato vigente)", nome="cobrar_do_cliente", marcada=v.cobrar_do_cliente) }}
+<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
+{% endif %}
+</div>

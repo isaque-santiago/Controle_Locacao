@@ -1,0 +1,30 @@
+"""Páginas: saúde, Dashboard do dono e telas em migração (o portal do locatário fica em rotas/portal.py)."""
+
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import RedirectResponse
+
+from src.services.autenticacao import PAPEL_LOCATARIO
+from src.web import dados_painel, navegacao
+from src.web.dependencias import exigir_dono, exigir_sessao
+from src.web.sessao import Sessao
+from src.web.templates import renderizar
+
+router = APIRouter()
+
+
+@router.api_route("/saude", methods=["GET", "HEAD"])
+def saude():
+    """Verificação de saúde para o proxy e o monitoramento: não exige login nem toca o banco."""
+    return {"status": "ok"}
+
+
+@router.get("/")
+def inicio(request: Request, sessao: Sessao = Depends(exigir_sessao)):
+    if sessao.papel == PAPEL_LOCATARIO:
+        return RedirectResponse("/portal", status_code=303)
+    return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar()})
+
+
+@router.get("/termos")
+def termos(request: Request, _: Sessao = Depends(exigir_dono)):
+    return renderizar(request, "termos.html", {"titulo": "Termos e privacidade"})

@@ -1,0 +1,106 @@
+"""Clientes: lista, busca, paginação e ficha com abas remotas."""
+
+from urllib.parse import urlencode
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from src.domain import clientes_lista
+from src.domain.ordenacao import cabecalhos, interpretar, valor_da_url
+from src.domain.paginacao import OPCOES_POR_PAGINA
+from src.web import dados_clientes
+from src.web.dependencias import exigir_dono
+from src.web.sessao import Sessao
+from src.web.templates import renderizar
+
+router = APIRouter()
+
+
+def _inteiro(valor, padrao):
+    try:
+        return int(valor) if valor is not None else padrao
+    except ValueError:
+        return padrao
+
+
+def _url_lista(status, busca, por_pagina, pagina=1, ordem=""):
+    parametros = {}
+    if status != clientes_lista.TODOS:
+        parametros["status"] = status
+    if busca:
+        parametros["q"] = busca
+    if por_pagina != OPCOES_POR_PAGINA[0]:
+        parametros["por_pagina"] = por_pagina
+    if ordem:
+        parametros["ordem"] = ordem
+    if pagina > 1:
+        parametros["pagina"] = pagina
+    return "/clientes" + (f"?{urlencode(parametros)}" if parametros else "")
+
+
+def _so_resultado(request):
+    return request.headers.get("HX-Request") == "true" and request.headers.get("HX-Target") == "resultado" and not request.headers.get("HX-History-Restore-Request")
+
+
+@router.get("/clientes")
+def lista(request: Request, status: str | None = None, q: str | None = None, pagina: str | None = None,
+          por_pagina: str | None = None, ordem: str | None = None, _: Sessao = Depends(exigir_dono)):
+    status = clientes_lista.status_valido(status)
+    busca = (q or "").strip()[:80]
+    tamanho = _inteiro(por_pagina, OPCOES_POR_PAGINA[0])
+    if tamanho not in OPCOES_POR_PAGINA:
+        tamanho = OPCOES_POR_PAGINA[0]
+    campo, decrescente = interpretar(ordem, clientes_lista.COLUNAS_ORDENAVEIS.values())
+    ordem = valor_da_url(campo, decrescente)
+    dados = dados_clientes.carregar_lista(status, busca, _inteiro(pagina, 1), tamanho, ordem)
+    p = dados["pagina"]
+    contexto = {
+        "titulo": "Clientes", "d": dados, "status": status, "busca": busca, "por_pagina": tamanho, "ordem": ordem,
+        "ordenacao": cabecalhos(clientes_lista.COLUNAS_ORDENAVEIS, campo, decrescente, lambda nova: _url_lista(status, busca, tamanho, ordem=nova)),
+        "opcoes_por_pagina": OPCOES_POR_PAGINA, "status_rotulo": clientes_lista.STATUS_ROTULO,
+        "chips": [(chave, rotulo, dados["total_cadastrados"] if chave == clientes_lista.TODOS else dados["contagem"][chave], _url_lista(chave, busca, tamanho, ordem=ordem))
+                  for chave, rotulo in ((clientes_lista.TODOS, "Todos"), *((x, clientes_lista.STATUS_ROTULO[x]) for x in clientes_lista.STATUS_ORDEM))],
+        "url_anterior": _url_lista(status, busca, tamanho, p.pagina - 1, ordem) if p.tem_anterior else None,
+        "url_proxima": _url_lista(status, busca, tamanho, p.pagina + 1, ordem) if p.tem_proxima else None,
+        "url_limpar": _url_lista(clientes_lista.TODOS, "", tamanho), "filtrando": status != clientes_lista.TODOS or bool(busca),
+    }
+    return renderizar(request, "clientes/_resultado.html" if _so_resultado(request) else "clientes/lista.html", contexto)
+
+
+def _cliente_ou_404(cliente_id):
+    try:
+        UUID(cliente_id)
+    except ValueError:
+        raise HTTPException(status_code=404)
+    cliente = dados_clientes.obter_cliente(cliente_id)
+    if cliente is None:
+        raise HTTPException(status_code=404)
+    return cliente
+
+
+def _contexto_aba(cliente, aba, pagina=1):
+    ficha_ = dados_clientes.carregar_ficha(cliente, aba, pagina)
+    p = ficha_["pagina_pagamentos"]
+    base = f"/clientes/{cliente['id']}"
+    pagina_url = lambda n: f"{base}?aba=pagamentos&pagina={n}"
+    parcial_url = lambda n: f"{base}/abas/pagamentos?pagina={n}"
+    return {"cliente": cliente, "aba": aba, "status_rotulo": clientes_lista.STATUS_ROTULO,
+            "pag_anterior": pagina_url(p.pagina - 1) if p.tem_anterior else None,
+            "pag_proxima": pagina_url(p.pagina + 1) if p.tem_proxima else None,
+            "parcial_anterior": parcial_url(p.pagina - 1) if p.tem_anterior else None,
+            "parcial_proxima": parcial_url(p.pagina + 1) if p.tem_proxima else None,
+            "abas_da_ficha": [(chave, rotulo, f"/clientes/{cliente['id']}/abas/{chave}", f"/clientes/{cliente['id']}?aba={chave}") for chave, rotulo in clientes_lista.ABAS_FICHA],
+            "a": ficha_}
+
+
+@router.get("/clientes/{cliente_id}")
+def ficha(request: Request, cliente_id: str, aba: str | None = None, pagina: str | None = None, _: Sessao = Depends(exigir_dono)):
+    cliente = _cliente_ou_404(cliente_id)
+    return renderizar(request, "clientes/ficha.html", {"titulo": cliente["nome"], **_contexto_aba(cliente, clientes_lista.aba_valida(aba), _inteiro(pagina, 1))})
+
+
+@router.get("/clientes/{cliente_id}/abas/{aba}")
+def aba(request: Request, cliente_id: str, aba: str, pagina: str | None = None, _: Sessao = Depends(exigir_dono)):
+    if aba not in dict(clientes_lista.ABAS_FICHA):
+        raise HTTPException(status_code=404)
+    return renderizar(request, "clientes/_resposta_aba.html", _contexto_aba(_cliente_ou_404(cliente_id), aba, _inteiro(pagina, 1)))

@@ -1,0 +1,80 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, kpi, selo, placa, tabela, estado_vazio, icone %}
+{% set areas = {"manutencao": "/manutencao", "documentos": "/documentos", "clientes": "/clientes"} %}
+
+{% block conteudo %}
+{{ cabecalho_pagina("Dashboard", d.data_extenso|capitalize) }}
+
+<dl class="grade kpis">
+  {{ kpi("Frota", d.frota_total ~ (" moto" if d.frota_total == 1 else " motos"), d.ocupacao ~ "% de ocupação") }}
+  {{ kpi("Recebido no mês", d.recebido|moeda_compacta, "de " ~ (d.previsto|moeda_compacta) ~ " previstos (" ~ d.percentual_recebido ~ "%)", variacao=d.variacoes.recebido if d.variacoes else None) }}
+  {{ kpi("Em atraso", d.atrasado|moeda_compacta, d.clientes_atrasados ~ (" cliente atrasado" if d.clientes_atrasados == 1 else " clientes atrasados"), atencao=(d.atrasado > 0), href="/cobrancas?aba=atrasadas") }}
+  {{ kpi("Manutenção no mês", d.manutencao_mes|moeda_compacta, d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), variacao=d.variacoes.manutencao if d.variacoes else None) }}
+</dl>
+
+<div class="grade duas-colunas igualar">
+    <section class="cartao" aria-labelledby="t-ocupacao">
+      <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>
+      <div class="ocupacao-corpo">
+        {% if d.rosca %}
+        <div class="rosca" role="img" aria-label="{{ d.descricao_medidor }}">
+          <svg viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="arco-fundo" cx="50" cy="50" r="40" pathLength="100"/>
+            {% for arco in d.rosca %}
+            <circle class="arco {{ arco.classe }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ arco.tamanho }} {{ 100 - arco.tamanho }}" stroke-dashoffset="{{ -arco.inicio }}"/>
+            {% endfor %}
+          </svg>
+          <span class="rosca-centro"><strong>{{ d.ocupacao }}%</strong><small>ocupação</small></span>
+        </div>
+        {% endif %}
+        <ul class="legenda legenda-detalhada" aria-label="Frota por situação">
+          {% for seg in d.legenda %}
+          <li>
+            <i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>
+            <span class="legenda-nome">{{ seg.rotulo.split(' ', 1)[1] }}</span>
+            <strong class="mono">{{ seg.quantidade }}</strong>
+            <span class="legenda-pct mono">{{ ((100 * seg.quantidade / d.frota_total)|round|int if d.frota_total else 0) }}%</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </section>
+
+  <section class="cartao content-start" aria-labelledby="t-alertas">
+    <div class="cartao-cab"><h2 id="t-alertas">Precisa de atenção</h2></div>
+    {% if d.alertas %}
+    <ul class="pendencias">
+      {% for a in d.alertas %}
+      <li class="pendencia">
+        <span class="adesivo {{ a.tom }}" aria-hidden="true">{{ a.quantidade }}</span>
+        <div><strong>{{ a.titulo }}</strong><span class="det">{{ a.descricao }}</span></div>
+        <a class="btn" href="{{ areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-texto-2">Nenhum alerta no momento.</p>
+    {% endif %}
+  </section>
+</div>
+
+    <section class="cartao mt-4 moto-lista-cards hoje-lista" aria-labelledby="t-hoje">
+      <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">vencendo hoje e atrasadas</span></div>
+      {% if d.hoje %}
+      {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}
+        {% for c in d.hoje %}
+        <tr>
+          <td class="topo font-medium">{{ c.cliente }}</td>
+          <td data-rotulo="Moto">{{ placa(c.placa|placa_br) }}</td>
+          <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
+          <td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>
+          <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
+          <td class="acao"><a class="btn" href="/cobrancas/{{ c.id }}/pagar" aria-label="Registrar pagamento de {{ c.cliente }}">Pagar</a></td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+      {% else %}
+      <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
+      {% endif %}
+    </section>
+{% endblock %}

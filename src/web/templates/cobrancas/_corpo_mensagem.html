@@ -1,0 +1,8 @@
+{% from "componentes/macros.html" import placa %}
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(c.placa|placa_br) if c.placa }}<span><b>{{ c.cliente }}</b> · vencimento <span class="mono">{{ c.vencimento|data_br }}</span></span></div>
+<div class="campo largo">
+  <label for="texto-mensagem">Mensagem para o cliente</label>
+  <textarea class="entrada area" id="texto-mensagem" rows="7" readonly>{{ texto }}</textarea>
+  <small id="aviso-copia" role="status" aria-live="polite"></small>
+</div>
+<div class="largo"><button class="btn btn-primario" type="button" data-copiar="texto-mensagem" data-copiar-aviso="aviso-copia">Copiar mensagem</button></div>

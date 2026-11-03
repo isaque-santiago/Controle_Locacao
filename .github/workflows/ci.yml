@@ -1,0 +1,205 @@
+name: CI
+
+# Testes Python em todo push e pull request; testes de navegador (responsivo, acessibilidade e
+# capturas) da tela de acesso do app web (FastAPI + HTMX) em Chromium, Firefox e WebKit. As páginas
+# autenticadas e os fluxos de homologação exigem o projeto Supabase de DESENVOLVIMENTO e rodam sob
+# demanda (workflow_dispatch), com segredos do repositório. Nunca aponte esses segredos para o projeto
+# de produção: os fluxos GRAVAM no banco (dados fictícios marcados com "E2E").
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Toda segunda, 09:00 em Brasília (12:00 UTC): só a auditoria de dependências importa; um CVE novo
+    # numa dependência já publicada faz a CI ficar vermelha e o GitHub avisa por e-mail.
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+    inputs:
+      autenticado:
+        description: "Rodar também as páginas e os fluxos autenticados (exige os segredos do projeto de desenvolvimento; os fluxos gravam no banco de dev)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  auditoria-dependencias:
+    # Vulnerabilidades conhecidas (CVE/GHSA) nas dependências de PRODUÇÃO e em toda a árvore que o pip resolve.
+    # Não bloqueia o deploy: um CVE novo não deve travar uma correção urgente. Se falhar, atualize a dependência
+    # em requirements.txt (ver Arquivos/Deploy_VPS.md, seção «Rotina de manutenção»).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install pip-audit
+      - run: pip-audit -r requirements.txt
+
+  testes-python:
+    if: github.event_name != 'schedule'
+    # 3.12 é a versão da imagem de produção (Dockerfile); 3.14 é a do desenvolvimento local.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+
+  navegador-login:
+    if: github.event_name != 'schedule'
+    # Sem credenciais: valores fictícios bastam para a tela de acesso renderizar.
+    # Fixa o Ubuntu 24.04: o ubuntu-latest passou a ser o 26.04, que o Playwright ainda não suporta; o --with-deps puxa
+    # centenas de pacotes e estoura o timeout, deixando um apt-get órfão segurando o lock do dpkg.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        perfil: [chromium-desktop, chromium-movel, firefox, webkit]
+    env:
+      SUPABASE_URL: https://ci-exemplo.supabase.co
+      SUPABASE_ANON_KEY: ci-chave-anonima-ficticia
+      E2E_BASE_URL: http://localhost:8000
+      E2E_DADOS: normal
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements-dev.txt -r e2e/requirements-e2e.txt
+      - name: Instalar o navegador
+        # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
+        run: |
+          # Um apt-get de inicialização (ou órfão da tentativa anterior) pode segurar o lock do dpkg: o playwright falha com
+          # "Could not get lock /var/lib/dpkg/lock-frontend" (código 100). Espera o lock soltar (até 3 min).
+          timeout 180 bash -c 'while sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 3; done' || true
+          for tentativa in 1 2 3; do
+            timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
+            echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
+          done
+          exit 1
+      - name: Subir o app web
+        run: |
+          nohup python -m uvicorn --factory src.web.app:criar_app --host 127.0.0.1 --port 8000 --workers 1 > app.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/saude && exit 0
+            sleep 1
+          done
+          cat app.log
+          exit 1
+      - name: Tela de acesso (5 larguras, 2 temas, axe-core, capturas)
+        run: python -m pytest e2e/test_login.py e2e/test_cobertura_dos_fluxos.py -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito
+      - name: Log do app
+        if: failure()
+        run: cat app.log
+      - name: Capturas e achados
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-login-${{ matrix.perfil }}
+          path: |
+            e2e/capturas/
+            e2e/resultados/
+          if-no-files-found: ignore
+
+  navegador-autenticado:
+    if: github.event_name == 'workflow_dispatch' && inputs.autenticado
+    # Fixa o Ubuntu 24.04: o ubuntu-latest passou a ser o 26.04, que o Playwright ainda não suporta; o --with-deps puxa
+    # centenas de pacotes e estoura o timeout, deixando um apt-get órfão segurando o lock do dpkg.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      # Um perfil por vez: os fluxos gravam no mesmo banco de desenvolvimento e não devem se atropelar.
+      max-parallel: 1
+      matrix:
+        perfil: [chromium-desktop, chromium-movel, firefox, webkit]
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_DEV_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_DEV_ANON_KEY }}
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_SENHA: ${{ secrets.E2E_SENHA }}
+      E2E_BASE_URL: http://localhost:8000
+      E2E_DADOS: normal
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements-dev.txt -r e2e/requirements-e2e.txt
+      - name: Instalar o navegador
+        # O mirror do apt às vezes fica lento: cada tentativa vale 5 min e são até 3.
+        run: |
+          # Um apt-get de inicialização (ou órfão da tentativa anterior) pode segurar o lock do dpkg: o playwright falha com
+          # "Could not get lock /var/lib/dpkg/lock-frontend" (código 100). Espera o lock soltar (até 3 min).
+          timeout 180 bash -c 'while sudo fuser /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock >/dev/null 2>&1; do sleep 3; done' || true
+          for tentativa in 1 2 3; do
+            timeout 300 python -m playwright install --with-deps ${{ startsWith(matrix.perfil, 'chromium') && 'chromium' || matrix.perfil }} && exit 0
+            echo "::warning::Instalação do navegador falhou ou expirou (tentativa $tentativa de 3)."
+          done
+          exit 1
+      - name: Subir o app web
+        run: |
+          nohup python -m uvicorn --factory src.web.app:criar_app --host 127.0.0.1 --port 8000 --workers 1 > app.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/saude && exit 0
+            sleep 1
+          done
+          cat app.log
+          exit 1
+      - name: Páginas, fluxos e condições extras (axe-core, teclado, zoom, reflow)
+        run: python -m pytest e2e -q --perfil ${{ matrix.perfil }} --capturas --e2e-estrito -k "not visual"
+      - name: Capturas e achados
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-autenticado-${{ matrix.perfil }}
+          path: |
+            e2e/capturas/
+            e2e/resultados/
+          if-no-files-found: ignore
+
+  deploy:
+    # Só publica no push para a main e só depois do pytest verde (3.12 e 3.14). O auto-deploy do Coolify deve ficar
+    # DESLIGADO (sem webhook do GitHub): este é o único gatilho. Segredos do repositório: COOLIFY_URL (ex.:
+    # https://coolify.exemplo.com, sem barra no fim), COOLIFY_TOKEN (token de API com permissão de deploy) e
+    # COOLIFY_APP_UUID. Reversão: aba Deployments do aplicativo no Coolify (Rollback). Passo a passo: Arquivos/Deploy_VPS.md.
+    needs: testes-python
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: producao
+    concurrency:
+      group: deploy-producao
+      cancel-in-progress: false
+    steps:
+      - name: Pedir o deploy ao Coolify
+        env:
+          COOLIFY_URL: ${{ secrets.COOLIFY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_APP_UUID: ${{ secrets.COOLIFY_APP_UUID }}
+        run: |
+          if [ -z "$COOLIFY_URL" ] || [ -z "$COOLIFY_TOKEN" ] || [ -z "$COOLIFY_APP_UUID" ]; then
+            echo "::error::Segredos COOLIFY_URL, COOLIFY_TOKEN e COOLIFY_APP_UUID não configurados."
+            exit 1
+          fi
+          # A API do Coolify exige POST neste endpoint (GET devolve 405: "This endpoint has changed to a POST request").
+          curl --fail-with-body --silent --show-error --max-time 60 --request POST \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" \
+            "${COOLIFY_URL%/}/api/v1/deploy?uuid=${COOLIFY_APP_UUID}&force=false"
+          echo
+          echo "Deploy solicitado. Acompanhe em Deployments no Coolify."

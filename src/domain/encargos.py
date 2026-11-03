@@ -1,10 +1,14 @@
-"""Cálculo de multa e juros por atraso."""
+"""Cálculo do encargo fixo por atraso (regra da operação, seção 14.1 do plano).
+
+R$ 15,00 fixos já no dia do vencimento + R$ 7,00 fixos por dia a partir do dia seguinte.
+Sem carência. Só incide sobre cobranças de locação com saldo em aberto.
+"""
 
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 
-_DIAS_MES = Decimal("30")
-_CEM = Decimal("100")
+TIPO_COM_ENCARGOS = "locacao"
+_ZERO = Decimal("0.00")
 
 
 def _arredondar(valor: Decimal) -> Decimal:
@@ -12,31 +16,35 @@ def _arredondar(valor: Decimal) -> Decimal:
 
 
 def calcular_encargos(
+    tipo: str,
     saldo: Decimal,
     vencimento: date,
     data_referencia: date,
-    multa_percentual: Decimal,
-    juros_mensal_percentual: Decimal,
-    carencia_dias: int = 0,
+    multa_valor: Decimal,
+    adicional_diario_valor: Decimal,
 ) -> dict:
-    """Multa única + juros simples pro rata sobre o saldo em aberto, após a carência.
+    """Encargos de uma cobrança na `data_referencia`.
 
-    dias = max(data_referencia - vencimento - carencia, 0)
-    multa = saldo * multa% se dias > 0 senão 0
-    juros = saldo * (juros_mensal% / 30) * dias
+    dias_atraso = max(data_referencia - vencimento, 0)
+    se tipo != 'locacao', saldo <= 0 ou data_referencia < vencimento: encargos = 0
+    senão: multa = multa_valor; adicional_diario = adicional_diario_valor * dias_atraso
+
+    O encargo é fixo: não depende do saldo (pagamento parcial não o reduz).
     """
-    dias_atraso = max((data_referencia - vencimento).days - carencia_dias, 0)
+    dias_atraso = max((data_referencia - vencimento).days, 0)
 
-    if dias_atraso <= 0:
-        multa = Decimal("0.00")
-        juros = Decimal("0.00")
+    if tipo != TIPO_COM_ENCARGOS or saldo <= 0 or data_referencia < vencimento:
+        multa = _ZERO
+        adicional = _ZERO
     else:
-        multa = _arredondar(saldo * multa_percentual / _CEM)
-        juros = _arredondar(saldo * juros_mensal_percentual / _CEM / _DIAS_MES * dias_atraso)
+        multa = _arredondar(multa_valor)
+        adicional = _arredondar(adicional_diario_valor * dias_atraso)
 
+    encargos = multa + adicional
     return {
         "dias_atraso": dias_atraso,
         "multa": multa,
-        "juros": juros,
-        "total": saldo + multa + juros,
+        "adicional_diario": adicional,
+        "encargos": encargos,
+        "total": saldo + encargos,
     }

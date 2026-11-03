@@ -47,7 +47,12 @@ def moto_status_alterado(placa, inativada):
     return _toast(f"Moto {placa} inativada." if inativada else f"Moto {placa} reativada.")
 
 
-def km_atualizado(placa, km):
+def km_atualizado(placa, km, km_atual=None):
+    """`km_atual` é o km da moto antes do lançamento: se a leitura for menor, ela só entra no histórico."""
+    if km_atual is not None and km < km_atual:
+        return _toast(
+            f"Leitura de {_km(km)} registrada no histórico da moto {placa}. O km atual continua {_km(km_atual)}."
+        )
     return _toast(f"Quilometragem da moto {placa} registrada: {_km(km)}.")
 
 
@@ -65,14 +70,29 @@ def acesso_portal_removido(nome):
 # ---------------------------------------------------------------- contratos --
 
 
-def contrato_criado(nome, placa):
-    return _alerta(
-        f"Contrato de {nome} com a moto {placa} criado. Anexe as fotos da vistoria de entrega na página Vistorias."
-    )
+def contrato_criado(nome, placa, enviadas=0, falhas_fotos=0):
+    """`enviadas` fotos da entrega foram anexadas; sem fotos, o aviso diz onde adicioná-las depois."""
+    texto = f"Contrato de {nome} com a moto {placa} criado."
+    if falhas_fotos:
+        return _alerta(texto + _aviso_fotos(falhas_fotos), atencao=True)
+    if enviadas:
+        return _alerta(texto + (" Foto da vistoria de entrega anexada." if enviadas == 1 else f" {enviadas} fotos da vistoria de entrega anexadas."))
+    return _alerta(texto + " Para anexar fotos da vistoria de entrega, abra Vistorias e use “Adicionar fotos”.")
 
 
-def contrato_encerrado(nome, placa):
-    return _toast(f"Contrato de {nome} encerrado. A moto {placa} está disponível.")
+def contrato_encerrado(nome, placa, devolucao=None, desconto=None, excedente=None):
+    """Confirma o encerramento. Com caução recebida (`devolucao` informada), diz quanto devolver
+    e quanto foi descontado de danos; danos acima da caução geram cobrança e pedem atenção."""
+    texto = f"Contrato de {nome} encerrado. A moto {placa} está disponível."
+    if devolucao is not None:
+        texto += f" Devolver {moeda(devolucao)} de caução ao cliente."
+    if Decimal(str(desconto or 0)) > 0:
+        texto += f" Danos descontados da caução: {moeda(desconto)}."
+    if Decimal(str(excedente or 0)) > 0:
+        return _alerta(
+            texto + f" Os danos passaram da caução: foi gerada uma cobrança de {moeda(excedente)} contra o cliente."
+        )
+    return _toast(texto)
 
 
 # --------------------------------------------------------------- cobranças --
@@ -82,7 +102,7 @@ def pagamento_registrado(principal, extras, quitada):
     """`Pagamento de R$ 450,00 registrado.` + encargos (se houver) + situação da cobrança."""
     texto = f"Pagamento de {moeda(principal)} registrado."
     if Decimal(str(extras or 0)) > 0:
-        texto += f" Multa e juros de {moeda(extras)} incluídos."
+        texto += f" Multa e adicional de {moeda(extras)} incluídos."
     texto += " Cobrança quitada." if quitada else " A cobrança continua em aberto com o saldo restante."
     return _toast(texto)
 
@@ -139,7 +159,7 @@ def fotos_anexadas(quantidade, falhas_fotos=0):
 
 def _aviso_fotos(falhas):
     quantas = "1 foto não foi enviada" if falhas == 1 else f"{falhas} fotos não foram enviadas"
-    return f" Atenção: {quantas}. Use “Adicionar fotos” para tentar de novo."
+    return f" Atenção: {quantas}. Abra Vistorias e use “Adicionar fotos” para tentar de novo."
 
 
 # ------------------------------------------------------------ configurações --

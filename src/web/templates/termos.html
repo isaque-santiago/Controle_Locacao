@@ -1,0 +1,38 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina %}
+{% block conteudo %}
+{% call cabecalho_pagina("Termos e privacidade", "Como o sistema trata os dados da locadora e dos locatários") %}{% endcall %}
+<div class="grid gap-4 max-w-3xl">
+  <section class="cartao" aria-labelledby="t-uso">
+    <h2 id="t-uso">Uso do sistema</h2>
+    <p class="text-texto-2">O Controle de Locação é de uso restrito ao dono da locadora, mediante login. O acesso é pessoal e intransferível: não compartilhe e-mail e senha. A sessão expira após 30 minutos de inatividade. Use «Sair» ao terminar em aparelhos de uso compartilhado.</p>
+  </section>
+  <section class="cartao" aria-labelledby="t-dados">
+    <h2 id="t-dados">Dados que o sistema guarda</h2>
+    <ul class="text-texto-2 list-disc pl-5 grid gap-1">
+      <li><strong class="text-texto">Locatários:</strong> nome, CPF, CNH (número e validade), telefone e endereço.</li>
+      <li><strong class="text-texto">Locações:</strong> contratos, cobranças, pagamentos, caução e histórico de contato.</li>
+      <li><strong class="text-texto">Motos:</strong> placa, quilometragem, manutenções e documentos (IPVA, licenciamento, seguro).</li>
+      <li><strong class="text-texto">Fotos e arquivos:</strong> vistorias, comprovantes e documentos enviados, em armazenamento privado.</li>
+    </ul>
+  </section>
+  <section class="cartao" aria-labelledby="t-finalidade">
+    <h2 id="t-finalidade">Para que os dados são usados</h2>
+    <p class="text-texto-2">Apenas para administrar as locações: emitir e acompanhar cobranças, controlar a frota e a manutenção, registrar vistorias e cumprir obrigações legais e contratuais. Os dados não são vendidos nem usados para publicidade.</p>
+  </section>
+  <section class="cartao" aria-labelledby="t-protecao">
+    <h2 id="t-protecao">Como os dados são protegidos</h2>
+    <ul class="text-texto-2 list-disc pl-5 grid gap-1">
+      <li>Acesso somente com login; o cadastro público está desativado.</li>
+      <li>Banco de dados com controle de acesso por linha (RLS) e arquivos privados, acessados por links temporários.</li>
+      <li>CPF mascarado nas listagens; CPF, CNH e endereço não são gravados em registros técnicos (logs).</li>
+      <li>Fotos de câmera perdem localização (GPS) e dados do aparelho antes de serem guardadas.</li>
+      <li>Conexão protegida por HTTPS.</li>
+    </ul>
+  </section>
+  <section class="cartao" aria-labelledby="t-direitos">
+    <h2 id="t-direitos">Direitos dos titulares (LGPD)</h2>
+    <p class="text-texto-2">Os locatários podem pedir à locadora a confirmação do tratamento, acesso, correção ou exclusão de seus dados, respeitados os prazos de guarda exigidos por lei e pelo contrato. Os dados são exportados apenas quando o dono solicita, pelo backup em Configurações, que contém dados pessoais e deve ser guardado com cuidado.</p>
+  </section>
+</div>
+{% endblock %}

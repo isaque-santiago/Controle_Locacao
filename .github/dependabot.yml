@@ -1,0 +1,27 @@
+# Atualizações automáticas por pull request. Cada PR passa pela CI (pytest em Python 3.12 e 3.14) antes de
+# ir para a main; o deploy continua saindo só pela job `deploy` do ci.yml. Alertas de segurança (CVE) do
+# Dependabot são uma opção do repositório: Settings > Code security > Dependabot alerts.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Sao_Paulo
+    open-pull-requests-limit: 5
+    groups:
+      producao:
+        patterns: ["*"]
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Sao_Paulo
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: America/Sao_Paulo

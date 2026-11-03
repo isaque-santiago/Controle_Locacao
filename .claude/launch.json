@@ -2,11 +2,35 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "controle-locacao",
-      "runtimeExecutable": ".venv\\Scripts\\streamlit.exe",
-      "runtimeArgs": ["run", "app.py", "--server.headless", "true"],
-      "port": 8501,
+      "name": "locacao-web",
+      "runtimeExecutable": ".venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "executar_web.py"
+      ],
+      "port": 8000,
       "autoPort": true
+    },
+    {
+      "name": "locacao-web-estavel",
+      "runtimeExecutable": ".venv\\Scripts\\python.exe",
+      "runtimeArgs": [
+        "executar_web.py",
+        "--sem-recarga"
+      ],
+      "port": 8000,
+      "autoPort": true
+    },
+    {
+      "name": "prototipo-layout",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8600",
+        "--bind",
+        "127.0.0.1"
+      ],
+      "port": 8600
     }
   ]
 }

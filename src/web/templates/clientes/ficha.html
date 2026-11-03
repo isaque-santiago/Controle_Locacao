@@ -1,0 +1,8 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, selo, abas_remotas, botao %}
+{% block conteudo %}
+{{ voltar("/clientes", "Voltar para clientes") }}
+<header class="cabecalho"><div class="cabecalho-texto"><h1>{{ cliente.nome }}</h1><p>{{ selo(status_rotulo[cliente.status], "ok" if cliente.status == "ativo" else "neutro") }}</p></div><div class="acoes">{{ botao("Editar", extra='hx-get="/clientes/' ~ cliente.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div></header>
+{{ abas_remotas("Seções da ficha", abas_da_ficha, aba) }}
+{% include "clientes/_painel.html" %}
+{% endblock %}

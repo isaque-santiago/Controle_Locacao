@@ -1,0 +1,545 @@
+/* Comportamentos da interface (sem dependências): diálogos, abas, filtros em chips e tema.
+   Usa delegação de eventos, então continua valendo para o que o HTMX troca na página. */
+(function () {
+  'use strict';
+
+  // ---- Diálogos: data-abrir="id" abre; data-fechar fecha; clique no fundo fecha ----
+  document.addEventListener('click', function (e) {
+    var abrir = e.target.closest('[data-abrir]');
+    if (abrir) {
+      var alvo = document.getElementById(abrir.getAttribute('data-abrir'));
+      if (alvo && alvo.showModal) alvo.showModal();
+      return;
+    }
+    var fechar = e.target.closest('[data-fechar]');
+    if (fechar) {
+      fecharDialogo(fechar.closest('dialog'));
+      return;
+    }
+    if (e.target.tagName === 'DIALOG') fecharDialogo(e.target);
+  });
+
+  // ---- Formulário em diálogo (#dlg-form): avisa antes de fechar com alterações não enviadas ----
+  // O marcador fica no <dialog>: sobrevive à troca do formulário com erro de validação e some ao abrir outro conteúdo.
+  var dlgForm = function () { return document.getElementById('dlg-form'); };
+  function fecharDialogo(dialogo) {
+    if (!dialogo) return;
+    if (dialogo.id !== 'dlg-form' || !dialogo.hasAttribute('data-alterado')) { dialogo.close(); return; }
+    var origem = document.createElement('span');
+    origem.setAttribute('data-confirmar-titulo', 'Descartar alterações?');
+    origem.setAttribute('data-confirmar-rotulo', 'Descartar');
+    pedirConfirmacao(origem, 'O que você preencheu e não enviou será perdido.', function () { dialogo.removeAttribute('data-alterado'); dialogo.close(); });
+  }
+  function marcarAlterado(e) {
+    var dialogo = dlgForm();
+    if (dialogo && e.target.closest && e.target.closest('#dlg-form form')) dialogo.setAttribute('data-alterado', '');
+  }
+  document.addEventListener('input', marcarAlterado);
+  document.addEventListener('change', marcarAlterado);
+  document.addEventListener('cancel', function (e) {  // Esc
+    if (e.target.id === 'dlg-form' && e.target.hasAttribute('data-alterado')) {
+      e.preventDefault();
+      fecharDialogo(e.target);
+    }
+  }, true);
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (e.detail.target && e.detail.target.id === 'dlg-form-conteudo' && dlgForm()) dlgForm().removeAttribute('data-alterado');
+  });
+  document.addEventListener('close', function (e) {
+    if (e.target && e.target.id === 'dlg-form') e.target.removeAttribute('data-alterado');
+  }, true);
+
+  // ---- Fotos grandes: reduz no navegador antes do envio (campos input[data-reduzir-foto]) ----
+  // A foto de câmera em resolução máxima (64 MP, 10 a 15 MB) passa do limite de 10 MB do servidor. Só mexe em JPEG/PNG acima de
+  // 4 MB: redesenha com no máximo 3000 px no lado maior e salva em JPEG (o redesenho aplica a orientação e não leva os metadados).
+  var FOTO_LIMITE_BYTES = 4 * 1024 * 1024, FOTO_LADO_MAXIMO = 3000, FOTO_QUALIDADE = 0.85;
+  var megas = function (bytes) { return (bytes / 1048576).toFixed(1).replace('.', ',') + ' MB'; };
+
+  function reduzirFoto(arquivo) {
+    if (!/^image\/(jpeg|png)$/.test(arquivo.type) || arquivo.size <= FOTO_LIMITE_BYTES || !window.createImageBitmap) {
+      return Promise.resolve(arquivo);
+    }
+    return createImageBitmap(arquivo, { imageOrientation: 'from-image' }).then(function (imagem) {
+      var escala = Math.min(1, FOTO_LADO_MAXIMO / Math.max(imagem.width, imagem.height));
+      var tela = document.createElement('canvas');
+      tela.width = Math.round(imagem.width * escala);
+      tela.height = Math.round(imagem.height * escala);
+      var contexto = tela.getContext('2d');
+      contexto.fillStyle = '#fff';  // PNG com transparência vira fundo branco no JPEG
+      contexto.fillRect(0, 0, tela.width, tela.height);
+      contexto.drawImage(imagem, 0, 0, tela.width, tela.height);
+      if (imagem.close) imagem.close();
+      return new Promise(function (resolver) {
+        tela.toBlob(function (blob) {
+          if (!blob || blob.size >= arquivo.size) { resolver(arquivo); return; }
+          resolver(new File([blob], arquivo.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: arquivo.lastModified }));
+        }, 'image/jpeg', FOTO_QUALIDADE);
+      });
+    }).catch(function () { return arquivo; });  // HEIC e outros formatos que o navegador não abre seguem como estão
+  }
+
+  document.addEventListener('change', function (e) {
+    var campo = e.target;
+    if (!campo.matches || !campo.matches('input[type="file"][data-reduzir-foto]') || !campo.files || !window.DataTransfer) return;
+    var originais = Array.prototype.slice.call(campo.files);
+    if (!originais.some(function (a) { return a.size > FOTO_LIMITE_BYTES; })) return;
+    var botoes = campo.form ? Array.prototype.filter.call(campo.form.querySelectorAll('button[type="submit"]'), function (b) { return !b.disabled; }) : [];
+    var status = campo.parentNode.querySelector('[data-foto-status]');
+    if (!status) {
+      status = document.createElement('small');
+      status.setAttribute('data-foto-status', '');
+      status.setAttribute('role', 'status');
+      campo.parentNode.insertBefore(status, campo.nextSibling);
+    }
+    botoes.forEach(function (b) { b.disabled = true; });  // o envio espera a redução terminar
+    status.textContent = 'Reduzindo foto grande…';
+    Promise.all(originais.map(reduzirFoto)).then(function (novos) {
+      var lista = new DataTransfer();
+      novos.forEach(function (f) { lista.items.add(f); });
+      campo.files = lista.files;
+      var antes = originais.reduce(function (s, a) { return s + a.size; }, 0);
+      var depois = novos.reduce(function (s, a) { return s + a.size; }, 0);
+      status.textContent = depois < antes ? 'Foto reduzida de ' + megas(antes) + ' para ' + megas(depois) + '.' : '';
+    }).catch(function () { status.textContent = ''; }).then(function () {
+      botoes.forEach(function (b) { b.disabled = false; });
+    });
+  });
+
+  // ---- Envio de formulário comum (página inteira): bloqueia clique duplo e mostra o indicador no botão ----
+  // Formulários do HTMX usam hx-sync/hx-disabled-elt; downloads não recarregam a página, então o bloqueio expira.
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (e.defaultPrevented || !form.classList || form.hasAttribute('hx-post')) return;
+    if (form.hasAttribute('data-confirmar') && !form.hasAttribute('data-confirmado')) return;  // ainda vai perguntar
+    if (form.hasAttribute('data-enviando')) { e.preventDefault(); return; }
+    form.setAttribute('data-enviando', '');
+    window.setTimeout(function () { form.removeAttribute('data-enviando'); }, 10000);
+  });
+  window.addEventListener('pageshow', function () {
+    document.querySelectorAll('form[data-enviando]').forEach(function (f) { f.removeAttribute('data-enviando'); });
+  });
+
+  // ---- Confirmação de ações destrutivas ----
+  // Elementos HTMX usam hx-confirm="texto"; formulários comuns usam data-confirmar="texto". Opcionais no
+  // elemento: data-confirmar-titulo, data-confirmar-rotulo (botão de confirmar) e data-confirmar-neutro
+  // (botão sem destaque de perigo). Em vez do confirm() do navegador, abre o <dialog id="dlg-confirmar">.
+  var confirmarPendente = null;
+  function pedirConfirmacao(origem, texto, aoConfirmar) {
+    var dialogo = document.getElementById('dlg-confirmar');
+    if (!dialogo || !dialogo.showModal) return window.confirm(texto) && (aoConfirmar(), true);
+    var ok = document.getElementById('dlg-confirmar-ok');
+    document.getElementById('dlg-confirmar-titulo').textContent = origem.getAttribute('data-confirmar-titulo') || 'Confirmar ação';
+    document.getElementById('dlg-confirmar-texto').textContent = texto;
+    ok.textContent = origem.getAttribute('data-confirmar-rotulo') || 'Confirmar';
+    ok.classList.toggle('btn-perigo', !origem.hasAttribute('data-confirmar-neutro'));
+    confirmarPendente = aoConfirmar;
+    if (!dialogo.open) dialogo.showModal();
+    return true;
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('#dlg-confirmar-ok')) return;
+    var acao = confirmarPendente;
+    confirmarPendente = null;
+    document.getElementById('dlg-confirmar').close();
+    if (acao) acao();
+  });
+  document.addEventListener('close', function (e) {
+    if (e.target && e.target.id === 'dlg-confirmar') confirmarPendente = null;
+  }, true);
+  // HTMX: intercepta a pergunta do hx-confirm e só dispara a requisição depois do "Confirmar"
+  document.body.addEventListener('htmx:confirm', function (e) {
+    if (!e.detail.question) return;
+    e.preventDefault();
+    pedirConfirmacao(e.detail.elt, e.detail.question, function () { e.detail.issueRequest(true); });
+  });
+  // Formulário comum: pergunta antes de enviar; depois do "Confirmar", reenvia sem perguntar de novo
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    var texto = form.getAttribute && form.getAttribute('data-confirmar');
+    if (!texto || form.hasAttribute('data-confirmado')) return;
+    e.preventDefault();
+    var botao = e.submitter;
+    pedirConfirmacao(form, texto, function () {
+      form.setAttribute('data-confirmado', '');
+      if (form.requestSubmit) form.requestSubmit(botao); else form.submit();
+    });
+  });
+
+  // ---- Menu da conta e filtros colapsáveis (<details data-conta|data-filtro>): fecha ao clicar fora ou com Esc ----
+  document.addEventListener('click', function (e) {
+    document.querySelectorAll('details[data-conta][open], details[data-filtro][open]').forEach(function (d) {
+      if (!d.contains(e.target)) d.removeAttribute('open');
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('details[data-conta][open], details[data-filtro][open]').forEach(function (d) { d.removeAttribute('open'); });
+  });
+
+  // ---- Mostrar/ocultar senha: data-alternar-senha="id-do-campo" ----
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('[data-alternar-senha]');
+    if (!botao) return;
+    var campo = document.getElementById(botao.getAttribute('data-alternar-senha'));
+    if (!campo) return;
+    var mostrar = campo.type === 'password';
+    campo.type = mostrar ? 'text' : 'password';
+    botao.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+    botao.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+  });
+
+  // ---- Copiar texto: data-copiar="id-do-campo" copia o valor; data-copiar-aviso="id" recebe o resultado ----
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('[data-copiar]');
+    if (!botao) return;
+    var campo = document.getElementById(botao.getAttribute('data-copiar'));
+    var aviso = document.getElementById(botao.getAttribute('data-copiar-aviso'));
+    if (!campo) return;
+    function avisar(texto) { if (aviso) aviso.textContent = texto; }
+    function selecionar() { campo.focus(); campo.select(); avisar('Texto selecionado: use Ctrl+C para copiar.'); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(campo.value).then(function () { avisar('Mensagem copiada.'); }, selecionar);
+    } else {
+      selecionar();
+    }
+  });
+
+  // ---- Abas: clique e setas, Home e End ----
+  // Abas com data-remoto carregam o painel pelo HTMX (um painel só): o JS não esconde painéis e,
+  // ao navegar por setas, só move o foco; Enter ou Espaço (clique) é que abre a aba.
+  function irParaAba(lista, aba, soFoco) {
+    var remota = aba.hasAttribute('data-remoto');
+    lista.querySelectorAll('[role="tab"]').forEach(function (a) {
+      var selecionada = a === aba;
+      if (!(remota && soFoco)) a.setAttribute('aria-selected', selecionada ? 'true' : 'false');
+      a.tabIndex = selecionada ? 0 : -1;
+      if (remota) return;
+      var painel = document.getElementById(a.getAttribute('aria-controls'));
+      if (painel) painel.hidden = !selecionada;
+    });
+    aba.focus();
+  }
+  document.addEventListener('click', function (e) {
+    var aba = e.target.closest('[role="tab"]');
+    // Abas remotas: quem marca a aba selecionada é a resposta do servidor (o HTMX troca as abas junto do painel)
+    if (aba && !aba.hasAttribute('data-remoto')) irParaAba(aba.closest('[role="tablist"]'), aba);
+  });
+  document.addEventListener('keydown', function (e) {
+    var aba = e.target.closest && e.target.closest('[role="tab"]');
+    if (!aba) return;
+    var lista = aba.closest('[role="tablist"]');
+    var abas = Array.prototype.slice.call(lista.querySelectorAll('[role="tab"]'));
+    var i = abas.indexOf(aba);
+    var proxima = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: abas.length - 1 }[e.key];
+    if (proxima === undefined) return;
+    e.preventDefault();
+    var destino = abas[(proxima + abas.length) % abas.length];
+    irParaAba(lista, destino, destino.hasAttribute('data-remoto'));
+  });
+
+  // ---- Chips de filtro em botão: um pressionado por grupo. Chips em link (<a>) vêm prontos do servidor ----
+  document.addEventListener('click', function (e) {
+    var chip = e.target.closest('button.chip');
+    if (!chip) return;
+    var grupo = chip.closest('.chips');
+    if (!grupo) return;
+    grupo.querySelectorAll('.chip').forEach(function (c) {
+      c.setAttribute('aria-pressed', c === chip ? 'true' : 'false');
+    });
+  });
+
+  // ---- Cartões recolhíveis no celular: [data-recolher] (botão do cabeçalho) abre/fecha o [data-recolhivel] que o contém ----
+  document.addEventListener('click', function (e) {
+    var gatilho = e.target.closest('[data-recolher]');
+    if (!gatilho || gatilho.disabled) return;
+    var cartao = gatilho.closest('[data-recolhivel]');
+    if (!cartao) return;
+    var aberto = cartao.classList.toggle('aberto');
+    gatilho.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+  });
+  // Em telas largas tudo fica aberto: o botão vira texto comum (desabilitado e fora da ordem de tabulação)
+  var larga = window.matchMedia('(min-width: 720px)');
+  function sincronizarRecolhiveis() {
+    document.querySelectorAll('[data-recolher]').forEach(function (b) {
+      b.disabled = larga.matches;
+      if (larga.matches) b.removeAttribute('aria-expanded');
+      else b.setAttribute('aria-expanded', b.closest('[data-recolhivel]').classList.contains('aberto') ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', sincronizarRecolhiveis);
+  document.addEventListener('htmx:afterSettle', sincronizarRecolhiveis);
+  if (larga.addEventListener) larga.addEventListener('change', sincronizarRecolhiveis);
+
+  // ---- Tema: automático -> escuro -> claro. O servidor lê o cookie e já envia data-tema ----
+  var ORDEM = ['', 'escuro', 'claro'];
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-alternar-tema]')) return;
+    var raiz = document.documentElement;
+    var atual = raiz.getAttribute('data-tema') || '';
+    var proximo = ORDEM[(ORDEM.indexOf(atual) + 1) % ORDEM.length];
+    if (proximo) raiz.setAttribute('data-tema', proximo); else raiz.removeAttribute('data-tema');
+    var seguro = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = 'tema=' + proximo + '; path=/; max-age=' + (proximo ? 31536000 : 0) + '; SameSite=Lax' + seguro;
+  });
+
+  // ---- Foco por teclado em faixas com rolagem horizontal (chips, abas): garante que o item focado apareça inteiro ----
+  document.addEventListener('focusin', function (e) {
+    var item = e.target.closest && e.target.closest('.chips > *, .abas > *');
+    if (item && item.scrollIntoView) item.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  });
+
+  // ---- Troca parcial do HTMX: se o elemento focado vai ser substituído (chip, paginação, seletor),
+  // devolve o foco ao equivalente na lista nova; sem equivalente, ao próprio trecho trocado ----
+  var focoAntes = null;
+  var focoPorId = null;
+  document.body.addEventListener('htmx:beforeSwap', function (e) {
+    var ativo = document.activeElement;
+    var alvo = e.detail.target;
+    var dentro = ativo && ativo !== document.body && alvo && alvo.contains(ativo) && alvo !== ativo;
+    var grupo = dentro ? ativo.closest('nav') : null;
+    focoPorId = ativo && ativo !== document.body && ativo.id ? ativo.id : null;
+    focoAntes = dentro ? { alvoId: alvo.id, id: ativo.id, href: ativo.getAttribute('href'), texto: (ativo.textContent || '').trim(), grupo: grupo ? grupo.className : '' } : null;
+  });
+  document.body.addEventListener('htmx:afterSettle', function (e) {
+    if (focoPorId && (!document.activeElement || document.activeElement === document.body)) {
+      var mesmo = document.getElementById(focoPorId);
+      if (mesmo) mesmo.focus({ preventScroll: true });
+    }
+    focoPorId = null;
+    if (!focoAntes) return;
+    var alvo = e.detail.target;
+    // Troca por outerHTML: o alvo antigo saiu do DOM, o equivalente novo tem o mesmo id
+    if (!alvo.isConnected && focoAntes.alvoId) alvo = document.getElementById(focoAntes.alvoId) || alvo;
+    var igual = null;
+    if (focoAntes.id) igual = document.getElementById(focoAntes.id);
+    if (!igual && focoAntes.href) {
+      igual = Array.prototype.slice.call(alvo.querySelectorAll('a[href]')).filter(function (a) {
+        return a.getAttribute('href') === focoAntes.href;
+      })[0];
+    }
+    if (!igual && focoAntes.grupo) {
+      // Mesmo botão no mesmo grupo (ex.: "Próxima" da paginação, cujo endereço mudou)
+      igual = Array.prototype.slice.call(alvo.querySelectorAll('nav.' + focoAntes.grupo.split(' ')[0] + ' a, nav.' + focoAntes.grupo.split(' ')[0] + ' button:not([disabled])')).filter(function (b) {
+        return (b.textContent || '').trim() === focoAntes.texto;
+      })[0];
+    }
+    focoAntes = null;
+    if (igual) igual.focus({ preventScroll: true });
+    else if (alvo.hasAttribute('tabindex')) alvo.focus({ preventScroll: true });
+  });
+
+  // ---- Diálogos de formulário carregados pelo HTMX: abrem quando o conteúdo chega e se esvaziam ao fechar ----
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    var alvo = e.detail.target;
+    var dialogo = alvo && alvo.closest ? alvo.closest('dialog') : null;
+    if (dialogo && !dialogo.open) {
+      dialogo.showModal();
+      // Foco no primeiro campo (com o conteúdo selecionado, para digitar por cima do valor atual)
+      var primeiro = dialogo.querySelector('input:not([type="hidden"]):not([type="checkbox"]), select, textarea');
+      if (primeiro) {
+        primeiro.focus();
+        if (primeiro.select && primeiro.type !== 'date') primeiro.select();
+      }
+    }
+  });
+  document.addEventListener('close', function (e) {
+    var dialogo = e.target;
+    if (dialogo && dialogo.id === 'dlg-form') {
+      var conteudo = document.getElementById('dlg-form-conteudo');
+      if (conteudo) conteudo.innerHTML = '';
+    }
+  }, true);
+  // Formulário devolvido com erro: leva o foco ao primeiro campo inválido
+  document.body.addEventListener('htmx:afterSettle', function () {
+    var invalido = document.querySelector('#form-dialogo [aria-invalid="true"]');
+    if (invalido) {
+      invalido.focus();
+      return;
+    }
+    // Diálogo que troca de etapa (ex.: escolher o contrato -> formulário): o botão clicado saiu da página
+    // e o foco se perderia; leva-o ao primeiro campo da nova etapa.
+    var dialogo = document.getElementById('dlg-form');
+    var formulario = document.getElementById('form-dialogo');
+    if (dialogo && dialogo.open && formulario && !dialogo.contains(document.activeElement)) {
+      var primeiro = formulario.querySelector('input:not([type="hidden"]):not([type="checkbox"]), select, textarea');
+      if (primeiro) primeiro.focus();
+    }
+  });
+
+  // Página inteira devolvida com erro de formulário (assistente de contrato, sem HTMX): foco no primeiro campo inválido
+  var invalidoNaPagina = document.querySelector('main form [aria-invalid="true"]');
+  if (invalidoNaPagina) invalidoNaPagina.focus();
+
+  // ---- Falha de rede do HTMX (sem conexão ou tempo esgotado): avisa em #avisos; some quando uma requisição der certo ----
+  function avisarFalhaDeRede(texto) {
+    // Com um diálogo aberto, a página fica atrás do fundo escuro: o aviso vai para dentro do diálogo
+    var dialogo = document.querySelector('dialog[open]');
+    var area = document.getElementById('avisos');
+    if (dialogo) {
+      area = dialogo.querySelector('[data-avisos-dialogo]');
+      if (!area) {
+        area = document.createElement('div');
+        area.setAttribute('data-avisos-dialogo', '');
+        area.setAttribute('aria-live', 'polite');
+        dialogo.insertBefore(area, dialogo.firstChild);
+      }
+    }
+    if (!area) return;
+    document.querySelectorAll('[data-falha-rede]').forEach(function (a) { a.remove(); });
+    var aviso = document.createElement('div');
+    aviso.className = 'aviso erro';
+    aviso.setAttribute('role', 'alert');
+    aviso.setAttribute('data-falha-rede', '');
+    aviso.innerHTML = '<svg class="i" aria-hidden="true" focusable="false"><use href="#i-alerta"/></svg><div></div>';
+    aviso.lastChild.textContent = texto;
+    area.appendChild(aviso);
+    area.scrollIntoView({ block: 'nearest' });
+  }
+  document.body.addEventListener('htmx:sendError', function () {
+    avisarFalhaDeRede('Sem conexão com o servidor. Verifique a internet e tente de novo.');
+  });
+  document.body.addEventListener('htmx:timeout', function () {
+    avisarFalhaDeRede('O servidor demorou demais para responder. Tente de novo.');
+  });
+  document.body.addEventListener('htmx:afterRequest', function (e) {
+    if (!e.detail.successful) return;
+    document.querySelectorAll('[data-falha-rede]').forEach(function (a) { a.remove(); });
+  });
+
+  // ---- Carregamento: a classe "carregando" no <html> acende a barra do topo enquanto houver requisição do HTMX ----
+  var pendentes = new Set();
+  function atualizarBarra() { document.documentElement.classList.toggle('carregando', pendentes.size > 0); }
+  document.body.addEventListener('htmx:beforeRequest', function (e) {
+    pendentes.add(e.detail.xhr);
+    // O trecho que vai ser trocado fica "ocupado" (leitores de tela anunciam; o CSS esmaece a lista)
+    if (e.detail.target && e.detail.target.setAttribute) e.detail.target.setAttribute('aria-busy', 'true');
+    atualizarBarra();
+  });
+  ['htmx:afterRequest', 'htmx:sendError', 'htmx:timeout', 'htmx:sendAbort'].forEach(function (nome) {
+    document.body.addEventListener(nome, function (e) {
+      pendentes.delete(e.detail.xhr);
+      if (e.detail.target && e.detail.target.removeAttribute) e.detail.target.removeAttribute('aria-busy');
+      atualizarBarra();
+    });
+  });
+  // Voltar pelo histórico (bfcache) não deve reabrir a página com a barra acesa
+  window.addEventListener('pageshow', function () { pendentes.clear(); atualizarBarra(); });
+
+  // ---- Lembrar filtros da lista ----
+  // Em listas com <form id="filtros" data-lembrar-filtros>, guarda na aba (sessionStorage) a busca, o filtro, a ordem e o "por
+  // página" da URL. Ao voltar da ficha ("Voltar", menu lateral) para o endereço puro da lista, reabre com o que estava.
+  // "Limpar filtros" (que deixa a URL sem parâmetros) apaga o que foi guardado; sair da conta também.
+  var PREFIXO_FILTROS = 'filtros-lista:';
+  function lembrarFiltros() {
+    var lista = document.getElementById('filtros');
+    if (!lista || !lista.hasAttribute('data-lembrar-filtros')) return;
+    var chave = PREFIXO_FILTROS + location.pathname;
+    try {
+      if (location.search) sessionStorage.setItem(chave, location.search);
+      else sessionStorage.removeItem(chave);
+    } catch (erro) { /* armazenamento indisponível: a lista só não lembra */ }
+  }
+  (function restaurarFiltros() {
+    var lista = document.getElementById('filtros');
+    if (!lista || !lista.hasAttribute('data-lembrar-filtros') || location.search) return lembrarFiltros();
+    try {
+      var salvo = sessionStorage.getItem(PREFIXO_FILTROS + location.pathname);
+      if (salvo) location.replace(location.pathname + salvo);
+    } catch (erro) { /* idem */ }
+  })();
+  document.body.addEventListener('htmx:pushedIntoHistory', lembrarFiltros);
+  document.body.addEventListener('htmx:historyRestore', lembrarFiltros);
+  document.addEventListener('submit', function (e) {
+    if (!e.target.action || new URL(e.target.action).pathname !== '/logout') return;
+    try {
+      Object.keys(sessionStorage).filter(function (k) { return k.indexOf(PREFIXO_FILTROS) === 0; })
+        .forEach(function (k) { sessionStorage.removeItem(k); });
+    } catch (erro) { /* idem */ }
+  });
+
+  // ---- Atalhos de teclado (só sem modificadores, fora de campos de texto e sem diálogo aberto) ----
+  // "/" leva o foco à busca da página; "n" aciona o botão marcado com data-atalho-novo (o "Novo ..." da lista).
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key !== '/' && e.key !== 'n') return;
+    var alvo = e.target;
+    var tag = alvo && alvo.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (alvo && alvo.isContentEditable)) return;
+    if (document.querySelector('dialog[open]')) return;
+    if (e.key === '/') {
+      var busca = document.querySelector('main input[type="search"]');
+      if (!busca) return;
+      e.preventDefault();
+      busca.focus();
+      busca.select();
+    } else {
+      var novo = document.querySelector('main [data-atalho-novo]');
+      if (!novo) return;
+      e.preventDefault();
+      novo.click();
+    }
+  });
+
+  // ---- Aviso de sessão prestes a expirar ----
+  // O servidor expira a sessão após data-sessao-limite segundos sem requisições. Cinco minutos antes, abre o diálogo de
+  // confirmação com "Continuar conectado" (POST /sessao/renovar); se o prazo passar, avisa que expirou e leva ao login.
+  // Qualquer requisição do HTMX bem-sucedida conta como atividade e reinicia a contagem.
+  var limiteSessao = parseInt(document.body.getAttribute('data-sessao-limite') || '0', 10);
+  if (limiteSessao > 0) {
+    var ultimaAtividade = Date.now();
+    var avisoEm = Math.max(limiteSessao - 300, Math.floor(limiteSessao / 2)) * 1000;
+    var relogioSessao = null;
+    var estadoSessao = 'ativa';  // 'ativa' | 'avisada' | 'expirada'
+    var origemAviso = document.createElement('span');
+    origemAviso.setAttribute('data-confirmar-neutro', '');
+
+    function csrfDaPagina() {
+      try { return JSON.parse(document.body.getAttribute('hx-headers') || '{}')['X-CSRF-Token'] || ''; } catch (erro) { return ''; }
+    }
+    function avisarSessaoExpirada() {
+      estadoSessao = 'expirada';
+      origemAviso.setAttribute('data-confirmar-titulo', 'Sessão expirada');
+      origemAviso.setAttribute('data-confirmar-rotulo', 'Entrar de novo');
+      pedirConfirmacao(origemAviso, 'Sua sessão expirou por inatividade. Entre de novo para continuar.', function () { location.assign('/login?expirou=1'); });
+    }
+    function avisarSessaoPrestesAExpirar() {
+      estadoSessao = 'avisada';
+      origemAviso.setAttribute('data-confirmar-titulo', 'Sessão prestes a expirar');
+      origemAviso.setAttribute('data-confirmar-rotulo', 'Continuar conectado');
+      pedirConfirmacao(origemAviso, 'Por inatividade, sua sessão termina em poucos minutos. Quer continuar conectado?', function () {
+        fetch('/sessao/renovar', { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-Token': csrfDaPagina() } })
+          .then(function (r) { if (r.ok && !r.redirected) reiniciarSessao(); else avisarSessaoExpirada(); },
+                function () { avisarSessaoExpirada(); });
+      });
+    }
+    function agendarSessao() {
+      window.clearTimeout(relogioSessao);
+      var parado = Date.now() - ultimaAtividade;
+      if (parado >= limiteSessao * 1000) { if (estadoSessao !== 'expirada') avisarSessaoExpirada(); return; }
+      if (parado >= avisoEm) {
+        if (estadoSessao === 'ativa') avisarSessaoPrestesAExpirar();
+        relogioSessao = window.setTimeout(agendarSessao, limiteSessao * 1000 - parado + 500);
+      } else {
+        relogioSessao = window.setTimeout(agendarSessao, avisoEm - parado);
+      }
+    }
+    function reiniciarSessao() {
+      ultimaAtividade = Date.now();
+      if (estadoSessao === 'avisada') {
+        var dialogo = document.getElementById('dlg-confirmar');
+        if (dialogo && dialogo.open) dialogo.close();
+      }
+      if (estadoSessao !== 'expirada') estadoSessao = 'ativa';
+      agendarSessao();
+    }
+    document.body.addEventListener('htmx:afterRequest', function (e) { if (e.detail.successful) reiniciarSessao(); });
+    // Aba em segundo plano: os temporizadores atrasam, então reconfere o prazo ao voltar
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) agendarSessao(); });
+    agendarSessao();
+  }
+
+  // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
+  document.body.addEventListener('htmx:afterSettle', function (e) {
+    if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
+  });
+})();

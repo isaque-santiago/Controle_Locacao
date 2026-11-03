@@ -1,0 +1,5 @@
+{% from "componentes/macros.html" import campo, form_dialogo %}
+{% call form_dialogo("Regularizar documento", acao, "Confirmar regularização", csrf_token, erro_geral) %}
+  <p class="largo"><strong>{{ documento.tipo|upper }}</strong>{% if documento.ano_referencia %} {{ documento.ano_referencia }}{% endif %} · vencimento <span class="mono">{{ documento.vencimento|data_br }}</span></p>
+  {{ campo("f-data", "Data de regularização", nome="data", valor=valores.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True) }}
+{% endcall %}

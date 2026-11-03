@@ -1,0 +1,12 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/manutencao?aba=catalogo", "Voltar para o catálogo") }}
+{{ cabecalho_pagina(titulo, "Defina quando este item deve aparecer nos alertas da frota.") }}
+<form class="cartao" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">{% include "manutencao/_campos_catalogo.html" %}</div>
+  <div class="rodape-acoes"><a class="btn" href="/manutencao?aba=catalogo">Cancelar</a><button class="btn btn-primario" type="submit">Salvar item</button></div>
+</form>
+{% endblock %}
