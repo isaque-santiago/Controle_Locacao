@@ -88,7 +88,7 @@ def _contexto(etapa, rascunho, cliente, moto, **extra):
         "motos_extras": extras, "extras_ids": [m["id"] for m in extras], "max_extras": MAX_MOTOS_POR_CONTRATO - 1,
         "titulo": "Novo contrato", "etapa": etapa, "passos": _passos(etapa, cliente, moto), "total_etapas": len(ETAPAS),
         "subtitulo_etapa": ETAPAS[etapa - 1][0], "cliente": cliente, "moto": moto, "base": _BASE,
-        "periodos_rotulo": contratos_lista.PERIODOS_ROTULO, **extra,
+        "periodos_rotulo": contratos_lista.PERIODOS_ROTULO, "tipos_contrato": formulario.TIPOS, **extra,
     }
 
 
@@ -97,7 +97,7 @@ def _extra_confirmar(rascunho, moto):
     condicoes = rascunho["condicoes"]
     digitada = rascunho.get("vistoria_texto") if rascunho.get("vistoria_moto") == moto["id"] else None
     return {
-        "condicoes": condicoes, "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
+        "condicoes": condicoes, "valor_total": formulario.valor_total_promessa(condicoes), "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
         "v": digitada or formulario.vistoria_inicial(moto["km_atual"]),
         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(moto['km_atual'])} km) e vira o km inicial do contrato.",
         "itens_checklist": [(PREFIXO + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],

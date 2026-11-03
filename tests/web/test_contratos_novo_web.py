@@ -116,6 +116,46 @@ def test_vincular_exige_principal_e_recusa_moto_indisponivel(cliente, base_contr
     assert "não está disponível para vincular" in cliente.get(f"{BASE}?etapa=2").text
 
 
+PROMESSA = {**CONDICOES, "tipo_contrato": "promessa_compra", "valor_entrada": "1.000,00", "numero_parcelas": "4",
+            "parcelas_pagas_inicial": "0", "dia_cobranca": "", "primeira_cobranca": "", "periodicidade": "mensal"}
+
+
+def test_condicoes_oferecem_tipo_e_campos_da_promessa(cliente, base_contratos):
+    _preparar(cliente, base_contratos, ate=2)
+    html = cliente.get(f"{BASE}?etapa=3").text
+    assert "Tipo do contrato" in html and "Promessa de compra" in html
+    for rotulo in ("Entrada", "Número de parcelas", "Parcelas já pagas", "Dia da cobrança", "Primeira cobrança"):
+        assert rotulo in html
+
+
+def test_promessa_confirma_com_total_agenda_limitada_e_payload_completo(cliente, base_contratos, acoes_contratos_falsas):
+    token = _preparar(cliente, base_contratos, ate=2)
+    cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **PROMESSA})
+    html = cliente.get(f"{BASE}?etapa=4").text
+    assert "Total da promessa" in html and "R$ 2.280,00" in html  # 1.000 + 4 x 320
+    assert "Parcela 1" in html and "Parcela 5" not in html and "Entrada" in html and "4 parcelas" in html
+    assert "Promessa de compra: a prévia mostra só os primeiros 30 dias" in html  # igual à RPC: o resto sai pelo gerador
+    assert "Prazo indeterminado: a prévia" not in html
+    cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()})
+    dados, _ = acoes_contratos_falsas.chamadas[0]
+    assert dados["tipo_contrato"] == "promessa_compra" and dados["numero_parcelas"] == 4
+    assert dados["valor_entrada"] == "1000.00" and dados["data_fim_prevista"] is None
+
+
+def test_promessa_sem_parcelas_volta_com_erro_no_campo(cliente, base_contratos):
+    token = _preparar(cliente, base_contratos, ate=2)
+    resposta = cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **PROMESSA, "numero_parcelas": ""})
+    assert resposta.status_code == 422 and "Número de parcelas:" in resposta.text
+
+
+def test_locacao_comum_nao_envia_campos_de_promessa(cliente, base_contratos, acoes_contratos_falsas):
+    token = _preparar(cliente, base_contratos)
+    assert "Total da promessa" not in cliente.get(f"{BASE}?etapa=4").text
+    cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()})
+    dados, _ = acoes_contratos_falsas.chamadas[0]
+    assert "tipo_contrato" not in dados and "numero_parcelas" not in dados
+
+
 def test_condicoes_comecam_com_padroes_da_moto(cliente, base_contratos):
     _preparar(cliente, base_contratos, ate=2)
     html = cliente.get(f"{BASE}?etapa=3").text

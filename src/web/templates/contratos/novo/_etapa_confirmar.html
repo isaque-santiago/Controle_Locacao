@@ -2,10 +2,15 @@
 {% include "contratos/novo/_resumo_selecao.html" %}
 {% call cartao(cliente.nome ~ " vai alugar " ~ (moto.placa|placa_br) ~ " · " ~ moto.marca ~ " " ~ moto.modelo) %}
 <dl class="grade-dados grade-linhas">
+  <div><dt>Tipo</dt><dd>{{ tipos_contrato[condicoes.tipo_contrato or "locacao"] }}</dd></div>
   <div><dt>Periodicidade</dt><dd>{{ periodos_rotulo[condicoes.periodicidade] }}</dd></div>
   <div><dt>Valor / período</dt><dd class="mono">{{ condicoes.valor_periodo|moeda }}</dd></div>
   <div><dt>Início</dt><dd class="mono">{{ condicoes.data_inicio|data_br }}</dd></div>
-  <div><dt>Prazo</dt><dd>{% if condicoes.data_fim_prevista %}<span class="mono">{{ condicoes.data_fim_prevista|data_br }}</span>{% else %}Indeterminado{% endif %}</dd></div>
+  {% if valor_total is not none %}<div><dt>Entrada</dt><dd class="mono">{{ condicoes.valor_entrada|moeda }}</dd></div>
+  <div><dt>Parcelas</dt><dd class="mono">{{ condicoes.numero_parcelas }}{% if condicoes.parcelas_pagas_inicial %} · {{ condicoes.parcelas_pagas_inicial }} já pagas{% endif %}</dd></div>
+  <div><dt>Total da promessa</dt><dd class="mono">{{ valor_total|moeda }}</dd></div>{% endif %}
+  {% if condicoes.dia_cobranca %}<div><dt>Dia da cobrança</dt><dd class="mono">{{ condicoes.dia_cobranca }}</dd></div>{% endif %}
+  <div><dt>Prazo</dt><dd>{% if valor_total is not none %}{{ condicoes.numero_parcelas }} parcelas{% elif condicoes.data_fim_prevista %}<span class="mono">{{ condicoes.data_fim_prevista|data_br }}</span>{% else %}Indeterminado{% endif %}</dd></div>
   <div><dt>Caução</dt><dd class="mono">{{ condicoes.caucao_valor|moeda }}</dd></div>
 </dl>
 {% endcall %}
@@ -13,11 +18,12 @@
 <h2 class="titulo-secao">Prévia da agenda de cobranças</h2>
 <div class="contrato-linhas">
 {% call tabela([("Item", ""), ("Vencimento", ""), ("Valor", "num")], "Cobranças previstas do contrato") %}
+{% if valor_total is not none and condicoes.valor_entrada|float > 0 %}<tr><td data-rotulo="Item">Entrada</td><td class="mono" data-rotulo="Vencimento">{{ condicoes.data_inicio|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ condicoes.valor_entrada|moeda }}</td></tr>{% endif %}
 {% if tem_caucao %}<tr><td data-rotulo="Item">Caução</td><td class="mono" data-rotulo="Vencimento">{{ condicoes.data_inicio|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ condicoes.caucao_valor|moeda }}</td></tr>{% endif %}
 {% for parcela in agenda %}<tr><td data-rotulo="Item">Parcela {{ parcela.numero }}</td><td class="mono" data-rotulo="Vencimento">{{ parcela.vencimento|data_br }}</td><td class="num mono" data-rotulo="Valor">{{ parcela.valor|moeda }}</td></tr>{% endfor %}
 {% endcall %}
 </div>
-{% if not condicoes.data_fim_prevista %}<p class="text-texto-2 text-[13px]">Prazo indeterminado: a prévia mostra só os primeiros 30 dias. As cobranças seguintes são geradas automaticamente enquanto o contrato estiver ativo.</p>{% endif %}
+{% if not condicoes.data_fim_prevista %}<p class="text-texto-2 text-[13px]">{% if valor_total is not none %}Promessa de compra: a prévia mostra só os primeiros 30 dias.{% else %}Prazo indeterminado: a prévia mostra só os primeiros 30 dias.{% endif %} As cobranças seguintes são geradas automaticamente enquanto o contrato estiver ativo.</p>{% endif %}
 
 <h2 class="titulo-secao">Vistoria de entrega</h2>
 <form class="cartao" method="post" action="{{ base }}/criar" enctype="multipart/form-data">
