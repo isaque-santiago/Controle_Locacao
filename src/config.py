@@ -49,14 +49,19 @@ def get_supabase_anon_key() -> str:
     return valor
 
 
-def get_locador() -> dict:
-    """Dados da empresa LOCADORA para o contrato: seção [locador] do secrets.toml.
+# Campos do LOCADOR no contrato em PDF; cada um vem da variável `LOCADOR_<CAMPO EM MAIÚSCULAS>`.
+CAMPOS_LOCADOR = (
+    "nome", "cnpj", "inscricao_estadual", "email", "telefones", "endereco",
+    "representante_nome", "representante_qualificacao", "representante_rg", "representante_cpf",
+    "cidade", "foro",
+)
 
-    Ficam fora do repositório (têm CNPJ e documentos pessoais do representante).
-    Devolve {} se a seção não existir — o contrato sai com linhas em branco.
+
+def get_locador() -> dict:
+    """Dados da empresa LOCADORA para o contrato: variáveis `LOCADOR_*` (ou o `.env` de dev).
+
+    Ficam fora do repositório (têm CNPJ e documentos pessoais do representante). Só entram os campos
+    preenchidos; sem nenhum, devolve {} e o contrato sai com linhas em branco no lugar do locador.
     """
-    try:
-        bruto = st.secrets.get("locador")
-        return {chave: str(valor) for chave, valor in dict(bruto).items()} if bruto else {}
-    except Exception:
-        return {}
+    dados = {campo: (_ler(f"LOCADOR_{campo.upper()}") or "").strip() for campo in CAMPOS_LOCADOR}
+    return {campo: valor for campo, valor in dados.items() if valor}
