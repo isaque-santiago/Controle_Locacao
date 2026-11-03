@@ -596,6 +596,12 @@ preparam o banco para a planilha "PAGAMENTO MOTOS":
   `rpc_pagar_parcela_divida` e `vw_parcelas_divida`; `supabase/verificar_compra_parcelada.sql`.
 - `20261103140000_capital_inclui_compra_parcelada.sql`: `vw_capital_veiculo` soma também as compras parceladas.
 
+**Telas (novo contrato):** o assistente de `/contratos/novo` aceita até 4 motos vinculadas na etapa Moto (a principal fica com a parcela e
+a receita), o tipo "Promessa de compra" na etapa Condições (entrada, número de parcelas, parcelas já pagas, dia e primeira cobrança) e mostra
+o total e a prévia da agenda na confirmação. A lista de contratos exibe "+N motos" e "Promessa de compra"; a ficha mostra as motos do contrato
+e o total, a entrada e as parcelas pagas/restantes. A vistoria de entrega continua só na moto principal. As telas de dívidas (compra parcelada)
+ainda não existem.
+
 Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
 Produção só depois de backup e autorização do dono. Regra pura da agenda: `src/domain/agenda_cobrancas.py` (`tests/test_agenda_promessa.py`).
 
