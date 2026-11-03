@@ -81,3 +81,13 @@ class TestServico:
         with patch("src.services.contratos.contratos.listar_motos_do_contrato", return_value=linhas) as leitura:
             assert contratos.motos_do_contrato("ct") == linhas
         leitura.assert_called_once_with("ct")
+
+
+def test_contar_vinculadas_ordena_pela_chave_composta_porque_contrato_motos_nao_tem_id():
+    """Regressão do erro 500 na lista de contratos: `todos()` ordena por `id` por padrão, coluna que a tabela não tem."""
+    from src.repositories import contratos as repositorio
+
+    linhas = [{"contrato_id": "c1", "moto_id": "m1"}, {"contrato_id": "c1", "moto_id": "m2"}, {"contrato_id": "c2", "moto_id": "m3"}]
+    with patch.object(repositorio, "todos", return_value=linhas) as todos:
+        assert repositorio.contar_vinculadas() == {"c1": 2, "c2": 1}
+    assert todos.call_args.args == ("contrato_motos",) and "id" not in todos.call_args.kwargs["ordem"]

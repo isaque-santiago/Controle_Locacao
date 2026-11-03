@@ -78,7 +78,7 @@ def listar_motos_do_contrato(contrato_id: str) -> list:
 def contar_vinculadas() -> dict:
     """Quantas motos vinculadas (além da principal) cada contrato tem: {contrato_id: n}, numa consulta só."""
     contagem: dict = {}
-    for linha in todos("contrato_motos"):
+    for linha in todos("contrato_motos", ordem=["contrato_id", "moto_id"]):
         contagem[linha["contrato_id"]] = contagem.get(linha["contrato_id"], 0) + 1
     return contagem
 
