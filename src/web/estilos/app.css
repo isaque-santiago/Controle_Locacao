@@ -198,6 +198,7 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
   .topo-movel .marca {padding: 0; flex: 1; min-width: 0;}
   .topo-movel .marca-simbolo {width: 32px; height: 32px; font-size: 13px;}
   .topo-movel .btn-icone {color: var(--lateral-forte); border-color: var(--lateral-linha);}
+  .topo-movel .btn-icone:hover {background: rgba(255,255,255,.12); border-color: var(--lateral-linha);}
   main {padding-bottom: calc(var(--barra-inferior) + 32px + env(safe-area-inset-bottom));}
   .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--superficie-elevada); border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom);}
   .barra-inferior a, .barra-inferior button {position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--barra-inferior); padding: var(--e2) 2px; border: 0; background: none; color: var(--texto-2); text-decoration: none; font-size: 12px; font-weight: 500; cursor: pointer;}
@@ -232,15 +233,20 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .btn:hover {background: var(--superficie-hover); border-color: var(--texto-3); box-shadow: 0 4px 10px -2px rgba(21,24,28,.18), inset 0 1px 0 rgba(255,255,255,.35); transform: translateY(-1px);}
 .btn:active {transform: translateY(0); box-shadow: inset 0 2px 4px rgba(21,24,28,.18);}
 .btn:disabled, .btn[aria-disabled="true"] {opacity: .5; cursor: not-allowed; transform: none; box-shadow: none;}
+.btn:disabled:hover, .btn[aria-disabled="true"]:hover {background: linear-gradient(180deg, var(--superficie-elevada), var(--superficie-hover)); border-color: var(--linha-forte);}
 .btn .i {transition: transform 180ms ease;}
 .btn-primario {background: linear-gradient(180deg, color-mix(in srgb, var(--btn) 88%, #fff), var(--btn)); border-color: var(--btn); color: var(--btn-texto); box-shadow: 0 2px 6px -1px color-mix(in srgb, var(--btn) 55%, transparent), inset 0 1px 0 rgba(255,255,255,.22);}
 .btn-primario:hover {background: linear-gradient(180deg, color-mix(in srgb, var(--btn-hover) 88%, #fff), var(--btn-hover)); border-color: var(--btn-hover); box-shadow: 0 8px 18px -6px color-mix(in srgb, var(--btn) 70%, transparent), inset 0 1px 0 rgba(255,255,255,.22);}
 .btn-primario:active {box-shadow: inset 0 2px 5px rgba(0,0,0,.3);}
 .btn-perigo {border-color: var(--perigo); color: var(--perigo-texto); background: var(--superficie-elevada);}
 .btn-perigo:hover {background: var(--perigo-fundo); border-color: var(--perigo); box-shadow: 0 4px 10px -2px rgba(214,69,69,.28);}
+.btn-primario:disabled:hover, .btn-primario[aria-disabled="true"]:hover {background: linear-gradient(180deg, color-mix(in srgb, var(--btn) 88%, #fff), var(--btn)); border-color: var(--btn);}
+.btn-perigo:disabled:hover, .btn-perigo[aria-disabled="true"]:hover {background: var(--superficie-elevada); border-color: var(--perigo);}
 @media (prefers-reduced-motion: reduce) {.btn, .btn .i {transition: none;} .btn:hover {transform: none;}}
 .btn-icone {width: var(--alvo); padding: 0; border-radius: var(--raio-md); background: transparent; border: 1px solid var(--linha-forte); color: inherit; display: inline-grid; place-items: center; min-height: var(--alvo); cursor: pointer; transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;}
 .btn-icone:hover {background: var(--superficie-hover); border-color: var(--texto-3); box-shadow: 0 2px 6px -1px rgba(21,24,28,.18);}
+.btn-icone:disabled {opacity: .5; cursor: not-allowed;}
+.btn-icone:disabled:hover {background: transparent; border-color: var(--linha-forte); box-shadow: none;}
 .btn-bloco {width: 100%;}
 .portal-acesso {display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e3);}
 .portal-acesso-bloco {display: flex; flex-direction: column; justify-content: space-between; gap: var(--e4); padding: var(--e4); border: 1px solid var(--linha); border-radius: var(--raio-campo); background: var(--superficie-elevada);}
@@ -684,6 +690,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .portal-topo {display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha);}
 .portal-topo .marca {padding: 0; flex: 1; min-width: 0;}
 .portal-topo .btn-icone, .portal-topo .btn-texto {color: var(--lateral-forte); border: 1px solid var(--lateral-linha); background: transparent;}
+.portal-topo .btn-icone:hover, .portal-topo .btn-texto:hover {background: rgba(255,255,255,.12); border-color: var(--lateral-linha);}
 .portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer;}
 .entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
 .campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
