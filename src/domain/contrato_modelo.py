@@ -143,8 +143,22 @@ def _preambulo(locador, cliente) -> str:
     return f"Pelo presente instrumento particular, de um lado: {empresa} {locatario}"
 
 
-def montar(contrato: dict, cliente: dict, moto: dict, locador: dict) -> list[Bloco]:
-    """Contrato completo, na ordem do documento, como lista de blocos."""
+def _descricao_moto(moto, km) -> str:
+    return (
+        f"Motocicleta de marca: {_v(moto.get('marca')).upper()}, Modelo: {_v(moto.get('modelo')).upper()}, "
+        f"Placa: {_v(moto.get('placa')).upper()}, Renavam nº {_v(moto.get('renavam'))}, "
+        f"Chassi: {_v(moto.get('chassi')).upper()}, Motor: {_EM_BRANCO}, "
+        f"Cor: {_v(moto.get('cor')).upper()}, Ano: {_ano(moto)}, "
+        f"Quilometragem: {_EM_BRANCO if km is None else _milhar(km)}"
+    )
+
+
+def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> list[Bloco]:
+    """Contrato completo, na ordem do documento, como lista de blocos.
+
+    `moto` é uma moto ou a lista de motos do contrato (a principal primeiro; contrato com várias motos)."""
+    motos = list(moto) if isinstance(moto, (list, tuple)) else [moto]
+    km_inicial = contrato.get("km_inicial") or 0
     t = TERMOS
     inicio = _como_data(contrato["data_inicio"])
     fim = contrato.get("data_fim_prevista")
@@ -170,18 +184,17 @@ def montar(contrato: dict, cliente: dict, moto: dict, locador: dict) -> list[Blo
     b.append(Bloco("preambulo", "", _preambulo(locador, cliente)))
 
     clausula(1, "DO OBJETO DO CONTRATO")
-    item(
-        "1.1.",
-        "Por meio deste contrato regula-se a locação do veículo: Motocicleta de marca: "
-        f"{_v(moto.get('marca')).upper()}, Modelo: {_v(moto.get('modelo')).upper()}, "
-        f"Placa: {_v(moto.get('placa')).upper()}, Renavam nº {_v(moto.get('renavam'))}, "
-        f"Chassi: {_v(moto.get('chassi')).upper()}, Motor: {_EM_BRANCO}, "
-        f"Cor: {_v(moto.get('cor')).upper()}, Ano: {_ano(moto)}, "
-        f"Quilometragem: {_milhar(contrato.get('km_inicial'))}.",
-    )
+    if len(motos) == 1:
+        item("1.1.", "Por meio deste contrato regula-se a locação do veículo: " + _descricao_moto(motos[0], km_inicial) + ".")
+    else:
+        item("1.1.", f"Por meio deste contrato regula-se a locação dos {len(motos)} veículos a seguir:")
+        for indice, moto in enumerate(motos):
+            # `km_inicial` do contrato é o da moto principal (a primeira); as demais saem para preencher à mão.
+            subitem(f"({chr(97 + indice)})", _descricao_moto(moto, km_inicial if indice == 0 else None) + ".")
     item(
         "1.2.",
-        f"O veículo descrito acima será utilizado exclusivamente pelo {_LOCATARIO}, não sendo "
+        f"{'O veículo descrito acima será utilizado' if len(motos) == 1 else 'Os veículos descritos acima serão utilizados'} "
+        f"exclusivamente pelo {_LOCATARIO}, não sendo "
         "permitido sub-rogar para terceiros os direitos por ele obtidos através do presente "
         f"contrato, nem permitir que outra pessoa conduza o referido veículo sem a inequívoca "
         f"e expressa autorização do {_LOCADOR}, sob pena de rescisão contratual, multa de "

@@ -131,3 +131,11 @@ def test_todo_item_tem_numero_e_texto():
     for bloco in montar(CONTRATO, CLIENTE, MOTO, LOCADOR):
         if bloco.tipo in ("item", "subitem"):
             assert bloco.numero.endswith(".") and bloco.texto
+
+
+def test_varias_motos_listam_cada_uma_com_km_so_na_principal():
+    segunda = {"marca": "Yamaha", "modelo": "Factor", "placa": "QRS4T21"}
+    texto = "\n".join(b.texto for b in montar(CONTRATO, CLIENTE, [MOTO, segunda], {}))
+    assert "locação dos 2 veículos" in texto and "QRS4T21" in texto
+    assert texto.count("Quilometragem: ...............................") == 1
+    assert "Os veículos descritos acima serão utilizados" in texto
