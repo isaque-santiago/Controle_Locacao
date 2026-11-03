@@ -19,9 +19,10 @@ def carregar_lista(status, busca, pagina, por_pagina, ordem=""):
     registros = contratos.listar()
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
     frota = {m["id"]: m for m in motos.listar()}
+    vinculadas = contratos.contar_vinculadas()
     itens = [
         {"contrato": c, "cliente_nome": nomes.get(c["cliente_id"], "—"), "moto": frota.get(c["moto_id"]),
-         "placa": (frota.get(c["moto_id"]) or {}).get("placa", "")}
+         "placa": (frota.get(c["moto_id"]) or {}).get("placa", ""), "vinculadas": vinculadas.get(c["id"], 0)}
         for c in registros
     ]
     pagina_itens, recorte, contagem = contratos_lista.montar_pagina(itens, status, busca, pagina, por_pagina, *interpretar(ordem, contratos_lista.COLUNAS_ORDENAVEIS.values()))
@@ -59,7 +60,9 @@ def carregar_ficha(contrato, aba):
     parcelas = sorted(cobrancas.listar_por_contrato(contrato["id"]), key=lambda c: c["vencimento"])
     proximas = [c["vencimento"] for c in parcelas if c["situacao"] == "aberta" and c["tipo"] == "locacao"]
     dados = {"proxima_cobranca": proximas[0] if proximas else None, "prazo": contratos_lista.prazo_texto(contrato.get("data_fim_prevista")),
-             "cobrancas": [], "vistorias": [], "manutencoes": []}
+             "cobrancas": [], "vistorias": [], "manutencoes": [],
+             "promessa": contratos_lista.resumo_promessa(contrato, parcelas),
+             "motos": contratos.motos_do_contrato(contrato["id"])}
     if aba == "cobrancas":
         historicos = cobrancas.historicos_pagamentos([c["id"] for c in parcelas])
         dados["cobrancas"] = [
@@ -114,9 +117,12 @@ def moto_para_contrato(moto_id):
 def previa_agenda(condicoes):
     """Parcelas previstas (a mesma lógica da RPC). Prazo indeterminado mostra só a janela inicial."""
     fim = condicoes.get("data_fim_prevista")
+    primeira = condicoes.get("primeira_cobranca")
     return contratos.previa_agenda(
         date.fromisoformat(condicoes["data_inicio"]), condicoes["periodicidade"],
         Decimal(condicoes["valor_periodo"]), date.fromisoformat(fim) if fim else None,
+        numero_parcelas=condicoes.get("numero_parcelas"), parcelas_pagas_inicial=condicoes.get("parcelas_pagas_inicial") or 0,
+        primeira_cobranca=date.fromisoformat(primeira) if primeira else None,
     )
 
 

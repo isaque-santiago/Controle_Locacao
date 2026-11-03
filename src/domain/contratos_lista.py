@@ -80,3 +80,16 @@ def filtrar_motos(motos: list[dict], busca: str) -> list[dict]:
         or termo in f"{m.get('marca', '')} {m.get('modelo', '')}".casefold()
         or bool(placa_termo and placa_termo in re.sub(r"[^a-z0-9]", "", (m.get("placa") or "").casefold()))
     ]
+
+
+def resumo_promessa(contrato: dict, cobrancas: list) -> dict | None:
+    """Totais da promessa de compra para a ficha; None na locação comum.
+
+    Parcelas pagas = as que já vinham pagas antes do cadastro + as cobranças de locação quitadas no sistema."""
+    if contrato.get("tipo_contrato") != "promessa_compra":
+        return None
+    quitadas = sum(1 for c in cobrancas if c.get("tipo") == "locacao" and c.get("situacao") == "paga")
+    total = int(contrato.get("numero_parcelas") or 0)
+    pagas = min(int(contrato.get("parcelas_pagas_inicial") or 0) + quitadas, total)
+    return {"valor_total": contrato.get("valor_total"), "valor_entrada": contrato.get("valor_entrada") or 0,
+            "numero_parcelas": total, "parcelas_pagas": pagas, "parcelas_restantes": total - pagas}

@@ -12,6 +12,7 @@ from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from src.domain import contratos_lista, formulario_contrato as formulario, formulario_vistoria, mensagens
+from src.domain.contrato_motos import MAX_MOTOS_POR_CONTRATO
 from src.domain.formulario_moto import ErroDeCampos
 from src.domain.valores import hoje_br
 from src.domain.vistorias import CHECKLIST_PADRAO, ESTADOS_ITEM, NIVEIS_COMBUSTIVEL, rotulo_item
@@ -47,6 +48,22 @@ def _selecionados(rascunho):
     return cliente, moto
 
 
+def _extras(rascunho, moto):
+    """Motos vinculadas do rascunho que ainda estão disponíveis (a principal e as repetidas são descartadas)."""
+    principal = moto["id"] if moto else None
+    motos, vistos = [], set()
+    for moto_id in rascunho.get("motos_extras", []):
+        candidata = dados_contratos.moto_para_contrato(moto_id)
+        if candidata is not None and moto_id != principal and moto_id not in vistos:
+            motos.append(candidata)
+            vistos.add(moto_id)
+    if motos:
+        rascunho["motos_extras"] = [m["id"] for m in motos]
+    else:
+        rascunho.pop("motos_extras", None)
+    return motos
+
+
 def _etapa_liberada(rascunho, cliente, moto):
     """Maior etapa que o rascunho permite abrir."""
     if cliente is None:
@@ -66,10 +83,12 @@ def _passos(etapa, cliente, moto):
 
 
 def _contexto(etapa, rascunho, cliente, moto, **extra):
+    extras = _extras(rascunho, moto)
     return {
+        "motos_extras": extras, "extras_ids": [m["id"] for m in extras], "max_extras": MAX_MOTOS_POR_CONTRATO - 1,
         "titulo": "Novo contrato", "etapa": etapa, "passos": _passos(etapa, cliente, moto), "total_etapas": len(ETAPAS),
         "subtitulo_etapa": ETAPAS[etapa - 1][0], "cliente": cliente, "moto": moto, "base": _BASE,
-        "periodos_rotulo": contratos_lista.PERIODOS_ROTULO, **extra,
+        "periodos_rotulo": contratos_lista.PERIODOS_ROTULO, "tipos_contrato": formulario.TIPOS, **extra,
     }
 
 
@@ -78,7 +97,7 @@ def _extra_confirmar(rascunho, moto):
     condicoes = rascunho["condicoes"]
     digitada = rascunho.get("vistoria_texto") if rascunho.get("vistoria_moto") == moto["id"] else None
     return {
-        "condicoes": condicoes, "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
+        "condicoes": condicoes, "valor_total": formulario.valor_total_promessa(condicoes), "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
         "v": digitada or formulario.vistoria_inicial(moto["km_atual"]),
         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(moto['km_atual'])} km) e vira o km inicial do contrato.",
         "itens_checklist": [(PREFIXO + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],
@@ -95,6 +114,7 @@ def _renderizar_etapa(request, etapa, rascunho, cliente, moto, erros=None, erro_
         extra["selecionado_id"] = rascunho.get("cliente_id")
     elif etapa == 2:
         extra["candidatas"] = dados_contratos.candidatas_moto(busca)
+        extra["rascunho_tem_moto"] = moto is not None
         extra["selecionado_id"] = rascunho.get("moto_id")
     elif etapa == 3:
         extra["v"] = rascunho.get("condicoes_texto") or formulario.condicoes_iniciais(hoje_br(), moto.get("valor_locacao_sugerido"))
@@ -152,6 +172,34 @@ async def escolher_moto(request: Request, sessao: Sessao = Depends(exigir_dono))
         sessao.avisos.append({"tipo": "erro", "texto": "Esta moto não está mais disponível."})
     else:
         sessao.rascunho_contrato["moto_id"] = moto["id"]
+        extras = [i for i in sessao.rascunho_contrato.get("motos_extras", []) if i != moto["id"]]
+        sessao.rascunho_contrato["motos_extras"] = extras
+    return _ir(2, busca)
+
+
+@router.post("/contratos/novo/moto-extra", dependencies=[Depends(validar_csrf)])
+async def vincular_moto(request: Request, sessao: Sessao = Depends(exigir_dono)):
+    """Adiciona ou tira uma moto vinculada (além da principal) do rascunho."""
+    entrada = await _entrada(request)
+    busca = (entrada.get("q") or "").strip()[:80]
+    rascunho = sessao.rascunho_contrato
+    principal = await run_in_threadpool(dados_contratos.moto_para_contrato, rascunho.get("moto_id"))
+    moto_id = entrada.get("moto_id")
+    extras = [m["id"] for m in await run_in_threadpool(_extras, rascunho, principal)]
+    if principal is None:
+        sessao.avisos.append({"tipo": "erro", "texto": "Escolha primeiro a moto principal."})
+    elif entrada.get("acao") == "remover":
+        rascunho["motos_extras"] = [i for i in extras if i != moto_id]
+    else:
+        moto = await run_in_threadpool(dados_contratos.moto_para_contrato, moto_id)
+        if moto is None or moto_id == principal["id"]:
+            sessao.avisos.append({"tipo": "erro", "texto": "Esta moto não está disponível para vincular."})
+        elif moto_id in extras:
+            pass
+        elif len(extras) + 1 >= MAX_MOTOS_POR_CONTRATO:
+            sessao.avisos.append({"tipo": "erro", "texto": f"Um contrato aceita até {MAX_MOTOS_POR_CONTRATO} motos."})
+        else:
+            rascunho["motos_extras"] = [*extras, moto_id]
     return _ir(2, busca)
 
 
@@ -204,9 +252,11 @@ def _criar(request, sessao, entrada, fotos=()):
             erros.update(erro.erros)
         if erros:
             raise ErroDeCampos(erros)
-        resultado = acoes_contratos.criar_contrato_com_vistoria(
-            {"moto_id": moto["id"], "cliente_id": cliente["id"], "km_inicial": vistoria["km"], **condicoes}, vistoria,
-        )
+        vinculadas = [m["id"] for m in _extras(rascunho, moto)]
+        dados = {"moto_id": moto["id"], "cliente_id": cliente["id"], "km_inicial": vistoria["km"], **condicoes}
+        if vinculadas:
+            dados["motos_vinculadas"] = vinculadas
+        resultado = acoes_contratos.criar_contrato_com_vistoria(dados, vistoria)
         rascunho.clear()
         contrato_id = resultado.get("contrato_id") if resultado else None
         falhas = acoes_vistorias.anexar_fotos_da_entrega(contrato_id, fotos) if fotos else 0

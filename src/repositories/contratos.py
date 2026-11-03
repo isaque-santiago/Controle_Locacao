@@ -75,6 +75,14 @@ def listar_motos_do_contrato(contrato_id: str) -> list:
     return sorted(linhas, key=lambda m: (not m["principal"], m["placa"]))
 
 
+def contar_vinculadas() -> dict:
+    """Quantas motos vinculadas (além da principal) cada contrato tem: {contrato_id: n}, numa consulta só."""
+    contagem: dict = {}
+    for linha in todos("contrato_motos"):
+        contagem[linha["contrato_id"]] = contagem.get(linha["contrato_id"], 0) + 1
+    return contagem
+
+
 @invalida_cache
 def atualizar(contrato_id: str, dados: dict):
     resposta = get_client().table(TABELA).update(dados).eq("id", contrato_id).execute()

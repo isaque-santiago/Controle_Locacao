@@ -9,4 +9,8 @@
     <div class="selecao-texto"><span class="selecao-rotulo">Moto</span><span class="selecao-valor">{{ placa(moto.placa|placa_br) }} {{ moto.marca }} {{ moto.modelo }}</span></div>
     <a class="btn btn-compacto" href="{{ base }}?etapa=2">Alterar moto</a>
   </div>{% endif %}
+  {% if motos_extras %}<div class="selecao-item">
+    <div class="selecao-texto"><span class="selecao-rotulo">Motos vinculadas ({{ motos_extras|length }})</span><span class="selecao-valor">{% for m in motos_extras %}{{ placa(m.placa|placa_br) }} {% endfor %}</span></div>
+    <a class="btn btn-compacto" href="{{ base }}?etapa=2">Alterar motos</a>
+  </div>{% endif %}
 </div>

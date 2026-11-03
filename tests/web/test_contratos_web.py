@@ -1,5 +1,7 @@
 """Fase 3: lista e ficha de Contratos no app FastAPI."""
 
+from decimal import Decimal
+
 from tests.web.conftest import entrar
 
 HX = {"HX-Request": "true", "HX-Target": "resultado"}
@@ -107,3 +109,26 @@ def test_ficha_oferece_o_pdf_e_a_geracao_exige_dono(cliente, base_contratos):
     assert cliente.get("/contratos/00000000-0000-0000-0000-00000000ffff/pdf").status_code == 404
     cliente.cookies.clear()
     assert cliente.get(f"/contratos/{base_contratos.id}/pdf").status_code == 303
+
+
+def test_lista_mostra_motos_vinculadas_e_promessa(cliente, base_contratos):
+    entrar(cliente)
+    base_contratos.vinculadas = {base_contratos.id: 2}
+    base_contratos.contratos[0]["tipo_contrato"] = "promessa_compra"
+    html = cliente.get("/contratos").text
+    assert "+2 motos" in html and "Promessa de compra" in html
+
+
+def test_ficha_de_promessa_mostra_totais_e_motos_do_contrato(cliente, base_contratos):
+    entrar(cliente)
+    base_contratos.contratos[0].update(tipo_contrato="promessa_compra", numero_parcelas=10, parcelas_pagas_inicial=3,
+                                       valor_total=Decimal("3800"), valor_entrada=Decimal("1000"))
+    html = cliente.get(f"/contratos/{base_contratos.id}").text
+    assert "Total da promessa" in html and "R$ 3.800,00" in html and "3 de 10" in html and "Parcelas restantes" in html
+    assert "Também neste contrato" in html and "QRS-4T21" in html  # a vinculada da fixture
+
+
+def test_ficha_de_locacao_comum_nao_mostra_bloco_de_promessa(cliente, base_contratos):
+    entrar(cliente)
+    html = cliente.get(f"/contratos/{base_contratos.id}").text
+    assert "Total da promessa" not in html and "Promessa de compra" not in html
