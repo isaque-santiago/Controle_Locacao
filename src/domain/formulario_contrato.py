@@ -15,6 +15,7 @@ from src.domain.vistorias import CHECKLIST_PADRAO, ESTADOS_ITEM, NIVEIS_COMBUSTI
 PERIODOS = tuple(PERIODOS_ROTULO)
 PRAZO_PADRAO_DIAS = 30  # sugestão de fim previsto quando o dono desmarca "prazo indeterminado"
 PREFIXO_ITEM = "item_"
+TIPOS = {"locacao": "Locação", "promessa_compra": "Promessa de compra"}
 
 
 def condicoes_iniciais(hoje: date, valor_sugerido) -> dict:
@@ -26,6 +27,12 @@ def condicoes_iniciais(hoje: date, valor_sugerido) -> dict:
         "periodicidade": "semanal",
         "valor_periodo": texto_moeda(valor_sugerido) if valor_sugerido else "",
         "caucao_valor": texto_moeda(0),
+        "tipo_contrato": "locacao",
+        "valor_entrada": texto_moeda(0),
+        "numero_parcelas": "",
+        "parcelas_pagas_inicial": "0",
+        "dia_cobranca": "",
+        "primeira_cobranca": "",
     }
 
 
@@ -38,6 +45,12 @@ def texto_das_condicoes(entrada: dict) -> dict:
         "periodicidade": _texto(entrada, "periodicidade"),
         "valor_periodo": _texto(entrada, "valor_periodo"),
         "caucao_valor": _texto(entrada, "caucao_valor"),
+        "tipo_contrato": _texto(entrada, "tipo_contrato") or "locacao",
+        "valor_entrada": _texto(entrada, "valor_entrada"),
+        "numero_parcelas": _texto(entrada, "numero_parcelas"),
+        "parcelas_pagas_inicial": _texto(entrada, "parcelas_pagas_inicial"),
+        "dia_cobranca": _texto(entrada, "dia_cobranca"),
+        "primeira_cobranca": _texto(entrada, "primeira_cobranca"),
     }
 
 
@@ -45,9 +58,13 @@ def ler_condicoes(entrada: dict) -> dict:
     """Condições do contrato prontas para `contratos.criar_com_vistoria` (dinheiro como texto decimal)."""
     erros: dict[str, str] = {}
     inicio = _coletar(erros, "data_inicio", _data_iso, _texto(entrada, "data_inicio"), "Data de início", True)
+    tipo = _texto(entrada, "tipo_contrato") or "locacao"
+    if tipo not in TIPOS:
+        erros["tipo_contrato"] = "Tipo do contrato: escolha uma das opções."
+    promessa = tipo == "promessa_compra"
     indeterminado = bool(entrada.get("indeterminado"))
     fim = None
-    if not indeterminado:
+    if not indeterminado and not promessa:
         fim = _coletar(erros, "data_fim_prevista", _data_iso, _texto(entrada, "data_fim_prevista"), "Fim previsto", True)
         if inicio and fim and fim < inicio:
             erros["data_fim_prevista"] = "Fim previsto: escolha uma data igual ou posterior ao início."
@@ -56,6 +73,7 @@ def ler_condicoes(entrada: dict) -> dict:
         erros["periodicidade"] = "Periodicidade: escolha uma das opções."
     valor = _coletar(erros, "valor_periodo", decimal_campo, entrada.get("valor_periodo"), "Valor do período", positivo=True)
     caucao = _coletar(erros, "caucao_valor", decimal_campo, entrada.get("caucao_valor"), "Caução")
+    promessa_dados = _ler_promessa(entrada, erros, periodicidade) if promessa else {}
     if erros:
         raise ErroDeCampos(erros)
     return {
@@ -64,7 +82,42 @@ def ler_condicoes(entrada: dict) -> dict:
         "periodicidade": periodicidade,
         "valor_periodo": str(valor),
         "caucao_valor": str(caucao),
+        **promessa_dados,
     }
+
+
+def _ler_promessa(entrada: dict, erros: dict, periodicidade: str) -> dict:
+    """Campos da promessa de compra (mesmas regras da RPC `rpc_criar_contrato`). Só entram no resultado
+    quando o contrato é promessa; a locação comum segue com o payload de sempre."""
+    entrada_valor = _coletar(erros, "valor_entrada", decimal_campo, entrada.get("valor_entrada") or "0", "Entrada")
+    parcelas = _coletar(erros, "numero_parcelas", inteiro_campo, entrada.get("numero_parcelas"), "Número de parcelas", 1, 600)
+    pagas = _coletar(erros, "parcelas_pagas_inicial", inteiro_campo, entrada.get("parcelas_pagas_inicial") or "0", "Parcelas já pagas", 0, 600)
+    if parcelas is not None and pagas is not None and pagas > parcelas:
+        erros["parcelas_pagas_inicial"] = "Parcelas já pagas: não pode superar o número de parcelas."
+    dia = None
+    if _texto(entrada, "dia_cobranca"):
+        maximo = 7 if periodicidade == "semanal" else 31
+        ajuda = "1 = domingo até 7 = sábado" if periodicidade == "semanal" else "dia do mês"
+        dia = _coletar(erros, "dia_cobranca", inteiro_campo, entrada.get("dia_cobranca"), f"Dia da cobrança ({ajuda})", 1, maximo)
+    primeira = _coletar(erros, "primeira_cobranca", _data_iso, _texto(entrada, "primeira_cobranca"), "Primeira cobrança", False)
+    dados = {
+        "tipo_contrato": "promessa_compra",
+        "numero_parcelas": parcelas,
+        "valor_entrada": str(entrada_valor) if entrada_valor is not None else None,
+        "parcelas_pagas_inicial": pagas,
+    }
+    if dia is not None:
+        dados["dia_cobranca"] = dia
+    if primeira:
+        dados["primeira_cobranca"] = primeira
+    return dados
+
+
+def valor_total_promessa(condicoes: dict) -> Decimal | None:
+    """Entrada + parcelas x valor do período, para a tela; None quando o contrato é locação comum."""
+    if condicoes.get("tipo_contrato") != "promessa_compra":
+        return None
+    return Decimal(condicoes["valor_entrada"]) + condicoes["numero_parcelas"] * Decimal(condicoes["valor_periodo"])
 
 
 def vistoria_inicial(km_atual: int) -> dict:

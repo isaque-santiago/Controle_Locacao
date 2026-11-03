@@ -109,3 +109,38 @@ def test_condicoes_do_encerramento_nao_comecam_antes_do_inicio():
     assert f.condicoes_do_encerramento(date(2026, 10, 7), "2026-08-01")["data_encerramento"] == "2026-10-07"
     assert f.condicoes_do_encerramento(date(2026, 7, 1), "2026-08-01")["data_encerramento"] == "2026-08-01"
     assert f.texto_do_encerramento({"confirmar": "on"})["confirmar"] is True
+
+
+PROMESSA = {**BASE, "tipo_contrato": "promessa_compra", "valor_entrada": "5.000,00", "numero_parcelas": "10",
+            "parcelas_pagas_inicial": "0", "dia_cobranca": "", "primeira_cobranca": ""}
+
+
+def test_locacao_comum_nao_leva_campos_de_promessa_no_payload():
+    dados = f.ler_condicoes({**BASE, "tipo_contrato": "locacao", "numero_parcelas": "10"})
+    assert "tipo_contrato" not in dados and "numero_parcelas" not in dados and f.valor_total_promessa(dados) is None
+
+
+def test_promessa_valida_calcula_total_e_ignora_fim_previsto():
+    dados = f.ler_condicoes({**PROMESSA, "data_fim_prevista": "lixo", "indeterminado": ""})
+    assert dados["tipo_contrato"] == "promessa_compra" and dados["data_fim_prevista"] is None
+    assert dados["numero_parcelas"] == 10 and dados["valor_entrada"] == "5000.00" and dados["parcelas_pagas_inicial"] == 0
+    assert f.valor_total_promessa(dados) == Decimal("8200.00")  # 5.000 + 10 x 320
+
+
+def test_promessa_exige_parcelas_e_valida_pagas_e_dia():
+    erros = _erros(f.ler_condicoes, {**PROMESSA, "numero_parcelas": ""})
+    assert "numero_parcelas" in erros
+    erros = _erros(f.ler_condicoes, {**PROMESSA, "parcelas_pagas_inicial": "11"})
+    assert "não pode superar" in erros["parcelas_pagas_inicial"]
+    assert "dia_cobranca" in _erros(f.ler_condicoes, {**PROMESSA, "dia_cobranca": "8"})  # semanal vai de 1 a 7
+    assert f.ler_condicoes({**PROMESSA, "periodicidade": "mensal", "dia_cobranca": "28"})["dia_cobranca"] == 28
+
+
+def test_promessa_em_andamento_guarda_primeira_cobranca_e_parcelas_pagas():
+    dados = f.ler_condicoes({**PROMESSA, "primeira_cobranca": "2026-11-20", "parcelas_pagas_inicial": "3"})
+    assert dados["primeira_cobranca"] == "2026-11-20" and dados["parcelas_pagas_inicial"] == 3
+    assert "primeira_cobranca" in _erros(f.ler_condicoes, {**PROMESSA, "primeira_cobranca": "20/11"})
+
+
+def test_tipo_de_contrato_invalido_e_recusado():
+    assert "tipo_contrato" in _erros(f.ler_condicoes, {**BASE, "tipo_contrato": "venda"})
