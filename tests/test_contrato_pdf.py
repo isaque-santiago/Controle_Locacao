@@ -41,23 +41,9 @@ def test_nome_fora_do_latin1_nao_quebra_a_geracao():
         assert contrato_pdf.gerar(CONTRATO, cliente, MOTO).startswith(b"%PDF-")
 
 
-def test_ficha_oferece_o_pdf_sem_gerar_a_cada_recarga():
-    from streamlit.testing.v1 import AppTest
+def test_varias_motos_saem_todas_no_pdf():
+    outra = {"marca": "Yamaha", "modelo": "Factor 150", "placa": "QRS4T21", "cor": "Azul"}
+    with patch.object(contrato_pdf, "get_locador", return_value={}):
+        pdf = contrato_pdf.gerar(CONTRATO, CLIENTE, [MOTO, outra])
+    assert pdf.startswith(b"%PDF-")
 
-    def script():
-        from src.ui import contratos
-        from tests.test_contrato_pdf import CLIENTE, CONTRATO, MOTO
-
-        contratos._cabecalho_ficha(
-            {**CONTRATO, "status": "ativo", "id": "c1"},
-            {**MOTO, "id": "m1"},
-            {**CLIENTE, "id": "cl1"},
-        )
-
-    with patch("src.services.contrato_pdf.gerar") as gerar:
-        app = AppTest.from_function(script, default_timeout=20).run()
-    assert not app.exception
-    botoes = app.get("download_button")
-    assert len(botoes) == 1
-    assert botoes[0].proto.label == "Contrato em PDF"
-    gerar.assert_not_called()  # o PDF só é montado no clique, não a cada rerun

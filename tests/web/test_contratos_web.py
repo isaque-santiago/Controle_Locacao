@@ -84,3 +84,26 @@ def test_lista_ordena_pela_coluna_na_url(cliente, base_contratos):
     html = cliente.get("/contratos?status=todos&ordem=-valor").text
     assert 'aria-sort="descending"' in html and 'href="/contratos?status=todos"' in html  # terceiro clique volta ao padrão
     assert 'name="ordem" value="-valor"' in html
+
+
+def test_contrato_em_pdf_baixa_o_arquivo_com_as_motos_do_contrato(cliente, base_contratos, monkeypatch):
+    from src.web import dados_contratos
+
+    chamadas = []
+    monkeypatch.setattr(dados_contratos.contrato_pdf, "gerar", lambda c, cl, motos: chamadas.append((c, cl, motos)) or b"%PDF-1.4 falso")
+    entrar(cliente)
+    resposta = cliente.get(f"/contratos/{base_contratos.id}/pdf")
+    assert resposta.status_code == 200 and resposta.content == b"%PDF-1.4 falso"
+    assert resposta.headers["content-type"] == "application/pdf"
+    assert resposta.headers["content-disposition"] == 'attachment; filename="contrato_BRA2E19_2026-08-01.pdf"'
+    contrato, cliente_pdf, motos = chamadas[0]
+    assert contrato["id"] == base_contratos.id and cliente_pdf["id"] == base_contratos.cliente["id"]
+    assert [m["placa"] for m in motos] == ["BRA2E19", "QRS4T21"]
+
+
+def test_ficha_oferece_o_pdf_e_a_geracao_exige_dono(cliente, base_contratos):
+    entrar(cliente)
+    assert f'href="/contratos/{base_contratos.id}/pdf"' in cliente.get(f"/contratos/{base_contratos.id}").text
+    assert cliente.get("/contratos/00000000-0000-0000-0000-00000000ffff/pdf").status_code == 404
+    cliente.cookies.clear()
+    assert cliente.get(f"/contratos/{base_contratos.id}/pdf").status_code == 303

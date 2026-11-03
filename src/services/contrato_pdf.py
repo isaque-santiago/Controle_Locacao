@@ -94,6 +94,7 @@ def renderizar(blocos: list[Bloco]) -> bytes:
     return bytes(pdf.output())
 
 
-def gerar(contrato: dict, cliente: dict, moto: dict) -> bytes:
-    """PDF do contrato a partir dos dados já carregados na ficha."""
+def gerar(contrato: dict, cliente: dict, moto: dict | list) -> bytes:
+    """PDF do contrato a partir dos dados já carregados na ficha. `moto`: uma moto ou a lista das
+    motos do contrato (a principal primeiro)."""
     return renderizar(montar(contrato, cliente, moto, get_locador()))

@@ -10,7 +10,7 @@ from src.domain import clientes_lista, contratos_lista
 from src.domain.encerramento import resumo_encerramento
 from src.domain.ordenacao import interpretar
 from src.domain.valores import hoje_br
-from src.services import clientes, cobrancas, contratos, manutencao, motos, vistorias
+from src.services import clientes, cobrancas, contrato_pdf, contratos, manutencao, motos, vistorias
 
 _TIPOS_VISTORIA = (("entrega", "Entrega"), ("devolucao", "Devolução"))
 
@@ -39,6 +39,14 @@ def obter_contrato(contrato_id):
     if cliente is None or moto is None:
         return None
     return {"contrato": contrato, "cliente": cliente, "moto": moto}
+
+
+def gerar_pdf(registro):
+    """PDF do contrato (`registro` de `obter_contrato`) e o nome do arquivo. Inclui as motos vinculadas."""
+    contrato, moto = registro["contrato"], registro["moto"]
+    frota = contratos.motos_do_contrato(contrato["id"]) or [moto]
+    placa = "".join(c for c in str(moto.get("placa", "")) if c.isalnum()).upper() or "moto"
+    return contrato_pdf.gerar(contrato, registro["cliente"], frota), f"contrato_{placa}_{contrato['data_inicio']}.pdf"
 
 
 def _avarias(checklist):
