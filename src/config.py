@@ -47,3 +47,21 @@ def get_supabase_anon_key() -> str:
     if not valor or valor == "sua-anon-key":
         raise RuntimeError("SUPABASE_ANON_KEY não foi configurada.")
     return valor
+
+
+# Campos do LOCADOR no contrato em PDF; cada um vem da variável `LOCADOR_<CAMPO EM MAIÚSCULAS>`.
+CAMPOS_LOCADOR = (
+    "nome", "cnpj", "inscricao_estadual", "email", "telefones", "endereco",
+    "representante_nome", "representante_qualificacao", "representante_rg", "representante_cpf",
+    "cidade", "foro",
+)
+
+
+def get_locador() -> dict:
+    """Dados da empresa LOCADORA para o contrato: variáveis `LOCADOR_*` (ou o `.env` de dev).
+
+    Ficam fora do repositório (têm CNPJ e documentos pessoais do representante). Só entram os campos
+    preenchidos; sem nenhum, devolve {} e o contrato sai com linhas em branco no lugar do locador.
+    """
+    dados = {campo: (_ler(f"LOCADOR_{campo.upper()}") or "").strip() for campo in CAMPOS_LOCADOR}
+    return {campo: valor for campo, valor in dados.items() if valor}

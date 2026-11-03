@@ -21,3 +21,15 @@ def test_configuracao_ausente_exibe_causa(monkeypatch):
             config.get_supabase_url()
         with pytest.raises(RuntimeError, match="SUPABASE_ANON_KEY"):
             config.get_supabase_anon_key()
+
+
+def test_locador_vem_das_variaveis_de_ambiente_e_ignora_vazias(monkeypatch):
+    from src import config
+
+    monkeypatch.setattr(config, "_SEGREDOS_DEV", config.Path("/inexistente/.env"))
+    for campo in config.CAMPOS_LOCADOR:
+        monkeypatch.delenv(f"LOCADOR_{campo.upper()}", raising=False)
+    assert config.get_locador() == {}
+    monkeypatch.setenv("LOCADOR_NOME", " Empresa Exemplo ")
+    monkeypatch.setenv("LOCADOR_CNPJ", "")
+    assert config.get_locador() == {"nome": "Empresa Exemplo"}

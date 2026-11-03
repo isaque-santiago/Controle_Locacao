@@ -3,7 +3,7 @@
 from urllib.parse import urlencode
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from src.domain import contratos_lista
 from src.domain.ordenacao import cabecalhos, interpretar, valor_da_url
@@ -104,3 +104,11 @@ def aba(request: Request, contrato_id: str, aba: str, _: Sessao = Depends(exigir
     if aba not in dict(contratos_lista.ABAS_FICHA):
         raise HTTPException(status_code=404)
     return renderizar(request, "contratos/_resposta_aba.html", _contexto_aba(_contrato_ou_404(contrato_id), aba))
+
+
+@router.get("/contratos/{contrato_id}/pdf")
+def contrato_em_pdf(contrato_id: str, _: Sessao = Depends(exigir_dono)):
+    """Baixa o contrato de locação em PDF, no modelo da empresa. O PDF só é montado neste pedido."""
+    conteudo, arquivo = dados_contratos.gerar_pdf(_contrato_ou_404(contrato_id))
+    return Response(conteudo, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{arquivo}"', "Cache-Control": "no-store"})

@@ -27,6 +27,25 @@ python executar_web.py
 
 Abre em `http://localhost:8000` (detalhes na seção abaixo).
 
+## Contrato em PDF
+
+A ficha do contrato tem o botão **Contrato em PDF** (rota `/contratos/{id}/pdf`, só para o dono), que gera o contrato de locação no
+modelo usado pela empresa (10 cláusulas), com os dados do cliente, da moto e do contrato
+(valor e caução por extenso, datas, km inicial). O PDF só é montado no clique.
+
+- **Texto do modelo:** `src/domain/contrato_modelo.py`. As multas, prazos e valores fixos
+  do modelo ficam no dicionário `TERMOS` (um lugar só, para revisão com o advogado); o
+  restante do texto é a redação do contrato original.
+- **Dados da empresa (LOCADOR):** variáveis `LOCADOR_NOME`, `LOCADOR_CNPJ` etc. (lista completa em `.env.example`; em produção, no Coolify), fora do git. Sem elas o contrato sai com linhas em branco no lugar do locador.
+- **Contrato com várias motos:** a cláusula 1.1 lista todas (a quilometragem inicial é a da principal; as outras saem em branco). As demais cláusulas continuam no singular ("o veículo"); revise o texto para esse caso.
+- **Campos que o cadastro não tem** (nacionalidade, estado civil, profissão, RG do
+  cliente e motor da moto) saem como linha em branco para preencher à mão.
+- **Fora do contrato gerado:** a cláusula 6.2 (multa e juros por atraso) usa os valores
+  fixos do modelo (`atraso_multa` e `atraso_juros_por_dia`), não os percentuais da tela
+  Configurações; se a operação mudar de regra, ajuste `TERMOS` ou passe a usar a
+  configuração.
+- Modelo padrão de contrato: revise o texto final com um advogado antes de usar.
+
 ## Testes
 
 ```bash

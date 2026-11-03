@@ -414,7 +414,9 @@ def base_contratos(monkeypatch):
 
     pessoas = [base.cliente, base.cliente_bloqueado]
     frota = [base.moto, base.moto_livre]
-    monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(listar=lambda: base.contratos, previa_agenda=previa_agenda))
+    monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(
+        listar=lambda: base.contratos, previa_agenda=previa_agenda,
+        motos_do_contrato=lambda id_: [dict(base.moto, principal=True), dict(base.moto_livre, principal=False)]))
     monkeypatch.setattr(dados_contratos, "clientes", SimpleNamespace(
         listar=lambda: pessoas, obter=lambda id_: next((c for c in pessoas if c["id"] == id_), None)))
     monkeypatch.setattr(dados_contratos, "motos", SimpleNamespace(
