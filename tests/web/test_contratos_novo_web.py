@@ -80,6 +80,42 @@ def test_etapa_dois_lista_so_motos_disponiveis_e_marca_a_escolhida(cliente, base
     assert recusada.status_code == 303 and "não está mais disponível" in cliente.get(f"{BASE}?etapa=2").text
 
 
+def test_vincular_moto_extra_aparece_no_resumo_e_vai_no_payload(cliente, base_contratos, acoes_contratos_falsas):
+    token = _preparar(cliente, base_contratos, ate=2)
+    extra = base_contratos.moto_livre2["id"]
+    html = cliente.get(f"{BASE}?etapa=2").text
+    assert "Vincular ao contrato" in html and 'aria-label="Vincular ao mesmo contrato a moto ABC-1D23"' in html
+    resposta = cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"{BASE}?etapa=2"
+    html = cliente.get(f"{BASE}?etapa=2").text
+    assert "Motos vinculadas (1)" in html and "Vinculada · tirar" in html
+    cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **CONDICOES})
+    assert "Motos vinculadas (1)" in cliente.get(f"{BASE}?etapa=4").text
+    cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()})
+    dados, _ = acoes_contratos_falsas.chamadas[0]
+    assert dados["motos_vinculadas"] == [extra]
+
+
+def test_remover_moto_extra_e_trocar_principal_descarta_a_vinculada(cliente, base_contratos, acoes_contratos_falsas):
+    token = _preparar(cliente, base_contratos, ate=2)
+    extra = base_contratos.moto_livre2["id"]
+    cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
+    cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "remover"})
+    assert "Motos vinculadas" not in cliente.get(f"{BASE}?etapa=2").text
+    cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
+    cliente.post(f"{BASE}/moto", data={"csrf_token": token, "moto_id": extra})  # vira a principal
+    assert "Motos vinculadas" not in cliente.get(f"{BASE}?etapa=2").text
+
+
+def test_vincular_exige_principal_e_recusa_moto_indisponivel(cliente, base_contratos):
+    token = _preparar(cliente, base_contratos, ate=1)
+    cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": base_contratos.moto_livre2["id"], "acao": "vincular"})
+    assert "Escolha primeiro a moto principal" in cliente.get(f"{BASE}?etapa=1").text
+    cliente.post(f"{BASE}/moto", data={"csrf_token": token, "moto_id": base_contratos.moto_livre["id"]})
+    cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": base_contratos.moto["id"], "acao": "vincular"})
+    assert "não está disponível para vincular" in cliente.get(f"{BASE}?etapa=2").text
+
+
 def test_condicoes_comecam_com_padroes_da_moto(cliente, base_contratos):
     _preparar(cliente, base_contratos, ate=2)
     html = cliente.get(f"{BASE}?etapa=3").text

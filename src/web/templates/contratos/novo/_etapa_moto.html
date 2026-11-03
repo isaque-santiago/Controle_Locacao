@@ -2,6 +2,7 @@
 {% set rotulo_busca = "Buscar moto disponível por placa ou modelo" %}
 {% include "contratos/novo/_resumo_selecao.html" %}
 {% include "contratos/novo/_busca.html" %}
+{% if selecionado_id %}<p class="text-texto-2 text-[13px]">Opcional: um contrato pode cobrir até {{ max_extras + 1 }} motos (a parcela e a receita ficam na moto principal). Use "Vincular ao contrato" nas outras motos.</p>{% endif %}
 <div id="resultado" tabindex="-1">{% include "contratos/novo/_selecao.html" %}</div>
 <div class="rodape-acoes">
   <a class="btn" href="{{ base }}?etapa=1">Voltar</a>
