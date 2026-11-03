@@ -958,6 +958,9 @@ e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_R
   observação; ex-locatários sem CPF só como texto em `multas_transito`; escopo inicial só banco e carga em dev (telas depois).
 - **Capital em veículos sem operação (Etios, Celta; aprovado em 22/10/2026):** `motos.placa_provisoria`; `despesas` com categoria `aquisicao`,
   `pago_por` e `a_confirmar`; dívida `emprestimo`; `dividas_vencimentos`; aporte ligado ao veículo e a view `vw_capital_veiculo`.
+- **Contrato com várias motos e compra a prazo (03/11/2026; banco, regras e testes, sem telas):** `contrato_motos` (moto principal em
+  `contratos.moto_id`, receita toda na principal) e dívida `compra_parcelada` com entrada, calendário de parcelas e pagamento por parcela.
+  Ver `Arquivos/Importacao_Dados_Reais.md` (migrations 6 e 7).
 - **D3 (decidida em 22/10/2026):** os encargos de atraso (seção 5.3) também valem para as parcelas de promessa de compra. Como elas são cobranças `tipo = 'locacao'`, não houve mudança de código.
 - **CPF e telefone** não existem na planilha: a carga de `clientes` e `contratos` espera a planilha ser completada.
 - **Ensaio** sempre no banco de dev; produção só depois de backup e autorização do dono. A carga é um SQL colado no SQL Editor

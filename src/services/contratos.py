@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Optional
 
 from src.domain.agenda_cobrancas import gerar_agenda
+from src.domain.contrato_motos import normalizar_motos_vinculadas
 from src.repositories import contratos
 
 
@@ -18,6 +19,8 @@ def criar_com_vistoria(dados, vistoria):
     fim = dados.get("data_fim_prevista") or None
     if fim is not None and fim < dados["data_inicio"]:
         raise ValueError("O fim do contrato deve ser igual ou posterior ao início.")
+    if dados.get("motos_vinculadas"):
+        dados = {**dados, "motos_vinculadas": normalizar_motos_vinculadas(dados["moto_id"], dados["motos_vinculadas"])}
     previa_agenda(
         date.fromisoformat(dados["data_inicio"]),
         dados["periodicidade"],
@@ -70,7 +73,11 @@ def criar_contrato(
     data_fim_prevista: Optional[date] = None,
     caucao_valor: Decimal = Decimal("0"),
     km_inicial: Optional[int] = None,
+    motos_vinculadas: Optional[list] = None,
 ) -> dict:
+    """Cria o contrato. `motos_vinculadas` são as motos além da principal (contrato com mais de uma moto:
+    a parcela e a receita ficam na moto principal)."""
+    vinculadas = normalizar_motos_vinculadas(moto_id, motos_vinculadas)
     payload = {
         "moto_id": moto_id,
         "cliente_id": cliente_id,
@@ -83,6 +90,8 @@ def criar_contrato(
         "caucao_valor": str(caucao_valor),
         "km_inicial": km_inicial,
     }
+    if vinculadas:
+        payload["motos_vinculadas"] = vinculadas
     return contratos.criar_via_rpc(payload)
 
 
@@ -95,3 +104,8 @@ def encerrar_contrato(
 ) -> dict:
     descricao = _validar_danos(valor_danos, descricao_danos)
     return contratos.encerrar_via_rpc(contrato_id, data, km_final, valor_danos, descricao)
+
+
+def motos_do_contrato(contrato_id: str) -> list:
+    """Motos do contrato, a principal primeiro (`principal` = True)."""
+    return contratos.listar_motos_do_contrato(contrato_id)
