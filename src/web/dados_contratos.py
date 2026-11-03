@@ -114,9 +114,12 @@ def moto_para_contrato(moto_id):
 def previa_agenda(condicoes):
     """Parcelas previstas (a mesma lógica da RPC). Prazo indeterminado mostra só a janela inicial."""
     fim = condicoes.get("data_fim_prevista")
+    primeira = condicoes.get("primeira_cobranca")
     return contratos.previa_agenda(
         date.fromisoformat(condicoes["data_inicio"]), condicoes["periodicidade"],
         Decimal(condicoes["valor_periodo"]), date.fromisoformat(fim) if fim else None,
+        numero_parcelas=condicoes.get("numero_parcelas"), parcelas_pagas_inicial=condicoes.get("parcelas_pagas_inicial") or 0,
+        primeira_cobranca=date.fromisoformat(primeira) if primeira else None,
     )
 
 

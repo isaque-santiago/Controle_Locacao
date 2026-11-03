@@ -26,6 +26,9 @@ def criar_com_vistoria(dados, vistoria):
         dados["periodicidade"],
         Decimal(dados["valor_periodo"]),
         date.fromisoformat(fim) if fim else None,
+        numero_parcelas=dados.get("numero_parcelas"),
+        parcelas_pagas_inicial=dados.get("parcelas_pagas_inicial") or 0,
+        primeira_cobranca=date.fromisoformat(dados["primeira_cobranca"]) if dados.get("primeira_cobranca") else None,
     )
     return contratos.criar_com_vistoria({**dados, "data_fim_prevista": fim}, vistoria)
 
@@ -57,11 +60,19 @@ def previa_agenda(
     periodicidade: str,
     valor_periodo: Decimal,
     data_fim_prevista: Optional[date] = None,
+    *,
+    numero_parcelas: Optional[int] = None,
+    parcelas_pagas_inicial: int = 0,
+    primeira_cobranca: Optional[date] = None,
 ) -> list:
     """Prévia da agenda de cobranças exibida na tela, com a mesma lógica usada
     pela RPC ao criar o contrato de verdade. Sem data final (prazo indeterminado),
-    mostra só a janela inicial; as seguintes são geradas enquanto o contrato estiver ativo."""
-    return gerar_agenda(data_inicio, periodicidade, valor_periodo, data_fim_prevista)
+    mostra só a janela inicial; as seguintes são geradas enquanto o contrato estiver ativo.
+    Na promessa de compra, `numero_parcelas` limita a agenda e as pagas/âncora vêm do contrato em andamento."""
+    return gerar_agenda(
+        data_inicio, periodicidade, valor_periodo, data_fim_prevista,
+        numero_parcelas=numero_parcelas, parcelas_pagas_inicial=parcelas_pagas_inicial, primeira_cobranca=primeira_cobranca,
+    )
 
 
 def criar_contrato(
