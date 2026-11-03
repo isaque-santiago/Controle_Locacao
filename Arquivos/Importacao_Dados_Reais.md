@@ -121,6 +121,7 @@ serviços e testes (**sem telas**; as telas ficam para uma fase seguinte).
   marca como pagas as primeiras N; `rpc_pagar_parcela_divida` registra pagamento (parcial ou total); gatilhos mantêm `paga_em` e recusam
   pagamento acima do saldo; `vw_parcelas_divida` mostra valor pago, saldo e situação. Regra pura em `src/domain/dividas.py`;
   `repositories/dividas.py` e `services/dividas.py`.
+- `20261103140000_capital_inclui_compra_parcelada.sql`: `vw_capital_veiculo` passa a somar também as dívidas `compra_parcelada` no "a pagar" do veículo.
 - Verificação: `supabase/verificar_contrato_varias_motos.sql` e `supabase/verificar_compra_parcelada.sql` (desfazem tudo ao final).
 - Efeito na carga: o Celta passa a ser carregado como compra parcelada (total R$ 14.000, entrada R$ 5.000, 9 parcelas de R$ 1.000 no dia 28,
   6 pagas) no lugar do modelo "motor + dívida de fornecedor" das cargas 03 e 05; e o Plano Conquista do Yangry como um contrato com a
@@ -198,3 +199,21 @@ cobrança única de "saldo anterior" (tipo `outros`); km inicial 0 com observaç
 - Dívidas XRE, Bros/Pop e TIA1B71 (saldos conflitantes) e os dados do Celta e do Etios (placa, datas, credor).
 - Escopo do histórico dos 64 contratos do Drive (atuais, histórico inativo ou não carregar).
 - Produção: backup do Supabase, autorização do dono e carga.
+
+### Atualização de 03/11/2026: foto de 23/10 apagada e recarga no modelo novo
+
+A foto de 23/10 do dev foi apagada e as migrations 6 e 7 foram aplicadas. A recarga usa três cargas novas (fora do repositório, com dados
+reais): `06` (contas, fornecedores, veículos e multas), `07` (despesas, sócio, dívidas, Etios e Celta como compra parcelada) e `08` (9 clientes e
+6 contratos, inclusive o Plano Conquista do Yangry com duas motos). As cargas `01` a `05` não devem mais ser usadas.
+
+Conferido num Postgres descartável: saldo da Lima R$ 1.880, do Ricão R$ 290, do Celta R$ 3.000 (6 parcelas pagas e 3 a vencer) e do Etios
+R$ 11.000; despesas por veículo iguais às da aba Frota (Biz OCO9853 R$ 2.266,92; Pop PMZ8278 R$ 1.750,94).
+
+Interpretações aplicadas (a confirmar com o Alisson):
+
+- A categoria "Investimento em veículo" da planilha virou `aquisicao` (capital: fica fora do resultado por veículo e entra em `vw_capital_veiculo`).
+- Os pagamentos de "Parcela de dívida" (Uno Way, R$ 7.500, R$ 457 e R$ 1.000) **não** foram carregados: a dívida não tem valor total nem parcelas.
+- O Celta tem duas leituras na planilha: a aba Celta (motor de R$ 8.000 em parcelas, custo total R$ 10.531) e a aba Dívidas, de 01/11 (compra a
+  prazo de R$ 14.000). Foram carregadas as duas, como estão, e a diferença fica sinalizada nas observações.
+- Pedidos antigos da Lima (003571, 003594 e 003598) já estão dentro da dívida anterior de R$ 770: não têm fornecedor nas despesas.
+- Fabiano e Mateus entram como clientes inativos, sem contrato; Yangry entra com nome e CPF que constam na própria planilha de frota.

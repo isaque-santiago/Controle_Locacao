@@ -557,7 +557,7 @@ vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 
 ## Importação dos dados reais (modelo pronto; carga parcial no dev)
 
-Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Sete migrations
+Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Oito migrations
 preparam o banco para a planilha "PAGAMENTO MOTOS":
 
 - `20261022120000_importacao_veiculos_contratos.sql`: tipo/dono/rastreador/seguro em `motos`; promessa de compra em `contratos`
@@ -575,6 +575,7 @@ preparam o banco para a planilha "PAGAMENTO MOTOS":
   `motos_vinculadas` em `rpc_criar_contrato`); `supabase/verificar_contrato_varias_motos.sql`.
 - `20261103130000_compra_parcelada.sql`: dívida `compra_parcelada` com entrada, calendário de parcelas, `rpc_criar_compra_parcelada`,
   `rpc_pagar_parcela_divida` e `vw_parcelas_divida`; `supabase/verificar_compra_parcelada.sql`.
+- `20261103140000_capital_inclui_compra_parcelada.sql`: `vw_capital_veiculo` soma também as compras parceladas.
 
 Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
 Produção só depois de backup e autorização do dono. Regra pura da agenda: `src/domain/agenda_cobrancas.py` (`tests/test_agenda_promessa.py`).
