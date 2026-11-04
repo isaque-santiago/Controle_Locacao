@@ -13,6 +13,7 @@ ENTRADA = {
     "alerta_manutencao_dias": 15,
     "alerta_documento_dias": 30,
     "alerta_cnh_dias": 30,
+    "dias_inadimplencia": 15,
     "multa_troca_oleo_valor": "0,00",
 }
 
@@ -78,3 +79,11 @@ DO_BANCO = {
     "encargo_diario_valor": Decimal("7.00"),
     "multa_troca_oleo_valor": Decimal("0.00"),
 }
+
+
+def test_corte_de_inadimplencia_aceita_de_1_a_100000_dias():
+    assert validar_configuracao({**ENTRADA, "dias_inadimplencia": "1"})["dias_inadimplencia"] == 1
+    assert validar_configuracao({**ENTRADA, "dias_inadimplencia": "30"})["dias_inadimplencia"] == 30
+    for ruim in ("0", "", "abc", "-3", "100001"):
+        with pytest.raises(ValueError, match="Inadimplente a partir de"):
+            validar_configuracao({**ENTRADA, "dias_inadimplencia": ruim})

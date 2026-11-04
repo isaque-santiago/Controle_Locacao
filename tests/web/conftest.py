@@ -909,7 +909,7 @@ class BaseConfiguracoes:
         self.config = {
             "id": 1, "multa_atraso_valor": Decimal("15.00"), "encargo_diario_valor": Decimal("7.00"),
             "multa_troca_oleo_valor": Decimal("0"), "alerta_manutencao_km": 300, "alerta_manutencao_dias": 15,
-            "alerta_documento_dias": 30, "alerta_cnh_dias": 30,
+            "alerta_documento_dias": 30, "alerta_cnh_dias": 30, "dias_inadimplencia": 15,
         }
         self.gravados = []
         self.backups = 0
