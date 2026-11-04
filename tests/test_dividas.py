@@ -108,3 +108,62 @@ class TestServico:
             with pytest.raises(ValueError, match="positivo"):
                 dividas.pagar_parcela("v", date(2026, 11, 28), Decimal("0"))
         rpc.assert_not_called()
+
+
+# ---------------------------------------------------------------- outros tipos e pagamento direto --
+
+
+def _repo_gravador(monkeypatch):
+    from types import SimpleNamespace
+
+    from src.services import dividas as servico
+
+    gravados = {"dividas": [], "pagamentos": []}
+    monkeypatch.setattr(servico, "dividas", SimpleNamespace(
+        criar_divida=lambda dados: gravados["dividas"].append(dados) or {"id": "novo", **dados},
+        registrar_pagamento=lambda dados: gravados["pagamentos"].append(dados) or {"id": "pg", **dados}))
+    monkeypatch.setattr(servico, "hoje_br", lambda: date(2026, 11, 4))
+    return servico, gravados
+
+
+def test_criar_divida_simples_serializa_valores_e_nao_confirma_saldo(monkeypatch):
+    servico, gravados = _repo_gravador(monkeypatch)
+    servico.criar_divida("moto_fiado", "  Nilson ", Decimal("9675.00"))
+    d = gravados["dividas"][0]
+    assert d["tipo"] == "moto_fiado" and d["credor"] == "Nilson" and d["valor_original"] == "9675.00"
+    assert d["saldo_confirmado"] is None and d["confirmado_em"] is None and d["numero_parcelas"] is None
+
+
+def test_criar_divida_com_saldo_confirmado_marca_a_data_de_hoje(monkeypatch):
+    servico, gravados = _repo_gravador(monkeypatch)
+    servico.criar_divida("financiamento", "Nicolas", Decimal("21901.92"), 24, Decimal("912.58"), 28, Decimal("20989.34"),
+                         "m1", " Financiamento ", " ")
+    d = gravados["dividas"][0]
+    assert d["saldo_confirmado"] == "20989.34" and d["confirmado_em"] == "2026-11-04" and d["valor_parcela"] == "912.58"
+    assert d["dia_vencimento"] == 28 and d["moto_id"] == "m1" and d["descricao"] == "Financiamento" and d["observacoes"] is None
+
+
+@pytest.mark.parametrize("args,erro", [
+    (("compra_parcelada", "X", Decimal("1")), "formulário próprio"),
+    (("emprestimo", "  ", Decimal("1")), "credor"),
+    (("emprestimo", "X", Decimal("-1")), "negativos"),
+    (("emprestimo", "X", Decimal("1"), 10, None), "ou nenhum dos dois"),
+])
+def test_criar_divida_recusa_dados_invalidos(monkeypatch, args, erro):
+    servico, gravados = _repo_gravador(monkeypatch)
+    with pytest.raises(ValueError, match=erro):
+        servico.criar_divida(*args)
+    assert gravados["dividas"] == []
+
+
+def test_pagar_divida_grava_um_pagamento_sem_parcela(monkeypatch):
+    servico, gravados = _repo_gravador(monkeypatch)
+    servico.pagar_divida("d1", date(2026, 11, 4), Decimal("300"), "c1", " pix ")
+    assert gravados["pagamentos"] == [{"divida_id": "d1", "data": "2026-11-04", "valor": "300", "conta_id": "c1", "observacoes": "pix"}]
+
+
+def test_pagar_divida_recusa_valor_nao_positivo(monkeypatch):
+    servico, gravados = _repo_gravador(monkeypatch)
+    with pytest.raises(ValueError, match="positivo"):
+        servico.pagar_divida("d1", date(2026, 11, 4), Decimal("0"))
+    assert gravados["pagamentos"] == []
