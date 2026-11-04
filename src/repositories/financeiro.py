@@ -1,4 +1,4 @@
-"""Leituras do dashboard financeiro: totais mensais (RPC) e saldo das dívidas (view)."""
+"""Leituras do dashboard financeiro: totais e detalhes do mês (RPC), saldo das dívidas e resultado por veículo (views)."""
 
 from datetime import date
 
@@ -19,3 +19,12 @@ def resumo_mensal(mes: date, quantidade: int = 6) -> list:
 
 def saldos_dividas() -> list:
     return todos("vw_saldo_dividas", ordem=("divida_id",))
+
+
+def detalhe_mensal(mes: date) -> dict:
+    """Entradas por conta, despesas por categoria, a repassar e receita da semana (RPC `rpc_detalhe_financeiro`)."""
+    return get_client().rpc("rpc_detalhe_financeiro", {"p_mes": mes.isoformat()}).execute().data
+
+
+def resultado_por_veiculo() -> list:
+    return todos("vw_resultado_moto", ordem=("moto_id",))
