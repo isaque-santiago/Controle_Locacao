@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 
-from src.domain import formulario_divida as formulario, mensagens
+from src.domain import dividas_lista, formulario_divida as formulario, mensagens
 from src.domain.valores import hoje_br
 from src.web import acoes_dividas, dados_dividas
 from src.web.apresentacao import formatar_placa
@@ -123,6 +123,99 @@ def _cadastrar(request, sessao, entrada):
 async def cadastrar(request: Request, sessao: Sessao = Depends(exigir_dono)):
     """Sem JavaScript: o botão "Conferir" mostra a prévia (total, saldo e calendário) e o "Cadastrar" grava."""
     return await run_in_threadpool(_cadastrar, request, sessao, await _entrada(request))
+
+
+_NOVA_DIVIDA = "dividas/nova_divida.html"
+
+
+def _contexto_nova_divida(motos, valores, erros=None, erro_geral=None):
+    return {"titulo": "Nova dívida", "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
+            "tipos": formulario.tipos_para_selecao(),
+            "motos": _opcoes_nova([], motos)["motos"]}
+
+
+@router.get("/dividas/nova-divida")
+def nova_divida(request: Request, _: Sessao = Depends(exigir_dono)):
+    return renderizar(request, _NOVA_DIVIDA, _contexto_nova_divida(dados_dividas.motos(), formulario.divida_inicial()))
+
+
+def _cadastrar_divida(request, sessao, entrada):
+    motos = dados_dividas.motos()
+    contexto = _contexto_nova_divida(motos, formulario.texto_da_divida(entrada))
+
+    def cadastrar():
+        dados = formulario.ler_divida(entrada, {m["id"] for m in motos})
+        criada = acoes_dividas.criar_divida(dados)
+        aviso = mensagens.divida_cadastrada(dados["credor"], dividas_lista.TIPOS_ROTULO[dados["tipo"]])
+        return _concluir(request, sessao, f"/dividas/{criada['id']}", aviso)
+
+    return _devolver_formulario(request, _NOVA_DIVIDA, contexto, cadastrar)
+
+
+@router.post("/dividas/nova-divida", dependencies=[Depends(validar_csrf)])
+async def cadastrar_divida(request: Request, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_cadastrar_divida, request, sessao, await _entrada(request))
+
+
+_PAGAR_DIVIDA = "dividas/pagar_divida.html"
+
+
+def _divida_para_pagar(divida_id: str) -> dict:
+    f = dados_dividas.ficha(_uuid_ou_404(divida_id))
+    if f is None:
+        raise HTTPException(status_code=404)
+    return f
+
+
+def _sem_pagamento_direto(request, sessao, f):
+    """Dívida quitada ou com parcelas não recebe pagamento direto (com parcelas, paga-se pela parcela)."""
+    divida_id = f["divida"]["id"]
+    if f["parcelas"]:
+        return _concluir(request, sessao, f"/dividas/{divida_id}", tipo="info", texto="Essa dívida tem parcelas: pague pela parcela.")
+    if f["saldo"] <= 0:
+        return _concluir(request, sessao, f"/dividas/{divida_id}", tipo="info", texto="Essa dívida já está quitada.")
+    return None
+
+
+def _contexto_pagar_divida(f, contas, valores, erros=None, erro_geral=None):
+    divida_id = f["divida"]["id"]
+    return {
+        "titulo": "Registrar pagamento", "f": f, "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
+        "acao": f"/dividas/{divida_id}/pagar", "voltar": f"/dividas/{divida_id}",
+        "contas": [("", "Não informada"), *[(c["id"], c["nome"]) for c in contas]],
+    }
+
+
+@router.get("/dividas/{divida_id}/pagar")
+def formulario_pagar_divida(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
+    f = _divida_para_pagar(divida_id)
+    recusa = _sem_pagamento_direto(request, sessao, f)
+    if recusa is not None:
+        return recusa
+    valores = formulario.pagamento_parcela_inicial(hoje_br(), f["saldo"])
+    return renderizar(request, _PAGAR_DIVIDA, _contexto_pagar_divida(f, dados_dividas.contas(), valores))
+
+
+def _pagar_divida(request, sessao, divida_id, entrada):
+    f = _divida_para_pagar(divida_id)
+    recusa = _sem_pagamento_direto(request, sessao, f)
+    if recusa is not None:
+        return recusa
+    contas = dados_dividas.contas()
+    contexto = _contexto_pagar_divida(f, contas, formulario.texto_do_pagamento_parcela(entrada))
+
+    def pagar():
+        dados = formulario.ler_pagamento_parcela(entrada, f["saldo"], {c["id"] for c in contas}, alvo="da dívida")
+        acoes_dividas.pagar_divida(f["divida"]["id"], dados["data"], dados["valor"], dados["conta_id"], dados["observacoes"])
+        aviso = mensagens.pagamento_divida_registrado(dados["valor"], dados["quitada"])
+        return _concluir(request, sessao, f"/dividas/{f['divida']['id']}", aviso)
+
+    return _devolver_formulario(request, _PAGAR_DIVIDA, contexto, pagar)
+
+
+@router.post("/dividas/{divida_id}/pagar", dependencies=[Depends(validar_csrf)])
+async def pagar_divida(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_pagar_divida, request, sessao, divida_id, await _entrada(request))
 
 
 # Rotas fixas (como /dividas/nova) devem ser declaradas antes desta, senão caem em /dividas/{divida_id}.

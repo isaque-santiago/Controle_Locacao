@@ -7,10 +7,17 @@ from datetime import date
 from decimal import Decimal
 
 from src.domain.dividas import calendario_parcelas, saldo_compra
+from src.domain.dividas_lista import TIPOS_ROTULO
 from src.domain.entradas import decimal_campo, inteiro_campo, texto_moeda
 from src.domain.formulario_moto import ErroDeCampos, _coletar, _data_iso, _texto
 from src.domain.mensagens import moeda
 
+# Tipos que se cadastram à mão aqui; a compra parcelada tem formulário próprio (calendário e entrada).
+TIPOS_NOVA = ("moto_fiado", "financiamento", "fornecedor", "rastreador", "emprestimo")
+CAMPOS_DIVIDA = (
+    "tipo", "credor", "valor_original", "numero_parcelas", "valor_parcela", "dia_vencimento", "saldo_confirmado",
+    "moto_id", "descricao", "observacoes",
+)
 MAX_PARCELAS = 120
 MAX_CREDOR = 120
 CAMPOS_COMPRA = (
@@ -28,15 +35,15 @@ def texto_do_pagamento_parcela(entrada: dict) -> dict:
     return {campo: _texto(entrada, campo) for campo in ("data", "valor", "conta_id", "observacoes")}
 
 
-def ler_pagamento_parcela(entrada: dict, saldo, contas_validas: set[str]) -> dict:
-    """Pagamento pronto para `dividas.pagar_parcela`. O valor vai de 0,01 ao saldo da parcela (menos que o saldo
-    deixa o resto em aberto); a conta é opcional, mas tem que ser uma das contas ativas."""
+def ler_pagamento_parcela(entrada: dict, saldo, contas_validas: set[str], alvo: str = "da parcela") -> dict:
+    """Pagamento pronto para `dividas.pagar_parcela` (ou `pagar_divida`, com `alvo="da dívida"`). O valor vai de 0,01 ao
+    saldo (menos que o saldo deixa o resto em aberto); a conta é opcional, mas tem que ser uma das contas ativas."""
     erros: dict[str, str] = {}
     saldo = Decimal(str(saldo))
     data = _coletar(erros, "data", _data_iso, _texto(entrada, "data"), "Data do pagamento", True)
     valor = _coletar(erros, "valor", decimal_campo, entrada.get("valor"), "Valor pago", positivo=True)
     if valor is not None and valor > saldo:
-        erros["valor"] = f"Valor pago: não pode ser maior que o saldo da parcela ({moeda(saldo)})."
+        erros["valor"] = f"Valor pago: não pode ser maior que o saldo {alvo} ({moeda(saldo)})."
     conta_id = _texto(entrada, "conta_id")
     if conta_id and conta_id not in contas_validas:
         erros["conta_id"] = "Conta: escolha uma das opções."
@@ -115,4 +122,60 @@ def previa_da_compra(dados: dict) -> dict:
             {"numero": i, "vencimento": v, "valor": dados["valor_parcela"], "paga": i <= dados["parcelas_pagas"]}
             for i, v in enumerate(vencimentos, start=1)
         ],
+    }
+
+
+def tipos_para_selecao() -> list[tuple[str, str]]:
+    return [(t, TIPOS_ROTULO[t]) for t in TIPOS_NOVA]
+
+
+def divida_inicial() -> dict:
+    return {"tipo": TIPOS_NOVA[0], "credor": "", "valor_original": "", "numero_parcelas": "", "valor_parcela": "",
+            "dia_vencimento": "", "saldo_confirmado": "", "moto_id": "", "descricao": "", "observacoes": ""}
+
+
+def texto_da_divida(entrada: dict) -> dict:
+    return {campo: _texto(entrada, campo) for campo in CAMPOS_DIVIDA}
+
+
+def ler_divida(entrada: dict, motos_validas: set[str]) -> dict:
+    """Dívida pronta para `dividas.criar_divida`. Parcelas e valor da parcela vêm juntos ou nenhum dos dois; o saldo confirmado
+    (opcional) é o que o responsável informou como o que falta pagar; o valor original pode ser 0,00 quando só se sabe o saldo."""
+    erros: dict[str, str] = {}
+    tipo = _texto(entrada, "tipo")
+    if tipo not in TIPOS_NOVA:
+        erros["tipo"] = "Tipo: escolha uma das opções."
+    credor = _texto(entrada, "credor")
+    if not credor:
+        erros["credor"] = "Credor: informe a quem se deve."
+    elif len(credor) > MAX_CREDOR:
+        erros["credor"] = f"Credor: use no máximo {MAX_CREDOR} caracteres."
+    original = _coletar(erros, "valor_original", decimal_campo, entrada.get("valor_original") or "0", "Valor original")
+    texto_n, texto_parcela = _texto(entrada, "numero_parcelas"), _texto(entrada, "valor_parcela")
+    n = parcela = None
+    if texto_n or texto_parcela:
+        n = _coletar(erros, "numero_parcelas", inteiro_campo, texto_n, "Número de parcelas", 1, MAX_PARCELAS)
+        parcela = _coletar(erros, "valor_parcela", decimal_campo, texto_parcela, "Valor da parcela", positivo=True)
+    dia = None
+    if _texto(entrada, "dia_vencimento"):
+        dia = _coletar(erros, "dia_vencimento", inteiro_campo, _texto(entrada, "dia_vencimento"), "Dia do vencimento", 1, 31)
+    confirmado = None
+    if _texto(entrada, "saldo_confirmado"):
+        confirmado = _coletar(erros, "saldo_confirmado", decimal_campo, entrada.get("saldo_confirmado"), "Saldo confirmado")
+    moto_id = _texto(entrada, "moto_id")
+    if moto_id and moto_id not in motos_validas:
+        erros["moto_id"] = "Moto: escolha uma das opções."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {
+        "tipo": tipo,
+        "credor": credor,
+        "valor_original": original,
+        "numero_parcelas": n,
+        "valor_parcela": parcela,
+        "dia_vencimento": dia,
+        "saldo_confirmado": confirmado,
+        "moto_id": moto_id or None,
+        "descricao": _texto(entrada, "descricao") or None,
+        "observacoes": _texto(entrada, "observacoes") or None,
     }

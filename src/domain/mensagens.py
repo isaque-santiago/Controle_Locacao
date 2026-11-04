@@ -121,6 +121,17 @@ def compra_parcelada_cadastrada(credor, numero_parcelas, valor_total):
     return _toast(f"Compra parcelada de {credor} cadastrada: {numero_parcelas} {plural}, total de {moeda(valor_total)}.")
 
 
+def divida_cadastrada(credor, tipo_rotulo):
+    return _toast(f"Dívida cadastrada: {tipo_rotulo} com {credor}.")
+
+
+def pagamento_divida_registrado(valor, quitada):
+    """`Pagamento de R$ 300,00 registrado.` + situação da dívida."""
+    texto = f"Pagamento de {moeda(valor)} registrado."
+    texto += " Dívida quitada." if quitada else " A dívida continua em aberto com o saldo restante."
+    return _toast(texto)
+
+
 # ---------------------------------------------------------------- documentos --
 
 

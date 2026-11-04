@@ -102,3 +102,69 @@ def test_previa_da_compra_marca_as_pagas_e_calcula_o_saldo():
     assert [x["numero"] for x in p["parcelas"]] == list(range(1, 10))
     assert p["parcelas"][0]["vencimento"] == date(2026, 5, 28) and p["parcelas"][8]["vencimento"] == date(2027, 1, 28)
     assert sum(1 for x in p["parcelas"] if x["paga"]) == 6 and p["parcelas"][5]["paga"] and not p["parcelas"][6]["paga"]
+
+
+# ---------------------------------------------------------------- outros tipos de dívida --
+
+
+def _divida(**extra):
+    return {"tipo": "moto_fiado", "credor": "Nilson", "valor_original": "9.675,00", "numero_parcelas": "", "valor_parcela": "",
+            "dia_vencimento": "", "saldo_confirmado": "", "moto_id": "", "descricao": "", "observacoes": "", **extra}
+
+
+def test_tipos_da_lista_nao_incluem_a_compra_parcelada():
+    tipos = dict(f.tipos_para_selecao())
+    assert set(tipos) == {"moto_fiado", "financiamento", "fornecedor", "rastreador", "emprestimo"}
+    assert tipos["moto_fiado"] == "Moto fiado" and tipos["emprestimo"] == "Empréstimo"
+    assert set(f.divida_inicial()) == set(f.CAMPOS_DIVIDA)
+
+
+def test_divida_simples_so_com_o_essencial():
+    d = f.ler_divida(_divida(), MOTOS)
+    assert d == {"tipo": "moto_fiado", "credor": "Nilson", "valor_original": Decimal("9675.00"), "numero_parcelas": None,
+                 "valor_parcela": None, "dia_vencimento": None, "saldo_confirmado": None, "moto_id": None,
+                 "descricao": None, "observacoes": None}
+
+
+def test_divida_completa_do_tia1b71():
+    d = f.ler_divida(_divida(tipo="financiamento", credor="Nicolas", valor_original="21.901,92", numero_parcelas="24",
+                             valor_parcela="912,58", dia_vencimento="28", saldo_confirmado="20.989,34", moto_id="m1",
+                             descricao=" Financiamento ", observacoes="Informado pelo Alisson"), MOTOS)
+    assert d["numero_parcelas"] == 24 and d["valor_parcela"] == Decimal("912.58") and d["dia_vencimento"] == 28
+    assert d["saldo_confirmado"] == Decimal("20989.34") and d["moto_id"] == "m1" and d["descricao"] == "Financiamento"
+
+
+def test_valor_original_vazio_vale_zero_e_saldo_confirmado_zero_e_aceito():
+    d = f.ler_divida(_divida(valor_original="", saldo_confirmado="0"), MOTOS)
+    assert d["valor_original"] == Decimal("0.00") and d["saldo_confirmado"] == Decimal("0.00")
+
+
+@pytest.mark.parametrize("campo,valor,erro", [
+    ("tipo", "compra_parcelada", "Tipo"), ("tipo", "", "Tipo"), ("credor", "", "Credor"), ("credor", "x" * 121, "no máximo 120"),
+    ("valor_original", "-1", "Valor original"), ("valor_original", "abc", "Valor original"),
+    ("numero_parcelas", "0", "Número de parcelas"), ("dia_vencimento", "32", "Dia do vencimento"),
+    ("dia_vencimento", "0", "Dia do vencimento"), ("saldo_confirmado", "-5", "Saldo confirmado"), ("moto_id", "x", "Moto"),
+])
+def test_divida_com_campo_invalido_nao_passa(campo, valor, erro):
+    extra = {campo: valor}
+    if campo == "numero_parcelas":
+        extra["valor_parcela"] = "100"
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_divida(_divida(**extra), MOTOS)
+    assert campo in e.value.erros and erro in e.value.erros[campo]
+
+
+def test_parcelas_e_valor_da_parcela_vem_juntos():
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_divida(_divida(numero_parcelas="10"), MOTOS)
+    assert set(e.value.erros) == {"valor_parcela"}
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_divida(_divida(valor_parcela="100"), MOTOS)
+    assert set(e.value.erros) == {"numero_parcelas"}
+
+
+def test_pagamento_direto_usa_a_mensagem_do_saldo_da_divida():
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_pagamento_parcela(_entrada(valor="5.000,00"), Decimal("3425"), CONTAS, alvo="da dívida")
+    assert "não pode ser maior que o saldo da dívida (R$ 3.425,00)" in e.value.erros["valor"]
+    assert f.ler_pagamento_parcela(_entrada(valor="3.425,00"), Decimal("3425"), CONTAS, alvo="da dívida")["quitada"] is True

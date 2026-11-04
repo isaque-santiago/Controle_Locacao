@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Optional
 
 from src.domain import dividas_lista
+from src.domain.valores import hoje_br
 from src.domain.dividas import calendario_parcelas, saldo_compra, validar_compra_parcelada
 from src.repositories import contas, dividas, motos
 
@@ -126,3 +127,62 @@ def motos_para_selecao() -> list:
     """Motos que podem ser ligadas a uma dívida (id, placa e modelo), por placa."""
     return sorted(({"id": m["id"], "placa": m["placa"], "modelo": m.get("modelo") or ""} for m in motos.listar()),
                   key=lambda m: m["placa"])
+
+
+def criar_divida(
+    tipo: str,
+    credor: str,
+    valor_original: Decimal,
+    numero_parcelas: Optional[int] = None,
+    valor_parcela: Optional[Decimal] = None,
+    dia_vencimento: Optional[int] = None,
+    saldo_confirmado: Optional[Decimal] = None,
+    moto_id: Optional[str] = None,
+    descricao: Optional[str] = None,
+    observacoes: Optional[str] = None,
+) -> dict:
+    """Cadastra uma dívida que não é compra parcelada (moto fiado, financiamento, fornecedor, rastreador, empréstimo).
+
+    Com saldo confirmado, `confirmado_em` fica em hoje. A compra parcelada tem RPC própria (calendário e entrada)."""
+    if tipo == "compra_parcelada":
+        raise ValueError("Compra parcelada se cadastra pelo formulário próprio.")
+    credor = (credor or "").strip()
+    if not credor:
+        raise ValueError("Informe o credor da dívida.")
+    if valor_original < 0 or (saldo_confirmado is not None and saldo_confirmado < 0):
+        raise ValueError("Os valores da dívida não podem ser negativos.")
+    if (numero_parcelas is None) != (valor_parcela is None):
+        raise ValueError("Informe o número de parcelas e o valor da parcela, ou nenhum dos dois.")
+    dados = {
+        "tipo": tipo,
+        "credor": credor,
+        "valor_original": str(valor_original),
+        "numero_parcelas": numero_parcelas,
+        "valor_parcela": None if valor_parcela is None else str(valor_parcela),
+        "dia_vencimento": dia_vencimento,
+        "saldo_confirmado": None if saldo_confirmado is None else str(saldo_confirmado),
+        "confirmado_em": hoje_br().isoformat() if saldo_confirmado is not None else None,
+        "moto_id": moto_id,
+        "descricao": (descricao or "").strip() or None,
+        "observacoes": (observacoes or "").strip() or None,
+    }
+    return dividas.criar_divida(dados)
+
+
+def pagar_divida(
+    divida_id: str,
+    data: date,
+    valor: Decimal,
+    conta_id: Optional[str] = None,
+    observacoes: Optional[str] = None,
+) -> dict:
+    """Registra um pagamento direto da dívida (sem parcela), para dívidas que não têm calendário, como moto fiado."""
+    if valor <= 0:
+        raise ValueError("O valor do pagamento deve ser positivo.")
+    return dividas.registrar_pagamento({
+        "divida_id": divida_id,
+        "data": data.isoformat(),
+        "valor": str(valor),
+        "conta_id": conta_id,
+        "observacoes": (observacoes or "").strip() or None,
+    })

@@ -997,6 +997,7 @@ PARCELA_ID = "00000000-0000-0000-0000-0000000000e8"
 PARCELA_PAGA_ID = "00000000-0000-0000-0000-0000000000e7"
 CONTA_ID = "00000000-0000-0000-0000-0000000000c1"
 MOTO_DIVIDA_ID = "00000000-0000-0000-0000-0000000000a1"
+DIVIDA_FIADO_ID = "00000000-0000-0000-0000-0000000000d2"
 
 
 def ficha_divida_exemplo():
@@ -1020,6 +1021,17 @@ def ficha_divida_exemplo():
             {"id": "g2", "data": "2026-05-01", "valor": "5000.00", "data_estimada": True, "parcela_numero": None,
              "observacoes": "Entrada da compra"},
         ],
+    }
+
+
+def ficha_divida_fiado():
+    """Moto fiado: sem parcelas, então o pagamento é direto."""
+    return {
+        "divida": {"id": DIVIDA_FIADO_ID, "credor": "Nilson", "tipo": "moto_fiado", "descricao": None, "valor_original": "9675.00",
+                   "valor_entrada": "0", "numero_parcelas": None, "valor_parcela": None, "dia_vencimento": None,
+                   "confirmado_em": None, "observacoes": None},
+        "tipo_rotulo": "Moto fiado", "saldo": Decimal("7600.00"), "total_pago": Decimal("2075.00"),
+        "saldo_confirmado": None, "diferenca": None, "moto": None, "parcelas": [], "pagamentos": [],
     }
 
 
@@ -1047,6 +1059,9 @@ class BaseDividas:
         self.pagamentos = []
         self.motos = [{"id": MOTO_DIVIDA_ID, "placa": "OID7656", "modelo": "Celta <b>LS</b>"}]
         self.compras = []
+        self.dividas_criadas = []
+        self.pagamentos_diretos = []
+        self.fichas[DIVIDA_FIADO_ID] = ficha_divida_fiado()
         self.falhar_com = None
 
 
@@ -1073,5 +1088,18 @@ def base_dividas(monkeypatch):
     monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(motos_para_selecao=lambda: base.motos,
         resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id),
         parcela=lambda id: base.parcelas.get(id), contas_ativas=lambda: base.contas))
-    monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra))
+    def criar_divida(**dados):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.dividas_criadas.append(dados)
+        return {"id": DIVIDA_ID, **dados}
+
+    def pagar_divida(divida_id, data, valor, conta_id, observacoes):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.pagamentos_diretos.append((divida_id, data, valor, conta_id, observacoes))
+        return {"id": "pg"}
+
+    monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(
+        pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra, criar_divida=criar_divida, pagar_divida=pagar_divida))
     return base
