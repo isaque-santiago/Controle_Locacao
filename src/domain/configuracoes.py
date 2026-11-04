@@ -11,7 +11,11 @@ CAMPOS_INTEIROS = {
     "alerta_manutencao_dias": "Avisar (dias antes)",
     "alerta_documento_dias": "Documentos da moto",
     "alerta_cnh_dias": "CNH do cliente",
+    "dias_inadimplencia": "Inadimplente a partir de (dias de atraso)",
 }
+# Menor valor aceito (o padrão é 0) e valor usado quando o banco ainda não tem a coluna.
+MINIMO_INTEIRO = {"dias_inadimplencia": 1}
+PADRAO_INTEIRO = {"dias_inadimplencia": 15}
 CAMPOS_MONETARIOS = {
     "multa_atraso_valor": "Multa de atraso (no vencimento)",
     "encargo_diario_valor": "Adicional por dia de atraso",
@@ -20,10 +24,10 @@ CAMPOS_MONETARIOS = {
 LIMITE_INTEIRO = 100_000
 
 
-def _inteiro(valor, rotulo):
+def _inteiro(valor, rotulo, minimo=0):
     texto = str(valor).strip()
-    if not texto.isdigit() or int(texto) > LIMITE_INTEIRO:
-        raise ValueError(f"{rotulo}: informe um número inteiro entre 0 e {LIMITE_INTEIRO}.")
+    if not texto.isdigit() or not minimo <= int(texto) <= LIMITE_INTEIRO:
+        raise ValueError(f"{rotulo}: informe um número inteiro entre {minimo} e {LIMITE_INTEIRO}.")
     return int(texto)
 
 
@@ -54,7 +58,7 @@ def validar_configuracao(entrada: dict) -> dict:
                 f"{rotulo}: informe um valor em reais válido, com até duas casas decimais."
             ) from None
     for campo, rotulo in CAMPOS_INTEIROS.items():
-        dados[campo] = _inteiro(entrada[campo], rotulo)
+        dados[campo] = _inteiro(entrada[campo], rotulo, MINIMO_INTEIRO.get(campo, 0))
     return dados
 
 

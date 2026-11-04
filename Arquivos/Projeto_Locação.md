@@ -985,6 +985,7 @@ A aba "Dashboard" da planilha "PAGAMENTO MOTOS" vira a seção **Financeiro** do
   - retiradas + aportes. A receita só conta dinheiro recebido (principal + multa/juros), sem caução nem a forma `abatimento`; as parcelas de
   dívida entram só pelos pagamentos de dívida, nunca em despesas (na planilha o risco de contar em dobro existia). As despesas por categoria
   são do mês escolhido (a planilha mostrava todo o período).
-- **Limitações conhecidas:** o corte de 15 dias para inadimplência é uma constante (`DIAS_INADIMPLENTE`), não uma configuração; `vw_resultado_moto`
+- **Corte de inadimplência (04/11/2026):** deixou de ser constante: `configuracoes.dias_inadimplencia` (migration `20261104140000_corte_inadimplencia.sql`, padrão 15, de 1 a 100000), campo em Configurações; sem a coluna no banco o Dashboard usa 15.
+- **Limitações conhecidas:** `vw_resultado_moto`
   e o relatório por moto ainda somam a forma `abatimento` como receita (o total do mês no Dashboard não); os modos compacto e ocultar valem só pela URL
   (não há preferência salva por usuário).

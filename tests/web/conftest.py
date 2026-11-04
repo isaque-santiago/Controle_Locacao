@@ -163,6 +163,7 @@ DADOS_PAINEL = {
         "dividas": {"total": Decimal("32014.34"), "moto_fiado": Decimal("32014.34")},
         "receita_estimada": Decimal("27155.00"),
         "receita_semana": Decimal("3245.50"),
+        "faixas": {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"},
         "grafico": {
             "largura": 600, "altura": 208, "y_base": 180, "y_rotulo": 200,
             "colunas": [
@@ -909,7 +910,7 @@ class BaseConfiguracoes:
         self.config = {
             "id": 1, "multa_atraso_valor": Decimal("15.00"), "encargo_diario_valor": Decimal("7.00"),
             "multa_troca_oleo_valor": Decimal("0"), "alerta_manutencao_km": 300, "alerta_manutencao_dias": 15,
-            "alerta_documento_dias": 30, "alerta_cnh_dias": 30,
+            "alerta_documento_dias": 30, "alerta_cnh_dias": 30, "dias_inadimplencia": 15,
         }
         self.gravados = []
         self.backups = 0

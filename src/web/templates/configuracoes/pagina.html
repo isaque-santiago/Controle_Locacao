@@ -13,6 +13,7 @@
     <div class="formulario">
       {{ campo("cfg-multa", "Multa de atraso (no vencimento)", nome="multa_atraso_valor", valor=v.multa_atraso_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.multa_atraso_valor, autocomplete="off") }}
       {{ campo("cfg-diario", "Adicional por dia de atraso", nome="encargo_diario_valor", valor=v.encargo_diario_valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.encargo_diario_valor, autocomplete="off") }}
+      {{ campo("cfg-inadimplente", "Inadimplente a partir de (dias de atraso)", nome="dias_inadimplencia", valor=v.dias_inadimplencia, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.dias_inadimplencia, ajuda="No Dashboard financeiro, contratos com menos dias de atraso aparecem como \"em atraso\" e, daí em diante, como \"inadimplentes\". Mínimo 1.", autocomplete="off", largo=True) }}
     </div>
     <p class="mt-4 text-texto-2" id="cfg-exemplo">Exemplo com os valores salvos: locação de <span class="mono text-texto">{{ exemplo.saldo|moeda }}</span>, vencida há <span class="mono text-texto">{{ exemplo.dias_vencida }} dias</span> → multa <span class="mono text-texto">{{ exemplo.multa|moeda }}</span> + adicional <span class="mono text-texto">{{ exemplo.adicional_diario|moeda }}</span> = encargos <span class="mono text-texto">{{ exemplo.encargos|moeda }}</span>; total a pagar <span class="mono font-semibold text-texto">{{ exemplo.total|moeda }}</span></p>
   </section>

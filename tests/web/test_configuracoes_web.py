@@ -7,7 +7,7 @@ from tests.web.conftest import csrf_da_sessao, entrar
 
 def _dados(token, **extra):
     return {"csrf_token": token, "multa_atraso_valor": "20,00", "encargo_diario_valor": "8,50", "multa_troca_oleo_valor": "0,00",
-            "alerta_manutencao_km": "400", "alerta_manutencao_dias": "20", "alerta_documento_dias": "45", "alerta_cnh_dias": "60", **extra}
+            "alerta_manutencao_km": "400", "alerta_manutencao_dias": "20", "alerta_documento_dias": "45", "alerta_cnh_dias": "60", "dias_inadimplencia": "20", **extra}
 
 
 def test_pagina_mostra_os_valores_salvos_e_o_exemplo_de_encargos(cliente, base_configuracoes):
@@ -27,7 +27,7 @@ def test_salva_e_avisa_quais_campos_mudaram(cliente, base_configuracoes):
     assert resposta.status_code == 303 and resposta.headers["location"] == "/configuracoes"
     gravado = base_configuracoes.gravados[0]
     assert gravado["multa_atraso_valor"] == Decimal("20.00") and gravado["encargo_diario_valor"] == Decimal("8.50")
-    assert gravado["alerta_manutencao_km"] == 400 and gravado["alerta_cnh_dias"] == 60
+    assert gravado["alerta_manutencao_km"] == 400 and gravado["alerta_cnh_dias"] == 60 and gravado["dias_inadimplencia"] == 20
     pagina = cliente.get("/configuracoes").text
     assert "Configurações salvas:" in pagina and "Multa de atraso (no vencimento)" in pagina and "CNH do cliente" in pagina
     assert "Multa por troca de óleo" not in pagina.split("Configurações salvas:")[1].split("</")[0]  # não mudou
@@ -38,7 +38,7 @@ def test_salvar_sem_mudar_nada_diz_que_nenhum_valor_foi_alterado(cliente, base_c
     entrar(cliente)
     cliente.post("/configuracoes", data=_dados(csrf_da_sessao(cliente), multa_atraso_valor="15,00", encargo_diario_valor="7,00",
                                                alerta_manutencao_km="300", alerta_manutencao_dias="15",
-                                               alerta_documento_dias="30", alerta_cnh_dias="30"))
+                                               alerta_documento_dias="30", alerta_cnh_dias="30", dias_inadimplencia="15"))
     assert "Nenhum valor foi alterado." in cliente.get("/configuracoes").text
 
 
@@ -87,3 +87,15 @@ def test_configuracoes_exigem_dono(cliente, base_configuracoes):
     assert cliente.post("/configuracoes", data=_dados("x")).status_code == 403
     assert cliente.post("/configuracoes/backup", data={"csrf_token": "x"}).status_code == 403
     assert base_configuracoes.backups == 0 and base_configuracoes.gravados == []
+
+
+def test_pagina_mostra_o_corte_de_inadimplencia(cliente, base_configuracoes):
+    entrar(cliente)
+    html = cliente.get("/configuracoes").text
+    assert "Inadimplente a partir de (dias de atraso)" in html and 'name="dias_inadimplencia"' in html and 'value="15"' in html
+
+
+def test_corte_de_inadimplencia_zero_e_recusado(cliente, base_configuracoes):
+    entrar(cliente)
+    resposta = cliente.post("/configuracoes", data=_dados(csrf_da_sessao(cliente), dias_inadimplencia="0"))
+    assert resposta.status_code == 422 and base_configuracoes.gravados == []

@@ -110,6 +110,15 @@ def faixa_de_atraso(dias: int, corte: int = DIAS_INADIMPLENTE) -> str:
     return "inadimplente" if dias >= corte else "em_atraso"
 
 
+def descricao_das_faixas(corte: int = DIAS_INADIMPLENTE) -> dict:
+    """Texto de cada faixa de atraso para a tela, conforme o corte configurado."""
+    dias = f"{corte} dia" if corte == 1 else f"{corte} dias"
+    return {
+        "em_atraso": f"até {corte - 1} dias" if corte > 2 else ("até 1 dia" if corte == 2 else "nenhum (todo atraso é inadimplência)"),
+        "inadimplente": f"{dias} ou mais",
+    }
+
+
 def analisar_devedores(
     cobrancas: list[dict],
     nomes_clientes: dict,
@@ -263,6 +272,7 @@ def alertas_financeiros(
     a_repassar: Decimal,
     entradas_sem_conta: Decimal,
     motos_em_manutencao: int,
+    corte: int = DIAS_INADIMPLENTE,
 ) -> list[dict]:
     """Indicadores com semáforo (como o quadro "Alertas e pendências" da planilha).
 
@@ -274,9 +284,10 @@ def alertas_financeiros(
         return escolhido, rotulos[escolhido]
 
     total_a_cobrar = devedores["a_receber"] + devedores["encargos"]
+    faixas = descricao_das_faixas(corte)
     itens = [
-        ("Contratos inadimplentes (15 dias ou mais)", devedores["inadimplentes"], "qtd", *nivel(devedores["inadimplentes"] > 0, "perigo")),
-        ("Contratos em atraso (até 14 dias)", devedores["em_atraso"], "qtd", *nivel(devedores["em_atraso"] > 0, "atencao")),
+        (f"Contratos inadimplentes ({faixas['inadimplente']})", devedores["inadimplentes"], "qtd", *nivel(devedores["inadimplentes"] > 0, "perigo")),
+        (f"Contratos em atraso ({faixas['em_atraso']})", devedores["em_atraso"], "qtd", *nivel(devedores["em_atraso"] > 0, "atencao")),
         ("Caixa do mês", mes["caixa"], "moeda", *nivel(mes["caixa"] < 0, "perigo")),
         ("Despesas a repassar ao locatário", a_repassar, "moeda", *nivel(a_repassar > 0, "atencao")),
         ("Entradas do mês sem conta cadastrada", entradas_sem_conta, "moeda", *nivel(entradas_sem_conta > 0, "atencao")),

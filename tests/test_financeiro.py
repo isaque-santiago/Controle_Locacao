@@ -240,3 +240,16 @@ def test_links_do_painel_mantem_o_que_esta_ligado():
     assert l == {"anterior": "?mes=2026-09&compacto=1", "seguinte": None, "atual": "?compacto=1",
                  "compacto": "?mes=2026-10", "ocultar": "?mes=2026-10&compacto=1&ocultar=1"}
     assert financeiro.links_do_painel("2026-08", "2026-07", "2026-09", False, True)["seguinte"] == "?mes=2026-09&ocultar=1"
+
+
+def test_descricao_das_faixas_segue_o_corte():
+    assert financeiro.descricao_das_faixas() == {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"}
+    assert financeiro.descricao_das_faixas(30) == {"em_atraso": "até 29 dias", "inadimplente": "30 dias ou mais"}
+    assert financeiro.descricao_das_faixas(2) == {"em_atraso": "até 1 dia", "inadimplente": "2 dias ou mais"}
+    um = financeiro.descricao_das_faixas(1)
+    assert um["inadimplente"] == "1 dia ou mais" and um["em_atraso"].startswith("nenhum")
+
+
+def test_alertas_usam_o_corte_configurado_nos_titulos():
+    titulos = [a["titulo"] for a in financeiro.alertas_financeiros(_devedores(), _mes(), Decimal("0"), Decimal("0"), 0, corte=30)]
+    assert "Contratos inadimplentes (30 dias ou mais)" in titulos and "Contratos em atraso (até 29 dias)" in titulos

@@ -49,3 +49,15 @@ def test_varios_erros_vem_juntos_e_limites_valem():
     assert set(erro.value.erros) == {"multa_atraso_valor", "alerta_cnh_dias"}
     assert f.ler_configuracao(_entrada(alerta_cnh_dias="100000"))["alerta_cnh_dias"] == 100000
     assert f.ler_configuracao(_entrada(multa_atraso_valor="0,00"))["multa_atraso_valor"] == Decimal("0.00")
+
+
+def test_corte_de_inadimplencia_vem_com_15_quando_o_banco_ainda_nao_tem_a_coluna():
+    assert f.valores_iniciais(CONFIG)["dias_inadimplencia"] == "15"
+    assert f.valores_iniciais({**CONFIG, "dias_inadimplencia": 30})["dias_inadimplencia"] == "30"
+
+
+def test_corte_de_inadimplencia_nao_aceita_zero():
+    with pytest.raises(ErroDeCampos) as erro:
+        f.ler_configuracao(_entrada(dias_inadimplencia="0"))
+    assert set(erro.value.erros) == {"dias_inadimplencia"}
+    assert f.ler_configuracao(_entrada(dias_inadimplencia="1"))["dias_inadimplencia"] == 1
