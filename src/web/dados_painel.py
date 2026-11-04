@@ -5,7 +5,7 @@
 
 from datetime import date
 
-from src.domain import painel
+from src.domain import financeiro, painel
 from src.domain.valores import hoje_br
 from src.services import (
     alertas,
@@ -13,13 +13,15 @@ from src.services import (
     cobrancas,
     configuracoes,
     dashboard,
-    financeiro,
     manutencao,
 )
+from src.services import financeiro as financeiro_servico
 
 
-def carregar(hoje: date | None = None, mes: str | None = None) -> dict:
-    """`mes` (aaaa-mm) escolhe o mês da seção Financeiro; o resto do Dashboard é sempre de hoje."""
+def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = False, ocultar: bool = False) -> dict:
+    """`mes` (aaaa-mm) escolhe o mês da seção Financeiro; o resto do Dashboard é sempre de hoje.
+
+    `compacto` mostra só os indicadores e os alertas; `ocultar` esconde valores, nomes e placas."""
     hoje = hoje or hoje_br()
     cobrancas.gerar_cobrancas_pendentes()
     dados = dashboard.resumo()
@@ -42,6 +44,7 @@ def carregar(hoje: date | None = None, mes: str | None = None) -> dict:
     ]
 
     mes_anterior = painel.nome_do_mes(painel.periodo_anterior(hoje)[0])
+    resumo_financeiro = financeiro_servico.painel(mes, hoje)
 
     return {
         "data_extenso": painel.data_por_extenso(hoje),
@@ -68,7 +71,12 @@ def carregar(hoje: date | None = None, mes: str | None = None) -> dict:
         },
         "ordens_concluidas": painel.ordens_concluidas_no_mes(manutencao.listar_manutencoes(), hoje),
         "hoje": linhas_hoje,
-        "financeiro": financeiro.painel(mes, hoje),
+        "financeiro": resumo_financeiro,
+        "compacto": compacto,
+        "ocultar": ocultar,
+        "links": financeiro.links_do_painel(
+            resumo_financeiro["mes_texto"], resumo_financeiro["mes_anterior"], resumo_financeiro["mes_seguinte"], compacto, ocultar
+        ),
         "alertas": painel.agrupar_alertas(
             configuracoes.obter(),
             alertas.listar_manutencao(),

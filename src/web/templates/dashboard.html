@@ -1,18 +1,31 @@
 {% extends "layout_painel.html" %}
 {% from "componentes/macros.html" import cabecalho_pagina, kpi, selo, placa, tabela, estado_vazio, icone %}
 {% set areas = {"manutencao": "/manutencao", "documentos": "/documentos", "clientes": "/clientes"} %}
+{% set oc = d.ocultar %}
+{% set comp = d.compacto %}
+{# Com "ocultar dados pessoais" ligado, valores, nomes e placas saem trocados por pontos já no servidor (não vão nem no HTML). #}
+{% macro din(v) -%}{% if oc %}R$ ••••{% else %}{{ v|moeda }}{% endif %}{%- endmacro %}
+{% macro dinc(v) -%}{% if oc %}R$ ••••{% else %}{{ v|moeda_compacta }}{% endif %}{%- endmacro %}
+{% macro nome(t) -%}{% if oc %}••••••{% else %}{{ t }}{% endif %}{%- endmacro %}
+{% macro plac(t) -%}{% if oc %}{{ placa("•••••••") }}{% else %}{{ placa(t|placa_br) }}{% endif %}{%- endmacro %}
 
 {% block conteudo %}
-{{ cabecalho_pagina("Dashboard", d.data_extenso|capitalize) }}
+{% call cabecalho_pagina("Dashboard", d.data_extenso|capitalize) %}
+  {% if d.links %}
+  <a class="btn" href="/{{ d.links.compacto }}">{{ "Sair do modo compacto" if comp else "Modo compacto" }}</a>
+  <a class="btn" href="/{{ d.links.ocultar }}">{{ "Mostrar dados pessoais" if oc else "Ocultar dados pessoais" }}</a>
+  {% endif %}
+{% endcall %}
 
 <dl class="grade kpis">
   {{ kpi("Frota", d.frota_total ~ (" moto" if d.frota_total == 1 else " motos"), d.ocupacao ~ "% de ocupação") }}
-  {{ kpi("Recebido no mês", d.recebido|moeda_compacta, "de " ~ (d.previsto|moeda_compacta) ~ " previstos (" ~ d.percentual_recebido ~ "%)", variacao=d.variacoes.recebido if d.variacoes else None) }}
-  {{ kpi("Em atraso", d.atrasado|moeda_compacta, d.clientes_atrasados ~ (" cliente atrasado" if d.clientes_atrasados == 1 else " clientes atrasados"), atencao=(d.atrasado > 0), href="/cobrancas?aba=atrasadas") }}
-  {{ kpi("Manutenção no mês", d.manutencao_mes|moeda_compacta, d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), variacao=d.variacoes.manutencao if d.variacoes else None) }}
+  {{ kpi("Recebido no mês", dinc(d.recebido), "de " ~ (dinc(d.previsto)) ~ " previstos (" ~ d.percentual_recebido ~ "%)", variacao=d.variacoes.recebido if (d.variacoes and not oc) else None) }}
+  {{ kpi("Em atraso", dinc(d.atrasado), d.clientes_atrasados ~ (" cliente atrasado" if d.clientes_atrasados == 1 else " clientes atrasados"), atencao=(d.atrasado > 0), href="/cobrancas?aba=atrasadas") }}
+  {{ kpi("Manutenção no mês", dinc(d.manutencao_mes), d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), variacao=d.variacoes.manutencao if (d.variacoes and not oc) else None) }}
 </dl>
 
 <div class="grade duas-colunas igualar">
+    {% if not comp %}
     <section class="cartao" aria-labelledby="t-ocupacao">
       <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>
       <div class="ocupacao-corpo">
@@ -39,6 +52,7 @@
         </ul>
       </div>
     </section>
+    {% endif %}
 
   <section class="cartao content-start" aria-labelledby="t-alertas">
     <div class="cartao-cab"><h2 id="t-alertas">Precisa de atenção</h2></div>
@@ -47,7 +61,7 @@
       {% for a in d.alertas %}
       <li class="pendencia">
         <span class="adesivo {{ a.tom }}" aria-hidden="true">{{ a.quantidade }}</span>
-        <div><strong>{{ a.titulo }}</strong><span class="det">{{ a.descricao }}</span></div>
+        <div><strong>{{ a.titulo }}</strong><span class="det">{{ nome(a.descricao) }}</span></div>
         <a class="btn" href="{{ areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>
       </li>
       {% endfor %}
@@ -58,18 +72,19 @@
   </section>
 </div>
 
+    {% if not comp %}
     <section class="cartao mt-4 moto-lista-cards hoje-lista" aria-labelledby="t-hoje">
       <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">vencendo hoje e atrasadas</span></div>
       {% if d.hoje %}
       {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}
         {% for c in d.hoje %}
         <tr>
-          <td class="topo font-medium">{{ c.cliente }}</td>
-          <td data-rotulo="Moto">{{ placa(c.placa|placa_br) }}</td>
+          <td class="topo font-medium">{{ nome(c.cliente) }}</td>
+          <td data-rotulo="Moto">{{ plac(c.placa) }}</td>
           <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
-          <td class="num mono" data-rotulo="Valor">{{ c.valor|moeda }}</td>
+          <td class="num mono" data-rotulo="Valor">{{ din(c.valor) }}</td>
           <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
-          <td class="acao"><a class="btn" href="/cobrancas/{{ c.id }}/pagar" aria-label="Registrar pagamento de {{ c.cliente }}">Pagar</a></td>
+          <td class="acao"><a class="btn" href="/cobrancas/{{ c.id }}/pagar" aria-label="Registrar pagamento de {{ nome(c.cliente) }}">Pagar</a></td>
         </tr>
         {% endfor %}
       {% endcall %}
@@ -77,6 +92,7 @@
       <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
       {% endif %}
     </section>
+    {% endif %}
 
 {% if d.financeiro %}
 {% set f = d.financeiro %}
@@ -84,45 +100,60 @@
   <div class="cartao-cab">
     <h2 id="t-financeiro">Financeiro · {{ f.mes_rotulo }}</h2>
     <form class="acoes" method="get" action="/" aria-label="Escolher o mês do Financeiro">
-      <a class="btn" href="/?mes={{ f.mes_anterior }}" aria-label="Mês anterior">‹</a>
+      <a class="btn" href="/{{ d.links.anterior }}" aria-label="Mês anterior">‹</a>
       <label class="so-leitor" for="seletor-mes">Mês</label>
       <input id="seletor-mes" type="month" name="mes" value="{{ f.mes_texto }}" max="{{ f.mes_maximo }}">
+      {% if comp %}<input type="hidden" name="compacto" value="1">{% endif %}
+      {% if oc %}<input type="hidden" name="ocultar" value="1">{% endif %}
       <button class="btn" type="submit">Ver</button>
-      {% if f.mes_seguinte %}<a class="btn" href="/?mes={{ f.mes_seguinte }}" aria-label="Mês seguinte">›</a>{% endif %}
-      {% if not f.e_mes_atual %}<a class="btn" href="/">Mês atual</a>{% endif %}
+      {% if d.links.seguinte %}<a class="btn" href="/{{ d.links.seguinte }}" aria-label="Mês seguinte">›</a>{% endif %}
+      {% if not f.e_mes_atual %}<a class="btn" href="/{{ d.links.atual }}">Mês atual</a>{% endif %}
     </form>
   </div>
 
   <dl class="grade kpis">
-    {{ kpi("Receita", f.atual.receita|moeda, "dinheiro recebido no mês") }}
-    {{ kpi("Despesas", f.atual.despesas|moeda, "custo operacional (sem investimento)") }}
-    {{ kpi("Resultado", f.atual.resultado|moeda, ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0)) }}
-    {{ kpi("Caixa", f.atual.caixa|moeda, "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0)) }}
-    {{ kpi("Investimento em veículos", f.atual.investimento|moeda, "fora do resultado") }}
-    {{ kpi("Parcelas de dívida", f.atual.parcelas_divida|moeda, "pagas no mês") }}
-    {{ kpi("Retiradas", f.atual.retiradas|moeda, "aportes: " ~ (f.atual.aportes|moeda)) }}
-    {{ kpi("Receita mensal estimada", f.receita_estimada|moeda, "contratos ativos") }}
+    {{ kpi("Receita", din(f.atual.receita), ("Semana: " ~ (din(f.receita_semana))) if f.e_mes_atual else "dinheiro recebido no mês") }}
+    {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)") }}
+    {{ kpi("Resultado", din(f.atual.resultado), ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0)) }}
+    {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0)) }}
+    {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado") }}
+    {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês") }}
+    {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ (din(f.atual.aportes))) }}
+    {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos") }}
   </dl>
 
   <dl class="grade kpis mt-4">
-    {{ kpi("A receber", f.devedores.a_receber|moeda, f.devedores.contratos_em_aberto ~ (" contrato em aberto" if f.devedores.contratos_em_aberto == 1 else " contratos em aberto"), atencao=(f.devedores.a_receber > 0), href="/cobrancas?aba=atrasadas") }}
-    {{ kpi("Encargos de atraso", f.devedores.encargos|moeda, "multa + adicional por dia") }}
+    {{ kpi("A receber", din(f.devedores.a_receber), f.devedores.contratos_em_aberto ~ (" contrato em aberto" if f.devedores.contratos_em_aberto == 1 else " contratos em aberto"), atencao=(f.devedores.a_receber > 0), href="/cobrancas?aba=atrasadas") }}
+    {{ kpi("Encargos de atraso", din(f.devedores.encargos), "multa + adicional por dia") }}
     {{ kpi("Em atraso", f.devedores.em_atraso, "até 14 dias") }}
     {{ kpi("Inadimplentes", f.devedores.inadimplentes, "15 dias ou mais", atencao=(f.devedores.inadimplentes > 0)) }}
-    {{ kpi("Dívidas em aberto", f.dividas.total|moeda, "motos fiado: " ~ (f.dividas.moto_fiado|moeda)) }}
+    {{ kpi("Dívidas em aberto", din(f.dividas.total), "motos fiado: " ~ (din(f.dividas.moto_fiado))) }}
   </dl>
 
+  {% if not comp %}
   <div class="grade duas-colunas igualar mt-4">
     <section class="cartao moto-lista-cards" aria-labelledby="t-evolucao">
       <div class="cartao-cab"><h2 id="t-evolucao">Últimos 6 meses</h2></div>
+      {% set g = f.grafico %}
+      {% if not oc %}
+      <svg class="grafico-colunas" viewBox="0 0 {{ g.largura }} {{ g.altura }}" role="img" aria-label="Colunas de receita e de despesas por mês; os valores estão na tabela logo abaixo">
+        <line class="base" x1="0" y1="{{ g.y_base }}" x2="{{ g.largura }}" y2="{{ g.y_base }}"/>
+        {% for c in g.colunas %}
+        <rect class="col-receita" x="{{ c.receita.x }}" y="{{ c.receita.y }}" width="{{ c.receita.largura }}" height="{{ c.receita.altura }}"/>
+        <rect class="col-despesa" x="{{ c.despesas.x }}" y="{{ c.despesas.y }}" width="{{ c.despesas.largura }}" height="{{ c.despesas.altura }}"/>
+        <text x="{{ c.x_rotulo }}" y="{{ g.y_rotulo }}">{{ c.rotulo }}</text>
+        {% endfor %}
+      </svg>
+      <ul class="legenda-grafico" aria-hidden="true"><li class="receita"><i></i>Receita</li><li class="despesa"><i></i>Despesas</li></ul>
+      {% endif %}
       {% call tabela([("Mês", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num"), ("Caixa", "num")], "Receita, despesas, resultado e caixa por mês") %}
         {% for m in f.evolucao %}
         <tr{% if m.mes == f.mes %} aria-current="true"{% endif %}>
           <td class="topo font-medium">{{ m.rotulo }}</td>
-          <td class="num mono" data-rotulo="Receita">{{ m.receita|moeda }}</td>
-          <td class="num mono" data-rotulo="Despesas">{{ m.despesas|moeda }}</td>
-          <td class="num mono" data-rotulo="Resultado">{{ m.resultado|moeda }}</td>
-          <td class="num mono" data-rotulo="Caixa">{{ m.caixa|moeda }}</td>
+          <td class="num mono" data-rotulo="Receita">{{ din(m.receita) }}</td>
+          <td class="num mono" data-rotulo="Despesas">{{ din(m.despesas) }}</td>
+          <td class="num mono" data-rotulo="Resultado">{{ din(m.resultado) }}</td>
+          <td class="num mono" data-rotulo="Caixa">{{ din(m.caixa) }}</td>
         </tr>
         {% endfor %}
       {% endcall %}
@@ -134,10 +165,10 @@
       {% call tabela([("Cliente", ""), ("Moto", ""), ("Atraso", "num"), ("A cobrar", "num"), ("Situação", "")], "Maiores débitos em atraso, com encargos") %}
         {% for c in f.devedores.ranking %}
         <tr>
-          <td class="topo font-medium">{{ c.cliente }}</td>
-          <td data-rotulo="Moto">{% if c.placa != "—" %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+          <td class="topo font-medium">{{ nome(c.cliente) }}</td>
+          <td data-rotulo="Moto">{% if c.placa != "—" %}{{ plac(c.placa) }}{% else %}—{% endif %}</td>
           <td class="num mono" data-rotulo="Atraso">{{ c.dias_atraso }} d</td>
-          <td class="num mono" data-rotulo="A cobrar">{{ c.total|moeda }}</td>
+          <td class="num mono" data-rotulo="A cobrar">{{ din(c.total) }}</td>
           <td data-rotulo="Situação">{% if c.faixa == "inadimplente" %}{{ selo("Inadimplente", "perigo") }}{% else %}{{ selo("Em atraso", "atencao") }}{% endif %}</td>
         </tr>
         {% endfor %}
@@ -145,6 +176,81 @@
       {% else %}
       <p class="text-texto-2">Nenhum débito em atraso.</p>
       {% endif %}
+    </section>
+  </div>
+
+  <div class="grade duas-colunas igualar mt-4">
+    <section class="cartao" aria-labelledby="t-entradas">
+      <div class="cartao-cab"><h2 id="t-entradas">Entradas por conta</h2><span class="text-texto-2 text-[13px]">{{ f.mes_rotulo }}</span></div>
+      {% if f.entradas.linhas %}
+      <ul class="barras-lista">
+        {% for e in f.entradas.linhas %}
+        <li>
+          <span>{{ nome(e.conta) }}</span><strong class="mono">{{ din(e.valor) }}</strong>
+          {% if not oc %}<svg class="barra" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect class="barra-fundo" width="100" height="8"/><rect class="barra-cheia" width="{{ e.proporcao }}" height="8"/></svg>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="barras-total"><span>Total</span><span class="mono">{{ din(f.entradas.total) }}</span></p>
+      {% else %}
+      <p class="text-texto-2">Nenhuma entrada neste mês.</p>
+      {% endif %}
+    </section>
+
+    <section class="cartao" aria-labelledby="t-categorias">
+      <div class="cartao-cab"><h2 id="t-categorias">Despesas por categoria</h2><span class="text-texto-2 text-[13px]">{{ f.mes_rotulo }}</span></div>
+      {% if f.categorias.linhas %}
+      <ul class="barras-lista">
+        {% for c in f.categorias.linhas %}
+        <li>
+          <span>{{ c.rotulo }}</span><strong class="mono">{{ din(c.valor) }}</strong>
+          {% if not oc %}<svg class="barra" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect class="barra-fundo" width="100" height="8"/><rect class="barra-cheia" width="{{ c.proporcao }}" height="8"/></svg>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="barras-total"><span>Total</span><span class="mono">{{ din(f.categorias.total) }}</span></p>
+      {% else %}
+      <p class="text-texto-2">Nenhuma despesa neste mês.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {% endif %}
+
+  <div class="grade duas-colunas igualar mt-4">
+    {% if not comp %}
+    <section class="cartao moto-lista-cards" aria-labelledby="t-veiculos">
+      <div class="cartao-cab"><h2 id="t-veiculos">Resultado por veículo</h2><span class="text-texto-2 text-[13px]">desde o início</span></div>
+      {% if f.veiculos %}
+      {% call tabela([("Moto", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")], "Receita, despesas e resultado de cada veículo") %}
+        {% for v in f.veiculos %}
+        <tr>
+          <td class="topo">{% if v.placa != "—" %}{{ plac(v.placa) }}{% else %}—{% endif %}</td>
+          <td data-rotulo="Locatário">{{ nome(v.locatario) }}</td>
+          <td class="num mono" data-rotulo="Receita">{{ din(v.receita) }}</td>
+          <td class="num mono" data-rotulo="Despesas">{{ din(v.despesas) }}</td>
+          <td class="num mono" data-rotulo="Resultado">{{ din(v.resultado) }}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+      {% else %}
+      <p class="text-texto-2">Nenhum veículo cadastrado.</p>
+      {% endif %}
+    </section>
+
+    {% endif %}
+
+    <section class="cartao moto-lista-cards" aria-labelledby="t-alertas-fin">
+      <div class="cartao-cab"><h2 id="t-alertas-fin">Alertas e pendências</h2></div>
+      {% call tabela([("Indicador", ""), ("Valor", "num"), ("Status", "")], "Indicadores financeiros com situação") %}
+        {% for a in f.alertas %}
+        <tr>
+          <td class="topo">{{ a.titulo }}</td>
+          <td class="num mono" data-rotulo="Valor">{% if a.formato == "moeda" %}{{ din(a.valor) }}{% else %}{{ a.valor }}{% endif %}</td>
+          <td data-rotulo="Status">{{ selo(a.status, a.tom) }}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
     </section>
   </div>
 </section>

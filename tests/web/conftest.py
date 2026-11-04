@@ -132,6 +132,10 @@ DADOS_PAINEL = {
         {"id": "c2", "cliente": "Marcos Teles", "placa": "BRA2E19", "vencimento": "2026-10-06",
          "valor": Decimal("290.00"), "atrasada": False, "dias_atraso": 0},
     ],
+    "compacto": False,
+    "ocultar": False,
+    "links": {"anterior": "?mes=2026-09", "seguinte": None, "atual": "", "compacto": "?mes=2026-10",
+              "ocultar": "?mes=2026-10&ocultar=1"},
     "financeiro": {
         "mes": date(2026, 10, 1), "mes_texto": "2026-10", "mes_rotulo": "outubro de 2026", "mes_anterior": "2026-09",
         "mes_seguinte": None, "mes_maximo": "2026-10", "e_mes_atual": True, "anterior": None,
@@ -158,6 +162,39 @@ DADOS_PAINEL = {
         },
         "dividas": {"total": Decimal("32014.34"), "moto_fiado": Decimal("32014.34")},
         "receita_estimada": Decimal("27155.00"),
+        "receita_semana": Decimal("3245.50"),
+        "grafico": {
+            "largura": 600, "altura": 208, "y_base": 180, "y_rotulo": 200,
+            "colunas": [
+                {"rotulo": "set./26", "x_rotulo": 150.0,
+                 "receita": {"x": 102.0, "y": 180.0, "largura": 90.0, "altura": 0.0, "valor": Decimal("0.00")},
+                 "despesas": {"x": 196.0, "y": 170.0, "largura": 90.0, "altura": 10.0, "valor": Decimal("450.00")}},
+                {"rotulo": "out./26", "x_rotulo": 450.0,
+                 "receita": {"x": 402.0, "y": 90.0, "largura": 90.0, "altura": 90.0, "valor": Decimal("3445.50")},
+                 "despesas": {"x": 496.0, "y": 60.0, "largura": 90.0, "altura": 120.0, "valor": Decimal("5161.20")}},
+            ],
+        },
+        "entradas": {
+            "linhas": [{"conta": "Luiza", "valor": Decimal("865.50"), "proporcao": 100},
+                       {"conta": "Sem conta informada", "valor": Decimal("2180.00"), "proporcao": 60}],
+            "total": Decimal("3045.50"), "sem_conta": Decimal("2180.00"),
+        },
+        "categorias": {
+            "linhas": [{"categoria": "manutencao", "rotulo": "Manutenção", "valor": Decimal("3735.00"), "proporcao": 100},
+                       {"categoria": "outros", "rotulo": "Outros", "valor": Decimal("139.00"), "proporcao": 4}],
+            "total": Decimal("3874.00"),
+        },
+        "veiculos": [
+            {"moto_id": "m1", "placa": "POU7015", "locatario": "JOSE <u>HENRIQUE</u>", "receita": Decimal("8200.00"),
+             "despesas": Decimal("900.00"), "resultado": Decimal("7300.00")},
+            {"moto_id": "m2", "placa": "—", "locatario": "—", "receita": Decimal("0.00"),
+             "despesas": Decimal("120.00"), "resultado": Decimal("-120.00")},
+        ],
+        "alertas": [
+            {"titulo": "Contratos inadimplentes (15 dias ou mais)", "valor": 3, "formato": "qtd", "tom": "perigo", "status": "Crítico"},
+            {"titulo": "Caixa do mês", "valor": Decimal("-3451.93"), "formato": "moeda", "tom": "perigo", "status": "Crítico"},
+            {"titulo": "Aportes de fora no mês", "valor": Decimal("120.00"), "formato": "moeda", "tom": "info", "status": "Info"},
+        ],
     },
     "alertas": [
         SimpleNamespace(quantidade=2, titulo="Manutenção vencida", descricao="Óleo e mais 1", tom="perigo", area="manutencao"),
