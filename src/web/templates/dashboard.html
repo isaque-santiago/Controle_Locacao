@@ -77,4 +77,76 @@
       <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
       {% endif %}
     </section>
+
+{% if d.financeiro %}
+{% set f = d.financeiro %}
+<section class="mt-4" aria-labelledby="t-financeiro">
+  <div class="cartao-cab">
+    <h2 id="t-financeiro">Financeiro · {{ f.mes_rotulo }}</h2>
+    <form class="acoes" method="get" action="/" aria-label="Escolher o mês do Financeiro">
+      <a class="btn" href="/?mes={{ f.mes_anterior }}" aria-label="Mês anterior">‹</a>
+      <label class="so-leitor" for="seletor-mes">Mês</label>
+      <input id="seletor-mes" type="month" name="mes" value="{{ f.mes_texto }}" max="{{ f.mes_maximo }}">
+      <button class="btn" type="submit">Ver</button>
+      {% if f.mes_seguinte %}<a class="btn" href="/?mes={{ f.mes_seguinte }}" aria-label="Mês seguinte">›</a>{% endif %}
+      {% if not f.e_mes_atual %}<a class="btn" href="/">Mês atual</a>{% endif %}
+    </form>
+  </div>
+
+  <dl class="grade kpis">
+    {{ kpi("Receita", f.atual.receita|moeda, "dinheiro recebido no mês") }}
+    {{ kpi("Despesas", f.atual.despesas|moeda, "custo operacional (sem investimento)") }}
+    {{ kpi("Resultado", f.atual.resultado|moeda, ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0)) }}
+    {{ kpi("Caixa", f.atual.caixa|moeda, "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0)) }}
+    {{ kpi("Investimento em veículos", f.atual.investimento|moeda, "fora do resultado") }}
+    {{ kpi("Parcelas de dívida", f.atual.parcelas_divida|moeda, "pagas no mês") }}
+    {{ kpi("Retiradas", f.atual.retiradas|moeda, "aportes: " ~ (f.atual.aportes|moeda)) }}
+    {{ kpi("Receita mensal estimada", f.receita_estimada|moeda, "contratos ativos") }}
+  </dl>
+
+  <dl class="grade kpis mt-4">
+    {{ kpi("A receber", f.devedores.a_receber|moeda, f.devedores.contratos_em_aberto ~ (" contrato em aberto" if f.devedores.contratos_em_aberto == 1 else " contratos em aberto"), atencao=(f.devedores.a_receber > 0), href="/cobrancas?aba=atrasadas") }}
+    {{ kpi("Encargos de atraso", f.devedores.encargos|moeda, "multa + adicional por dia") }}
+    {{ kpi("Em atraso", f.devedores.em_atraso, "até 14 dias") }}
+    {{ kpi("Inadimplentes", f.devedores.inadimplentes, "15 dias ou mais", atencao=(f.devedores.inadimplentes > 0)) }}
+    {{ kpi("Dívidas em aberto", f.dividas.total|moeda, "motos fiado: " ~ (f.dividas.moto_fiado|moeda)) }}
+  </dl>
+
+  <div class="grade duas-colunas igualar mt-4">
+    <section class="cartao moto-lista-cards" aria-labelledby="t-evolucao">
+      <div class="cartao-cab"><h2 id="t-evolucao">Últimos 6 meses</h2></div>
+      {% call tabela([("Mês", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num"), ("Caixa", "num")], "Receita, despesas, resultado e caixa por mês") %}
+        {% for m in f.evolucao %}
+        <tr{% if m.mes == f.mes %} aria-current="true"{% endif %}>
+          <td class="topo font-medium">{{ m.rotulo }}</td>
+          <td class="num mono" data-rotulo="Receita">{{ m.receita|moeda }}</td>
+          <td class="num mono" data-rotulo="Despesas">{{ m.despesas|moeda }}</td>
+          <td class="num mono" data-rotulo="Resultado">{{ m.resultado|moeda }}</td>
+          <td class="num mono" data-rotulo="Caixa">{{ m.caixa|moeda }}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+    </section>
+
+    <section class="cartao moto-lista-cards" aria-labelledby="t-devedores">
+      <div class="cartao-cab"><h2 id="t-devedores">Quem está devendo</h2><span class="text-texto-2 text-[13px]">posição de hoje</span></div>
+      {% if f.devedores.ranking %}
+      {% call tabela([("Cliente", ""), ("Moto", ""), ("Atraso", "num"), ("A cobrar", "num"), ("Situação", "")], "Maiores débitos em atraso, com encargos") %}
+        {% for c in f.devedores.ranking %}
+        <tr>
+          <td class="topo font-medium">{{ c.cliente }}</td>
+          <td data-rotulo="Moto">{% if c.placa != "—" %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+          <td class="num mono" data-rotulo="Atraso">{{ c.dias_atraso }} d</td>
+          <td class="num mono" data-rotulo="A cobrar">{{ c.total|moeda }}</td>
+          <td data-rotulo="Situação">{% if c.faixa == "inadimplente" %}{{ selo("Inadimplente", "perigo") }}{% else %}{{ selo("Em atraso", "atencao") }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+      {% else %}
+      <p class="text-texto-2">Nenhum débito em atraso.</p>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

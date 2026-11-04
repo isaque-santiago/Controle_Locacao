@@ -45,7 +45,7 @@ def test_painel_do_mes_atual(monkeypatch):
 
     assert pedidos == [(date(2026, 11, 1), 6)]
     assert p["mes_texto"] == "2026-11" and p["mes_rotulo"] == "novembro de 2026" and p["e_mes_atual"]
-    assert p["mes_anterior"] == "2026-10" and p["mes_seguinte"] is None
+    assert p["mes_anterior"] == "2026-10" and p["mes_seguinte"] is None and p["mes_maximo"] == "2026-11"
     assert p["atual"]["mes"] == date(2026, 11, 1) and p["atual"]["resultado"] == Decimal("60.00")
     assert p["atual"]["caixa"] == Decimal("45.00")
     assert p["anterior"]["mes"] == date(2026, 10, 1)

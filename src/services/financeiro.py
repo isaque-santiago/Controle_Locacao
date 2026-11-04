@@ -40,6 +40,7 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
         "mes_rotulo": financeiro.rotulo_mes(mes),
         "mes_anterior": anterior_mes.strftime("%Y-%m"),
         "mes_seguinte": financeiro.somar_meses(mes, 1).strftime("%Y-%m") if mes < financeiro.primeiro_dia(hoje) else None,
+        "mes_maximo": financeiro.primeiro_dia(hoje).strftime("%Y-%m"),
         "e_mes_atual": mes == financeiro.primeiro_dia(hoje),
         "atual": atual,
         "anterior": anterior,

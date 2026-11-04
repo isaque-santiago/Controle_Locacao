@@ -2,6 +2,7 @@
 
 import re
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -131,6 +132,33 @@ DADOS_PAINEL = {
         {"id": "c2", "cliente": "Marcos Teles", "placa": "BRA2E19", "vencimento": "2026-10-06",
          "valor": Decimal("290.00"), "atrasada": False, "dias_atraso": 0},
     ],
+    "financeiro": {
+        "mes": date(2026, 10, 1), "mes_texto": "2026-10", "mes_rotulo": "outubro de 2026", "mes_anterior": "2026-09",
+        "mes_seguinte": None, "mes_maximo": "2026-10", "e_mes_atual": True, "anterior": None,
+        "atual": {"mes": date(2026, 10, 1), "receita": Decimal("3445.50"), "despesas": Decimal("5161.20"),
+                  "investimento": Decimal("800.00"), "parcelas_divida": Decimal("1056.23"),
+                  "retiradas": Decimal("0.00"), "aportes": Decimal("120.00"), "resultado": Decimal("-1715.70"),
+                  "caixa": Decimal("-3451.93"), "margem": -50},
+        "evolucao": [
+            {"mes": date(2026, 9, 1), "rotulo": "set./26", "receita": Decimal("0.00"), "despesas": Decimal("450.00"),
+             "resultado": Decimal("-450.00"), "caixa": Decimal("-450.00")},
+            {"mes": date(2026, 10, 1), "rotulo": "out./26", "receita": Decimal("3445.50"),
+             "despesas": Decimal("5161.20"), "resultado": Decimal("-1715.70"), "caixa": Decimal("-3451.93")},
+        ],
+        "devedores": {
+            "a_receber": Decimal("6849.00"), "encargos": Decimal("1003.00"), "contratos_em_aberto": 9,
+            "em_atraso": 6, "inadimplentes": 3,
+            "ranking": [
+                {"contrato_id": "k1", "cliente": "Ronildo <i>Souza</i>", "placa": "POT5B25", "dias_atraso": 23,
+                 "faixa": "inadimplente", "debito": Decimal("2100.00"), "encargos": Decimal("176.00"),
+                 "total": Decimal("2276.00")},
+                {"contrato_id": "k2", "cliente": "Diego", "placa": "—", "dias_atraso": 9, "faixa": "em_atraso",
+                 "debito": Decimal("687.00"), "encargos": Decimal("78.00"), "total": Decimal("765.00")},
+            ],
+        },
+        "dividas": {"total": Decimal("32014.34"), "moto_fiado": Decimal("32014.34")},
+        "receita_estimada": Decimal("27155.00"),
+    },
     "alertas": [
         SimpleNamespace(quantidade=2, titulo="Manutenção vencida", descricao="Óleo e mais 1", tom="perigo", area="manutencao"),
         SimpleNamespace(quantidade=1, titulo="Documento a vencer", descricao="próximos 30 dias", tom="atencao", area="documentos"),
