@@ -611,6 +611,16 @@ repositório (contêm CPF, telefone e dados reais), idempotente por lote (`impor
 locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
 `Arquivos/Importacao_Dados_Reais.md`.
 
+## Dashboard financeiro (Etapa 1)
+
+O Dashboard (`/`) ganhou a seção **Financeiro**, com o mês escolhido em `?mes=aaaa-mm` (padrão: mês atual; mês futuro ou inválido volta ao atual).
+Mostra receita, despesas, resultado, caixa, investimento em veículos, parcelas de dívida, retiradas e aportes, receita mensal estimada, a
+receber, encargos de atraso, em atraso (até 14 dias), inadimplentes (15 dias ou mais), dívidas em aberto, os últimos 6 meses e os maiores
+devedores. Os totais mensais vêm da RPC de leitura `rpc_resumo_financeiro` (migration `20261104120000_resumo_financeiro.sql`; roteiro de
+verificação em `supabase/verificar_resumo_financeiro.sql`, que termina em ROLLBACK). As regras ficam em `src/domain/financeiro.py`.
+Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
+Pendente (Etapa 2): entradas por conta, despesas por categoria, resultado por veículo, gráficos, modo compacto e ocultar dados pessoais.
+
 ## Convenções dos relatórios
 
 Receita usa a data de pagamento e exclui caução. Custo de manutenção considera
