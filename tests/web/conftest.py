@@ -996,6 +996,7 @@ DIVIDA_ID = "00000000-0000-0000-0000-0000000000d1"
 PARCELA_ID = "00000000-0000-0000-0000-0000000000e8"
 PARCELA_PAGA_ID = "00000000-0000-0000-0000-0000000000e7"
 CONTA_ID = "00000000-0000-0000-0000-0000000000c1"
+MOTO_DIVIDA_ID = "00000000-0000-0000-0000-0000000000a1"
 
 
 def ficha_divida_exemplo():
@@ -1044,6 +1045,8 @@ class BaseDividas:
         self.parcelas[PARCELA_PAGA_ID] = self.parcelas.pop("v7")
         self.contas = [{"id": CONTA_ID, "nome": "Quezia <i>Silva</i>"}]
         self.pagamentos = []
+        self.motos = [{"id": MOTO_DIVIDA_ID, "placa": "OID7656", "modelo": "Celta <b>LS</b>"}]
+        self.compras = []
         self.falhar_com = None
 
 
@@ -1061,8 +1064,14 @@ def base_dividas(monkeypatch):
         base.pagamentos.append((vencimento_id, data, valor, conta_id, observacoes))
         return {"pagamento_id": "novo", "parcela_paga": True, "saldo_da_parcela": 0}
 
-    monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(
+    def criar_compra(**dados):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.compras.append(dados)
+        return {"divida_id": DIVIDA_ID, "parcelas": dados["numero_parcelas"], "saldo": 3000}
+
+    monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(motos_para_selecao=lambda: base.motos,
         resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id),
         parcela=lambda id: base.parcelas.get(id), contas_ativas=lambda: base.contas))
-    monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(pagar_parcela=pagar_parcela))
+    monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra))
     return base

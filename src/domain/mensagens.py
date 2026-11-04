@@ -115,6 +115,12 @@ def parcela_divida_paga(valor, numero, quitada):
     return _toast(texto)
 
 
+def compra_parcelada_cadastrada(credor, numero_parcelas, valor_total):
+    """`Compra parcelada de Celta cadastrada: 9 parcelas, total de R$ 14.000,00.`"""
+    plural = "parcela" if int(numero_parcelas) == 1 else "parcelas"
+    return _toast(f"Compra parcelada de {credor} cadastrada: {numero_parcelas} {plural}, total de {moeda(valor_total)}.")
+
+
 # ---------------------------------------------------------------- documentos --
 
 

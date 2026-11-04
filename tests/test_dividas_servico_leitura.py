@@ -61,3 +61,10 @@ def test_parcela_e_contas(monkeypatch):
     _preparar(monkeypatch)
     assert dividas.parcela("v1")["numero"] == 8 and dividas.parcela("x") is None
     assert dividas.contas_ativas() == [{"id": "c1", "nome": "Quezia"}]
+
+
+def test_motos_para_selecao_vem_por_placa_so_com_o_necessario(monkeypatch):
+    _preparar(monkeypatch)
+    monkeypatch.setattr(dividas, "motos", SimpleNamespace(listar=lambda: [
+        {"id": "b", "placa": "ZZZ9Z99", "modelo": None, "km_atual": 5}, {"id": "a", "placa": "AAA1A11", "modelo": "CG", "km_atual": 1}]))
+    assert dividas.motos_para_selecao() == [{"id": "a", "placa": "AAA1A11", "modelo": "CG"}, {"id": "b", "placa": "ZZZ9Z99", "modelo": ""}]

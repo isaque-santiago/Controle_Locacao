@@ -189,3 +189,96 @@ def test_pagar_exige_login(cliente):
     from tests.web.conftest import PARCELA_ID
 
     assert cliente.get(f"/dividas/parcelas/{PARCELA_ID}/pagar").status_code == 303
+
+
+def _compra(cliente, acao="previa", **extra):
+    from tests.web.conftest import csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "acao": acao, "credor": "Celta", "valor_entrada": "5.000,00", "numero_parcelas": "9",
+             "valor_parcela": "1.000,00", "primeira_parcela": "2026-05-28", "parcelas_pagas": "6", "data_entrada": "", "conta_id": "",
+             "moto_id": "", "descricao": "", "observacoes": "", **extra}
+    return cliente.post("/dividas/nova", data=dados, follow_redirects=False)
+
+
+def test_formulario_de_compra_parcelada_vem_com_os_padroes(cliente):
+    entrar(cliente)
+    resposta = cliente.get("/dividas/nova")
+    html = resposta.text
+    assert resposta.status_code == 200 and "Nova compra parcelada" in html
+    assert 'name="credor"' in html and 'value="0,00"' in html and 'name="acao" value="previa"' in html
+    assert 'name="acao" value="criar"' not in html
+    assert "OID-7656 · Celta &lt;b&gt;LS&lt;/b&gt;" in html and "Quezia &lt;i&gt;Silva&lt;/i&gt;" in html
+
+
+def test_nova_nao_cai_na_ficha_da_divida(cliente):
+    entrar(cliente)
+    assert cliente.get("/dividas/nova").status_code == 200
+
+
+def test_conferir_mostra_total_saldo_e_calendario_sem_gravar(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _compra(cliente)
+    html = resposta.text
+    assert resposta.status_code == 200 and base_dividas.compras == []
+    assert "Confira antes de cadastrar" in html and "R$ 14.000,00" in html and "R$ 3.000,00" in html
+    assert "28/05/2026" in html and "28/01/2027" in html and "6 já paga(s)" in html
+    assert 'name="acao" value="criar"' in html and 'value="Celta"' in html
+
+
+def test_cadastrar_grava_com_o_total_calculado_e_abre_a_ficha(cliente, base_dividas):
+    from datetime import date
+    from decimal import Decimal
+    from tests.web.conftest import CONTA_ID, DIVIDA_ID, MOTO_DIVIDA_ID
+
+    entrar(cliente)
+    resposta = _compra(cliente, "criar", conta_id=CONTA_ID, moto_id=MOTO_DIVIDA_ID, descricao="Celta 2008")
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_ID}"
+    dados = base_dividas.compras[0]
+    assert dados["credor"] == "Celta" and dados["valor_total"] == Decimal("14000.00") and dados["valor_entrada"] == Decimal("5000.00")
+    assert dados["numero_parcelas"] == 9 and dados["parcelas_pagas"] == 6 and dados["primeira_parcela"] == date(2026, 5, 28)
+    assert dados["conta_id"] == CONTA_ID and dados["moto_id"] == MOTO_DIVIDA_ID and dados["descricao"] == "Celta 2008"
+    assert "Compra parcelada de Celta cadastrada: 9 parcelas, total de R$ 14.000,00." in cliente.get(f"/dividas/{DIVIDA_ID}").text
+
+
+def test_campos_invalidos_nao_gravam_e_preservam_o_digitado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _compra(cliente, "criar", credor="", numero_parcelas="0", valor_parcela="abc", parcelas_pagas="10")
+    html = resposta.text
+    assert resposta.status_code == 422 and base_dividas.compras == []
+    assert "Credor: informe a quem se deve." in html and "Número de parcelas" in html and "Valor da parcela" in html
+    assert 'value="abc"' in html and 'value="5.000,00"' in html
+
+
+def test_parcelas_pagas_acima_do_total_e_recusada_ja_na_conferencia(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _compra(cliente, parcelas_pagas="12")
+    assert resposta.status_code == 422 and "no máximo 9" in resposta.text and "Confira antes de cadastrar" not in resposta.text
+
+
+def test_conta_ou_moto_que_nao_existe_e_recusada(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _compra(cliente, "criar", conta_id="00000000-0000-0000-0000-00000000ffff", moto_id="00000000-0000-0000-0000-00000000fffe")
+    assert resposta.status_code == 422 and base_dividas.compras == []
+    assert "Conta: escolha uma das opções" in resposta.text and "Moto: escolha uma das opções" in resposta.text
+
+
+def test_cadastro_sem_csrf_e_recusado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = cliente.post("/dividas/nova", data={"acao": "criar", "credor": "X"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.compras == []
+
+
+def test_falha_do_banco_ao_cadastrar_mostra_erro_e_mantem_o_formulario(cliente, base_dividas):
+    entrar(cliente)
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    resposta = _compra(cliente, "criar")
+    assert resposta.status_code in (500, 503) and 'value="Celta"' in resposta.text
+
+
+def test_nova_exige_login(cliente):
+    assert cliente.get("/dividas/nova").status_code == 303
+
+
+def test_lista_leva_ao_cadastro(cliente):
+    entrar(cliente)
+    assert 'href="/dividas/nova"' in cliente.get("/dividas").text

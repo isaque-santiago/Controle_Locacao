@@ -120,3 +120,9 @@ def parcela(vencimento_id: str) -> Optional[dict]:
 
 def contas_ativas() -> list:
     return contas.listar_ativas()
+
+
+def motos_para_selecao() -> list:
+    """Motos que podem ser ligadas a uma dívida (id, placa e modelo), por placa."""
+    return sorted(({"id": m["id"], "placa": m["placa"], "modelo": m.get("modelo") or ""} for m in motos.listar()),
+                  key=lambda m: m["placa"])

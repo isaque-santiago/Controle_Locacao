@@ -8,6 +8,7 @@ from starlette.concurrency import run_in_threadpool
 from src.domain import formulario_divida as formulario, mensagens
 from src.domain.valores import hoje_br
 from src.web import acoes_dividas, dados_dividas
+from src.web.apresentacao import formatar_placa
 from src.web.dependencias import exigir_dono, validar_csrf
 from src.web.rotas.motos_formularios import _concluir, _devolver_formulario, _entrada
 from src.web.sessao import Sessao
@@ -79,6 +80,49 @@ def _pagar(request, sessao, vencimento_id, entrada):
 @router.post("/dividas/parcelas/{vencimento_id}/pagar", dependencies=[Depends(validar_csrf)])
 async def pagar(request: Request, vencimento_id: str, sessao: Sessao = Depends(exigir_dono)):
     return await run_in_threadpool(_pagar, request, sessao, vencimento_id, await _entrada(request))
+
+
+_NOVA = "dividas/nova.html"
+
+
+def _opcoes_nova(contas, motos):
+    return {
+        "contas": [("", "Não informada"), *[(c["id"], c["nome"]) for c in contas]],
+        "motos": [("", "Nenhuma"), *[(m["id"], f"{formatar_placa(m['placa'])} · {m['modelo']}".rstrip(" ·")) for m in motos]],
+    }
+
+
+def _contexto_nova(contas, motos, valores, erros=None, erro_geral=None, previa=None):
+    return {"titulo": "Nova compra parcelada", "v": valores, "erros": erros or {}, "erro_geral": erro_geral, "previa": previa,
+            **_opcoes_nova(contas, motos)}
+
+
+@router.get("/dividas/nova")
+def nova(request: Request, _: Sessao = Depends(exigir_dono)):
+    contexto = _contexto_nova(dados_dividas.contas(), dados_dividas.motos(), formulario.compra_inicial(hoje_br()))
+    return renderizar(request, _NOVA, contexto)
+
+
+def _cadastrar(request, sessao, entrada):
+    contas, motos = dados_dividas.contas(), dados_dividas.motos()
+    contexto = _contexto_nova(contas, motos, formulario.texto_da_compra(entrada))
+
+    def cadastrar():
+        dados = formulario.ler_compra_parcelada(entrada, {c["id"] for c in contas}, {m["id"] for m in motos})
+        if entrada.get("acao") != "criar":
+            contexto["previa"] = formulario.previa_da_compra(dados)
+            return renderizar(request, _NOVA, contexto)
+        resposta = acoes_dividas.criar_compra_parcelada(dados)
+        aviso = mensagens.compra_parcelada_cadastrada(dados["credor"], dados["numero_parcelas"], dados["valor_total"])
+        return _concluir(request, sessao, f"/dividas/{resposta['divida_id']}", aviso)
+
+    return _devolver_formulario(request, _NOVA, contexto, cadastrar)
+
+
+@router.post("/dividas/nova", dependencies=[Depends(validar_csrf)])
+async def cadastrar(request: Request, sessao: Sessao = Depends(exigir_dono)):
+    """Sem JavaScript: o botão "Conferir" mostra a prévia (total, saldo e calendário) e o "Cadastrar" grava."""
+    return await run_in_threadpool(_cadastrar, request, sessao, await _entrada(request))
 
 
 # Rotas fixas (como /dividas/nova) devem ser declaradas antes desta, senão caem em /dividas/{divida_id}.

@@ -17,3 +17,7 @@ def parcela(vencimento_id):
 
 def contas():
     return dividas.contas_ativas()
+
+
+def motos():
+    return dividas.motos_para_selecao()
