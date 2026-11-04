@@ -958,7 +958,7 @@ e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_R
   observação; ex-locatários sem CPF só como texto em `multas_transito`; escopo inicial só banco e carga em dev (telas depois).
 - **Capital em veículos sem operação (Etios, Celta; aprovado em 22/10/2026):** `motos.placa_provisoria`; `despesas` com categoria `aquisicao`,
   `pago_por` e `a_confirmar`; dívida `emprestimo`; `dividas_vencimentos`; aporte ligado ao veículo e a view `vw_capital_veiculo`.
-- **Contrato com várias motos e compra a prazo (03/11/2026; banco, regras e testes, sem telas):** `contrato_motos` (moto principal em
+- **Contrato com várias motos e compra a prazo (03/11/2026; banco, regras e testes; as telas vieram em 04/11/2026, ver a seção 18):** `contrato_motos` (moto principal em
   `contratos.moto_id`, receita toda na principal) e dívida `compra_parcelada` com entrada, calendário de parcelas e pagamento por parcela.
   Ver `Arquivos/Importacao_Dados_Reais.md` (migrations 6 e 7).
 - **D3 (decidida em 22/10/2026):** os encargos de atraso (seção 5.3) também valem para as parcelas de promessa de compra. Como elas são cobranças `tipo = 'locacao'`, não houve mudança de código.
@@ -989,3 +989,21 @@ A aba "Dashboard" da planilha "PAGAMENTO MOTOS" vira a seção **Financeiro** do
 - **Limitações conhecidas:** `vw_resultado_moto`
   e o relatório por moto ainda somam a forma `abatimento` como receita (o total do mês no Dashboard não); os modos compacto e ocultar valem só pela URL
   (não há preferência salva por usuário).
+
+---
+
+## 18. Telas de dívidas (04/11/2026)
+
+O contrato com várias motos já tinha tela (etapa Moto do novo contrato, lista e ficha do contrato). Faltavam as **dívidas**, agora no menu
+(grupo "Gestão e sistema", folha "Mais" no celular), só para o dono:
+
+- `/dividas`: indicadores (total em aberto, motos fiado, parcelas atrasadas, próximo vencimento) e a tabela de dívidas com saldo (o confirmado
+  pelo responsável vale sobre o calculado), próxima parcela e situação; atrasadas primeiro, quitadas por último.
+- `/dividas/{id}`: resumo, aviso quando o saldo confirmado difere do calculado, parcelas com situação (paga, atrasada, a vencer, sem data) e os pagamentos.
+- `/dividas/parcelas/{id}/pagar`: paga uma parcela (valor de 0,01 até o saldo; pagamento parcial deixa o resto em aberto; conta opcional) pela
+  RPC `rpc_pagar_parcela_divida`.
+- `/dividas/nova`: compra parcelada (entrada, parcelas, primeira parcela, parcelas já pagas, conta e moto opcionais). O total é calculado
+  (entrada + parcelas) e o botão **Conferir** mostra total, saldo e calendário antes de **Cadastrar** (sem JavaScript), pela RPC `rpc_criar_compra_parcelada`.
+- Não há migration nova. Regras em `src/domain/dividas_lista.py` e `src/domain/formulario_divida.py`.
+- **Fora desta entrega:** editar ou apagar dívida, registrar dívida de outros tipos (moto fiado, empréstimo) e pagamento sem parcela, e confirmar saldo pela tela.
+
