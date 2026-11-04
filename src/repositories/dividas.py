@@ -72,3 +72,15 @@ def obter_parcela(vencimento_id: str):
     """Uma parcela com valor pago, saldo e situação (view), ou None."""
     achadas = todos("vw_parcelas_divida", ordem=("vencimento_id",), filtros={"vencimento_id": vencimento_id})
     return achadas[0] if achadas else None
+
+
+@invalida_cache
+def criar_divida(dados: dict) -> dict:
+    """Insere uma dívida (uma tabela só, sem RPC)."""
+    return get_client().table("dividas").insert(dados).execute().data[0]
+
+
+@invalida_cache
+def registrar_pagamento(dados: dict) -> dict:
+    """Insere um pagamento direto da dívida, sem parcela (uma tabela só, sem RPC)."""
+    return get_client().table("pagamentos_divida").insert(dados).execute().data[0]
