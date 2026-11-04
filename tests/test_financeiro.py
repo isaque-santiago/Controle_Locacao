@@ -56,9 +56,17 @@ def test_margem_negativa_e_arredondada():
     assert financeiro.margem(Decimal("0"), Decimal("-10")) is None
 
 
-def test_receita_mensal_estimada_semanal_vezes_52_sobre_12_mais_mensal():
-    assert financeiro.receita_mensal_estimada(Decimal("1200"), Decimal("500")) == Decimal("5700.00")
-    assert financeiro.receita_mensal_estimada(None, None) == Decimal("0.00")
+def test_receita_mensal_estimada_so_dos_contratos_ativos_pela_periodicidade():
+    contratos = [
+        {"status": "ativo", "periodicidade": "semanal", "valor_periodo": "1200"},
+        {"status": "ativo", "periodicidade": "mensal", "valor_periodo": "500"},
+        {"status": "ativo", "periodicidade": "quinzenal", "valor_periodo": "600"},
+        {"status": "encerrado", "periodicidade": "semanal", "valor_periodo": "9999"},
+        {"status": "ativo", "periodicidade": "desconhecida", "valor_periodo": "70"},
+    ]
+    # 1200 x 52/12 + 500 + 600 x 26/12
+    assert financeiro.receita_mensal_estimada(contratos) == Decimal("5200.00") + Decimal("500") + Decimal("1300.00")
+    assert financeiro.receita_mensal_estimada([]) == Decimal("0.00")
 
 
 def test_faixa_de_atraso_corta_em_15_dias():

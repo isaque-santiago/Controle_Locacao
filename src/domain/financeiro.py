@@ -86,9 +86,23 @@ def margem(receita: Decimal, resultado: Decimal) -> Optional[int]:
     return int((resultado * 100 / receita).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
-def receita_mensal_estimada(semanal: Decimal, mensal: Decimal) -> Decimal:
-    """Contratos semanais valem 52/12 semanas por mês; os mensais entram como estão."""
-    return (Decimal(str(semanal or 0)) * 52 / 12 + Decimal(str(mensal or 0))).quantize(_CENTAVOS, rounding=ROUND_HALF_UP)
+# Quantas cobranças cada periodicidade gera por mês (52 semanas e 365 dias por ano).
+_COBRANCAS_POR_MES = {
+    "diario": Decimal(365) / 12,
+    "semanal": Decimal(52) / 12,
+    "quinzenal": Decimal(26) / 12,
+    "mensal": Decimal(1),
+}
+
+
+def receita_mensal_estimada(contratos: list[dict]) -> Decimal:
+    """Receita mensal dos contratos ativos: valor da cobrança x cobranças por mês da periodicidade."""
+    total = Decimal(0)
+    for c in contratos:
+        if c.get("status") != "ativo":
+            continue
+        total += Decimal(str(c.get("valor_periodo") or 0)) * _COBRANCAS_POR_MES.get(c.get("periodicidade"), Decimal(0))
+    return total.quantize(_CENTAVOS, rounding=ROUND_HALF_UP)
 
 
 def faixa_de_atraso(dias: int, corte: int = DIAS_INADIMPLENTE) -> str:
