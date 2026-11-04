@@ -611,15 +611,20 @@ repositório (contêm CPF, telefone e dados reais), idempotente por lote (`impor
 locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
 `Arquivos/Importacao_Dados_Reais.md`.
 
-## Dashboard financeiro (Etapa 1)
+## Dashboard financeiro (Etapas 1 e 2)
 
-O Dashboard (`/`) ganhou a seção **Financeiro**, com o mês escolhido em `?mes=aaaa-mm` (padrão: mês atual; mês futuro ou inválido volta ao atual).
-Mostra receita, despesas, resultado, caixa, investimento em veículos, parcelas de dívida, retiradas e aportes, receita mensal estimada, a
-receber, encargos de atraso, em atraso (até 14 dias), inadimplentes (15 dias ou mais), dívidas em aberto, os últimos 6 meses e os maiores
-devedores. Os totais mensais vêm da RPC de leitura `rpc_resumo_financeiro` (migration `20261104120000_resumo_financeiro.sql`; roteiro de
-verificação em `supabase/verificar_resumo_financeiro.sql`, que termina em ROLLBACK). As regras ficam em `src/domain/financeiro.py`.
-Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
-Pendente (Etapa 2): entradas por conta, despesas por categoria, resultado por veículo, gráficos, modo compacto e ocultar dados pessoais.
+O Dashboard (`/`) tem a seção **Financeiro**, com o mês escolhido em `?mes=aaaa-mm` (padrão: mês atual; mês futuro ou inválido volta ao atual).
+Mostra receita (e a da semana), despesas, resultado, caixa, investimento em veículos, parcelas de dívida, retiradas e aportes, receita mensal
+estimada, a receber, encargos de atraso, em atraso (até 14 dias), inadimplentes (15 dias ou mais), dívidas em aberto, o gráfico e a tabela dos
+últimos 6 meses, os maiores devedores, as entradas por conta, as despesas por categoria, o resultado por veículo (desde o início) e os alertas com semáforo.
+
+- **Modo compacto** (`?compacto=1`): só os indicadores e os alertas. **Ocultar dados pessoais** (`?ocultar=1`): valores, nomes, placas e descrições
+  saem trocados por pontos já no servidor (nem vão no HTML) e os gráficos somem. Os botões ficam no cabeçalho e a navegação de mês mantém os dois.
+- Os totais vêm de duas RPCs de leitura: `rpc_resumo_financeiro` (migration `20261104120000_resumo_financeiro.sql`, roteiro `supabase/verificar_resumo_financeiro.sql`)
+  e `rpc_detalhe_financeiro` (migration `20261104130000_detalhe_financeiro.sql`, roteiro `supabase/verificar_detalhe_financeiro.sql`). Os roteiros terminam em ROLLBACK.
+  As regras ficam em `src/domain/financeiro.py`. **Sem as duas migrations aplicadas o Dashboard falha.**
+- Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
+- Os gráficos são SVG sem script e sem estilo inline (a política de conteúdo só aceita CSS do próprio site); a tabela ao lado traz os mesmos números.
 
 ## Convenções dos relatórios
 
