@@ -623,6 +623,7 @@ estimada, a receber, encargos de atraso, em atraso (até 14 dias), inadimplentes
 - Os totais vêm de duas RPCs de leitura: `rpc_resumo_financeiro` (migration `20261104120000_resumo_financeiro.sql`, roteiro `supabase/verificar_resumo_financeiro.sql`)
   e `rpc_detalhe_financeiro` (migration `20261104130000_detalhe_financeiro.sql`, roteiro `supabase/verificar_detalhe_financeiro.sql`). Os roteiros terminam em ROLLBACK.
   As regras ficam em `src/domain/financeiro.py`. **Sem as duas migrations aplicadas o Dashboard falha.**
+- O corte entre "em atraso" e "inadimplente" é o parâmetro **Inadimplente a partir de (dias de atraso)** em Configurações (padrão 15, mínimo 1; migration `20261104140000_corte_inadimplencia.sql`, que deve ser aplicada antes de publicar o app novo).
 - Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
 - Os gráficos são SVG sem script e sem estilo inline (a política de conteúdo só aceita CSS do próprio site); a tabela ao lado traz os mesmos números.
 
