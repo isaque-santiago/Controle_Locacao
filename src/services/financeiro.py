@@ -1,5 +1,6 @@
 """Dashboard financeiro: totais do mês, evolução de 6 meses, entradas, despesas, devedores, dívidas, veículos e alertas."""
 
+import logging
 from datetime import date
 from decimal import Decimal
 from typing import Optional
@@ -9,7 +10,35 @@ from src.domain.valores import hoje_br
 from src.repositories import contratos, financeiro as repositorio
 from src.services import clientes, cobrancas, configuracoes, motos
 
+logger = logging.getLogger(__name__)
+
 MESES_NA_EVOLUCAO = 6
+
+
+def _navegacao(mes: date, hoje: date) -> dict:
+    """Mês escolhido e os endereços para andar entre os meses (valem mesmo sem os totais)."""
+    primeiro = financeiro.primeiro_dia(hoje)
+    return {
+        "mes": mes,
+        "mes_texto": mes.strftime("%Y-%m"),
+        "mes_rotulo": financeiro.rotulo_mes(mes),
+        "mes_anterior": financeiro.somar_meses(mes, -1).strftime("%Y-%m"),
+        "mes_seguinte": financeiro.somar_meses(mes, 1).strftime("%Y-%m") if mes < primeiro else None,
+        "mes_maximo": primeiro.strftime("%Y-%m"),
+        "e_mes_atual": mes == primeiro,
+    }
+
+
+def painel_seguro(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict:
+    """Como `painel`, mas uma falha ao ler o financeiro (migration pendente, banco fora do ar) não derruba o Dashboard:
+    devolve só a navegação de mês com `indisponivel` verdadeiro, e o erro vai para o log."""
+    hoje = hoje or hoje_br()
+    try:
+        return painel(mes_texto, hoje)
+    except Exception:
+        logger.exception("Não foi possível montar o painel financeiro")
+        mes = financeiro.mes_da_consulta(mes_texto, hoje)
+        return {**_navegacao(mes, hoje), "indisponivel": True}
 
 
 def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict:
@@ -40,15 +69,8 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
     locatarios = {c["moto_id"]: nomes.get(c["cliente_id"], "—") for c in contratos_lista if c["status"] == "ativo"}
     em_manutencao = sum(1 for m in motos.listar() if m["status"] == "manutencao")
-    anterior_mes = financeiro.somar_meses(mes, -1)
     return {
-        "mes": mes,
-        "mes_texto": mes.strftime("%Y-%m"),
-        "mes_rotulo": financeiro.rotulo_mes(mes),
-        "mes_anterior": anterior_mes.strftime("%Y-%m"),
-        "mes_seguinte": financeiro.somar_meses(mes, 1).strftime("%Y-%m") if mes < financeiro.primeiro_dia(hoje) else None,
-        "mes_maximo": financeiro.primeiro_dia(hoje).strftime("%Y-%m"),
-        "e_mes_atual": mes == financeiro.primeiro_dia(hoje),
+        **_navegacao(mes, hoje),
         "atual": atual,
         "anterior": anterior,
         "evolucao": [{**m, "rotulo": financeiro.rotulo_mes_curto(m["mes"])} for m in meses],
