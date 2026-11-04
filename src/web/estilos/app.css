@@ -349,6 +349,24 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .rosca-centro {position: absolute; inset: 0; display: grid; place-content: center; text-align: center;}
 .rosca-centro strong {font: 700 34px/1 var(--fonte-mono, inherit);}
 .rosca-centro small {font-size: 12px; color: var(--texto-3);}
+
+/* Gráficos do Financeiro (SVG sem script: a tabela ao lado traz os mesmos números) */
+.grafico-colunas {display: block; width: 100%; height: auto; margin-bottom: var(--e3);}
+.grafico-colunas .col-receita {fill: var(--sucesso);}
+.grafico-colunas .col-despesa {fill: var(--perigo);}
+.grafico-colunas .base {stroke: var(--linha-forte); stroke-width: 1;}
+.grafico-colunas text {fill: var(--texto-2); font-size: 11px; text-anchor: middle;}
+.legenda-grafico {display: flex; flex-wrap: wrap; gap: var(--e4); margin: 0 0 var(--e3); padding: 0; list-style: none; font-size: 13px; color: var(--texto-2);}
+.legenda-grafico i {display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px;}
+.legenda-grafico .receita i {background: var(--sucesso);}
+.legenda-grafico .despesa i {background: var(--perigo);}
+.barras-lista {display: grid; gap: var(--e3); margin: 0; padding: 0; list-style: none;}
+.barras-lista li {display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--e3); row-gap: var(--e1); align-items: baseline;}
+.barras-lista .barra {grid-column: 1 / -1; display: block; width: 100%; height: 8px;}
+.barras-lista .barra-fundo {fill: var(--seg-vazio);}
+.barras-lista .barra-cheia {fill: var(--seg-cheio);}
+.barras-lista strong {font-weight: 600;}
+.barras-total {display: flex; justify-content: space-between; gap: var(--e3); margin-top: var(--e3); padding-top: var(--e3); border-top: 1px solid var(--linha); font-weight: 600;}
 .ocupacao-corpo .legenda {flex-direction: column; flex-wrap: nowrap; gap: var(--e3); font-size: 14px;}
 .legenda {list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e2) var(--e5); color: var(--texto-2); font-size: 13px;}
 .legenda i {display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; background: var(--seg-cheio);}
