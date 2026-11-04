@@ -1005,5 +1005,6 @@ O contrato com várias motos já tinha tela (etapa Moto do novo contrato, lista 
 - `/dividas/nova`: compra parcelada (entrada, parcelas, primeira parcela, parcelas já pagas, conta e moto opcionais). O total é calculado
   (entrada + parcelas) e o botão **Conferir** mostra total, saldo e calendário antes de **Cadastrar** (sem JavaScript), pela RPC `rpc_criar_compra_parcelada`.
 - Não há migration nova. Regras em `src/domain/dividas_lista.py` e `src/domain/formulario_divida.py`.
-- **Fora desta entrega:** editar ou apagar dívida, registrar dívida de outros tipos (moto fiado, empréstimo) e pagamento sem parcela, e confirmar saldo pela tela.
+- **Complemento (04/11/2026):** `/dividas/nova-divida` cadastra moto fiado, financiamento, fornecedor, rastreador e empréstimo (saldo confirmado opcional, com a data de hoje) e `/dividas/{id}/pagar` registra pagamento direto de dívida sem parcelas (valor até o saldo; dívida com parcelas paga-se pela parcela). Ambos são inserção em uma tabela só, sem RPC.
+- **Fora desta entrega:** editar ou apagar dívida, e confirmar ou corrigir o saldo de uma dívida já cadastrada pela tela.
 
