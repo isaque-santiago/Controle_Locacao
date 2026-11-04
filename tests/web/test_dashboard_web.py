@@ -149,3 +149,42 @@ def test_secao_financeira_sem_devedores_e_sem_receita(cliente, monkeypatch):
     entrar(cliente)
     html = cliente.get("/").text
     assert "Nenhum débito em atraso." in html and "sem receita no mês" in html
+
+
+def test_grafico_de_colunas_tem_texto_alternativo_e_uma_coluna_por_mes(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    grafico = re.search(r'<svg class="grafico-colunas"[^>]*aria-label="([^"]+)">(.*?)</svg>', html, re.S)
+    assert grafico and "tabela logo abaixo" in grafico.group(1)
+    assert len(re.findall(r'class="col-receita"', grafico.group(2))) == 2
+    assert len(re.findall(r'class="col-despesa"', grafico.group(2))) == 2
+    assert "set./26" in grafico.group(2) and "out./26" in grafico.group(2)
+    assert "style=" not in grafico.group(0)
+
+
+def test_entradas_por_conta_e_despesas_por_categoria(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Entradas por conta" in html and "Sem conta informada" in html and "R$ 2.180,00" in html
+    assert "Despesas por categoria" in html and "Manutenção" in html and "R$ 3.735,00" in html
+    assert "R$ 3.874,00" in html
+
+
+def test_resultado_por_veiculo_e_alertas_financeiros(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Resultado por veículo" in html and "POU-7015" in html and "R$ 7.300,00" in html and "R$ -120,00" in html
+    assert "JOSE <u>HENRIQUE</u>" not in html and "JOSE &lt;u&gt;HENRIQUE&lt;/u&gt;" in html
+    assert "Alertas e pendências" in html and "Contratos inadimplentes (15 dias ou mais)" in html
+    assert "selo perigo" in html and "Crítico" in html and "selo info" in html
+
+
+def test_receita_da_semana_so_aparece_no_mes_atual(cliente, monkeypatch):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    entrar(cliente)
+    assert "Semana: R$ 3.245,50" in cliente.get("/").text
+    passado = {**DADOS_PAINEL, "financeiro": {**DADOS_PAINEL["financeiro"], "e_mes_atual": False, "mes_seguinte": "2026-10"}}
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: passado)
+    assert "Semana: R$" not in cliente.get("/").text

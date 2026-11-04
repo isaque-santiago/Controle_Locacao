@@ -207,7 +207,7 @@ def _meses_grafico():
 
 def test_colunas_da_evolucao_usam_a_mesma_escala_e_cabem_no_quadro():
     g = financeiro.colunas_evolucao(_meses_grafico(), largura=600, altura=180)
-    assert g["largura"] == 600 and g["altura"] == 208 and len(g["colunas"]) == 2
+    assert g["largura"] == 600 and g["altura"] == 208 and g["y_base"] == 180 and len(g["colunas"]) == 2
     out = g["colunas"][1]
     assert out["receita"]["altura"] == 180.0 and out["receita"]["y"] == 0.0
     assert out["despesas"]["altura"] == 90.0

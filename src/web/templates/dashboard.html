@@ -94,7 +94,7 @@
   </div>
 
   <dl class="grade kpis">
-    {{ kpi("Receita", f.atual.receita|moeda, "dinheiro recebido no mês") }}
+    {{ kpi("Receita", f.atual.receita|moeda, ("Semana: " ~ (f.receita_semana|moeda)) if f.e_mes_atual else "dinheiro recebido no mês") }}
     {{ kpi("Despesas", f.atual.despesas|moeda, "custo operacional (sem investimento)") }}
     {{ kpi("Resultado", f.atual.resultado|moeda, ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0)) }}
     {{ kpi("Caixa", f.atual.caixa|moeda, "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0)) }}
@@ -115,6 +115,16 @@
   <div class="grade duas-colunas igualar mt-4">
     <section class="cartao moto-lista-cards" aria-labelledby="t-evolucao">
       <div class="cartao-cab"><h2 id="t-evolucao">Últimos 6 meses</h2></div>
+      {% set g = f.grafico %}
+      <svg class="grafico-colunas" viewBox="0 0 {{ g.largura }} {{ g.altura }}" role="img" aria-label="Colunas de receita e de despesas por mês; os valores estão na tabela logo abaixo">
+        <line class="base" x1="0" y1="{{ g.y_base }}" x2="{{ g.largura }}" y2="{{ g.y_base }}"/>
+        {% for c in g.colunas %}
+        <rect class="col-receita" x="{{ c.receita.x }}" y="{{ c.receita.y }}" width="{{ c.receita.largura }}" height="{{ c.receita.altura }}"/>
+        <rect class="col-despesa" x="{{ c.despesas.x }}" y="{{ c.despesas.y }}" width="{{ c.despesas.largura }}" height="{{ c.despesas.altura }}"/>
+        <text x="{{ c.x_rotulo }}" y="{{ g.y_rotulo }}">{{ c.rotulo }}</text>
+        {% endfor %}
+      </svg>
+      <ul class="legenda-grafico" aria-hidden="true"><li class="receita"><i></i>Receita</li><li class="despesa"><i></i>Despesas</li></ul>
       {% call tabela([("Mês", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num"), ("Caixa", "num")], "Receita, despesas, resultado e caixa por mês") %}
         {% for m in f.evolucao %}
         <tr{% if m.mes == f.mes %} aria-current="true"{% endif %}>
@@ -145,6 +155,76 @@
       {% else %}
       <p class="text-texto-2">Nenhum débito em atraso.</p>
       {% endif %}
+    </section>
+  </div>
+
+  <div class="grade duas-colunas igualar mt-4">
+    <section class="cartao" aria-labelledby="t-entradas">
+      <div class="cartao-cab"><h2 id="t-entradas">Entradas por conta</h2><span class="text-texto-2 text-[13px]">{{ f.mes_rotulo }}</span></div>
+      {% if f.entradas.linhas %}
+      <ul class="barras-lista">
+        {% for e in f.entradas.linhas %}
+        <li>
+          <span>{{ e.conta }}</span><strong class="mono">{{ e.valor|moeda }}</strong>
+          <svg class="barra" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect class="barra-fundo" width="100" height="8"/><rect class="barra-cheia" width="{{ e.proporcao }}" height="8"/></svg>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="barras-total"><span>Total</span><span class="mono">{{ f.entradas.total|moeda }}</span></p>
+      {% else %}
+      <p class="text-texto-2">Nenhuma entrada neste mês.</p>
+      {% endif %}
+    </section>
+
+    <section class="cartao" aria-labelledby="t-categorias">
+      <div class="cartao-cab"><h2 id="t-categorias">Despesas por categoria</h2><span class="text-texto-2 text-[13px]">{{ f.mes_rotulo }}</span></div>
+      {% if f.categorias.linhas %}
+      <ul class="barras-lista">
+        {% for c in f.categorias.linhas %}
+        <li>
+          <span>{{ c.rotulo }}</span><strong class="mono">{{ c.valor|moeda }}</strong>
+          <svg class="barra" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect class="barra-fundo" width="100" height="8"/><rect class="barra-cheia" width="{{ c.proporcao }}" height="8"/></svg>
+        </li>
+        {% endfor %}
+      </ul>
+      <p class="barras-total"><span>Total</span><span class="mono">{{ f.categorias.total|moeda }}</span></p>
+      {% else %}
+      <p class="text-texto-2">Nenhuma despesa neste mês.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="grade duas-colunas igualar mt-4">
+    <section class="cartao moto-lista-cards" aria-labelledby="t-veiculos">
+      <div class="cartao-cab"><h2 id="t-veiculos">Resultado por veículo</h2><span class="text-texto-2 text-[13px]">desde o início</span></div>
+      {% if f.veiculos %}
+      {% call tabela([("Moto", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")], "Receita, despesas e resultado de cada veículo") %}
+        {% for v in f.veiculos %}
+        <tr>
+          <td class="topo">{% if v.placa != "—" %}{{ placa(v.placa|placa_br) }}{% else %}—{% endif %}</td>
+          <td data-rotulo="Locatário">{{ v.locatario }}</td>
+          <td class="num mono" data-rotulo="Receita">{{ v.receita|moeda }}</td>
+          <td class="num mono" data-rotulo="Despesas">{{ v.despesas|moeda }}</td>
+          <td class="num mono" data-rotulo="Resultado">{{ v.resultado|moeda }}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+      {% else %}
+      <p class="text-texto-2">Nenhum veículo cadastrado.</p>
+      {% endif %}
+    </section>
+
+    <section class="cartao moto-lista-cards" aria-labelledby="t-alertas-fin">
+      <div class="cartao-cab"><h2 id="t-alertas-fin">Alertas e pendências</h2></div>
+      {% call tabela([("Indicador", ""), ("Valor", "num"), ("Status", "")], "Indicadores financeiros com situação") %}
+        {% for a in f.alertas %}
+        <tr>
+          <td class="topo">{{ a.titulo }}</td>
+          <td class="num mono" data-rotulo="Valor">{% if a.formato == "moeda" %}{{ a.valor|moeda }}{% else %}{{ a.valor }}{% endif %}</td>
+          <td data-rotulo="Status">{{ selo(a.status, a.tom) }}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
     </section>
   </div>
 </section>

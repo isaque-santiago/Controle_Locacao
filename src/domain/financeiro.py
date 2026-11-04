@@ -313,7 +313,7 @@ def colunas_evolucao(meses: list[dict], largura: int = 600, altura: int = 180, m
             "receita": retangulo(base, m["receita"]),
             "despesas": retangulo(base + barra + Decimal(4), m["despesas"]),
         })
-    return {"largura": largura, "altura": altura + margem_rotulo, "y_rotulo": altura + margem_rotulo - 8, "colunas": colunas}
+    return {"largura": largura, "altura": altura + margem_rotulo, "y_base": altura, "y_rotulo": altura + margem_rotulo - 8, "colunas": colunas}
 
 
 def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = False) -> str:
