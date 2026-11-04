@@ -111,6 +111,12 @@
     </form>
   </div>
 
+  {% if f.indisponivel %}
+  <div class="cartao vazio" role="status">
+    <h2>Financeiro indisponível agora</h2>
+    <p>Não foi possível carregar os números deste mês. O resto do Dashboard continua funcionando. Tente de novo em instantes; se continuar, avise quem cuida do sistema.</p>
+  </div>
+  {% else %}
   <dl class="grade kpis">
     {{ kpi("Receita", din(f.atual.receita), ("Semana: " ~ (din(f.receita_semana))) if f.e_mes_atual else "dinheiro recebido no mês") }}
     {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)") }}
@@ -253,6 +259,7 @@
       {% endcall %}
     </section>
   </div>
+  {% endif %}
 </section>
 {% endif %}
 {% endblock %}

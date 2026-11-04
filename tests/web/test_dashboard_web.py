@@ -240,3 +240,19 @@ def test_modos_da_url_chegam_ao_dashboard(cliente, monkeypatch):
     cliente.get("/?compacto=true&ocultar=0")
     assert pedidos[0]["compacto"] is True and pedidos[0]["ocultar"] is True
     assert pedidos[1]["compacto"] is False and pedidos[1]["ocultar"] is False
+
+
+def test_financeiro_indisponivel_mostra_aviso_e_o_resto_do_dashboard_continua(cliente, monkeypatch):
+    from tests.web.conftest import DADOS_PAINEL
+
+    fin = DADOS_PAINEL["financeiro"]
+    indisponivel = {k: fin[k] for k in ("mes", "mes_texto", "mes_rotulo", "mes_anterior", "mes_seguinte", "mes_maximo", "e_mes_atual")}
+    _com(monkeypatch, financeiro={**indisponivel, "indisponivel": True})
+    entrar(cliente)
+    resposta = cliente.get("/")
+    html = resposta.text
+    assert resposta.status_code == 200
+    assert "Financeiro indisponível agora" in html and "Financeiro · outubro de 2026" in html
+    assert 'type="month" name="mes"' in html
+    assert "Receita mensal estimada" not in html and "Quem está devendo" not in html and "Resultado por veículo" not in html
+    assert "Precisa de atenção" in html and "Ocupação da frota" in html and "Frota" in html
