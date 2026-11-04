@@ -86,3 +86,66 @@ def test_indicadores_mostram_a_variacao_mensal_com_texto_e_tom(cliente):
     assert "R$ 120 a mais (+9%) que no mesmo período de setembro." in html
     assert "R$ 40 a menos (−32%) que no mesmo período de setembro." in html
     assert '<span aria-hidden="true">↑</span>' in html  # a seta é decorativa; o texto diz "a mais"
+
+
+def test_mes_da_secao_financeira_vem_da_url(cliente, monkeypatch):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    pedidos = []
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: pedidos.append(k.get("mes")) or DADOS_PAINEL)
+    entrar(cliente)
+    assert cliente.get("/").status_code == 200
+    assert cliente.get("/?mes=2026-08").status_code == 200
+    assert pedidos == [None, "2026-08"]
+    assert cliente.get("/?mes=" + "9" * 50).status_code == 200  # mês inválido: o serviço usa o mês atual
+
+
+def test_secao_financeira_mostra_totais_do_mes_em_reais(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Financeiro · outubro de 2026" in html
+    assert "R$ 3.445,50" in html and "R$ 5.161,20" in html and "R$ -1.715,70" in html
+    assert "-50% de margem" in html
+    assert "R$ 27.155,00" in html and "R$ 32.014,34" in html
+
+
+def test_secao_financeira_lista_devedores_e_escapa_nomes(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Inadimplente" in html and "Em atraso" in html and "23 d" in html
+    assert "POT-5B25" in html and "R$ 2.276,00" in html
+    assert "<i>Souza</i>" not in html and "Ronildo &lt;i&gt;Souza&lt;/i&gt;" in html
+
+
+def test_secao_financeira_tem_evolucao_e_seletor_de_mes(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "set./26" in html and "out./26" in html
+    assert 'type="month" name="mes" value="2026-10" max="2026-10"' in html
+    assert 'href="/?mes=2026-09"' in html
+    assert "Mês seguinte" not in html and "Mês atual" not in html
+
+
+def test_secao_financeira_de_mes_passado_oferece_voltar_ao_atual(cliente, monkeypatch):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    passado = {**DADOS_PAINEL, "financeiro": {**DADOS_PAINEL["financeiro"], "e_mes_atual": False, "mes_seguinte": "2026-09"}}
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: passado)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'href="/?mes=2026-09" aria-label="Mês seguinte"' in html and ">Mês atual<" in html
+
+
+def test_secao_financeira_sem_devedores_e_sem_receita(cliente, monkeypatch):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    fin = DADOS_PAINEL["financeiro"]
+    vazio = {**DADOS_PAINEL, "financeiro": {**fin, "atual": {**fin["atual"], "margem": None},
+                                           "devedores": {**fin["devedores"], "ranking": [], "contratos_em_aberto": 0}}}
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: vazio)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Nenhum débito em atraso." in html and "sem receita no mês" in html

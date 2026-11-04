@@ -1,6 +1,6 @@
 """Páginas: saúde, Dashboard do dono e telas em migração (o portal do locatário fica em rotas/portal.py)."""
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import RedirectResponse
 
 from src.services.autenticacao import PAPEL_LOCATARIO
@@ -19,10 +19,10 @@ def saude():
 
 
 @router.get("/")
-def inicio(request: Request, sessao: Sessao = Depends(exigir_sessao)):
+def inicio(request: Request, mes: str | None = Query(default=None), sessao: Sessao = Depends(exigir_sessao)):
     if sessao.papel == PAPEL_LOCATARIO:
         return RedirectResponse("/portal", status_code=303)
-    return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar()})
+    return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar(mes=mes)})
 
 
 @router.get("/termos")

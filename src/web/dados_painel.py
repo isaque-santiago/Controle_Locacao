@@ -13,11 +13,13 @@ from src.services import (
     cobrancas,
     configuracoes,
     dashboard,
+    financeiro,
     manutencao,
 )
 
 
-def carregar(hoje: date | None = None) -> dict:
+def carregar(hoje: date | None = None, mes: str | None = None) -> dict:
+    """`mes` (aaaa-mm) escolhe o mês da seção Financeiro; o resto do Dashboard é sempre de hoje."""
     hoje = hoje or hoje_br()
     cobrancas.gerar_cobrancas_pendentes()
     dados = dashboard.resumo()
@@ -66,6 +68,7 @@ def carregar(hoje: date | None = None) -> dict:
         },
         "ordens_concluidas": painel.ordens_concluidas_no_mes(manutencao.listar_manutencoes(), hoje),
         "hoje": linhas_hoje,
+        "financeiro": financeiro.painel(mes, hoje),
         "alertas": painel.agrupar_alertas(
             configuracoes.obter(),
             alertas.listar_manutencao(),

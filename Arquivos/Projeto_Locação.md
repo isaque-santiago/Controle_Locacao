@@ -965,3 +965,22 @@ e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_R
 - **CPF e telefone** não existem na planilha: a carga de `clientes` e `contratos` espera a planilha ser completada.
 - **Ensaio** sempre no banco de dev; produção só depois de backup e autorização do dono. A carga é um SQL colado no SQL Editor
   (sem `service_role`), idempotente e numa transação única.
+
+---
+
+## 17. Dashboard financeiro (Etapa 1 em 04/11/2026; Etapa 2 pendente)
+
+A aba "Dashboard" da planilha "PAGAMENTO MOTOS" vira a seção **Financeiro** do `/` do app, por etapas e só para o dono.
+
+- **Etapa 1 (feita):** migration `20261104120000_resumo_financeiro.sql` (`rpc_resumo_financeiro`, só leitura), regras em
+  `src/domain/financeiro.py`, serviço e repositório `financeiro`, e a seção no `dashboard.html` com seletor de mês (`?mes=aaaa-mm`; futuro ou
+  inválido vale o mês atual). Mostra receita, despesas, resultado, caixa, investimento em veículos, parcelas de dívida, retiradas e aportes,
+  receita mensal estimada, a receber, encargos, em atraso (até 14 dias), inadimplentes (15 dias ou mais), dívidas, a tabela dos últimos 6 meses
+  e o ranking dos 8 maiores devedores.
+- **Definições:** resultado = receita - despesas operacionais (sem `aquisicao`); caixa = receita - despesas - investimento - parcelas de dívida
+  - retiradas + aportes. A receita só conta dinheiro recebido (principal + multa/juros), sem caução nem a forma `abatimento`; as parcelas de
+  dívida entram só pelos pagamentos de dívida, nunca em despesas (na planilha o risco de contar em dobro existia).
+- **Etapa 2 (pendente):** entradas por conta, despesas por categoria, resultado por veículo, alertas financeiros, gráficos, **modo compacto** e
+  uma opção para **ocultar dados pessoais** (nomes, placas e valores) ao mostrar a tela a terceiros.
+- **Fora do escopo por enquanto:** receita da semana, e o corte de 15 dias para inadimplência é uma constante (`DIAS_INADIMPLENTE`), não uma configuração.
+
