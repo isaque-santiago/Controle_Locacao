@@ -86,3 +86,16 @@ def test_indicadores_mostram_a_variacao_mensal_com_texto_e_tom(cliente):
     assert "R$ 120 a mais (+9%) que no mesmo período de setembro." in html
     assert "R$ 40 a menos (−32%) que no mesmo período de setembro." in html
     assert '<span aria-hidden="true">↑</span>' in html  # a seta é decorativa; o texto diz "a mais"
+
+
+def test_mes_da_secao_financeira_vem_da_url(cliente, monkeypatch):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    pedidos = []
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: pedidos.append(k.get("mes")) or DADOS_PAINEL)
+    entrar(cliente)
+    assert cliente.get("/").status_code == 200
+    assert cliente.get("/?mes=2026-08").status_code == 200
+    assert pedidos == [None, "2026-08"]
+    assert cliente.get("/?mes=" + "9" * 50).status_code == 200  # mês inválido: o serviço usa o mês atual
