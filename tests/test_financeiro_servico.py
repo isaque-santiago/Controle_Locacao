@@ -1,0 +1,72 @@
+"""Serviço do dashboard financeiro: junta o resumo mensal, os devedores e as dívidas."""
+
+from datetime import date
+from decimal import Decimal
+from types import SimpleNamespace
+
+from src.services import financeiro
+
+
+def _meses(ate: date):
+    out = []
+    for i in range(5, -1, -1):
+        indice = ate.year * 12 + ate.month - 1 - i
+        out.append({"mes": date(indice // 12, indice % 12 + 1, 1).isoformat(), "receita": "100", "despesas": "40",
+                    "investimento": "0", "parcelas_divida": "10", "retiradas": "5", "aportes": "0"})
+    return out
+
+
+def _preparar(monkeypatch, pedidos=None):
+    def resumo(mes, quantidade):
+        if pedidos is not None:
+            pedidos.append((mes, quantidade))
+        return _meses(mes)
+
+    monkeypatch.setattr(financeiro, "repositorio", SimpleNamespace(
+        resumo_mensal=resumo,
+        saldos_dividas=lambda: [{"tipo": "moto_fiado", "saldo_calculado": "300", "saldo_confirmado": None}],
+    ))
+    monkeypatch.setattr(financeiro, "configuracoes", SimpleNamespace(
+        obter=lambda: {"multa_atraso_valor": "15", "encargo_diario_valor": "7"}))
+    monkeypatch.setattr(financeiro, "clientes", SimpleNamespace(listar=lambda: [{"id": "cl1", "nome": "JOSE"}]))
+    monkeypatch.setattr(financeiro, "motos", SimpleNamespace(listar=lambda: [{"id": "m1", "placa": "POU7015"}]))
+    monkeypatch.setattr(financeiro, "cobrancas", SimpleNamespace(listar=lambda: [
+        {"contrato_id": "c1", "cliente_id": "cl1", "moto_id": "m1", "tipo": "locacao", "saldo": "100",
+         "vencimento": "2026-11-01", "situacao": "atrasada"}]))
+    monkeypatch.setattr(financeiro, "contratos", SimpleNamespace(listar=lambda: [
+        {"status": "ativo", "periodicidade": "mensal", "valor_periodo": "500"}]))
+
+
+def test_painel_do_mes_atual(monkeypatch):
+    pedidos = []
+    _preparar(monkeypatch, pedidos)
+
+    p = financeiro.painel(None, hoje=date(2026, 11, 4))
+
+    assert pedidos == [(date(2026, 11, 1), 6)]
+    assert p["mes_texto"] == "2026-11" and p["mes_rotulo"] == "novembro de 2026" and p["e_mes_atual"]
+    assert p["mes_anterior"] == "2026-10" and p["mes_seguinte"] is None
+    assert p["atual"]["mes"] == date(2026, 11, 1) and p["atual"]["resultado"] == Decimal("60.00")
+    assert p["atual"]["caixa"] == Decimal("45.00")
+    assert p["anterior"]["mes"] == date(2026, 10, 1)
+    assert [m["rotulo"] for m in p["evolucao"]] == ["jun./26", "jul./26", "ago./26", "set./26", "out./26", "nov./26"]
+    # 3 dias de atraso na cobrança de 01/11 vista em 04/11: 15 + 7 x 3
+    assert p["devedores"]["a_receber"] == Decimal("100") and p["devedores"]["encargos"] == Decimal("36.00")
+    assert p["devedores"]["ranking"][0]["cliente"] == "JOSE"
+    assert p["dividas"]["total"] == Decimal("300") and p["receita_estimada"] == Decimal("500.00")
+
+
+def test_painel_de_mes_passado_oferece_o_seguinte(monkeypatch):
+    pedidos = []
+    _preparar(monkeypatch, pedidos)
+
+    p = financeiro.painel("2026-08", hoje=date(2026, 11, 4))
+
+    assert pedidos == [(date(2026, 8, 1), 6)]
+    assert not p["e_mes_atual"] and p["mes_seguinte"] == "2026-09" and p["mes_anterior"] == "2026-07"
+
+
+def test_painel_com_mes_invalido_volta_ao_mes_atual(monkeypatch):
+    _preparar(monkeypatch)
+    assert financeiro.painel("2030-01", hoje=date(2026, 11, 4))["mes_texto"] == "2026-11"
+    assert financeiro.painel("abc", hoje=date(2026, 11, 4))["mes_texto"] == "2026-11"
