@@ -68,7 +68,7 @@ reaproveitado (largura e tema mudam no mesmo contexto). O tema vem do cookie `te
 | Arquivo | O que faz |
 |---|---|
 | `test_login.py` | tela de acesso: layout, axe, teclado (sem credenciais) |
-| `test_paginas.py` | fluxo 1: as 10 páginas do menu e o logout |
+| `test_paginas.py` | fluxo 1: as 11 páginas do menu e o logout |
 | `test_fluxos.py` | fluxos 2 a 10; os de 4 a 10 gravam (uma vez por perfil Chromium, largura de referência, tema claro) |
 | `test_homologacao.py` | zoom 200%, reflow a 320 px, paisagem, texto 200%, espaçamento WCAG, teclado e rede/CPU reduzidas |
 | `test_regressao_visual.py` | compara com `e2e/referencia/web/<sistema>/...` (ignorado pelo git) |
