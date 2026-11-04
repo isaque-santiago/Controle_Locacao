@@ -54,6 +54,7 @@ PAGINAS = (
     Pagina("Manutenção", "/manutencao"),
     Pagina("Documentos", "/documentos"),
     Pagina("Vistorias", "/vistorias"),
+    Pagina("Dívidas", "/dividas"),
     Pagina("Relatórios", "/relatorios"),
     Pagina("Configurações", "/configuracoes"),
 )
