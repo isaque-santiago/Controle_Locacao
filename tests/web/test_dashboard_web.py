@@ -131,7 +131,8 @@ def test_secao_financeira_de_mes_passado_oferece_voltar_ao_atual(cliente, monkey
     from src.web import dados_painel
     from tests.web.conftest import DADOS_PAINEL
 
-    passado = {**DADOS_PAINEL, "financeiro": {**DADOS_PAINEL["financeiro"], "e_mes_atual": False, "mes_seguinte": "2026-09"}}
+    passado = {**DADOS_PAINEL, "financeiro": {**DADOS_PAINEL["financeiro"], "e_mes_atual": False, "mes_seguinte": "2026-09"},
+               "links": {**DADOS_PAINEL["links"], "seguinte": "?mes=2026-09"}}
     monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: passado)
     entrar(cliente)
     html = cliente.get("/").text
@@ -188,3 +189,54 @@ def test_receita_da_semana_so_aparece_no_mes_atual(cliente, monkeypatch):
     passado = {**DADOS_PAINEL, "financeiro": {**DADOS_PAINEL["financeiro"], "e_mes_atual": False, "mes_seguinte": "2026-10"}}
     monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: passado)
     assert "Semana: R$" not in cliente.get("/").text
+
+
+def _com(monkeypatch, **mudancas):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: {**DADOS_PAINEL, **mudancas})
+
+
+def test_ocultar_dados_pessoais_troca_valores_nomes_e_placas_no_proprio_html(cliente, monkeypatch):
+    _com(monkeypatch, ocultar=True)
+    entrar(cliente)
+    html = cliente.get("/").text
+    for segredo in ("R$ 3.445,50", "R$ 2.180,00", "R$ 7.300,00", "R$ 1.480", "R$ 320,00", "R$ 32.014,34",
+                    "Joana", "Marcos Teles", "Ronildo", "JOSE", "Luiza", "POU-7015", "QRS-4T21", "POT-5B25"):
+        assert segredo not in html, segredo
+    assert "R$ ••••" in html and "••••••" in html
+    assert "Mostrar dados pessoais" in html and 'type="hidden" name="ocultar" value="1"' in html
+    assert "grafico-colunas" not in html and 'class="barra"' not in html
+    assert "Atraso 5d" in html  # o que não identifica ninguém continua visível
+
+
+def test_dados_visiveis_por_padrao_e_botao_para_ocultar(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Ocultar dados pessoais" in html and 'href="/?mes=2026-10&amp;ocultar=1"' in html
+    assert "Modo compacto" in html and 'href="/?mes=2026-10"' in html
+
+
+def test_modo_compacto_mostra_so_indicadores_e_alertas(cliente, monkeypatch):
+    _com(monkeypatch, compacto=True)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Sair do modo compacto" in html and 'type="hidden" name="compacto" value="1"' in html
+    assert "Financeiro · outubro de 2026" in html and "Precisa de atenção" in html and "Alertas e pendências" in html
+    for escondido in ("Ocupação da frota", "Últimos 6 meses", "Quem está devendo", "Entradas por conta",
+                      "Despesas por categoria", "Resultado por veículo", 'id="t-hoje"'):
+        assert escondido not in html, escondido
+
+
+def test_modos_da_url_chegam_ao_dashboard(cliente, monkeypatch):
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    pedidos = []
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: pedidos.append(k) or DADOS_PAINEL)
+    entrar(cliente)
+    cliente.get("/?compacto=1&ocultar=1")
+    cliente.get("/?compacto=true&ocultar=0")
+    assert pedidos[0]["compacto"] is True and pedidos[0]["ocultar"] is True
+    assert pedidos[1]["compacto"] is False and pedidos[1]["ocultar"] is False

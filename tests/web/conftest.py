@@ -132,6 +132,10 @@ DADOS_PAINEL = {
         {"id": "c2", "cliente": "Marcos Teles", "placa": "BRA2E19", "vencimento": "2026-10-06",
          "valor": Decimal("290.00"), "atrasada": False, "dias_atraso": 0},
     ],
+    "compacto": False,
+    "ocultar": False,
+    "links": {"anterior": "?mes=2026-09", "seguinte": None, "atual": "", "compacto": "?mes=2026-10",
+              "ocultar": "?mes=2026-10&ocultar=1"},
     "financeiro": {
         "mes": date(2026, 10, 1), "mes_texto": "2026-10", "mes_rotulo": "outubro de 2026", "mes_anterior": "2026-09",
         "mes_seguinte": None, "mes_maximo": "2026-10", "e_mes_atual": True, "anterior": None,
