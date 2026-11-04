@@ -35,12 +35,13 @@
 {%- endmacro %}
 
 {# Lista suspensa. opcoes: lista de (valor, rotulo). #}
-{% macro campo_lista(id, rotulo, opcoes, nome=None, selecionado=None, largo=False) -%}
-<div class="campo{{ ' largo' if largo else '' }}">
+{% macro campo_lista(id, rotulo, opcoes, nome=None, selecionado=None, largo=False, erro="") -%}
+<div class="campo{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
   <label for="{{ id }}">{{ rotulo }}</label>
-  <select class="entrada" id="{{ id }}" name="{{ nome or id }}">
+  <select class="entrada" id="{{ id }}" name="{{ nome or id }}"{% if erro %} aria-invalid="true" aria-describedby="{{ id }}-erro"{% endif %}>
     {% for valor, texto in opcoes %}<option value="{{ valor }}"{{ ' selected' if valor == selecionado else '' }}>{{ texto }}</option>{% endfor %}
   </select>
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
 </div>
 {%- endmacro %}
 

@@ -1,0 +1,39 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, kpi, selo, placa, tabela, estado_vazio, botao %}
+{% set tom_situacao = {"atrasada": "perigo", "em_aberto": "neutro", "quitada": "ok"} %}
+{% set rotulo_situacao = {"atrasada": "Parcela atrasada", "em_aberto": "Em aberto", "quitada": "Quitada"} %}
+{% block conteudo %}
+{% set t = d.totais %}
+{% call cabecalho_pagina("Dívidas", t.dividas_em_aberto ~ (" dívida em aberto" if t.dividas_em_aberto == 1 else " dívidas em aberto")) %}
+{{ botao("Nova compra parcelada", href="/dividas/nova", variante="primario", icone_nome="novo") }}
+{% endcall %}
+
+<dl class="grade kpis">
+  {{ kpi("Total em aberto", t.total_em_aberto|moeda, "todas as dívidas com saldo") }}
+  {{ kpi("Motos fiado", t.moto_fiado|moeda, "parte do total em aberto") }}
+  {{ kpi("Parcelas atrasadas", t.parcelas_atrasadas, "vencidas e não pagas", atencao=(t.parcelas_atrasadas > 0)) }}
+  {{ kpi("Próximo vencimento", (t.proximo_vencimento|data_br) if t.proximo_vencimento else "—", t.proximo_credor if t.proximo_credor else "nenhuma parcela com data") }}
+</dl>
+
+{% if d.linhas %}
+<section class="cartao moto-lista-cards" aria-labelledby="t-dividas">
+  <div class="cartao-cab"><h2 id="t-dividas">Todas as dívidas</h2></div>
+  {% call tabela([("Credor", ""), ("Tipo", ""), ("Moto", ""), ("Valor original", "num"), ("Pago", "num"), ("Saldo", "num"), ("Próxima parcela", ""), ("Situação", "")], "Dívidas com saldo e próxima parcela") %}
+    {% for l in d.linhas %}
+    <tr>
+      <td class="topo font-medium"><a href="/dividas/{{ l.divida_id }}">{{ l.credor }}</a></td>
+      <td data-rotulo="Tipo">{{ l.tipo_rotulo }}</td>
+      <td data-rotulo="Moto">{% if l.placa %}{{ placa(l.placa|placa_br) }}{% else %}—{% endif %}</td>
+      <td class="num mono" data-rotulo="Valor original">{{ l.valor_original|moeda }}</td>
+      <td class="num mono" data-rotulo="Pago">{{ l.total_pago|moeda }}</td>
+      <td class="num mono" data-rotulo="Saldo">{{ l.saldo|moeda }}{% if l.saldo_confirmado %} <small class="text-texto-2">confirmado</small>{% endif %}</td>
+      <td data-rotulo="Próxima parcela">{% if l.proxima_vencimento %}<span class="mono">{{ l.proxima_vencimento|data_br }}</span>{% if l.proxima_valor %} · <span class="mono">{{ l.proxima_valor|moeda }}</span>{% endif %}{% elif l.parcelas_abertas %}sem data{% else %}—{% endif %}</td>
+      <td data-rotulo="Situação">{{ selo(rotulo_situacao[l.situacao] ~ (" (" ~ l.parcelas_atrasadas ~ ")" if l.situacao == "atrasada" else ""), tom_situacao[l.situacao]) }}</td>
+    </tr>
+    {% endfor %}
+  {% endcall %}
+</section>
+{% else %}
+{{ estado_vazio("Nenhuma dívida cadastrada", "Cadastre uma compra parcelada ou carregue as dívidas da operação.") }}
+{% endif %}
+{% endblock %}

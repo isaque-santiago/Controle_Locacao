@@ -107,6 +107,20 @@ def pagamento_registrado(principal, extras, quitada):
     return _toast(texto)
 
 
+def parcela_divida_paga(valor, numero, quitada):
+    """`Pagamento de R$ 1.000,00 registrado na parcela 7.` + situação da parcela."""
+    parte = f" na parcela {numero}" if numero else ""
+    texto = f"Pagamento de {moeda(valor)} registrado{parte}."
+    texto += " Parcela quitada." if quitada else " A parcela continua em aberto com o saldo restante."
+    return _toast(texto)
+
+
+def compra_parcelada_cadastrada(credor, numero_parcelas, valor_total):
+    """`Compra parcelada de Celta cadastrada: 9 parcelas, total de R$ 14.000,00.`"""
+    plural = "parcela" if int(numero_parcelas) == 1 else "parcelas"
+    return _toast(f"Compra parcelada de {credor} cadastrada: {numero_parcelas} {plural}, total de {moeda(valor_total)}.")
+
+
 # ---------------------------------------------------------------- documentos --
 
 

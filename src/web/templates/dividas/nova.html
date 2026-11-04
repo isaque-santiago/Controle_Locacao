@@ -1,0 +1,51 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso, campo, campo_lista, area_texto, kpi, tabela, selo %}
+{% block conteudo %}
+{{ voltar("/dividas", "Voltar para dívidas") }}
+{{ cabecalho_pagina("Nova compra parcelada", "Entrada mais parcelas mensais no mesmo dia (ex.: Celta, R$ 5.000 de entrada e 9 parcelas de R$ 1.000).") }}
+<form class="cartao" id="form-compra-parcelada" method="post" action="/dividas/nova">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    {{ campo("f-credor", "Credor", nome="credor", valor=v.credor, obrigatorio=True, erro=erros.credor, autocomplete="off", largo=True, ajuda="A quem se deve (pessoa ou loja).") }}
+    {{ campo("f-entrada", "Entrada", nome="valor_entrada", valor=v.valor_entrada, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_entrada, autocomplete="off", ajuda="Deixe 0,00 se não houve entrada.") }}
+    {{ campo("f-data-entrada", "Data da entrada", nome="data_entrada", valor=v.data_entrada, tipo="date", erro=erros.data_entrada, ajuda="Vazio: vale a data da primeira parcela, marcada como estimada.") }}
+    {{ campo("f-n-parcelas", "Número de parcelas", nome="numero_parcelas", valor=v.numero_parcelas, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.numero_parcelas, autocomplete="off") }}
+    {{ campo("f-valor-parcela", "Valor de cada parcela", nome="valor_parcela", valor=v.valor_parcela, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor_parcela, autocomplete="off") }}
+    {{ campo("f-primeira", "Primeira parcela vence em", nome="primeira_parcela", valor=v.primeira_parcela, tipo="date", obrigatorio=True, erro=erros.primeira_parcela, ajuda="As demais vencem no mesmo dia dos meses seguintes (em mês curto, no último dia).") }}
+    {{ campo("f-pagas", "Parcelas já pagas", nome="parcelas_pagas", valor=v.parcelas_pagas, mono=True, inputmode="numeric", erro=erros.parcelas_pagas, autocomplete="off", ajuda="As primeiras parcelas entram como pagas, com a data do vencimento (estimada).") }}
+    {{ campo_lista("f-conta", "Conta que pagou", contas, nome="conta_id", selecionado=v.conta_id, erro=erros.conta_id) }}
+    {{ campo_lista("f-moto", "Moto ligada à compra", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
+    {{ campo("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, autocomplete="off", largo=True) }}
+    {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
+    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. O total é calculado: entrada + parcelas.</p>
+  </div>
+
+  {% if previa %}
+  <section class="mt-4" aria-labelledby="t-previa">
+    <h2 id="t-previa">Confira antes de cadastrar</h2>
+    <dl class="grade kpis kpis-3">
+      {{ kpi("Total da compra", previa.valor_total|moeda) }}
+      {{ kpi("Saldo a pagar", previa.saldo|moeda, "depois da entrada e das parcelas já pagas", atencao=(previa.saldo > 0)) }}
+      {{ kpi("Parcelas", previa.parcelas|length, (previa.parcelas|selectattr("paga")|list|length) ~ " já paga(s)") }}
+    </dl>
+    {% call tabela([("Nº", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", "")], "Calendário das parcelas") %}
+      {% for p in previa.parcelas %}
+      <tr>
+        <td class="topo font-medium">{{ p.numero }}</td>
+        <td class="mono" data-rotulo="Vencimento">{{ p.vencimento|data_br }}</td>
+        <td class="num mono" data-rotulo="Valor">{{ p.valor|moeda }}</td>
+        <td data-rotulo="Situação">{{ selo("Paga", "ok") if p.paga else selo("A pagar", "neutro") }}</td>
+      </tr>
+      {% endfor %}
+    {% endcall %}
+  </section>
+  {% endif %}
+
+  <div class="rodape-acoes">
+    <a class="btn" href="/dividas">Cancelar</a>
+    <button class="btn{{ '' if previa else ' btn-primario' }}" type="submit" name="acao" value="previa">Conferir</button>
+    {% if previa %}<button class="btn btn-primario" type="submit" name="acao" value="criar">Cadastrar compra</button>{% endif %}
+  </div>
+</form>
+{% endblock %}

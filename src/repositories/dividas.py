@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Optional
 
 from src.db import get_client
-from src.repositories.consultas import invalida_cache
+from src.repositories.consultas import invalida_cache, todos
 
 
 @invalida_cache
@@ -45,3 +45,30 @@ def listar_parcelas(divida_id: str) -> list:
     """Parcelas da dívida (view `vw_parcelas_divida`), em ordem de número."""
     linhas = get_client().table("vw_parcelas_divida").select("*").eq("divida_id", divida_id).execute().data
     return sorted(linhas, key=lambda p: (p["numero"] is None, p["numero"] or 0))
+
+
+def listar_saldos() -> list:
+    """Saldo de cada dívida (view `vw_saldo_dividas`)."""
+    return todos("vw_saldo_dividas", ordem=("divida_id",))
+
+
+def listar_todas_parcelas() -> list:
+    """Parcelas de todas as dívidas (view `vw_parcelas_divida`)."""
+    return todos("vw_parcelas_divida", ordem=("vencimento_id",))
+
+
+def obter(divida_id: str):
+    resposta = get_client().table("dividas").select("*").eq("id", divida_id).maybe_single().execute()
+    return resposta.data if resposta else None
+
+
+def listar_pagamentos(divida_id: str) -> list:
+    """Pagamentos da dívida, o mais recente primeiro."""
+    linhas = todos("pagamentos_divida", ordem="data", filtros={"divida_id": divida_id})
+    return sorted(linhas, key=lambda p: (p["data"], p["criado_em"]), reverse=True)
+
+
+def obter_parcela(vencimento_id: str):
+    """Uma parcela com valor pago, saldo e situação (view), ou None."""
+    achadas = todos("vw_parcelas_divida", ordem=("vencimento_id",), filtros={"vencimento_id": vencimento_id})
+    return achadas[0] if achadas else None

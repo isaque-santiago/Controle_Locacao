@@ -627,6 +627,13 @@ estimada, a receber, encargos de atraso, em atraso (até 14 dias), inadimplentes
 - Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
 - Os gráficos são SVG sem script e sem estilo inline (a política de conteúdo só aceita CSS do próprio site); a tabela ao lado traz os mesmos números.
 
+## Dívidas (telas)
+
+Menu **Dívidas** (só o dono): `/dividas` lista cada dívida com saldo, próxima parcela e situação; `/dividas/{id}` mostra parcelas e pagamentos;
+`/dividas/parcelas/{id}/pagar` registra o pagamento de uma parcela (total ou parcial); `/dividas/nova` cadastra uma compra parcelada com
+conferência do total, do saldo e do calendário antes de gravar. Usam as RPCs e views das migrations 6 e 7 (não há migration nova). O contrato com
+várias motos já tem tela desde 03/11/2026 (etapa Moto do novo contrato, lista e ficha). Ainda não há edição de dívida nem cadastro dos outros tipos.
+
 ## Convenções dos relatórios
 
 Receita usa a data de pagamento e exclui caução. Custo de manutenção considera

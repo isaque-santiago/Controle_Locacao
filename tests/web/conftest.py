@@ -980,3 +980,98 @@ def base_portal(monkeypatch):
     monkeypatch.setattr(acoes_portal, "portal_locatario", SimpleNamespace(registrar_troca_oleo=registrar))
     return base
 
+
+
+def _linha_divida(id, credor, tipo="compra_parcelada", saldo="3000.00", situacao="em_aberto", **extra):
+    return {
+        "divida_id": id, "credor": credor, "tipo": tipo, "tipo_rotulo": {"compra_parcelada": "Compra parcelada",
+        "moto_fiado": "Moto fiado", "emprestimo": "Empréstimo"}.get(tipo, tipo), "moto_id": None, "placa": None,
+        "valor_original": Decimal("14000.00"), "total_pago": Decimal("11000.00"), "saldo": Decimal(saldo),
+        "saldo_confirmado": False, "proxima_vencimento": date(2026, 11, 28), "proxima_valor": Decimal("1000.00"),
+        "parcelas_abertas": 3, "parcelas_atrasadas": 0, "situacao": situacao, **extra,
+    }
+
+
+DIVIDA_ID = "00000000-0000-0000-0000-0000000000d1"
+PARCELA_ID = "00000000-0000-0000-0000-0000000000e8"
+PARCELA_PAGA_ID = "00000000-0000-0000-0000-0000000000e7"
+CONTA_ID = "00000000-0000-0000-0000-0000000000c1"
+MOTO_DIVIDA_ID = "00000000-0000-0000-0000-0000000000a1"
+
+
+def ficha_divida_exemplo():
+    return {
+        "divida": {"id": DIVIDA_ID, "credor": "Celta <b>Zero</b>", "tipo": "compra_parcelada", "descricao": "Compra a prazo",
+                   "valor_original": "14000.00", "valor_entrada": "5000.00", "numero_parcelas": 9, "valor_parcela": "1000.00",
+                   "dia_vencimento": 28, "confirmado_em": None, "observacoes": "Combinado <i>de boca</i>"},
+        "tipo_rotulo": "Compra parcelada", "saldo": Decimal("3000.00"), "total_pago": Decimal("11000.00"),
+        "saldo_confirmado": None, "diferenca": None,
+        "moto": {"id": "m1", "marca": "Chevrolet", "modelo": "Celta", "placa": "OID7656"},
+        "parcelas": [
+            {"vencimento_id": "v7", "numero": 7, "vencimento": "2026-10-28", "valor": "1000.00", "valor_pago": "1000.00",
+             "saldo": "0.00", "situacao": "paga", "dias_atraso": 0},
+            {"vencimento_id": PARCELA_ID, "numero": 8, "vencimento": "2026-11-28", "valor": "1000.00", "valor_pago": "0.00",
+             "saldo": "1000.00", "situacao": "a_vencer", "dias_atraso": 0},
+            {"vencimento_id": "v9", "numero": 9, "vencimento": "2026-10-01", "valor": "1000.00", "valor_pago": "400.00",
+             "saldo": "600.00", "situacao": "atrasada", "dias_atraso": 34},
+        ],
+        "pagamentos": [
+            {"id": "g1", "data": "2026-10-28", "valor": "1000.00", "data_estimada": False, "parcela_numero": 7, "observacoes": None},
+            {"id": "g2", "data": "2026-05-01", "valor": "5000.00", "data_estimada": True, "parcela_numero": None,
+             "observacoes": "Entrada da compra"},
+        ],
+    }
+
+
+class BaseDividas:
+    """Dados fictícios dos serviços usados por src/web/dados_dividas e acoes_dividas."""
+
+    def __init__(self):
+        self.linhas = [
+            _linha_divida("d1", "Celta <b>Zero</b>", placa="OID7656"),
+            _linha_divida("d2", "Nilson", tipo="moto_fiado", saldo="7600.00", situacao="atrasada", parcelas_atrasadas=2,
+                          proxima_vencimento=date(2026, 10, 10), saldo_confirmado=True),
+            _linha_divida("d3", "Etios", tipo="emprestimo", saldo="0.00", situacao="quitada", proxima_vencimento=None,
+                          proxima_valor=None, parcelas_abertas=0),
+        ]
+        self.totais = {"total_em_aberto": Decimal("10600.00"), "moto_fiado": Decimal("7600.00"), "dividas_em_aberto": 2,
+                       "parcelas_atrasadas": 2, "proximo_vencimento": date(2026, 10, 10), "proximo_credor": "Nilson"}
+        self.fichas = {DIVIDA_ID: ficha_divida_exemplo()}
+        self.parcelas = {PARCELA_ID: {
+            "vencimento_id": PARCELA_ID, "divida_id": DIVIDA_ID, "credor": "Celta <b>Zero</b>", "numero": 8,
+            "vencimento": "2026-11-28", "valor": "1000.00", "valor_pago": "0.00", "saldo": "1000.00", "situacao": "a_vencer"}}
+        self.parcelas["v7"] = {**self.parcelas[PARCELA_ID], "vencimento_id": "00000000-0000-0000-0000-0000000000e7",
+                               "numero": 7, "valor_pago": "1000.00", "saldo": "0.00", "situacao": "paga"}
+        self.parcelas[PARCELA_PAGA_ID] = self.parcelas.pop("v7")
+        self.contas = [{"id": CONTA_ID, "nome": "Quezia <i>Silva</i>"}]
+        self.pagamentos = []
+        self.motos = [{"id": MOTO_DIVIDA_ID, "placa": "OID7656", "modelo": "Celta <b>LS</b>"}]
+        self.compras = []
+        self.falhar_com = None
+
+
+@pytest.fixture(autouse=True)
+def base_dividas(monkeypatch):
+    from src.web import dados_dividas
+
+    from src.web import acoes_dividas
+
+    base = BaseDividas()
+
+    def pagar_parcela(vencimento_id, data, valor, conta_id, observacoes):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.pagamentos.append((vencimento_id, data, valor, conta_id, observacoes))
+        return {"pagamento_id": "novo", "parcela_paga": True, "saldo_da_parcela": 0}
+
+    def criar_compra(**dados):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.compras.append(dados)
+        return {"divida_id": DIVIDA_ID, "parcelas": dados["numero_parcelas"], "saldo": 3000}
+
+    monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(motos_para_selecao=lambda: base.motos,
+        resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id),
+        parcela=lambda id: base.parcelas.get(id), contas_ativas=lambda: base.contas))
+    monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra))
+    return base
