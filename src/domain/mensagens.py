@@ -107,6 +107,14 @@ def pagamento_registrado(principal, extras, quitada):
     return _toast(texto)
 
 
+def parcela_divida_paga(valor, numero, quitada):
+    """`Pagamento de R$ 1.000,00 registrado na parcela 7.` + situação da parcela."""
+    parte = f" na parcela {numero}" if numero else ""
+    texto = f"Pagamento de {moeda(valor)} registrado{parte}."
+    texto += " Parcela quitada." if quitada else " A parcela continua em aberto com o saldo restante."
+    return _toast(texto)
+
+
 # ---------------------------------------------------------------- documentos --
 
 

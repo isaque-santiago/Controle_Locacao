@@ -994,6 +994,8 @@ def _linha_divida(id, credor, tipo="compra_parcelada", saldo="3000.00", situacao
 
 DIVIDA_ID = "00000000-0000-0000-0000-0000000000d1"
 PARCELA_ID = "00000000-0000-0000-0000-0000000000e8"
+PARCELA_PAGA_ID = "00000000-0000-0000-0000-0000000000e7"
+CONTA_ID = "00000000-0000-0000-0000-0000000000c1"
 
 
 def ficha_divida_exemplo():
@@ -1034,13 +1036,33 @@ class BaseDividas:
         self.totais = {"total_em_aberto": Decimal("10600.00"), "moto_fiado": Decimal("7600.00"), "dividas_em_aberto": 2,
                        "parcelas_atrasadas": 2, "proximo_vencimento": date(2026, 10, 10), "proximo_credor": "Nilson"}
         self.fichas = {DIVIDA_ID: ficha_divida_exemplo()}
+        self.parcelas = {PARCELA_ID: {
+            "vencimento_id": PARCELA_ID, "divida_id": DIVIDA_ID, "credor": "Celta <b>Zero</b>", "numero": 8,
+            "vencimento": "2026-11-28", "valor": "1000.00", "valor_pago": "0.00", "saldo": "1000.00", "situacao": "a_vencer"}}
+        self.parcelas["v7"] = {**self.parcelas[PARCELA_ID], "vencimento_id": "00000000-0000-0000-0000-0000000000e7",
+                               "numero": 7, "valor_pago": "1000.00", "saldo": "0.00", "situacao": "paga"}
+        self.parcelas[PARCELA_PAGA_ID] = self.parcelas.pop("v7")
+        self.contas = [{"id": CONTA_ID, "nome": "Quezia <i>Silva</i>"}]
+        self.pagamentos = []
+        self.falhar_com = None
 
 
 @pytest.fixture(autouse=True)
 def base_dividas(monkeypatch):
     from src.web import dados_dividas
 
+    from src.web import acoes_dividas
+
     base = BaseDividas()
+
+    def pagar_parcela(vencimento_id, data, valor, conta_id, observacoes):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.pagamentos.append((vencimento_id, data, valor, conta_id, observacoes))
+        return {"pagamento_id": "novo", "parcela_paga": True, "saldo_da_parcela": 0}
+
     monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(
-        resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id)))
+        resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id),
+        parcela=lambda id: base.parcelas.get(id), contas_ativas=lambda: base.contas))
+    monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(pagar_parcela=pagar_parcela))
     return base

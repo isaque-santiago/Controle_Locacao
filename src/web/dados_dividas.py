@@ -9,3 +9,11 @@ def resumo():
 
 def ficha(divida_id):
     return dividas.ficha(divida_id)
+
+
+def parcela(vencimento_id):
+    return dividas.parcela(vencimento_id)
+
+
+def contas():
+    return dividas.contas_ativas()
