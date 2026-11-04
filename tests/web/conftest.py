@@ -980,3 +980,38 @@ def base_portal(monkeypatch):
     monkeypatch.setattr(acoes_portal, "portal_locatario", SimpleNamespace(registrar_troca_oleo=registrar))
     return base
 
+
+
+def _linha_divida(id, credor, tipo="compra_parcelada", saldo="3000.00", situacao="em_aberto", **extra):
+    return {
+        "divida_id": id, "credor": credor, "tipo": tipo, "tipo_rotulo": {"compra_parcelada": "Compra parcelada",
+        "moto_fiado": "Moto fiado", "emprestimo": "Empréstimo"}.get(tipo, tipo), "moto_id": None, "placa": None,
+        "valor_original": Decimal("14000.00"), "total_pago": Decimal("11000.00"), "saldo": Decimal(saldo),
+        "saldo_confirmado": False, "proxima_vencimento": date(2026, 11, 28), "proxima_valor": Decimal("1000.00"),
+        "parcelas_abertas": 3, "parcelas_atrasadas": 0, "situacao": situacao, **extra,
+    }
+
+
+class BaseDividas:
+    """Dados fictícios dos serviços usados por src/web/dados_dividas e acoes_dividas."""
+
+    def __init__(self):
+        self.linhas = [
+            _linha_divida("d1", "Celta <b>Zero</b>", placa="OID7656"),
+            _linha_divida("d2", "Nilson", tipo="moto_fiado", saldo="7600.00", situacao="atrasada", parcelas_atrasadas=2,
+                          proxima_vencimento=date(2026, 10, 10), saldo_confirmado=True),
+            _linha_divida("d3", "Etios", tipo="emprestimo", saldo="0.00", situacao="quitada", proxima_vencimento=None,
+                          proxima_valor=None, parcelas_abertas=0),
+        ]
+        self.totais = {"total_em_aberto": Decimal("10600.00"), "moto_fiado": Decimal("7600.00"), "dividas_em_aberto": 2,
+                       "parcelas_atrasadas": 2, "proximo_vencimento": date(2026, 10, 10), "proximo_credor": "Nilson"}
+
+
+@pytest.fixture(autouse=True)
+def base_dividas(monkeypatch):
+    from src.web import dados_dividas
+
+    base = BaseDividas()
+    monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(
+        resumo=lambda: {"linhas": base.linhas, "totais": base.totais}))
+    return base
