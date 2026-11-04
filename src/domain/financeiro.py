@@ -331,3 +331,16 @@ def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = 
 def opcao_ligada(texto: Optional[str]) -> bool:
     """Interruptor da URL: só '1' liga."""
     return texto == "1"
+
+
+def links_do_painel(
+    mes: str, mes_anterior: str, mes_seguinte: Optional[str], compacto: bool, ocultar: bool
+) -> dict:
+    """Endereços (sem a barra inicial) dos botões do Dashboard: a navegação de mês e os interruptores mantêm o que já está ligado."""
+    return {
+        "anterior": consulta(mes_anterior, compacto, ocultar),
+        "seguinte": consulta(mes_seguinte, compacto, ocultar) if mes_seguinte else None,
+        "atual": consulta(None, compacto, ocultar),
+        "compacto": consulta(mes, not compacto, ocultar),
+        "ocultar": consulta(mes, compacto, not ocultar),
+    }

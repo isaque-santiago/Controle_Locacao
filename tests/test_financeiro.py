@@ -233,3 +233,10 @@ def test_consulta_monta_so_o_que_foi_escolhido():
 
 def test_opcao_ligada_so_com_1():
     assert financeiro.opcao_ligada("1") and not financeiro.opcao_ligada(None) and not financeiro.opcao_ligada("true")
+
+
+def test_links_do_painel_mantem_o_que_esta_ligado():
+    l = financeiro.links_do_painel("2026-10", "2026-09", None, compacto=True, ocultar=False)
+    assert l == {"anterior": "?mes=2026-09&compacto=1", "seguinte": None, "atual": "?compacto=1",
+                 "compacto": "?mes=2026-10", "ocultar": "?mes=2026-10&compacto=1&ocultar=1"}
+    assert financeiro.links_do_painel("2026-08", "2026-07", "2026-09", False, True)["seguinte"] == "?mes=2026-09&ocultar=1"
