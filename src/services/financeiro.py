@@ -53,6 +53,8 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
     anterior = meses[-2] if len(meses) > 1 else None
 
     config = configuracoes.obter()
+    # Banco ainda sem a coluna (migration 20261104140000 pendente): vale o corte de sempre, 15 dias.
+    corte = int(config.get("dias_inadimplencia") or financeiro.DIAS_INADIMPLENTE)
     devedores = financeiro.analisar_devedores(
         cobrancas.listar(),
         {c["id"]: c["nome"] for c in clientes.listar()},
@@ -60,6 +62,7 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
         Decimal(str(config["multa_atraso_valor"])),
         Decimal(str(config["encargo_diario_valor"])),
         hoje,
+        corte,
     )
     dividas = financeiro.saldo_das_dividas(repositorio.saldos_dividas())
     detalhe = repositorio.detalhe_mensal(mes)
@@ -75,6 +78,7 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
         "anterior": anterior,
         "evolucao": [{**m, "rotulo": financeiro.rotulo_mes_curto(m["mes"])} for m in meses],
         "devedores": devedores,
+        "faixas": financeiro.descricao_das_faixas(corte),
         "dividas": dividas,
         "receita_estimada": financeiro.receita_mensal_estimada(contratos_lista),
         "receita_semana": Decimal(str(detalhe["receita_semana"])),
@@ -82,5 +86,5 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
         "categorias": financeiro.despesas_por_categoria(detalhe["despesas_por_categoria"]),
         "veiculos": financeiro.resultado_por_veiculo(repositorio.resultado_por_veiculo(), locatarios),
         "grafico": financeiro.colunas_evolucao(meses),
-        "alertas": financeiro.alertas_financeiros(devedores, atual, a_repassar, entradas["sem_conta"], em_manutencao),
+        "alertas": financeiro.alertas_financeiros(devedores, atual, a_repassar, entradas["sem_conta"], em_manutencao, corte),
     }

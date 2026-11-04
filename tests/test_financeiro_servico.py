@@ -120,3 +120,20 @@ def test_painel_seguro_nao_derruba_o_dashboard_se_a_leitura_falhar(monkeypatch, 
     assert p["mes_rotulo"] == "agosto de 2026" and not p["e_mes_atual"] and p["mes_maximo"] == "2026-11"
     assert "atual" not in p
     assert "Não foi possível montar o painel financeiro" in caplog.text
+
+
+def test_painel_usa_o_corte_de_inadimplencia_das_configuracoes(monkeypatch):
+    _preparar(monkeypatch)
+    # cobrança de 01/11 vista em 10/11: 9 dias de atraso
+    monkeypatch.setattr(financeiro, "configuracoes", SimpleNamespace(obter=lambda: {
+        "multa_atraso_valor": "15", "encargo_diario_valor": "7", "dias_inadimplencia": 7}))
+    p = financeiro.painel(None, hoje=date(2026, 11, 10))
+    assert p["devedores"]["inadimplentes"] == 1 and p["devedores"]["em_atraso"] == 0
+    assert p["faixas"] == {"em_atraso": "até 6 dias", "inadimplente": "7 dias ou mais"}
+    assert "Contratos inadimplentes (7 dias ou mais)" in {a["titulo"] for a in p["alertas"]}
+
+
+def test_painel_sem_a_coluna_do_corte_usa_15_dias(monkeypatch):
+    _preparar(monkeypatch)  # a configuração de teste não traz dias_inadimplencia (banco sem a migration)
+    p = financeiro.painel(None, hoje=date(2026, 11, 10))
+    assert p["devedores"]["em_atraso"] == 1 and p["faixas"]["inadimplente"] == "15 dias ou mais"

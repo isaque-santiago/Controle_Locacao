@@ -163,6 +163,7 @@ DADOS_PAINEL = {
         "dividas": {"total": Decimal("32014.34"), "moto_fiado": Decimal("32014.34")},
         "receita_estimada": Decimal("27155.00"),
         "receita_semana": Decimal("3245.50"),
+        "faixas": {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"},
         "grafico": {
             "largura": 600, "altura": 208, "y_base": 180, "y_rotulo": 200,
             "colunas": [

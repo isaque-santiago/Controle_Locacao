@@ -131,8 +131,8 @@
   <dl class="grade kpis mt-4">
     {{ kpi("A receber", din(f.devedores.a_receber), f.devedores.contratos_em_aberto ~ (" contrato em aberto" if f.devedores.contratos_em_aberto == 1 else " contratos em aberto"), atencao=(f.devedores.a_receber > 0), href="/cobrancas?aba=atrasadas") }}
     {{ kpi("Encargos de atraso", din(f.devedores.encargos), "multa + adicional por dia") }}
-    {{ kpi("Em atraso", f.devedores.em_atraso, "até 14 dias") }}
-    {{ kpi("Inadimplentes", f.devedores.inadimplentes, "15 dias ou mais", atencao=(f.devedores.inadimplentes > 0)) }}
+    {{ kpi("Em atraso", f.devedores.em_atraso, f.faixas.em_atraso) }}
+    {{ kpi("Inadimplentes", f.devedores.inadimplentes, f.faixas.inadimplente, atencao=(f.devedores.inadimplentes > 0)) }}
     {{ kpi("Dívidas em aberto", din(f.dividas.total), "motos fiado: " ~ (din(f.dividas.moto_fiado))) }}
   </dl>
 
