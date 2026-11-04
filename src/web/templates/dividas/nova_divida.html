@@ -1,0 +1,27 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso, campo, campo_lista, area_texto %}
+{% block conteudo %}
+{{ voltar("/dividas", "Voltar para dívidas") }}
+{{ cabecalho_pagina("Nova dívida", "Moto fiado, financiamento, fornecedor, rastreador ou empréstimo. Para compra com entrada e calendário de parcelas, use a compra parcelada.") }}
+<form class="cartao" id="form-divida" method="post" action="/dividas/nova-divida">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    {{ campo_lista("f-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, erro=erros.tipo) }}
+    {{ campo("f-credor", "Credor", nome="credor", valor=v.credor, obrigatorio=True, erro=erros.credor, autocomplete="off", ajuda="A quem se deve (pessoa ou loja).") }}
+    {{ campo("f-original", "Valor original", nome="valor_original", valor=v.valor_original, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_original, autocomplete="off", ajuda="Quanto era no começo. Pode ficar vazio (0,00) se só se sabe o saldo.") }}
+    {{ campo("f-saldo", "Saldo confirmado (hoje)", nome="saldo_confirmado", valor=v.saldo_confirmado, prefixo="R$", mono=True, inputmode="decimal", erro=erros.saldo_confirmado, autocomplete="off", ajuda="O que falta pagar, informado pelo responsável. Vale sobre o saldo calculado.") }}
+    {{ campo("f-n", "Número de parcelas", nome="numero_parcelas", valor=v.numero_parcelas, mono=True, inputmode="numeric", erro=erros.numero_parcelas, autocomplete="off", ajuda="Só se houver parcelas fixas; informe junto com o valor da parcela.") }}
+    {{ campo("f-parcela", "Valor da parcela", nome="valor_parcela", valor=v.valor_parcela, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_parcela, autocomplete="off") }}
+    {{ campo("f-dia", "Dia do vencimento", nome="dia_vencimento", valor=v.dia_vencimento, mono=True, inputmode="numeric", erro=erros.dia_vencimento, autocomplete="off", ajuda="De 1 a 31. Vazio se não há dia fixo.") }}
+    {{ campo_lista("f-moto", "Moto ligada à dívida", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
+    {{ campo("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, autocomplete="off", largo=True) }}
+    {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
+    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. Parcelas e valor da parcela vão juntos ou nenhum dos dois.</p>
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="/dividas">Cancelar</a>
+    <button class="btn btn-primario" type="submit">Cadastrar dívida</button>
+  </div>
+</form>
+{% endblock %}

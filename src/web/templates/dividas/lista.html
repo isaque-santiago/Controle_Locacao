@@ -5,6 +5,7 @@
 {% block conteudo %}
 {% set t = d.totais %}
 {% call cabecalho_pagina("Dívidas", t.dividas_em_aberto ~ (" dívida em aberto" if t.dividas_em_aberto == 1 else " dívidas em aberto")) %}
+{{ botao("Nova dívida", href="/dividas/nova-divida", icone_nome="novo") }}
 {{ botao("Nova compra parcelada", href="/dividas/nova", variante="primario", icone_nome="novo") }}
 {% endcall %}
 

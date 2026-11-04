@@ -282,3 +282,165 @@ def test_nova_exige_login(cliente):
 def test_lista_leva_ao_cadastro(cliente):
     entrar(cliente)
     assert 'href="/dividas/nova"' in cliente.get("/dividas").text
+
+
+# ---------------------------------------------------------------- nova dívida (outros tipos) --
+
+
+def _divida_nova(cliente, **extra):
+    from tests.web.conftest import csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "tipo": "moto_fiado", "credor": "Nilson", "valor_original": "9.675,00",
+             "numero_parcelas": "", "valor_parcela": "", "dia_vencimento": "", "saldo_confirmado": "", "moto_id": "",
+             "descricao": "", "observacoes": "", **extra}
+    return cliente.post("/dividas/nova-divida", data=dados, follow_redirects=False)
+
+
+def test_formulario_de_nova_divida_oferece_os_cinco_tipos(cliente):
+    entrar(cliente)
+    html = cliente.get("/dividas/nova-divida").text
+    assert "Nova dívida" in html and 'name="tipo"' in html and 'name="saldo_confirmado"' in html
+    for rotulo in ("Moto fiado", "Financiamento", "Fornecedor", "Rastreador", "Empréstimo"):
+        assert rotulo in html
+    assert "Compra parcelada</option>" not in html
+    assert "OID-7656 · Celta &lt;b&gt;LS&lt;/b&gt;" in html
+
+
+def test_nova_divida_nao_cai_na_ficha(cliente):
+    entrar(cliente)
+    assert cliente.get("/dividas/nova-divida").status_code == 200
+
+
+def test_cadastrar_divida_grava_e_abre_a_ficha(cliente, base_dividas):
+    from decimal import Decimal
+    from tests.web.conftest import DIVIDA_ID, MOTO_DIVIDA_ID
+
+    entrar(cliente)
+    resposta = _divida_nova(cliente, tipo="financiamento", credor="Nicolas", valor_original="21.901,92", numero_parcelas="24",
+                            valor_parcela="912,58", dia_vencimento="28", saldo_confirmado="20.989,34", moto_id=MOTO_DIVIDA_ID)
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_ID}"
+    d = base_dividas.dividas_criadas[0]
+    assert d["tipo"] == "financiamento" and d["credor"] == "Nicolas" and d["valor_original"] == Decimal("21901.92")
+    assert d["numero_parcelas"] == 24 and d["valor_parcela"] == Decimal("912.58") and d["dia_vencimento"] == 28
+    assert d["saldo_confirmado"] == Decimal("20989.34") and d["moto_id"] == MOTO_DIVIDA_ID
+    assert "Dívida cadastrada: Financiamento com Nicolas." in cliente.get(f"/dividas/{DIVIDA_ID}").text
+
+
+def test_divida_simples_so_com_credor_e_valor(cliente, base_dividas):
+    entrar(cliente)
+    assert _divida_nova(cliente).status_code == 303
+    d = base_dividas.dividas_criadas[0]
+    assert d["numero_parcelas"] is None and d["saldo_confirmado"] is None and d["moto_id"] is None
+
+
+def test_divida_invalida_nao_grava_e_preserva_o_digitado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _divida_nova(cliente, tipo="compra_parcelada", credor="", numero_parcelas="10", dia_vencimento="40")
+    html = resposta.text
+    assert resposta.status_code == 422 and base_dividas.dividas_criadas == []
+    assert "Tipo: escolha uma das opções" in html and "Credor: informe a quem se deve." in html
+    assert "Valor da parcela" in html and "Dia do vencimento" in html and 'value="9.675,00"' in html
+
+
+def test_nova_divida_sem_csrf_e_recusada(cliente, base_dividas):
+    entrar(cliente)
+    resposta = cliente.post("/dividas/nova-divida", data={"tipo": "emprestimo", "credor": "X"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.dividas_criadas == []
+
+
+def test_falha_do_banco_ao_cadastrar_divida_mostra_erro(cliente, base_dividas):
+    entrar(cliente)
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    resposta = _divida_nova(cliente)
+    assert resposta.status_code in (500, 503) and 'value="Nilson"' in resposta.text
+
+
+def test_lista_tem_os_dois_botoes_de_cadastro(cliente):
+    entrar(cliente)
+    html = cliente.get("/dividas").text
+    assert 'href="/dividas/nova-divida"' in html and 'href="/dividas/nova"' in html
+
+
+# ---------------------------------------------------------------- pagamento direto (sem parcela) --
+
+
+def _pagar_direto(cliente, divida_id=None, **extra):
+    from tests.web.conftest import DIVIDA_FIADO_ID, csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "data": "2026-11-04", "valor": "300,00", "conta_id": "", "observacoes": "", **extra}
+    return cliente.post(f"/dividas/{divida_id or DIVIDA_FIADO_ID}/pagar", data=dados, follow_redirects=False)
+
+
+def test_ficha_sem_parcelas_oferece_registrar_pagamento_e_com_parcelas_nao(cliente):
+    from tests.web.conftest import DIVIDA_FIADO_ID, DIVIDA_ID
+
+    entrar(cliente)
+    assert f'href="/dividas/{DIVIDA_FIADO_ID}/pagar"' in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+    assert f'href="/dividas/{DIVIDA_ID}/pagar"' not in cliente.get(f"/dividas/{DIVIDA_ID}").text
+
+
+def test_formulario_de_pagamento_direto_mostra_o_saldo(cliente):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/pagar").text
+    assert "Registrar pagamento" in html and "Nilson" in html and "R$ 7.600,00" in html and 'value="7.600,00"' in html
+
+
+def test_pagamento_direto_grava_e_volta_para_a_ficha(cliente, base_dividas):
+    from datetime import date
+    from decimal import Decimal
+    from tests.web.conftest import CONTA_ID, DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    resposta = _pagar_direto(cliente, conta_id=CONTA_ID, observacoes="pix")
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_FIADO_ID}"
+    assert base_dividas.pagamentos_diretos == [(DIVIDA_FIADO_ID, date(2026, 11, 4), Decimal("300.00"), CONTA_ID, "pix")]
+    assert "Pagamento de R$ 300,00 registrado. A dívida continua em aberto" in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+
+
+def test_pagamento_direto_do_saldo_todo_quita(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    _pagar_direto(cliente, valor="7.600,00")
+    assert "Dívida quitada." in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+
+
+def test_pagamento_direto_acima_do_saldo_e_recusado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _pagar_direto(cliente, valor="8.000,00")
+    assert resposta.status_code == 422 and base_dividas.pagamentos_diretos == []
+    assert "não pode ser maior que o saldo da dívida (R$ 7.600,00)" in resposta.text
+
+
+def test_divida_com_parcelas_manda_pagar_pela_parcela(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    resposta = cliente.get(f"/dividas/{DIVIDA_ID}/pagar", follow_redirects=False)
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_ID}"
+    assert "pague pela parcela" in cliente.get(f"/dividas/{DIVIDA_ID}").text
+    assert _pagar_direto(cliente, DIVIDA_ID).status_code == 303 and base_dividas.pagamentos_diretos == []
+
+
+def test_divida_quitada_nao_recebe_pagamento_direto(cliente, base_dividas):
+    from decimal import Decimal
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    base_dividas.fichas[DIVIDA_FIADO_ID]["saldo"] = Decimal("0")
+    entrar(cliente)
+    resposta = cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/pagar", follow_redirects=False)
+    assert resposta.status_code == 303 and "já está quitada" in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+    assert 'href="/dividas/' + DIVIDA_FIADO_ID + '/pagar"' not in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+
+
+def test_pagamento_direto_inexistente_sem_csrf_e_sem_login(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    assert cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/pagar").status_code == 303
+    entrar(cliente)
+    assert cliente.get("/dividas/00000000-0000-0000-0000-0000000000ff/pagar").status_code == 404
+    assert cliente.get("/dividas/xyz/pagar").status_code == 404
+    resposta = cliente.post(f"/dividas/{DIVIDA_FIADO_ID}/pagar", data={"data": "2026-11-04", "valor": "10"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.pagamentos_diretos == []
