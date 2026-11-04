@@ -1,0 +1,67 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, kpi, selo, placa, tabela, botao %}
+{% set tom_parcela = {"paga": "ok", "atrasada": "perigo", "a_vencer": "neutro", "sem_data": "atencao"} %}
+{% set rotulo_parcela = {"paga": "Paga", "atrasada": "Atrasada", "a_vencer": "A vencer", "sem_data": "Sem data"} %}
+{% block conteudo %}
+{% set dv = f.divida %}
+{{ voltar("/dividas", "Voltar para dívidas") }}
+<header class="cabecalho">
+  <div class="cabecalho-texto">
+    <h1>{{ dv.credor }}</h1>
+    <p>{{ f.tipo_rotulo }}{% if dv.descricao %} · {{ dv.descricao }}{% endif %}</p>
+    {% if f.moto %}<p class="mt-2">{{ f.moto.marca }} {{ f.moto.modelo }} {{ placa(f.moto.placa|placa_br) }}</p>{% endif %}
+  </div>
+  <div class="acoes">{{ selo("Quitada", "ok") if f.saldo <= 0 else selo("Em aberto", "neutro") }}</div>
+</header>
+
+<dl class="grade kpis">
+  {{ kpi("Valor original", dv.valor_original|moeda, ("entrada de " ~ (dv.valor_entrada|moeda)) if dv.valor_entrada and dv.valor_entrada|float > 0 else None) }}
+  {{ kpi("Pago", f.total_pago|moeda) }}
+  {{ kpi("Saldo", f.saldo|moeda, ("confirmado por você em " ~ (dv.confirmado_em|data_br)) if f.saldo_confirmado is not none and dv.confirmado_em else "calculado", atencao=(f.saldo > 0)) }}
+  {{ kpi("Parcelas", (dv.numero_parcelas ~ " x " ~ (dv.valor_parcela|moeda)) if dv.numero_parcelas and dv.valor_parcela else (f.parcelas|length ~ " cadastradas"), ("vence todo dia " ~ dv.dia_vencimento) if dv.dia_vencimento else None) }}
+</dl>
+
+{% if f.diferenca is not none and f.diferenca|float != 0 %}
+<p class="aviso atencao" role="status"><span>O saldo confirmado difere do calculado em <b class="mono">{{ f.diferenca|moeda }}</b> (confirmado menos calculado).</span></p>
+{% endif %}
+{% if dv.observacoes %}<section class="cartao mb-4"><h2>Observações</h2><p class="text-texto-2">{{ dv.observacoes }}</p></section>{% endif %}
+
+<section class="cartao moto-lista-cards mb-4" aria-labelledby="t-parcelas">
+  <div class="cartao-cab"><h2 id="t-parcelas">Parcelas</h2></div>
+  {% if f.parcelas %}
+  {% call tabela([("Nº", ""), ("Vencimento", ""), ("Valor", "num"), ("Pago", "num"), ("Saldo", "num"), ("Situação", ""), ("Ação", "")], "Parcelas da dívida com valor pago e saldo") %}
+    {% for p in f.parcelas %}
+    <tr>
+      <td class="topo font-medium">{{ p.numero if p.numero else "—" }}</td>
+      <td class="mono" data-rotulo="Vencimento">{{ (p.vencimento|data_br) if p.vencimento else "sem data" }}</td>
+      <td class="num mono" data-rotulo="Valor">{{ p.valor|moeda }}</td>
+      <td class="num mono" data-rotulo="Pago">{{ p.valor_pago|moeda }}</td>
+      <td class="num mono" data-rotulo="Saldo">{{ p.saldo|moeda }}</td>
+      <td data-rotulo="Situação">{{ selo(rotulo_parcela[p.situacao] ~ (" · " ~ p.dias_atraso ~ " d" if p.situacao == "atrasada" else ""), tom_parcela[p.situacao]) }}</td>
+      <td class="acao">{% if p.situacao != "paga" %}<a class="btn" href="/dividas/parcelas/{{ p.vencimento_id }}/pagar" aria-label="Pagar a parcela {{ p.numero if p.numero else '' }} de {{ dv.credor }}">Pagar</a>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  {% endcall %}
+  {% else %}
+  <p class="text-texto-2">Esta dívida não tem parcelas cadastradas.</p>
+  {% endif %}
+</section>
+
+<section class="cartao moto-lista-cards" aria-labelledby="t-pagamentos">
+  <div class="cartao-cab"><h2 id="t-pagamentos">Pagamentos</h2></div>
+  {% if f.pagamentos %}
+  {% call tabela([("Data", ""), ("Valor", "num"), ("Parcela", ""), ("Observações", "")], "Pagamentos feitos nesta dívida") %}
+    {% for g in f.pagamentos %}
+    <tr>
+      <td class="topo mono">{{ g.data|data_br }}{% if g.data_estimada %} <small class="text-texto-2">estimada</small>{% endif %}</td>
+      <td class="num mono" data-rotulo="Valor">{{ g.valor|moeda }}</td>
+      <td data-rotulo="Parcela">{{ g.parcela_numero if g.parcela_numero else "—" }}</td>
+      <td data-rotulo="Observações">{{ g.observacoes or "—" }}</td>
+    </tr>
+    {% endfor %}
+  {% endcall %}
+  {% else %}
+  <p class="text-texto-2">Nenhum pagamento registrado.</p>
+  {% endif %}
+</section>
+{% endblock %}

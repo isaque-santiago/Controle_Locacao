@@ -5,3 +5,7 @@ from src.services import dividas
 
 def resumo():
     return dividas.resumo()
+
+
+def ficha(divida_id):
+    return dividas.ficha(divida_id)

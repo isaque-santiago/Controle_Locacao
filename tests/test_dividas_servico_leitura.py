@@ -24,7 +24,8 @@ def _preparar(monkeypatch, divida=True):
         listar_todas_parcelas=lambda: parcelas,
         obter=lambda id: ({"id": id, "tipo": "compra_parcelada", "credor": "Celta", "moto_id": "m1", "valor_original": "14000"} if divida and id == "d1" else None),
         listar_parcelas=lambda id: sorted([p for p in parcelas if p["divida_id"] == id], key=lambda p: p["numero"]),
-        listar_pagamentos=lambda id: [{"id": "p1", "data": "2026-10-28", "valor": "1000"}],
+        listar_pagamentos=lambda id: [{"id": "p1", "data": "2026-10-28", "valor": "1000", "vencimento_id": "v0"},
+                                      {"id": "p2", "data": "2026-05-01", "valor": "5000", "vencimento_id": None}],
         obter_parcela=lambda id: next((p for p in parcelas if p["vencimento_id"] == id), None),
     )
     monkeypatch.setattr(dividas, "dividas", repo)
@@ -47,6 +48,7 @@ def test_ficha_junta_parcelas_pagamentos_e_moto(monkeypatch):
     f = dividas.ficha("d1")
     assert f["tipo_rotulo"] == "Compra parcelada" and f["saldo"] == Decimal("3000") and f["total_pago"] == Decimal("11000")
     assert [p["numero"] for p in f["parcelas"]] == [7, 8] and f["pagamentos"][0]["id"] == "p1"
+    assert f["pagamentos"][0]["parcela_numero"] == 7 and f["pagamentos"][1]["parcela_numero"] is None
     assert f["moto"]["placa"] == "OID7656"
 
 

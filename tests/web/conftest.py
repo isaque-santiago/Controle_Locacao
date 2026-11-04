@@ -992,6 +992,34 @@ def _linha_divida(id, credor, tipo="compra_parcelada", saldo="3000.00", situacao
     }
 
 
+DIVIDA_ID = "00000000-0000-0000-0000-0000000000d1"
+PARCELA_ID = "00000000-0000-0000-0000-0000000000e8"
+
+
+def ficha_divida_exemplo():
+    return {
+        "divida": {"id": DIVIDA_ID, "credor": "Celta <b>Zero</b>", "tipo": "compra_parcelada", "descricao": "Compra a prazo",
+                   "valor_original": "14000.00", "valor_entrada": "5000.00", "numero_parcelas": 9, "valor_parcela": "1000.00",
+                   "dia_vencimento": 28, "confirmado_em": None, "observacoes": "Combinado <i>de boca</i>"},
+        "tipo_rotulo": "Compra parcelada", "saldo": Decimal("3000.00"), "total_pago": Decimal("11000.00"),
+        "saldo_confirmado": None, "diferenca": None,
+        "moto": {"id": "m1", "marca": "Chevrolet", "modelo": "Celta", "placa": "OID7656"},
+        "parcelas": [
+            {"vencimento_id": "v7", "numero": 7, "vencimento": "2026-10-28", "valor": "1000.00", "valor_pago": "1000.00",
+             "saldo": "0.00", "situacao": "paga", "dias_atraso": 0},
+            {"vencimento_id": PARCELA_ID, "numero": 8, "vencimento": "2026-11-28", "valor": "1000.00", "valor_pago": "0.00",
+             "saldo": "1000.00", "situacao": "a_vencer", "dias_atraso": 0},
+            {"vencimento_id": "v9", "numero": 9, "vencimento": "2026-10-01", "valor": "1000.00", "valor_pago": "400.00",
+             "saldo": "600.00", "situacao": "atrasada", "dias_atraso": 34},
+        ],
+        "pagamentos": [
+            {"id": "g1", "data": "2026-10-28", "valor": "1000.00", "data_estimada": False, "parcela_numero": 7, "observacoes": None},
+            {"id": "g2", "data": "2026-05-01", "valor": "5000.00", "data_estimada": True, "parcela_numero": None,
+             "observacoes": "Entrada da compra"},
+        ],
+    }
+
+
 class BaseDividas:
     """Dados fictícios dos serviços usados por src/web/dados_dividas e acoes_dividas."""
 
@@ -1005,6 +1033,7 @@ class BaseDividas:
         ]
         self.totais = {"total_em_aberto": Decimal("10600.00"), "moto_fiado": Decimal("7600.00"), "dividas_em_aberto": 2,
                        "parcelas_atrasadas": 2, "proximo_vencimento": date(2026, 10, 10), "proximo_credor": "Nilson"}
+        self.fichas = {DIVIDA_ID: ficha_divida_exemplo()}
 
 
 @pytest.fixture(autouse=True)
@@ -1013,5 +1042,5 @@ def base_dividas(monkeypatch):
 
     base = BaseDividas()
     monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(
-        resumo=lambda: {"linhas": base.linhas, "totais": base.totais}))
+        resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id)))
     return base

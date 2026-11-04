@@ -97,6 +97,10 @@ def ficha(divida_id: str) -> Optional[dict]:
     saldo = next((s for s in dividas.listar_saldos() if s["divida_id"] == divida_id), None)
     parcelas = dividas.listar_parcelas(divida_id)
     moto = motos.obter(divida["moto_id"]) if divida.get("moto_id") else None
+    numeros = {p["vencimento_id"]: p["numero"] for p in parcelas}
+    pagamentos = [
+        {**p, "parcela_numero": numeros.get(p.get("vencimento_id"))} for p in dividas.listar_pagamentos(divida_id)
+    ]
     return {
         "divida": divida,
         "tipo_rotulo": dividas_lista.TIPOS_ROTULO.get(divida["tipo"], divida["tipo"]),
@@ -105,7 +109,7 @@ def ficha(divida_id: str) -> Optional[dict]:
         "saldo_confirmado": (saldo or {}).get("saldo_confirmado"),
         "diferenca": (saldo or {}).get("diferenca"),
         "parcelas": parcelas,
-        "pagamentos": dividas.listar_pagamentos(divida_id),
+        "pagamentos": pagamentos,
         "moto": moto,
     }
 
