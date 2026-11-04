@@ -96,3 +96,27 @@ def test_painel_traz_os_detalhes_da_etapa_2(monkeypatch):
     assert alertas["Entradas do mês sem conta cadastrada"]["valor"] == Decimal("40.00")
     assert alertas["Despesas a repassar ao locatário"]["valor"] == Decimal("115")
     assert alertas["Motos em manutenção"]["valor"] == 1
+
+
+def test_painel_seguro_devolve_o_painel_quando_tudo_funciona(monkeypatch):
+    _preparar(monkeypatch)
+    p = financeiro.painel_seguro(None, hoje=date(2026, 11, 4))
+    assert "indisponivel" not in p and p["mes_texto"] == "2026-11" and p["atual"]["receita"] == Decimal("100.00")
+
+
+def test_painel_seguro_nao_derruba_o_dashboard_se_a_leitura_falhar(monkeypatch, caplog):
+    _preparar(monkeypatch)
+
+    def falha(mes):
+        raise RuntimeError("function rpc_detalhe_financeiro does not exist")
+
+    monkeypatch.setattr(financeiro.repositorio, "detalhe_mensal", falha)
+
+    with caplog.at_level("ERROR"):
+        p = financeiro.painel_seguro("2026-08", hoje=date(2026, 11, 4))
+
+    assert p["indisponivel"] is True
+    assert p["mes_texto"] == "2026-08" and p["mes_anterior"] == "2026-07" and p["mes_seguinte"] == "2026-09"
+    assert p["mes_rotulo"] == "agosto de 2026" and not p["e_mes_atual"] and p["mes_maximo"] == "2026-11"
+    assert "atual" not in p
+    assert "Não foi possível montar o painel financeiro" in caplog.text

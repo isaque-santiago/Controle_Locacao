@@ -44,7 +44,7 @@ def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = 
     ]
 
     mes_anterior = painel.nome_do_mes(painel.periodo_anterior(hoje)[0])
-    resumo_financeiro = financeiro_servico.painel(mes, hoje)
+    resumo_financeiro = financeiro_servico.painel_seguro(mes, hoje)
 
     return {
         "data_extenso": painel.data_por_extenso(hoje),
