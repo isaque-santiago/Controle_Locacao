@@ -179,3 +179,155 @@ def saldo_das_dividas(saldos: list[dict]) -> dict:
             fiado += saldo
     return {"total": total, "moto_fiado": fiado}
 
+
+
+# ---------------------------------------------------------------------------
+# Etapa 2: entradas por conta, despesas por categoria, resultado por veículo, alertas e gráfico
+# ---------------------------------------------------------------------------
+
+SEM_CONTA = "Sem conta informada"
+_CATEGORIAS = {
+    "manutencao": "Manutenção",
+    "documentacao": "Documentação",
+    "seguro_rastreador": "Seguro e rastreador",
+    "multas": "Multas",
+    "combustivel": "Combustível",
+    "outros": "Outros",
+    "aquisicao": "Investimento em veículo",
+}
+
+
+def _percentuais(valores: list[Decimal]) -> list[int]:
+    """Cada valor como % do maior (0 a 100); tudo zero quando não há valor positivo."""
+    maior = max(valores, default=_ZERO)
+    if maior <= 0:
+        return [0 for _ in valores]
+    return [int((v * 100 / maior).quantize(Decimal("1"), rounding=ROUND_HALF_UP)) for v in valores]
+
+
+def entradas_por_conta(linhas: list[dict]) -> dict:
+    """Entradas do mês por conta, a maior primeiro; as sem conta somam em 'Sem conta informada'."""
+    somas: dict[str, Decimal] = defaultdict(lambda: _ZERO)
+    for l in linhas:
+        somas[l.get("conta") or SEM_CONTA] += _dinheiro(l.get("valor"))
+    ordenadas = sorted(somas.items(), key=lambda par: par[1], reverse=True)
+    proporcoes = _percentuais([v for _, v in ordenadas])
+    return {
+        "linhas": [{"conta": c, "valor": v, "proporcao": p} for (c, v), p in zip(ordenadas, proporcoes)],
+        "total": sum(somas.values(), _ZERO),
+        "sem_conta": somas.get(SEM_CONTA, _ZERO),
+    }
+
+
+def despesas_por_categoria(linhas: list[dict]) -> dict:
+    """Despesas do mês por categoria, a maior primeiro, com o rótulo em português."""
+    somas: dict[str, Decimal] = defaultdict(lambda: _ZERO)
+    for l in linhas:
+        somas[l["categoria"]] += _dinheiro(l.get("valor"))
+    ordenadas = sorted(((c, v) for c, v in somas.items() if v > 0), key=lambda par: par[1], reverse=True)
+    proporcoes = _percentuais([v for _, v in ordenadas])
+    return {
+        "linhas": [
+            {"categoria": c, "rotulo": _CATEGORIAS.get(c, c.replace("_", " ").capitalize()), "valor": v, "proporcao": p}
+            for (c, v), p in zip(ordenadas, proporcoes)
+        ],
+        "total": sum((v for _, v in ordenadas), _ZERO),
+    }
+
+
+def resultado_por_veiculo(linhas: list[dict], locatarios: dict) -> list[dict]:
+    """Receita, despesas e resultado de cada veículo (de `vw_resultado_moto`, desde o início), do melhor ao pior.
+
+    Despesas = manutenção + documentos + despesas da locadora (sem aquisição, que é capital)."""
+    saida = []
+    for l in linhas:
+        receita = _dinheiro(l.get("receita_recebida"))
+        despesas = (
+            _dinheiro(l.get("custo_manutencao")) + _dinheiro(l.get("custo_documentos")) + _dinheiro(l.get("custo_despesas"))
+        )
+        saida.append({
+            "moto_id": l["moto_id"],
+            "placa": l.get("placa") or "—",
+            "locatario": locatarios.get(l["moto_id"], "—"),
+            "receita": receita,
+            "despesas": despesas,
+            "resultado": receita - despesas,
+        })
+    saida.sort(key=lambda v: (v["resultado"], v["placa"]), reverse=True)
+    return saida
+
+
+def alertas_financeiros(
+    devedores: dict,
+    mes: dict,
+    a_repassar: Decimal,
+    entradas_sem_conta: Decimal,
+    motos_em_manutencao: int,
+) -> list[dict]:
+    """Indicadores com semáforo (como o quadro "Alertas e pendências" da planilha).
+
+    `tom` combina com os selos da tela: perigo (crítico), atencao, ok e info. `formato` diz se `valor` é dinheiro ou quantidade."""
+
+    def nivel(condicao: bool, tom: str) -> tuple[str, str]:
+        rotulos = {"perigo": "Crítico", "atencao": "Atenção", "ok": "OK", "info": "Info"}
+        escolhido = tom if condicao else "ok"
+        return escolhido, rotulos[escolhido]
+
+    total_a_cobrar = devedores["a_receber"] + devedores["encargos"]
+    itens = [
+        ("Contratos inadimplentes (15 dias ou mais)", devedores["inadimplentes"], "qtd", *nivel(devedores["inadimplentes"] > 0, "perigo")),
+        ("Contratos em atraso (até 14 dias)", devedores["em_atraso"], "qtd", *nivel(devedores["em_atraso"] > 0, "atencao")),
+        ("Caixa do mês", mes["caixa"], "moeda", *nivel(mes["caixa"] < 0, "perigo")),
+        ("Despesas a repassar ao locatário", a_repassar, "moeda", *nivel(a_repassar > 0, "atencao")),
+        ("Entradas do mês sem conta cadastrada", entradas_sem_conta, "moeda", *nivel(entradas_sem_conta > 0, "atencao")),
+        ("Motos em manutenção", motos_em_manutencao, "qtd", *nivel(motos_em_manutencao > 0, "atencao")),
+        ("Total a cobrar (débito + encargos)", total_a_cobrar, "moeda", *nivel(total_a_cobrar > 0, "atencao")),
+        ("Retiradas no mês", mes["retiradas"], "moeda", *nivel(mes["retiradas"] > 0, "atencao")),
+        ("Aportes de fora no mês", mes["aportes"], "moeda", "info", "Info"),
+    ]
+    return [
+        {"titulo": t, "valor": v, "formato": f, "tom": tom, "status": status}
+        for t, v, f, tom, status in itens
+    ]
+
+
+def colunas_evolucao(meses: list[dict], largura: int = 600, altura: int = 180, margem_rotulo: int = 28) -> dict:
+    """Geometria (em unidades do viewBox do SVG) das colunas de receita e despesas por mês.
+
+    A mesma escala vale para os dois: o maior valor de toda a série ocupa a altura inteira."""
+    maior = max([m["receita"] for m in meses] + [m["despesas"] for m in meses], default=_ZERO)
+    faixa = Decimal(largura) / max(len(meses), 1)
+    barra = faixa * Decimal("0.3")
+
+    def retangulo(inicio: Decimal, valor: Decimal) -> dict:
+        h = (valor * altura / maior).quantize(Decimal("0.1")) if maior > 0 and valor > 0 else _ZERO
+        return {"x": float(inicio.quantize(Decimal("0.1"))), "y": float(Decimal(altura) - h), "largura": float(barra.quantize(Decimal("0.1"))),
+                "altura": float(h), "valor": valor}
+
+    colunas = []
+    for i, m in enumerate(meses):
+        base = faixa * i + faixa * Decimal("0.17")
+        colunas.append({
+            "rotulo": rotulo_mes_curto(m["mes"]),
+            "x_rotulo": float((faixa * i + faixa / 2).quantize(Decimal("0.1"))),
+            "receita": retangulo(base, m["receita"]),
+            "despesas": retangulo(base + barra + Decimal(4), m["despesas"]),
+        })
+    return {"largura": largura, "altura": altura + margem_rotulo, "y_rotulo": altura + margem_rotulo - 8, "colunas": colunas}
+
+
+def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = False) -> str:
+    """Texto do parâmetro da URL do Dashboard (`?mes=2026-09&compacto=1&ocultar=1`); vazio se nada foi escolhido."""
+    partes = []
+    if mes:
+        partes.append(f"mes={mes}")
+    if compacto:
+        partes.append("compacto=1")
+    if ocultar:
+        partes.append("ocultar=1")
+    return "?" + "&".join(partes) if partes else ""
+
+
+def opcao_ligada(texto: Optional[str]) -> bool:
+    """Interruptor da URL: só '1' liga."""
+    return texto == "1"
