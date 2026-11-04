@@ -4,8 +4,9 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 
+from src.domain import dividas_lista
 from src.domain.dividas import calendario_parcelas, saldo_compra, validar_compra_parcelada
-from src.repositories import dividas
+from src.repositories import contas, dividas, motos
 
 
 def criar_compra_parcelada(
@@ -77,3 +78,41 @@ def pagar_parcela(
 
 def parcelas_da_divida(divida_id: str) -> list:
     return dividas.listar_parcelas(divida_id)
+
+
+def resumo() -> dict:
+    """Linhas da página Dívidas (uma por dívida, com saldo e próxima parcela) e os totais do topo."""
+    linhas = dividas_lista.linhas_da_lista(dividas.listar_saldos(), dividas.listar_todas_parcelas())
+    placas = {m["id"]: m["placa"] for m in motos.listar()}
+    for linha in linhas:
+        linha["placa"] = placas.get(linha["moto_id"])
+    return {"linhas": linhas, "totais": dividas_lista.totais(linhas)}
+
+
+def ficha(divida_id: str) -> Optional[dict]:
+    """Dívida com saldo, parcelas e pagamentos, ou None se não existir."""
+    divida = dividas.obter(divida_id)
+    if divida is None:
+        return None
+    saldo = next((s for s in dividas.listar_saldos() if s["divida_id"] == divida_id), None)
+    parcelas = dividas.listar_parcelas(divida_id)
+    moto = motos.obter(divida["moto_id"]) if divida.get("moto_id") else None
+    return {
+        "divida": divida,
+        "tipo_rotulo": dividas_lista.TIPOS_ROTULO.get(divida["tipo"], divida["tipo"]),
+        "saldo": dividas_lista.saldo_em_aberto(saldo or {"saldo_calculado": divida["valor_original"]}),
+        "total_pago": Decimal(str((saldo or {}).get("total_pago") or 0)),
+        "saldo_confirmado": (saldo or {}).get("saldo_confirmado"),
+        "diferenca": (saldo or {}).get("diferenca"),
+        "parcelas": parcelas,
+        "pagamentos": dividas.listar_pagamentos(divida_id),
+        "moto": moto,
+    }
+
+
+def parcela(vencimento_id: str) -> Optional[dict]:
+    return dividas.obter_parcela(vencimento_id)
+
+
+def contas_ativas() -> list:
+    return contas.listar_ativas()
