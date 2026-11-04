@@ -1,4 +1,4 @@
-"""Dashboard financeiro: reúne os totais do mês, a evolução de 6 meses, os devedores e as dívidas."""
+"""Dashboard financeiro: totais do mês, evolução de 6 meses, entradas, despesas, devedores, dívidas, veículos e alertas."""
 
 from datetime import date
 from decimal import Decimal
@@ -33,6 +33,13 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
         hoje,
     )
     dividas = financeiro.saldo_das_dividas(repositorio.saldos_dividas())
+    detalhe = repositorio.detalhe_mensal(mes)
+    entradas = financeiro.entradas_por_conta(detalhe["entradas_por_conta"])
+    a_repassar = Decimal(str(detalhe["a_repassar"]))
+    contratos_lista = contratos.listar()
+    nomes = {c["id"]: c["nome"] for c in clientes.listar()}
+    locatarios = {c["moto_id"]: nomes.get(c["cliente_id"], "—") for c in contratos_lista if c["status"] == "ativo"}
+    em_manutencao = sum(1 for m in motos.listar() if m["status"] == "manutencao")
     anterior_mes = financeiro.somar_meses(mes, -1)
     return {
         "mes": mes,
@@ -47,5 +54,11 @@ def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict
         "evolucao": [{**m, "rotulo": financeiro.rotulo_mes_curto(m["mes"])} for m in meses],
         "devedores": devedores,
         "dividas": dividas,
-        "receita_estimada": financeiro.receita_mensal_estimada(contratos.listar()),
+        "receita_estimada": financeiro.receita_mensal_estimada(contratos_lista),
+        "receita_semana": Decimal(str(detalhe["receita_semana"])),
+        "entradas": entradas,
+        "categorias": financeiro.despesas_por_categoria(detalhe["despesas_por_categoria"]),
+        "veiculos": financeiro.resultado_por_veiculo(repositorio.resultado_por_veiculo(), locatarios),
+        "grafico": financeiro.colunas_evolucao(meses),
+        "alertas": financeiro.alertas_financeiros(devedores, atual, a_repassar, entradas["sem_conta"], em_manutencao),
     }
