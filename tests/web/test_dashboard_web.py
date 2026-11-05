@@ -66,6 +66,24 @@ def test_ocupacao_explica_a_base_da_conta_e_legenda_bate_com_a_rosca(cliente):
     assert "—" in legenda  # inativas ficam fora da conta
 
 
+def test_recebido_mostra_barra_de_progresso_e_variacao_neutra(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'role="progressbar"' in html and 'aria-valuenow="74"' in html
+    assert '<rect class="kpi-barra-cheia" width="74"' in html
+    assert "kpi-variacao bom" not in html.split("Recebido no mês", 1)[1].split("Em atraso", 1)[0]
+
+
+def test_ocultar_dados_pessoais_esconde_a_barra_de_progresso(cliente, monkeypatch):
+    from src.web import dados_painel
+
+    oculto = {**DADOS_PAINEL, "ocultar": True}
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: oculto)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'role="progressbar"' not in html
+
+
 def test_nomes_vindos_do_banco_sao_escapados(cliente):
     entrar(cliente)
     html = cliente.get("/").text

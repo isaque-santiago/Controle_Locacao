@@ -1013,3 +1013,8 @@ a.mes-seta:hover {background: var(--superficie-hover); color: var(--texto);}
 .mes-campo:focus-visible {outline: 3px solid var(--foco-halo); outline-offset: -3px;}
 .rosca-centro small + small {margin-top: 2px; font-size: 11px;}
 .legenda-nota {flex: 1 1 100%; margin: 0; font-size: 12.5px; color: var(--texto-3);}
+/* Barra de progresso do KPI (ex.: recebido do previsto no mês) */
+.kpi-barra {display: block; height: 6px; margin-top: var(--e3); border-radius: 999px; background: var(--seg-vazio); overflow: hidden;}
+.kpi-barra > svg {display: block; width: 100%; height: 100%;}
+.kpi-barra-cheia {fill: var(--seg-cheio);}
+.kpi-variacao.neutro {color: var(--texto-2);}
