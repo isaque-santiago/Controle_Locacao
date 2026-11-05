@@ -171,3 +171,11 @@ def test_descricao_casos_de_borda():
     # diferença menor que R$ 1: mostra centavos (nunca "R$ 0 a mais") e percentual "menos de 1%"
     pequena = painel.descrever_variacao(painel.variacao(Decimal("1000.40"), Decimal("1000")), "setembro", True)
     assert "R$ 0,40 a mais (menos de 1%)" in pequena["texto"]
+
+
+def test_limitar_lista_corta_no_limite_e_mantem_a_ordem():
+    linhas = list(range(12))
+    assert painel.limitar_lista(linhas) == [0, 1, 2, 3, 4]
+    assert painel.limitar_lista(linhas, 3) == [0, 1, 2]
+    assert painel.limitar_lista([1, 2], 5) == [1, 2]
+    assert painel.limitar_lista(linhas, 0) == []

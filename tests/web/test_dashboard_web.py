@@ -2,7 +2,7 @@
 
 import re
 
-from tests.web.conftest import entrar
+from tests.web.conftest import DADOS_PAINEL, entrar
 
 
 def test_dashboard_exige_login(cliente):
@@ -34,6 +34,26 @@ def test_cartao_hoje_lista_atraso_e_vencimento_do_dia(cliente):
     assert "Atraso 5d" in html and "Vence hoje" in html
     assert "QRS-4T21" in html and "01/10/2026" in html and "R$ 320,00" in html
     assert 'aria-label="Registrar pagamento de Marcos Teles"' in html
+
+
+def test_cartao_hoje_limitado_mostra_link_para_ver_todas(cliente, monkeypatch):
+    base = DADOS_PAINEL["hoje"][0]
+    monkeypatch.setitem(DADOS_PAINEL, "hoje", [dict(base) for _ in range(5)])
+    monkeypatch.setitem(DADOS_PAINEL, "hoje_total", 51)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "mostrando 5 de 51" in html
+    assert "Ver todas as 51 cobranças" in html
+
+
+def test_resultado_por_veiculo_recolhe_o_que_passa_de_cinco(cliente, monkeypatch):
+    base = DADOS_PAINEL["financeiro"]["veiculos"][0]
+    veiculos = [{**base, "placa": f"AAA{i}A00"} for i in range(8)]
+    monkeypatch.setitem(DADOS_PAINEL, "financeiro", {**DADOS_PAINEL["financeiro"], "veiculos": veiculos})
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Mostrar os outros 3 veículos" in html
+    assert '<details class="ver-mais">' in html
 
 
 def test_nomes_vindos_do_banco_sao_escapados(cliente):

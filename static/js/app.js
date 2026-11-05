@@ -538,6 +538,12 @@
     agendarSessao();
   }
 
+  // ---- Campo com data-envia-ao-mudar: envia o formulário assim que o valor muda (ex.: seletor de mês) ----
+  document.addEventListener('change', function (e) {
+    var campo = e.target;
+    if (!campo.hasAttribute || !campo.hasAttribute('data-envia-ao-mudar') || !campo.form || !campo.value) return;
+    if (campo.form.requestSubmit) campo.form.requestSubmit(); else campo.form.submit();
+  });
   // ---- Depois de uma troca do HTMX, devolve o foco ao conteúdo principal (leitores de tela) ----
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
