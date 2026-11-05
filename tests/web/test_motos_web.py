@@ -162,3 +162,19 @@ def test_botao_novo_e_busca_ficam_no_conteudo_para_os_atalhos(cliente):
     entrar(cliente)
     principal = cliente.get("/motos").text.split("<main", 1)[1]
     assert "data-atalho-novo" in principal and 'type="search"' in principal
+
+
+def test_moto_vinculada_do_contrato_mostra_o_locatario_na_lista_e_na_busca(cliente, base_motos):
+    """Contrato com várias motos: a parcela fica na principal, mas a vinculada também tem locatário."""
+    base_motos.motos[1]["status"] = "alugada"
+    base_motos.vinculos.append({"contrato_id": "k1", "moto_id": base_motos.motos[1]["id"]})
+    entrar(cliente)
+    html = cliente.get("/motos?q=joana").text
+    assert "Honda CG 101" in html and "Factor" in html
+    assert html.count("Joana &lt;b&gt;Prado&lt;/b&gt;") == 2
+
+
+def test_vinculada_de_contrato_encerrado_volta_a_ficar_sem_locatario(cliente, base_motos):
+    base_motos.vinculos.append({"contrato_id": "k0", "moto_id": base_motos.motos[1]["id"]})
+    entrar(cliente)
+    assert "Factor" not in cliente.get("/motos?q=joana").text
