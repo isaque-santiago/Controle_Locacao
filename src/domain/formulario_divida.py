@@ -271,3 +271,30 @@ def ler_saldo_confirmado(entrada: dict, hoje: date) -> dict:
     if erros:
         raise ErroDeCampos(erros)
     return {"saldo_confirmado": saldo, "confirmado_em": date.fromisoformat(data)}
+
+
+# ---------------------------------------------------------------- editar parcela --
+
+
+def edicao_parcela_inicial(parcela: dict) -> dict:
+    """Texto inicial dos campos: o vencimento (vazio se a parcela ainda não tem data) e o valor."""
+    return {"vencimento": str(parcela["vencimento"])[:10] if parcela.get("vencimento") else "", "valor": texto_moeda(parcela["valor"])}
+
+
+def texto_da_edicao_parcela(entrada: dict) -> dict:
+    return {"vencimento": _texto(entrada, "vencimento"), "valor": _texto(entrada, "valor")}
+
+
+def ler_edicao_parcela(entrada: dict, valor_pago) -> dict:
+    """Vencimento (pode ficar vazio: sem data) e, só se a parcela ainda não tem pagamento, o novo valor.
+
+    Com pagamento já feito o valor não muda: a parcela é marcada como paga a partir da soma dos pagamentos, então mexer no
+    valor deixaria esse estado desatualizado. Para corrigir, edite o pagamento."""
+    erros: dict[str, str] = {}
+    vencimento = _coletar(erros, "vencimento", _data_iso, _texto(entrada, "vencimento"), "Vencimento", False)
+    dados = {"vencimento": date.fromisoformat(vencimento) if vencimento else None}
+    if Decimal(str(valor_pago or 0)) == 0:
+        dados["valor"] = _coletar(erros, "valor", decimal_campo, entrada.get("valor"), "Valor da parcela", positivo=True)
+    if erros:
+        raise ErroDeCampos(erros)
+    return dados

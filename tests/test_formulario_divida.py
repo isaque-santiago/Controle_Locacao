@@ -282,3 +282,39 @@ def test_nao_troca_para_compra_parcelada_nem_para_tipo_desconhecido(tipo):
 def test_a_compra_parcelada_ignora_o_tipo_enviado():
     d = f.ler_edicao_divida(_edicao(tipo="moto_fiado"), "compra_parcelada", MOTOS)
     assert "tipo" not in d
+
+
+# ---------------------------------------------------------------- editar parcela --
+
+PARCELA = {"vencimento": "2026-11-28", "valor": "1000.00"}
+
+
+def test_edicao_da_parcela_parte_do_que_ela_tem():
+    assert f.edicao_parcela_inicial(PARCELA) == {"vencimento": "2026-11-28", "valor": "1.000,00"}
+    assert f.edicao_parcela_inicial({"vencimento": None, "valor": "500"}) == {"vencimento": "", "valor": "500,00"}
+
+
+def test_parcela_sem_pagamento_muda_vencimento_e_valor():
+    d = f.ler_edicao_parcela({"vencimento": "2026-12-15", "valor": "1.200,00"}, Decimal("0"))
+    assert d == {"vencimento": date(2026, 12, 15), "valor": Decimal("1200.00")}
+
+
+def test_parcela_com_pagamento_so_muda_o_vencimento_e_ignora_o_valor():
+    d = f.ler_edicao_parcela({"vencimento": "2026-12-15", "valor": "abc"}, Decimal("400"))
+    assert d == {"vencimento": date(2026, 12, 15)}
+
+
+def test_vencimento_vazio_deixa_a_parcela_sem_data():
+    assert f.ler_edicao_parcela({"vencimento": "", "valor": "1000"}, Decimal("0"))["vencimento"] is None
+
+
+@pytest.mark.parametrize("entrada,campo,erro", [
+    ({"vencimento": "28/12/2026", "valor": "10"}, "vencimento", "Vencimento"),
+    ({"vencimento": "2026-12-01", "valor": ""}, "valor", "Valor da parcela"),
+    ({"vencimento": "2026-12-01", "valor": "0"}, "valor", "Valor da parcela"),
+    ({"vencimento": "2026-12-01", "valor": "-5"}, "valor", "Valor da parcela"),
+])
+def test_edicao_de_parcela_invalida(entrada, campo, erro):
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_parcela(entrada, Decimal("0"))
+    assert campo in e.value.erros and erro in e.value.erros[campo]
