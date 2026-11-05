@@ -217,3 +217,25 @@ Interpretações aplicadas (a confirmar com o Alisson):
   prazo de R$ 14.000). Foram carregadas as duas, como estão, e a diferença fica sinalizada nas observações.
 - Pedidos antigos da Lima (003571, 003594 e 003598) já estão dentro da dívida anterior de R$ 770: não têm fornecedor nas despesas.
 - Fabiano e Mateus entram como clientes inativos, sem contrato; Yangry entra com nome e CPF que constam na própria planilha de frota.
+
+## 8. Carga em produção, parcela 1 (preparada em 05/11/2026; **nada aplicado em produção**)
+
+O dono pediu para começar a carregar produção com o que já está completo, em parcelas: o resto vem depois, quando a planilha de pendências voltar.
+
+**Pacote (fora do repositório, pasta de cargas do usuário, porque contém CPF e telefone):** diagnóstico só de leitura, migrations 23 a 33 em um arquivo, cargas
+02 (base: contas, fornecedores, veículos, multas), 03 (financeiro), 04 (clientes e contratos já em dev) e 05 (clientes e contratos novos), mais os desfazeres.
+Todas as cargas usam `importacoes_lote` com o prefixo `planilha-2026-11-03-prod-…` e rodam em transação única.
+
+**Estado real da produção (diagnóstico de 05/11/2026):** migrations 14 a 33 já aplicadas e banco só com os dados de exemplo do `seed_exemplos` (6 motos, 5 clientes, 3 contratos). Por isso o pacote ganhou um passo de limpeza (`00b`), que apaga só os dados de exemplo, com trava contra apagar dado real.
+
+**Ensaio (Postgres descartável, igual à produção: migrations 1 a 33 + seed + exemplos):** o pacote aplica limpo, é idempotente (segunda rodada só avisa "já importado"),
+o gerador automático de cobranças não cria atraso retroativo e `desfazer_TUDO` volta o banco a zero; o arquivo de migrations (01) é seguro de rodar de novo por cima do que já existe. Totais: 32 veículos, 72 multas, 16 clientes, 12 contratos,
+75 despesas. Os saldos dos contratos novos batem com a aba Frota da planilha (devido e recebido).
+
+**Entra na parcela 1:** tudo da foto de 03/11 que já estava no dev; 7 clientes novos com nome, CPF e telefone completos; telefones que faltavam em 4 clientes; contratos de
+Ronilton (promessa, Uno POT5B25), Diego Siebra, Pedro (mensal), Ricardo (promessa), João Filho (com saldo anterior de R$ 220 em 12/10) e Jhonatan William (com caução).
+Decisões da aba "Decisões" adotadas como o desenvolvedor sugeriu (histórico só dos atuais, saldo anterior como cobrança única, caução como já é hoje, CPF obrigatório).
+
+**Fica para a parcela 2:** Apolinário e Cabeça (CPF inválido), Julho, José Henrique, Wagner e Marcelo (identidade a confirmar), Leo/Fabricio/Mateus (dados faltando),
+contrato do Alfredo (faltam parcelas e total da promessa), Joel (caução e saldo anterior confusos), ex-locatários com débito (sem dados), dívidas XRE, Bros, Pop, TIA1B71,
+Uno Way e as 4 motos do leilão, e tudo o que mudou na planilha depois de 03/11 (Juliano, Leonardo/Plano Conquista, pagamento do Marcelo em 04/11).
