@@ -3,6 +3,7 @@
 Os testes das rotas trocam estes serviços por dados fictícios."""
 
 from src.domain import vistorias_lista
+from src.domain.contrato_motos import todas_as_motos
 from src.domain.vistorias import (
     comparar_checklists,
     contar_avarias,
@@ -24,7 +25,7 @@ def carregar_lista(tipo, busca, pagina, por_pagina):
     itens = []
     for v in todas:
         contrato = contratos_por_id.get(v["contrato_id"])
-        moto = frota.get(contrato["moto_id"]) if contrato else None
+        moto = frota.get(v.get("moto_id")) or (frota.get(contrato["moto_id"]) if contrato else None)
         itens.append({
             "vistoria": v,
             "contrato_id": contrato["id"] if contrato else None,
@@ -53,8 +54,40 @@ def _cartao(vistoria, diferentes):
     return {"vistoria": vistoria, "itens": itens, "fotos": fotos, "avarias": resumo_avarias(vistoria)}
 
 
+def _vinculos_por_contrato():
+    """{contrato_id: [moto_id das vinculadas]}, numa consulta só."""
+    mapa: dict = {}
+    for v in contratos.listar_vinculos():
+        mapa.setdefault(v["contrato_id"], []).append(v["moto_id"])
+    return mapa
+
+
+def _valor_do_registro(contrato, moto_id):
+    """Valor do campo `contrato` do formulário de registro: o id do contrato (moto principal) ou `contrato:moto`."""
+    return contrato["id"] if moto_id == contrato["moto_id"] else f"{contrato['id']}:{moto_id}"
+
+
+def _grupo(contrato, moto, comparacao):
+    """Cartões de entrega e devolução de UMA moto do contrato, com os totais que a página mostra."""
+    entrega, devolucao = comparacao["entrega"], comparacao["devolucao"]
+    diferentes = set(comparar_checklists(entrega["checklist"], devolucao["checklist"])) if entrega and devolucao else set()
+    registrar = "/vistorias/registrar?contrato=" + _valor_do_registro(contrato, moto["id"])
+    return {
+        "moto": moto,
+        "km_rodados": km_rodados(entrega, devolucao),
+        "avarias_devolucao": contar_avarias(devolucao) if devolucao else None,
+        "tem_alterados": bool(diferentes),
+        "cartoes": [
+            {"tipo": tipo, "titulo": vistorias_lista.TIPO_ROTULO[tipo], "registrar": registrar,
+             "dados": _cartao(registro, diferentes) if registro else None}
+            for tipo, registro in (("entrega", entrega), ("devolucao", devolucao))
+        ],
+    }
+
+
 def obter_comparacao(contrato_id):
-    """Contrato com cliente, moto e as duas vistorias; None se contrato, cliente ou moto não existirem."""
+    """Contrato com cliente, moto principal e as duas vistorias dela (`cartoes`, `km_rodados`...), mais um grupo igual
+    para cada moto vinculada em `outras`; None se contrato, cliente ou moto principal não existirem."""
     contrato = next((c for c in contratos.listar() if c["id"] == contrato_id), None)
     if contrato is None:
         return None
@@ -62,36 +95,35 @@ def obter_comparacao(contrato_id):
     moto = motos.obter(contrato["moto_id"])
     if cliente is None or moto is None:
         return None
-    comparacao = vistorias.comparar_entrega_devolucao(contrato_id)
-    entrega, devolucao = comparacao["entrega"], comparacao["devolucao"]
-    diferentes = set(comparar_checklists(entrega["checklist"], devolucao["checklist"])) if entrega and devolucao else set()
-    return {
-        "contrato": contrato, "cliente": cliente, "moto": moto,
-        "km_rodados": km_rodados(entrega, devolucao),
-        "avarias_devolucao": contar_avarias(devolucao) if devolucao else None,
-        "tem_alterados": bool(diferentes),
-        "cartoes": [
-            {"tipo": tipo, "titulo": vistorias_lista.TIPO_ROTULO[tipo],
-             "dados": _cartao(registro, diferentes) if registro else None}
-            for tipo, registro in (("entrega", entrega), ("devolucao", devolucao))
-        ],
-    }
+    principal = _grupo(contrato, moto, vistorias.comparar_entrega_devolucao(contrato_id))
+    outras = []
+    for moto_id in _vinculos_por_contrato().get(contrato_id, []):
+        vinculada = motos.obter(moto_id)
+        if vinculada is not None:
+            outras.append(_grupo(contrato, vinculada, vistorias.comparar_entrega_devolucao(contrato_id, moto_id)))
+    return {"contrato": contrato, "cliente": cliente, **principal, "outras": outras,
+            "algum_alterado": principal["tem_alterados"] or any(g["tem_alterados"] for g in outras)}
 
 
 def contratos_pendentes():
-    """Contratos que ainda não têm as duas vistorias, como (id, rótulo), os ativos primeiro."""
-    feitas = {}
+    """Pares (contrato, moto) que ainda não têm as duas vistorias, como (valor, rótulo), os contratos ativos primeiro.
+    O valor é o id do contrato (moto principal) ou `contrato:moto` (moto vinculada)."""
+    feitas: dict = {}
     for v in vistorias.listar():
-        feitas.setdefault(v["contrato_id"], []).append(v)
+        feitas.setdefault((v["contrato_id"], v["moto_id"]), []).append(v)
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
     frota = {m["id"]: m for m in motos.listar()}
-    pendentes = [c for c in contratos.listar() if c["moto_id"] in frota and tipos_faltantes(feitas.get(c["id"], []))]
-    pendentes.sort(key=lambda c: (c.get("status") != "ativo", str(c["data_inicio"])))
-    return [
-        (c["id"], f"{nomes.get(c['cliente_id'], '—')} → {formatar_placa(frota[c['moto_id']]['placa'])}"
-                  f" · {frota[c['moto_id']].get('marca', '')} {frota[c['moto_id']].get('modelo', '')} ({c['status']})")
-        for c in pendentes
-    ]
+    vinculos = _vinculos_por_contrato()
+    ordenados = sorted(contratos.listar(), key=lambda c: (c.get("status") != "ativo", str(c["data_inicio"])))
+    pendentes = []
+    for c in ordenados:
+        for moto_id in todas_as_motos(c["moto_id"], vinculos.get(c["id"])):
+            if moto_id in frota and tipos_faltantes(feitas.get((c["id"], moto_id), [])):
+                moto = frota[moto_id]
+                rotulo = (f"{nomes.get(c['cliente_id'], '—')} → {formatar_placa(moto['placa'])}"
+                          f" · {moto.get('marca', '')} {moto.get('modelo', '')} ({c['status']})")
+                pendentes.append((_valor_do_registro(c, moto_id), rotulo + ("" if moto_id == c["moto_id"] else " · vinculada")))
+    return pendentes
 
 
 def vistoria_para_fotos(vistoria_id):
@@ -108,14 +140,20 @@ def vistoria_para_fotos(vistoria_id):
             "tipo_rotulo": vistorias_lista.TIPO_ROTULO[vistoria["tipo"]], "fotos_atuais": len(vistoria.get("fotos") or [])}
 
 
-def obter_para_registro(contrato_id):
-    """Contrato com cliente, moto e os tipos de vistoria que faltam; None se algum dos três não existir."""
+def obter_para_registro(valor):
+    """Contrato com cliente, a moto (a principal ou uma vinculada, `valor` = `contrato` ou `contrato:moto`) e os tipos de
+    vistoria que faltam nela; None se contrato, cliente ou moto não existirem ou a moto não for do contrato."""
+    contrato_id, _, moto_pedida = valor.partition(":")
     contrato = next((c for c in contratos.listar() if c["id"] == contrato_id), None)
     if contrato is None:
         return None
+    moto_id = moto_pedida or contrato["moto_id"]
+    if moto_id not in todas_as_motos(contrato["moto_id"], _vinculos_por_contrato().get(contrato_id)):
+        return None
     cliente = clientes.obter(contrato["cliente_id"])
-    moto = motos.obter(contrato["moto_id"])
+    moto = motos.obter(moto_id)
     if cliente is None or moto is None:
         return None
-    return {"contrato": contrato, "cliente": cliente, "moto": moto,
-            "faltantes": tipos_faltantes(vistorias.listar_por_contrato(contrato_id))}
+    return {"contrato": contrato, "cliente": cliente, "moto": moto, "valor": _valor_do_registro(contrato, moto_id),
+            "vinculada": moto_id != contrato["moto_id"],
+            "faltantes": tipos_faltantes(vistorias.listar_por_contrato(contrato_id, moto_id))}

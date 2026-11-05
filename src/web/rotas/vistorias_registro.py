@@ -38,8 +38,9 @@ def _modelo_do_formulario(request):
 
 
 def _uuid_ou_vazio(texto):
+    """O campo `contrato` é o id do contrato ou `contrato:moto` (moto vinculada); inválido vira vazio."""
     try:
-        return str(UUID((texto or "").strip()))
+        return ":".join(str(UUID(parte)) for parte in (texto or "").strip().split(":", 1))
     except ValueError:
         return ""
 

@@ -45,3 +45,20 @@ def test_obter_por_contrato_e_tipo_nao_confunde_a_vinculada_com_a_do_contrato():
     so_vinculada = [LINHAS[1]]
     with patch.object(repositorio, "get_client", return_value=_cliente(so_vinculada)):
         assert repositorio.obter_por_contrato_e_tipo("c1", "entrega") is None
+
+
+def test_comparar_entrega_devolucao_pede_a_moto_ao_repositorio():
+    from src.services import vistorias as servico
+
+    with patch("src.services.vistorias.vistorias.obter_por_contrato_e_tipo", side_effect=lambda c, t, m=None: {"tipo": t, "moto": m, "checklist": {}}) as obter:
+        r = servico.comparar_entrega_devolucao("c1", "m2")
+    assert r["entrega"]["moto"] == "m2" and r["devolucao"]["moto"] == "m2"
+    assert obter.call_count == 2
+
+
+def test_comparar_entrega_devolucao_sem_moto_e_a_principal():
+    from src.services import vistorias as servico
+
+    with patch("src.services.vistorias.vistorias.obter_por_contrato_e_tipo", return_value=None) as obter:
+        assert servico.comparar_entrega_devolucao("c1")["diferencas"] is None
+    assert obter.call_args_list[0].args == ("c1", "entrega", None)
