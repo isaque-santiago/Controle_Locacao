@@ -128,6 +128,12 @@ def previa_agenda(condicoes):
 
 # ----------------------------------------------------------------- encerramento --
 
+def vinculadas_do_contrato(contrato_id):
+    """Motos vinculadas do contrato (sem a principal), com o km atual de cada uma, na ordem da view."""
+    frota = {m["id"]: m for m in motos.listar()}
+    return [frota[m["moto_id"]] for m in contratos.motos_do_contrato(contrato_id) if not m["principal"] and m["moto_id"] in frota]
+
+
 def previa_encerramento(contrato_id, data, valor_danos):
     """Caução, danos e cobranças que o encerramento cancelaria (`data` e `valor_danos` podem ser None)."""
     return resumo_encerramento(cobrancas.listar_por_contrato(contrato_id), data, valor_danos)

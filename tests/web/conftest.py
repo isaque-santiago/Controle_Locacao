@@ -447,6 +447,7 @@ class BaseContratos:
         self.moto_livre2 = {"id": "00000000-0000-0000-0000-0000000000a3", "placa": "ABC1D23", "marca": "Honda", "modelo": "Pop 110",
                             "km_atual": 800, "status": "disponivel", "valor_locacao_sugerido": Decimal("200")}
         self.vinculadas = {}
+        self.com_vinculada = True  # motos_do_contrato devolve a QRS4T21 como vinculada
         self.contratos = [
             {"id": self.id, "cliente_id": self.cliente["id"], "moto_id": self.moto["id"], "status": "ativo",
              "data_inicio": "2026-08-01", "data_fim_prevista": None, "data_encerramento": None, "periodicidade": "semanal",
@@ -489,7 +490,8 @@ def base_contratos(monkeypatch):
     frota = [base.moto, base.moto_livre, base.moto_livre2]
     monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(
         listar=lambda: base.contratos, previa_agenda=previa_agenda, contar_vinculadas=lambda: base.vinculadas,
-        motos_do_contrato=lambda id_: [dict(base.moto, principal=True), dict(base.moto_livre, principal=False)]))
+        motos_do_contrato=lambda id_: [dict(base.moto, moto_id=base.moto["id"], principal=True)]
+        + ([dict(base.moto_livre, moto_id=base.moto_livre["id"], principal=False)] if base.com_vinculada else [])))
     monkeypatch.setattr(dados_contratos, "clientes", SimpleNamespace(
         listar=lambda: pessoas, obter=lambda id_: next((c for c in pessoas if c["id"] == id_), None)))
     monkeypatch.setattr(dados_contratos, "motos", SimpleNamespace(

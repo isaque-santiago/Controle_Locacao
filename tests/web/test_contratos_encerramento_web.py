@@ -3,10 +3,18 @@
 from datetime import date
 from decimal import Decimal
 
+import pytest
+
 from src.domain.vistorias import CHECKLIST_PADRAO
 from tests.web.conftest import csrf_da_sessao, entrar
 
 HX = {"HX-Request": "true"}
+
+
+@pytest.fixture(autouse=True)
+def contrato_de_uma_moto(base_contratos):
+    """Os testes abaixo são de contrato com uma moto só; os de várias motos ligam `com_vinculada` de novo."""
+    base_contratos.com_vinculada = False
 
 
 def _url(base, sufixo=""):
@@ -124,3 +132,55 @@ def test_confirmacao_ausente_marca_a_caixa_como_invalida_para_receber_o_foco(cli
     html = cliente.post(_url(base_contratos), data=dados, headers=HX).text
     assert 'id="f-confirmar-enc"' in html and 'aria-invalid="true" aria-describedby="f-confirmar-enc-erro"' in html
     assert 'id="f-confirmar-enc-erro"' in html
+
+
+def _bloco_vinculada(base, **extra):
+    """Campos da vistoria de devolução da moto vinculada (prefixo vinc1_ e o id da moto escondido)."""
+    campos = {"km": "5100", "nivel_combustivel": "1/2", "adicionais": "", "avarias": "",
+              **{f"item_{i}": "ok" for i in CHECKLIST_PADRAO}, **extra}
+    return {f"vinc1_{chave}": valor for chave, valor in campos.items()} | {"vinc1_moto": base.moto_livre["id"]}
+
+
+def test_dialogo_com_vinculada_tem_um_bloco_de_devolucao_por_moto(cliente, base_contratos):
+    base_contratos.com_vinculada = True
+    entrar(cliente)
+    html = cliente.get(_url(base_contratos), headers=HX).text
+    assert "(principal)" in html and "(vinculada)" in html
+    assert f'name="vinc1_moto" value="{base_contratos.moto_livre["id"]}"' in html
+    assert 'name="vinc1_km"' in html and 'value="5000"' in html  # começa no km atual da vinculada
+
+
+def test_encerrar_envia_a_devolucao_de_cada_vinculada(cliente, base_contratos, acoes_contratos_falsas):
+    base_contratos.com_vinculada = True
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    resposta = cliente.post(_url(base_contratos), data=_dados(token) | _bloco_vinculada(base_contratos), headers=HX)
+    assert resposta.status_code == 200 and resposta.headers["HX-Redirect"] == f"/contratos/{base_contratos.id}"
+    (vistoria_extra,) = acoes_contratos_falsas.vistorias_vinculadas[0]
+    assert vistoria_extra["moto_id"] == base_contratos.moto_livre["id"] and vistoria_extra["km"] == 5100
+
+
+def test_encerrar_sem_a_devolucao_da_vinculada_volta_com_erro_e_nao_grava(cliente, base_contratos, acoes_contratos_falsas):
+    base_contratos.com_vinculada = True
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    resposta = cliente.post(_url(base_contratos), data=_dados(token), headers=HX)
+    assert acoes_contratos_falsas.encerramentos == [] and resposta.status_code == 422
+
+
+def test_km_da_vinculada_invalido_junta_com_os_erros_da_principal(cliente, base_contratos, acoes_contratos_falsas):
+    base_contratos.com_vinculada = True
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    dados = _dados(token, km="abc") | _bloco_vinculada(base_contratos, km="x")
+    resposta = cliente.post(_url(base_contratos), data=dados, headers=HX)
+    assert acoes_contratos_falsas.encerramentos == [] and resposta.status_code == 422
+    assert resposta.text.count("msg-erro") >= 2 and 'value="x"' in resposta.text
+
+
+def test_contrato_de_uma_moto_nao_pede_bloco_nem_manda_vistorias_extras(cliente, base_contratos, acoes_contratos_falsas):
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    assert "vinc1_" not in cliente.get(_url(base_contratos), headers=HX).text
+    cliente.post(_url(base_contratos), data=_dados(token), headers=HX)
+    assert acoes_contratos_falsas.vistorias_vinculadas == [None]
