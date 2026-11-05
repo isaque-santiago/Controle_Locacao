@@ -138,3 +138,17 @@ class TestContratosDaMoto:
 
     def test_moto_sem_contrato(self):
         assert contratos_da_moto("m9", CONTRATOS, VINCULOS) == []
+
+
+def test_listar_vinculos_le_contrato_motos_ordenando_pela_chave_composta():
+    from src.repositories import contratos as repositorio
+
+    linhas = [{"contrato_id": "c1", "moto_id": "m2"}]
+    with patch.object(repositorio, "todos", return_value=linhas) as todos:
+        assert repositorio.listar_vinculos() == linhas
+    assert todos.call_args.args == ("contrato_motos",) and "id" not in todos.call_args.kwargs["ordem"]
+
+
+def test_servico_listar_vinculos_repassa_ao_repositorio():
+    with patch("src.services.contratos.contratos.listar_vinculos", return_value=[{"contrato_id": "c1", "moto_id": "m2"}]):
+        assert contratos.listar_vinculos() == [{"contrato_id": "c1", "moto_id": "m2"}]
