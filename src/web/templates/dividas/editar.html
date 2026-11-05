@@ -1,0 +1,27 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar as voltar_link, cabecalho_pagina, aviso, campo, campo_lista, area_texto %}
+{% block conteudo %}
+{{ voltar_link(voltar, "Voltar para a dívida") }}
+{{ cabecalho_pagina("Editar dívida", f.tipo_rotulo ~ (" · o total e as parcelas seguem o calendário já gerado" if f.divida.tipo == "compra_parcelada" else "")) }}
+<form class="cartao" id="form-editar-divida" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    {{ campo("f-credor", "Credor", nome="credor", valor=v.credor, obrigatorio=True, erro=erros.credor, autocomplete="off", largo=True) }}
+    {% if "valor_original" in editaveis %}
+    {{ campo("f-original", "Valor original", nome="valor_original", valor=v.valor_original, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_original, autocomplete="off") }}
+    {{ campo("f-dia", "Dia do vencimento", nome="dia_vencimento", valor=v.dia_vencimento, mono=True, inputmode="numeric", erro=erros.dia_vencimento, autocomplete="off", ajuda="De 1 a 31. Vazio se não há dia fixo.") }}
+    {{ campo("f-n", "Número de parcelas", nome="numero_parcelas", valor=v.numero_parcelas, mono=True, inputmode="numeric", erro=erros.numero_parcelas, autocomplete="off", ajuda="Informe junto com o valor da parcela.") }}
+    {{ campo("f-parcela", "Valor da parcela", nome="valor_parcela", valor=v.valor_parcela, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_parcela, autocomplete="off") }}
+    {% endif %}
+    {{ campo_lista("f-moto", "Moto ligada à dívida", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
+    {{ campo("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, autocomplete="off", largo=True) }}
+    {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
+    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. O tipo da dívida não muda; para o saldo, use "Confirmar saldo".</p>
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="{{ voltar }}">Cancelar</a>
+    <button class="btn btn-primario" type="submit">Salvar alterações</button>
+  </div>
+</form>
+{% endblock %}

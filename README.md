@@ -632,7 +632,7 @@ estimada, a receber, encargos de atraso, em atraso (até 14 dias), inadimplentes
 Menu **Dívidas** (só o dono): `/dividas` lista cada dívida com saldo, próxima parcela e situação; `/dividas/{id}` mostra parcelas e pagamentos;
 `/dividas/parcelas/{id}/pagar` registra o pagamento de uma parcela (total ou parcial); `/dividas/nova` cadastra uma compra parcelada com
 conferência do total, do saldo e do calendário antes de gravar. Usam as RPCs e views das migrations 6 e 7 (não há migration nova). O contrato com
-várias motos já tem tela desde 03/11/2026 (etapa Moto do novo contrato, lista e ficha). `/dividas/nova-divida` cadastra moto fiado, financiamento, fornecedor, rastreador e empréstimo (inserção direta em `dividas`, sem RPC, porque mexe em uma tabela só) e `/dividas/{id}/pagar` registra pagamento de dívida sem parcelas (insere em `pagamentos_divida`). Ainda não há edição nem exclusão de dívida.
+várias motos já tem tela desde 03/11/2026 (etapa Moto do novo contrato, lista e ficha). `/dividas/nova-divida` cadastra moto fiado, financiamento, fornecedor, rastreador e empréstimo (inserção direta em `dividas`, sem RPC, porque mexe em uma tabela só) e `/dividas/{id}/pagar` registra pagamento de dívida sem parcelas (insere em `pagamentos_divida`). A ficha também tem **Editar** (na compra parcelada só credor, moto, descrição e observações, porque o total e as parcelas seguem o calendário gerado), **Confirmar saldo** (o saldo informado pelo responsável, com data, vale sobre o calculado; dá para remover a confirmação) e **Apagar** (página de confirmação; parcelas e pagamentos saem junto, em cascata, e não há como desfazer).
 
 ## Convenções dos relatórios
 

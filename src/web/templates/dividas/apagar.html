@@ -1,0 +1,24 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar as voltar_link, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar_link(voltar, "Voltar para a dívida") }}
+{{ cabecalho_pagina("Apagar dívida", f.divida.credor ~ " · " ~ f.tipo_rotulo) }}
+<form class="cartao" id="form-apagar-divida" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  {{ aviso("atencao", "Isto não pode ser desfeito. Para só corrigir um dado, use Editar; para acertar o que falta pagar, use Confirmar saldo.", "Apagar é definitivo.") }}
+  <p class="mt-4">Saem junto com a dívida:</p>
+  <ul class="mt-2 mb-4 list-disc pl-6">
+    <li><b>{{ f.parcelas|length }}</b> {{ "parcela" if f.parcelas|length == 1 else "parcelas" }}</li>
+    <li><b>{{ f.pagamentos|length }}</b> {{ "pagamento" if f.pagamentos|length == 1 else "pagamentos" }}, somando <span class="mono">{{ f.total_pago|moeda }}</span></li>
+  </ul>
+  <label class="flex items-center gap-2" for="f-confirmar-apagar">
+    <input type="checkbox" id="f-confirmar-apagar" name="confirmar" value="sim" required>
+    <span>Entendi que a dívida de <b>{{ f.divida.credor }}</b> e esses lançamentos serão apagados.</span>
+  </label>
+  <div class="rodape-acoes">
+    <a class="btn" href="{{ voltar }}">Cancelar</a>
+    <button class="btn btn-perigo" type="submit">Apagar a dívida</button>
+  </div>
+</form>
+{% endblock %}

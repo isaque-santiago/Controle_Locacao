@@ -84,3 +84,15 @@ def criar_divida(dados: dict) -> dict:
 def registrar_pagamento(dados: dict) -> dict:
     """Insere um pagamento direto da dívida, sem parcela (uma tabela só, sem RPC)."""
     return get_client().table("pagamentos_divida").insert(dados).execute().data[0]
+
+
+@invalida_cache
+def atualizar_divida(divida_id: str, dados: dict) -> dict:
+    """Atualiza colunas de uma dívida (uma tabela só, sem RPC)."""
+    return get_client().table("dividas").update(dados).eq("id", divida_id).execute().data[0]
+
+
+@invalida_cache
+def apagar_divida(divida_id: str) -> None:
+    """Apaga a dívida; as parcelas e os pagamentos saem junto (on delete cascade, num único comando)."""
+    get_client().table("dividas").delete().eq("id", divida_id).execute()

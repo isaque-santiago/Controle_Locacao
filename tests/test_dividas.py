@@ -167,3 +167,71 @@ def test_pagar_divida_recusa_valor_nao_positivo(monkeypatch):
     with pytest.raises(ValueError, match="positivo"):
         servico.pagar_divida("d1", date(2026, 11, 4), Decimal("0"))
     assert gravados["pagamentos"] == []
+
+
+# ---------------------------------------------------------------- editar, confirmar saldo e apagar --
+
+
+def _repo_edicao(monkeypatch):
+    from types import SimpleNamespace
+
+    from src.services import dividas as servico
+
+    feitos = {"atualizadas": [], "apagadas": []}
+    monkeypatch.setattr(servico, "dividas", SimpleNamespace(
+        atualizar_divida=lambda id, dados: feitos["atualizadas"].append((id, dados)) or {"id": id, **dados},
+        apagar_divida=lambda id: feitos["apagadas"].append(id)))
+    return servico, feitos
+
+
+def test_atualizar_divida_serializa_dinheiro_e_apara_o_credor(monkeypatch):
+    servico, feitos = _repo_edicao(monkeypatch)
+    servico.atualizar_divida("d1", {"credor": "  Nilson ", "valor_original": Decimal("9000.00"), "numero_parcelas": 24,
+                                    "valor_parcela": Decimal("912.58"), "dia_vencimento": 28, "descricao": None})
+    assert feitos["atualizadas"] == [("d1", {"credor": "Nilson", "valor_original": "9000.00", "numero_parcelas": 24,
+                                             "valor_parcela": "912.58", "dia_vencimento": 28, "descricao": None})]
+
+
+def test_atualizar_divida_da_compra_parcelada_so_com_identificacao(monkeypatch):
+    servico, feitos = _repo_edicao(monkeypatch)
+    servico.atualizar_divida("d1", {"credor": "Álvaro", "moto_id": None, "descricao": "x", "observacoes": None})
+    assert feitos["atualizadas"][0][1] == {"credor": "Álvaro", "moto_id": None, "descricao": "x", "observacoes": None}
+
+
+@pytest.mark.parametrize("dados,erro", [
+    ({"credor": "  "}, "credor"), ({"credor": "X", "valor_original": Decimal("-1")}, "negativos"),
+    ({"credor": "X", "numero_parcelas": 10, "valor_parcela": None}, "ou nenhum dos dois"),
+    ({"credor": "X", "numero_parcelas": None, "valor_parcela": Decimal("10")}, "ou nenhum dos dois"),
+])
+def test_atualizar_divida_recusa_dados_invalidos(monkeypatch, dados, erro):
+    servico, feitos = _repo_edicao(monkeypatch)
+    with pytest.raises(ValueError, match=erro):
+        servico.atualizar_divida("d1", dados)
+    assert feitos["atualizadas"] == []
+
+
+def test_confirmar_saldo_grava_valor_e_data(monkeypatch):
+    servico, feitos = _repo_edicao(monkeypatch)
+    servico.confirmar_saldo("d1", Decimal("3425.00"), date(2026, 10, 16))
+    assert feitos["atualizadas"] == [("d1", {"saldo_confirmado": "3425.00", "confirmado_em": "2026-10-16"})]
+
+
+def test_confirmar_saldo_none_tira_a_confirmacao(monkeypatch):
+    servico, feitos = _repo_edicao(monkeypatch)
+    servico.confirmar_saldo("d1", None, None)
+    assert feitos["atualizadas"] == [("d1", {"saldo_confirmado": None, "confirmado_em": None})]
+
+
+def test_confirmar_saldo_recusa_negativo_e_data_vazia(monkeypatch):
+    servico, feitos = _repo_edicao(monkeypatch)
+    with pytest.raises(ValueError, match="negativo"):
+        servico.confirmar_saldo("d1", Decimal("-1"), date(2026, 10, 16))
+    with pytest.raises(ValueError, match="data"):
+        servico.confirmar_saldo("d1", Decimal("1"), None)
+    assert feitos["atualizadas"] == []
+
+
+def test_apagar_divida_chama_o_repositorio(monkeypatch):
+    servico, feitos = _repo_edicao(monkeypatch)
+    servico.apagar_divida("d1")
+    assert feitos["apagadas"] == ["d1"]

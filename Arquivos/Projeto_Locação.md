@@ -1006,7 +1006,8 @@ O contrato com várias motos já tinha tela (etapa Moto do novo contrato, lista 
   (entrada + parcelas) e o botão **Conferir** mostra total, saldo e calendário antes de **Cadastrar** (sem JavaScript), pela RPC `rpc_criar_compra_parcelada`.
 - Não há migration nova. Regras em `src/domain/dividas_lista.py` e `src/domain/formulario_divida.py`.
 - **Complemento (04/11/2026):** `/dividas/nova-divida` cadastra moto fiado, financiamento, fornecedor, rastreador e empréstimo (saldo confirmado opcional, com a data de hoje) e `/dividas/{id}/pagar` registra pagamento direto de dívida sem parcelas (valor até o saldo; dívida com parcelas paga-se pela parcela). Ambos são inserção em uma tabela só, sem RPC.
-- **Fora desta entrega:** editar ou apagar dívida, e confirmar ou corrigir o saldo de uma dívida já cadastrada pela tela.
+- **Editar, confirmar saldo e apagar (05/11/2026):** `/dividas/{id}/editar` (na compra parcelada só credor, moto, descrição e observações), `/dividas/{id}/saldo` (confirmar com valor e data até hoje, ou remover a confirmação) e `/dividas/{id}/confirmar-exclusao` (página de confirmação, só leitura, com o que sai junto; o POST fica em `/dividas/{id}/apagar`, porque o guarda de segurança não aceita GET com `/apagar` no caminho; `on delete cascade` leva parcelas e pagamentos num comando só). Uma tabela cada, sem RPC. Observação: apagar não remove a linha correspondente de `importacoes_lote`; se a dívida veio de uma carga, refazer a carga não a recria, porque a carga é idempotente por lote (desfaça pelo SQL de desfazer a carga, que limpa os dois).
+- **Fora desta entrega:** trocar o tipo de uma dívida e editar parcelas ou pagamentos individuais.
 
 
 ## 19. Vistoria por moto em contrato com várias motos (desenho aprovado em 05/11/2026)

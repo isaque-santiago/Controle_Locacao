@@ -186,3 +186,38 @@ def pagar_divida(
         "conta_id": conta_id,
         "observacoes": (observacoes or "").strip() or None,
     })
+
+
+def atualizar_divida(divida_id: str, dados: dict) -> dict:
+    """Grava a edição de uma dívida. Valores em dinheiro vão como texto; credor vazio e valores negativos são recusados.
+    `dados` tem só as colunas a mudar (na compra parcelada, só credor, moto, descrição e observações)."""
+    if "credor" in dados:
+        dados = {**dados, "credor": (dados["credor"] or "").strip()}
+        if not dados["credor"]:
+            raise ValueError("Informe o credor da dívida.")
+    for campo in ("valor_original", "valor_parcela"):
+        if dados.get(campo) is not None:
+            if Decimal(str(dados[campo])) < 0:
+                raise ValueError("Os valores da dívida não podem ser negativos.")
+            dados = {**dados, campo: str(dados[campo])}
+    if ("numero_parcelas" in dados or "valor_parcela" in dados) and (
+        (dados.get("numero_parcelas") is None) != (dados.get("valor_parcela") is None)
+    ):
+        raise ValueError("Informe o número de parcelas e o valor da parcela, ou nenhum dos dois.")
+    return dividas.atualizar_divida(divida_id, dados)
+
+
+def confirmar_saldo(divida_id: str, saldo: Optional[Decimal], data: Optional[date]) -> dict:
+    """Confirma o saldo da dívida (o que falta pagar, informado pelo responsável) ou, com `saldo=None`, tira a confirmação."""
+    if saldo is None:
+        return dividas.atualizar_divida(divida_id, {"saldo_confirmado": None, "confirmado_em": None})
+    if saldo < 0:
+        raise ValueError("O saldo confirmado não pode ser negativo.")
+    if data is None:
+        raise ValueError("Informe a data da confirmação.")
+    return dividas.atualizar_divida(divida_id, {"saldo_confirmado": str(saldo), "confirmado_em": data.isoformat()})
+
+
+def apagar_divida(divida_id: str) -> None:
+    """Apaga a dívida com as parcelas e os pagamentos. Irreversível: a tela pede confirmação antes."""
+    dividas.apagar_divida(divida_id)
