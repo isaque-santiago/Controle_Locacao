@@ -186,7 +186,7 @@ def ler_divida(entrada: dict, motos_validas: set[str]) -> dict:
 # Na compra parcelada, valor original = entrada + n x parcela é uma regra do banco: só os dados de identificação mudam.
 CAMPOS_EDICAO_COMPRA = ("credor", "moto_id", "descricao", "observacoes")
 CAMPOS_EDICAO = (
-    "credor", "valor_original", "numero_parcelas", "valor_parcela", "dia_vencimento", "moto_id", "descricao", "observacoes",
+    "tipo", "credor", "valor_original", "numero_parcelas", "valor_parcela", "dia_vencimento", "moto_id", "descricao", "observacoes",
 )
 
 
@@ -203,7 +203,7 @@ def edicao_inicial(divida: dict) -> dict:
         return "" if divida.get(campo) is None else texto_moeda(divida[campo])
 
     return {
-        "credor": divida.get("credor") or "", "valor_original": dinheiro("valor_original"),
+        "tipo": divida.get("tipo") or "", "credor": divida.get("credor") or "", "valor_original": dinheiro("valor_original"),
         "numero_parcelas": numero("numero_parcelas"), "valor_parcela": dinheiro("valor_parcela"),
         "dia_vencimento": numero("dia_vencimento"), "moto_id": divida.get("moto_id") or "",
         "descricao": divida.get("descricao") or "", "observacoes": divida.get("observacoes") or "",
@@ -216,7 +216,8 @@ def texto_da_edicao(entrada: dict) -> dict:
 
 def ler_edicao_divida(entrada: dict, tipo: str, motos_validas: set[str]) -> dict:
     """Colunas da dívida a gravar. As mesmas regras do cadastro; na compra parcelada só credor, moto, descrição e observações
-    mudam (o total e as parcelas estão amarrados ao calendário já gerado)."""
+    mudam (o total e as parcelas estão amarrados ao calendário já gerado). Nos outros tipos o tipo também pode mudar, entre os
+    cinco de `TIPOS_NOVA`; uma dívida nunca vira (nem deixa de ser) compra parcelada, porque essa tem calendário e regra de total."""
     erros: dict[str, str] = {}
     credor = _texto(entrada, "credor")
     if not credor:
@@ -229,6 +230,10 @@ def ler_edicao_divida(entrada: dict, tipo: str, motos_validas: set[str]) -> dict
     dados = {"credor": credor, "moto_id": moto_id or None, "descricao": _texto(entrada, "descricao") or None,
              "observacoes": _texto(entrada, "observacoes") or None}
     if tipo != "compra_parcelada":
+        tipo_novo = _texto(entrada, "tipo") or tipo
+        if tipo_novo not in TIPOS_NOVA:
+            erros["tipo"] = "Tipo: escolha uma das opções."
+        dados["tipo"] = tipo_novo
         original = _coletar(erros, "valor_original", decimal_campo, entrada.get("valor_original") or "0", "Valor original")
         texto_n, texto_parcela = _texto(entrada, "numero_parcelas"), _texto(entrada, "valor_parcela")
         n = parcela = None

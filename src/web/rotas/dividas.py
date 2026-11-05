@@ -260,7 +260,7 @@ def _contexto_editar(f, motos, valores, erros=None, erro_geral=None):
     divida_id = f["divida"]["id"]
     return {"titulo": "Editar dívida", "f": f, "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
             "acao": f"/dividas/{divida_id}/editar", "voltar": f"/dividas/{divida_id}",
-            "editaveis": formulario.campos_editaveis(f["divida"]["tipo"]),
+            "editaveis": formulario.campos_editaveis(f["divida"]["tipo"]), "tipos": formulario.tipos_para_selecao(),
             "motos": _opcoes_nova([], motos)["motos"]}
 
 

@@ -667,3 +667,32 @@ def test_falha_do_banco_ao_apagar_mantem_a_pagina(cliente, base_dividas):
     base_dividas.falhar_com = RuntimeError("banco fora do ar")
     resposta = _apagar(cliente)
     assert resposta.status_code in (500, 503) and base_dividas.apagadas == [] and "Apagar dívida" in resposta.text
+
+
+# ---------------------------------------------------------------- trocar o tipo --
+
+
+def test_editar_moto_fiado_oferece_trocar_o_tipo_e_grava(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/editar").text
+    assert 'name="tipo"' in html and "Trocar o tipo não mexe em parcelas nem pagamentos" in html
+    assert '<option value="moto_fiado" selected>' in html and "Compra parcelada</option>" not in html
+    assert _editar(cliente, tipo="financiamento").status_code == 303
+    assert base_dividas.edicoes[0][1]["tipo"] == "financiamento"
+
+
+def test_editar_compra_parcelada_nao_oferece_trocar_o_tipo(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    assert 'name="tipo"' not in cliente.get(f"/dividas/{DIVIDA_ID}/editar").text
+    assert _editar(cliente, DIVIDA_ID, tipo="moto_fiado").status_code == 303
+    assert "tipo" not in base_dividas.edicoes[0][1]
+
+
+def test_trocar_para_compra_parcelada_e_recusado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _editar(cliente, tipo="compra_parcelada")
+    assert resposta.status_code == 422 and base_dividas.edicoes == [] and "Tipo: escolha uma das opções" in resposta.text

@@ -249,3 +249,36 @@ def test_confirmar_saldo_recusa_entradas_invalidas(entrada, campo, erro):
     with pytest.raises(ErroDeCampos) as e:
         f.ler_saldo_confirmado(entrada, date(2026, 11, 5))
     assert campo in e.value.erros and erro in e.value.erros[campo]
+
+
+# ---------------------------------------------------------------- trocar o tipo --
+
+
+def test_campos_editaveis_incluem_o_tipo_so_fora_da_compra_parcelada():
+    assert "tipo" in f.campos_editaveis("moto_fiado") and "tipo" not in f.campos_editaveis("compra_parcelada")
+
+
+def test_edicao_inicial_traz_o_tipo_atual():
+    assert f.edicao_inicial({**DIVIDA_BANCO, "tipo": "moto_fiado"})["tipo"] == "moto_fiado"
+
+
+def test_trocar_o_tipo_entre_os_cinco():
+    d = f.ler_edicao_divida(_edicao(tipo="financiamento"), "moto_fiado", MOTOS)
+    assert d["tipo"] == "financiamento"
+
+
+def test_sem_tipo_na_entrada_mantem_o_atual():
+    d = f.ler_edicao_divida(_edicao(tipo=""), "emprestimo", MOTOS)
+    assert d["tipo"] == "emprestimo"
+
+
+@pytest.mark.parametrize("tipo", ["compra_parcelada", "qualquer"])
+def test_nao_troca_para_compra_parcelada_nem_para_tipo_desconhecido(tipo):
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_divida(_edicao(tipo=tipo), "moto_fiado", MOTOS)
+    assert "tipo" in e.value.erros and "Tipo" in e.value.erros["tipo"]
+
+
+def test_a_compra_parcelada_ignora_o_tipo_enviado():
+    d = f.ler_edicao_divida(_edicao(tipo="moto_fiado"), "compra_parcelada", MOTOS)
+    assert "tipo" not in d
