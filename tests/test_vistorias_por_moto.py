@@ -2,7 +2,12 @@
 
 import pytest
 
-from src.domain.vistorias_por_moto import exigir_todas_as_motos, motos_sem_vistoria, validar_vistorias_vinculadas
+from src.domain.vistorias_por_moto import (
+    da_moto,
+    exigir_todas_as_motos,
+    motos_sem_vistoria,
+    validar_vistorias_vinculadas,
+)
 
 KM = {"m2": 1000, "m3": 500}
 
@@ -81,3 +86,22 @@ class TestExigirTodasAsMotos:
     def test_com_vinculadas_e_nenhuma_vistoria_recusa(self):
         with pytest.raises(ValueError, match="todas as motos"):
             exigir_todas_as_motos("m1", ["m2"], [])
+
+
+class TestDaMoto:
+    VISTORIAS = [
+        {"id": "v1", "moto_id": "m1", "tipo": "entrega", "contrato": {"moto_id": "m1"}},
+        {"id": "v2", "moto_id": "m2", "tipo": "entrega", "contrato": {"moto_id": "m1"}},
+    ]
+
+    def test_padrao_devolve_so_as_da_moto_principal(self):
+        assert [v["id"] for v in da_moto(self.VISTORIAS)] == ["v1"]
+
+    def test_moto_pedida(self):
+        assert [v["id"] for v in da_moto(self.VISTORIAS, "m2")] == ["v2"]
+
+    def test_moto_sem_vistoria(self):
+        assert da_moto(self.VISTORIAS, "m9") == []
+
+    def test_sem_o_contrato_embutido_o_padrao_nao_devolve_nada(self):
+        assert da_moto([{"id": "v1", "moto_id": "m1"}]) == []

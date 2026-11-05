@@ -46,6 +46,14 @@ def validar_vistorias_vinculadas(
     return normalizadas
 
 
+def da_moto(vistorias: Iterable[dict], moto_id: Optional[str] = None) -> list:
+    """Vistorias de uma moto. Sem `moto_id`, as da moto principal do contrato (`contrato.moto_id`, trazido junto
+    na consulta): as telas que ainda mostram uma vistoria por contrato seguem sem ver as das vinculadas."""
+    if moto_id is not None:
+        return [v for v in vistorias if v["moto_id"] == moto_id]
+    return [v for v in vistorias if v["moto_id"] == (v.get("contrato") or {}).get("moto_id")]
+
+
 def motos_sem_vistoria(
     moto_principal_id: str,
     vinculadas: Optional[Iterable[str]],
