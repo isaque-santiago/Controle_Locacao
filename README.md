@@ -450,7 +450,7 @@ ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas 
    - `20260921152000_finalizar_manutencao.sql`: conclusão/cancelamento de manutenção aberta.
    - `20260921153000_resultado_km.sql`: distância registrada e custo por km na view.
    - `20260921154000_permissoes_authenticated.sql`: permissões do papel `authenticated` (a RLS continua decidindo as linhas).
-   - `20260922000000_restringe_rls_ao_dono.sql`: RLS e Storage só para o UUID do dono (ajuste o UUID em `is_dono()` antes de aplicar).
+   - `20260922000000_restringe_rls_ao_dono.sql`: RLS e Storage só para o dono (ajuste o UUID em `is_dono()` antes de aplicar). A migration `20261105120000_administradores.sql` passa o acesso para a tabela `administradores` (veja "Administradores").
    - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
    - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
    - `20261002120000_idempotencia_operacoes.sql`: coluna `chave_operacao` e índice único em `pagamentos`, `manutencoes`, `documentos_moto` e `historico_km`, e `rpc_registrar_manutencao` passa a devolver o resultado do primeiro envio quando a chave se repete (Etapa 7 do plano de UI/UX). Rode `supabase/verificar_fluxos.sql` no projeto de homologação depois de aplicar.
@@ -662,3 +662,9 @@ achados curados em `Arquivos/Achados_UI_UX.md`; massa de dados extremos em
 Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-child` e com pilhas de fonte com fallback do sistema; as fontes são locais (`static/fontes/`, declaradas em `src/web/estilos/app.css`). O Lighthouse foi medido depois, já no app novo (seção 10 do `Arquivos/Design_UI.md`).
 
 Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/Roteiro_Homologacao_Manual.md`).
+
+### Administradores (mais de um usuário com acesso total)
+
+`is_dono()` consulta a tabela `administradores (user_id)`: quem está nela tem o mesmo acesso do dono (migration `20261105120000_administradores.sql`, que também move o dono atual para a tabela, lendo o UUID da função antiga, então vale para dev e produção). A tabela só é alterada pelo SQL Editor; o app não escreve nela e cada usuário vê só a própria linha.
+
+Para criar um administrador: crie o usuário em Authentication > Users (com "Auto Confirm User") e rode no SQL Editor `insert into administradores (user_id) select id from auth.users where email = 'fulano@exemplo.com';`. Para remover o acesso: `delete from administradores where user_id = (select id from auth.users where email = 'fulano@exemplo.com');`. Roteiro de teste: `supabase/verificar_administradores.sql` (só em dev, termina em ROLLBACK). Nunca coloque senhas ou e-mails reais no repositório.
