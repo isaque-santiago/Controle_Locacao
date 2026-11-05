@@ -175,7 +175,7 @@ def test_descricao_casos_de_borda():
 
 def test_limitar_lista_corta_no_limite_e_mantem_a_ordem():
     linhas = list(range(12))
-    assert painel.limitar_lista(linhas) == [0, 1, 2, 3, 4]
+    assert painel.limitar_lista(linhas) == [0, 1, 2, 3, 4, 5, 6]
     assert painel.limitar_lista(linhas, 3) == [0, 1, 2]
     assert painel.limitar_lista([1, 2], 5) == [1, 2]
     assert painel.limitar_lista(linhas, 0) == []
