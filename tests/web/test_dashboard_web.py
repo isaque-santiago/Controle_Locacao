@@ -38,11 +38,11 @@ def test_cartao_hoje_lista_atraso_e_vencimento_do_dia(cliente):
 
 def test_cartao_hoje_limitado_mostra_link_para_ver_todas(cliente, monkeypatch):
     base = DADOS_PAINEL["hoje"][0]
-    monkeypatch.setitem(DADOS_PAINEL, "hoje", [dict(base) for _ in range(5)])
+    monkeypatch.setitem(DADOS_PAINEL, "hoje", [dict(base) for _ in range(7)])
     monkeypatch.setitem(DADOS_PAINEL, "hoje_total", 51)
     entrar(cliente)
     html = cliente.get("/").text
-    assert "mostrando 5 de 51" in html
+    assert "mostrando 7 de 51" in html
     assert "Ver todas as 51 cobranças" in html
 
 

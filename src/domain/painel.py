@@ -225,7 +225,7 @@ def cobrancas_de_hoje(cobrancas: list[dict], hoje: date) -> list[dict]:
     return sorted(selecionadas, key=lambda c: c["vencimento"])
 
 
-LIMITE_HOJE = 5
+LIMITE_HOJE = 7
 
 
 def limitar_lista(linhas: list, limite: int = LIMITE_HOJE) -> list:
