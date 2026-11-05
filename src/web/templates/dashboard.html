@@ -24,7 +24,50 @@
   {{ kpi("Manutenção no mês", dinc(d.manutencao_mes), d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), variacao=d.variacoes.manutencao if (d.variacoes and not oc) else None) }}
 </dl>
 
-<div class="grade duas-colunas igualar">
+{# "Hoje" vem logo após os KPIs: é o que o operador precisa agir primeiro. Em tela larga, fica ao lado de Atenção e Ocupação. #}
+<div class="dash dash-topo{% if comp %} dash-topo--simples{% endif %}">
+{% if not comp %}
+<section class="cartao moto-lista-cards hoje-lista" aria-labelledby="t-hoje">
+  <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">{% set total_hoje = d.hoje_total if d.hoje_total is defined else d.hoje|length %}{% if total_hoje > d.hoje|length %}mostrando {{ d.hoje|length }} de {{ total_hoje }}, as mais antigas primeiro{% else %}vencendo hoje e atrasadas{% endif %}</span></div>
+  {% if d.hoje %}
+  {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}
+    {% for c in d.hoje %}
+    <tr>
+      <td class="topo font-medium">{{ nome(c.cliente) }}</td>
+      <td data-rotulo="Moto">{{ plac(c.placa) }}</td>
+      <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
+      <td class="num mono" data-rotulo="Valor">{{ din(c.valor) }}</td>
+      <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
+      <td class="acao"><a class="btn" href="/cobrancas/{{ c.id }}/pagar" aria-label="Registrar pagamento de {{ nome(c.cliente) }}">Pagar</a></td>
+    </tr>
+    {% endfor %}
+  {% endcall %}
+  {% if total_hoje > d.hoje|length %}
+  <p class="hoje-mais"><a class="btn" href="/cobrancas?aba=atrasadas">Ver todas as {{ total_hoje }} cobranças</a></p>
+  {% endif %}
+  {% else %}
+  <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<div class="dash-lateral">
+  <section class="cartao content-start" aria-labelledby="t-alertas">
+    <div class="cartao-cab"><h2 id="t-alertas">Precisa de atenção</h2></div>
+    {% if d.alertas %}
+    <ul class="pendencias">
+      {% for a in d.alertas %}
+      <li class="pendencia">
+        <span class="adesivo {{ a.tom }}" aria-hidden="true">{{ a.quantidade }}</span>
+        <div><strong>{{ a.titulo }}</strong><span class="det">{{ nome(a.descricao) }}</span></div>
+        <a class="btn" href="{{ areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-texto-2">Nenhum alerta no momento.</p>
+    {% endif %}
+  </section>
     {% if not comp %}
     <section class="cartao" aria-labelledby="t-ocupacao">
       <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>
@@ -54,60 +97,26 @@
     </section>
     {% endif %}
 
-  <section class="cartao content-start" aria-labelledby="t-alertas">
-    <div class="cartao-cab"><h2 id="t-alertas">Precisa de atenção</h2></div>
-    {% if d.alertas %}
-    <ul class="pendencias">
-      {% for a in d.alertas %}
-      <li class="pendencia">
-        <span class="adesivo {{ a.tom }}" aria-hidden="true">{{ a.quantidade }}</span>
-        <div><strong>{{ a.titulo }}</strong><span class="det">{{ nome(a.descricao) }}</span></div>
-        <a class="btn" href="{{ areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>
-      </li>
-      {% endfor %}
-    </ul>
-    {% else %}
-    <p class="text-texto-2">Nenhum alerta no momento.</p>
-    {% endif %}
-  </section>
 </div>
-
-    {% if not comp %}
-    <section class="cartao mt-4 moto-lista-cards hoje-lista" aria-labelledby="t-hoje">
-      <div class="cartao-cab"><h2 id="t-hoje">Hoje</h2><span class="text-texto-2 text-[13px]">vencendo hoje e atrasadas</span></div>
-      {% if d.hoje %}
-      {% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ação", "")], "Cobranças que vencem hoje ou estão atrasadas") %}
-        {% for c in d.hoje %}
-        <tr>
-          <td class="topo font-medium">{{ nome(c.cliente) }}</td>
-          <td data-rotulo="Moto">{{ plac(c.placa) }}</td>
-          <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
-          <td class="num mono" data-rotulo="Valor">{{ din(c.valor) }}</td>
-          <td data-rotulo="Situação">{% if c.atrasada %}{{ selo("Atraso " ~ c.dias_atraso ~ "d", "perigo") }}{% else %}{{ selo("Vence hoje", "atencao") }}{% endif %}</td>
-          <td class="acao"><a class="btn" href="/cobrancas/{{ c.id }}/pagar" aria-label="Registrar pagamento de {{ nome(c.cliente) }}">Pagar</a></td>
-        </tr>
-        {% endfor %}
-      {% endcall %}
-      {% else %}
-      <p class="text-texto-2">Nenhuma cobrança vencendo hoje ou atrasada.</p>
-      {% endif %}
-    </section>
-    {% endif %}
+</div>
 
 {% if d.financeiro %}
 {% set f = d.financeiro %}
 <section class="mt-4" aria-labelledby="t-financeiro">
   <div class="cartao-cab">
     <h2 id="t-financeiro">Financeiro · {{ f.mes_rotulo }}</h2>
-    <form class="acoes" method="get" action="/" aria-label="Escolher o mês do Financeiro">
-      <a class="btn" href="/{{ d.links.anterior }}" aria-label="Mês anterior">‹</a>
-      <label class="so-leitor" for="seletor-mes">Mês</label>
-      <input id="seletor-mes" type="month" name="mes" value="{{ f.mes_texto }}" max="{{ f.mes_maximo }}">
+    <form class="acoes seletor-mes" method="get" action="/" aria-label="Escolher o mês do Financeiro">
+      <div class="mes-segmentado">
+        <a class="mes-seta" href="/{{ d.links.anterior }}" aria-label="Mês anterior">{{ icone("chevron", "mes-seta-icone anterior") }}</a>
+        <label class="so-leitor" for="seletor-mes">Mês</label>
+        <input class="mes-campo" id="seletor-mes" type="month" name="mes" value="{{ f.mes_texto }}" max="{{ f.mes_maximo }}" data-envia-ao-mudar>
+        {% if d.links.seguinte %}<a class="mes-seta" href="/{{ d.links.seguinte }}" aria-label="Mês seguinte">{{ icone("chevron", "mes-seta-icone seguinte") }}</a>{% else %}<span class="mes-seta desativado" aria-hidden="true">{{ icone("chevron", "mes-seta-icone seguinte") }}</span>{% endif %}
+      </div>
       {% if comp %}<input type="hidden" name="compacto" value="1">{% endif %}
       {% if oc %}<input type="hidden" name="ocultar" value="1">{% endif %}
-      <button class="btn" type="submit">Ver</button>
-      {% if d.links.seguinte %}<a class="btn" href="/{{ d.links.seguinte }}" aria-label="Mês seguinte">›</a>{% endif %}
-      {% if not f.e_mes_atual %}<a class="btn" href="/{{ d.links.atual }}">Mês atual</a>{% endif %}
+      {# Sem JavaScript, o botão (ou Enter no campo) continua enviando o mês. #}
+      <button class="so-leitor" type="submit">Ver</button>
+      {% if not f.e_mes_atual %}<a class="btn btn-compacto" href="/{{ d.links.atual }}">Mês atual</a>{% endif %}
     </form>
   </div>
 
@@ -128,7 +137,7 @@
     {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos") }}
   </dl>
 
-  <dl class="grade kpis mt-4">
+  <dl class="grade kpis kpis-5 mt-4">
     {{ kpi("A receber", din(f.devedores.a_receber), f.devedores.contratos_em_aberto ~ (" contrato em aberto" if f.devedores.contratos_em_aberto == 1 else " contratos em aberto"), atencao=(f.devedores.a_receber > 0), href="/cobrancas?aba=atrasadas") }}
     {{ kpi("Encargos de atraso", din(f.devedores.encargos), "multa + adicional por dia") }}
     {{ kpi("Em atraso", f.devedores.em_atraso, f.faixas.em_atraso) }}
@@ -226,10 +235,10 @@
   <div class="grade duas-colunas igualar mt-4">
     {% if not comp %}
     <section class="cartao moto-lista-cards" aria-labelledby="t-veiculos">
-      <div class="cartao-cab"><h2 id="t-veiculos">Resultado por veículo</h2><span class="text-texto-2 text-[13px]">desde o início</span></div>
+      <div class="cartao-cab"><h2 id="t-veiculos">Resultado por veículo</h2><span class="text-texto-2 text-[13px]">do melhor ao pior · desde o início</span></div>
       {% if f.veiculos %}
-      {% call tabela([("Moto", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")], "Receita, despesas e resultado de cada veículo") %}
-        {% for v in f.veiculos %}
+      {% set cols_veic = [("Moto", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")] %}
+      {% macro linha_veiculo(v) %}
         <tr>
           <td class="topo">{% if v.placa != "—" %}{{ plac(v.placa) }}{% else %}—{% endif %}</td>
           <td data-rotulo="Locatário">{{ nome(v.locatario) }}</td>
@@ -237,8 +246,19 @@
           <td class="num mono" data-rotulo="Despesas">{{ din(v.despesas) }}</td>
           <td class="num mono" data-rotulo="Resultado">{{ din(v.resultado) }}</td>
         </tr>
-        {% endfor %}
+      {% endmacro %}
+      {# Mostra os 5 melhores; o restante fica recolhido (sem JavaScript). #}
+      {% call tabela(cols_veic, "Receita, despesas e resultado de cada veículo") %}
+        {% for v in f.veiculos[:5] %}{{ linha_veiculo(v) }}{% endfor %}
       {% endcall %}
+      {% if f.veiculos|length > 5 %}
+      <details class="ver-mais">
+        <summary>Mostrar os outros {{ f.veiculos|length - 5 }} veículos</summary>
+        {% call tabela(cols_veic, "Demais veículos, do melhor ao pior resultado") %}
+          {% for v in f.veiculos[5:] %}{{ linha_veiculo(v) }}{% endfor %}
+        {% endcall %}
+      </details>
+      {% endif %}
       {% else %}
       <p class="text-texto-2">Nenhum veículo cadastrado.</p>
       {% endif %}
