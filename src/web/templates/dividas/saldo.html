@@ -1,0 +1,21 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar as voltar_link, cabecalho_pagina, aviso, campo %}
+{% block conteudo %}
+{{ voltar_link(voltar, "Voltar para a dívida") }}
+{{ cabecalho_pagina("Confirmar saldo", "Informe quanto falta pagar. O saldo confirmado vale no lugar do calculado, e a ficha mostra a diferença entre os dois.") }}
+<form class="cartao" id="form-saldo" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    <div class="largo"><b>{{ f.divida.credor }}</b> · {{ f.tipo_rotulo }} · pago <span class="mono">{{ f.total_pago|moeda }}</span> · saldo hoje <span class="mono font-semibold">{{ f.saldo|moeda }}</span>{% if f.saldo_confirmado is not none %} (confirmado){% else %} (calculado){% endif %}</div>
+    {{ campo("f-saldo-confirmado", "Saldo confirmado", nome="saldo", valor=v.saldo, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.saldo, ajuda="Pode ser 0,00 se a dívida já foi quitada.", autocomplete="off", largo=True) }}
+    {{ campo("f-data-confirmacao", "Informado em", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True, ajuda="Data em que o responsável informou esse valor (até hoje).") }}
+    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="{{ voltar }}">Cancelar</a>
+    {% if f.saldo_confirmado is not none %}<button class="btn" type="submit" name="acao" value="limpar" formnovalidate>Remover confirmação</button>{% endif %}
+    <button class="btn btn-primario" type="submit" name="acao" value="confirmar">Confirmar saldo</button>
+  </div>
+</form>
+{% endblock %}

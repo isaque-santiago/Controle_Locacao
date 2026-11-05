@@ -444,3 +444,158 @@ def test_pagamento_direto_inexistente_sem_csrf_e_sem_login(cliente, base_dividas
     assert cliente.get("/dividas/xyz/pagar").status_code == 404
     resposta = cliente.post(f"/dividas/{DIVIDA_FIADO_ID}/pagar", data={"data": "2026-11-04", "valor": "10"}, follow_redirects=False)
     assert resposta.status_code in (400, 403) and base_dividas.pagamentos_diretos == []
+
+
+# ---------------------------------------------------------------- confirmar saldo --
+
+
+def _saldo(cliente, divida_id=None, **extra):
+    from tests.web.conftest import DIVIDA_FIADO_ID, csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "acao": "confirmar", "saldo": "3.425,00", "data": "2026-10-16", **extra}
+    return cliente.post(f"/dividas/{divida_id or DIVIDA_FIADO_ID}/saldo", data=dados, follow_redirects=False)
+
+
+def test_ficha_tem_os_botoes_editar_e_confirmar_saldo(cliente):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_ID}").text
+    assert f'href="/dividas/{DIVIDA_ID}/editar"' in html and f'href="/dividas/{DIVIDA_ID}/saldo"' in html
+
+
+def test_formulario_de_saldo_parte_do_saldo_atual(cliente):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/saldo").text
+    assert "Confirmar saldo" in html and "Nilson" in html and 'value="7.600,00"' in html and "(calculado)" in html
+    assert "Remover confirmação" not in html
+
+
+def test_confirmar_saldo_grava_valor_e_data_e_avisa(cliente, base_dividas):
+    from datetime import date
+    from decimal import Decimal
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    resposta = _saldo(cliente)
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_FIADO_ID}"
+    assert base_dividas.saldos == [(DIVIDA_FIADO_ID, Decimal("3425.00"), date(2026, 10, 16))]
+    assert "Saldo confirmado em R$ 3.425,00" in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+
+
+def test_saldo_zero_e_aceito(cliente, base_dividas):
+    entrar(cliente)
+    assert _saldo(cliente, saldo="0").status_code == 303 and base_dividas.saldos[0][1] == 0
+
+
+def test_remover_confirmacao_so_aparece_quando_ha_e_limpa_sem_validar(cliente, base_dividas):
+    from decimal import Decimal
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    base_dividas.fichas[DIVIDA_FIADO_ID]["saldo_confirmado"] = Decimal("3425.00")
+    entrar(cliente)
+    assert "Remover confirmação" in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/saldo").text
+    resposta = _saldo(cliente, acao="limpar", saldo="", data="")
+    assert resposta.status_code == 303 and base_dividas.saldos == [(DIVIDA_FIADO_ID, None, None)]
+    assert "Confirmação removida" in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+
+
+def test_saldo_invalido_ou_com_data_futura_nao_grava(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _saldo(cliente, saldo="abc", data="2999-01-01")
+    assert resposta.status_code == 422 and base_dividas.saldos == []
+    assert "Saldo confirmado" in resposta.text and "não pode ser no futuro" in resposta.text and 'value="abc"' in resposta.text
+
+
+def test_saldo_404_csrf_e_login(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    assert cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/saldo").status_code == 303
+    entrar(cliente)
+    assert cliente.get("/dividas/00000000-0000-0000-0000-0000000000ff/saldo").status_code == 404
+    assert cliente.get("/dividas/xyz/saldo").status_code == 404
+    resposta = cliente.post(f"/dividas/{DIVIDA_FIADO_ID}/saldo", data={"saldo": "1", "data": "2026-10-16"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.saldos == []
+
+
+def test_falha_do_banco_ao_confirmar_saldo(cliente, base_dividas):
+    entrar(cliente)
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    resposta = _saldo(cliente)
+    assert resposta.status_code in (500, 503) and 'value="3.425,00"' in resposta.text
+
+
+# ---------------------------------------------------------------- editar dívida --
+
+
+def _editar(cliente, divida_id=None, **extra):
+    from tests.web.conftest import DIVIDA_FIADO_ID, csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "credor": "Nilson (confirmado)", "valor_original": "9.000,00", "dia_vencimento": "10",
+             "numero_parcelas": "", "valor_parcela": "", "moto_id": "", "descricao": "Bros e Pop", "observacoes": "", **extra}
+    return cliente.post(f"/dividas/{divida_id or DIVIDA_FIADO_ID}/editar", data=dados, follow_redirects=False)
+
+
+def test_formulario_de_editar_parte_dos_dados_da_divida(cliente):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/editar").text
+    assert "Editar dívida" in html and 'value="Nilson"' in html and 'value="9.675,00"' in html
+    assert 'name="valor_original"' in html and 'name="numero_parcelas"' in html
+
+
+def test_editar_a_compra_parcelada_esconde_valores_e_parcelas(cliente):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_ID}/editar").text
+    assert 'name="credor"' in html and 'name="descricao"' in html and 'name="moto_id"' in html
+    assert 'name="valor_original"' not in html and 'name="numero_parcelas"' not in html and "seguem o calendário" in html
+
+
+def test_editar_grava_e_volta_para_a_ficha(cliente, base_dividas):
+    from decimal import Decimal
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    resposta = _editar(cliente)
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_FIADO_ID}"
+    divida_id, dados = base_dividas.edicoes[0]
+    assert divida_id == DIVIDA_FIADO_ID and dados["credor"] == "Nilson (confirmado)" and dados["valor_original"] == Decimal("9000.00")
+    assert dados["dia_vencimento"] == 10 and dados["descricao"] == "Bros e Pop" and dados["observacoes"] is None
+    assert "Dívida de Nilson (confirmado) atualizada." in cliente.get(f"/dividas/{DIVIDA_FIADO_ID}").text
+
+
+def test_editar_a_compra_parcelada_so_manda_os_campos_de_identificacao(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    assert _editar(cliente, DIVIDA_ID, valor_original="1", numero_parcelas="3", valor_parcela="5").status_code == 303
+    assert set(base_dividas.edicoes[0][1]) == {"credor", "moto_id", "descricao", "observacoes"}
+
+
+def test_editar_com_erro_nao_grava_e_preserva_o_digitado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _editar(cliente, credor="", valor_original="-5", dia_vencimento="40")
+    assert resposta.status_code == 422 and base_dividas.edicoes == []
+    assert "Credor: informe a quem se deve." in resposta.text and "Valor original" in resposta.text and 'value="-5"' in resposta.text
+
+
+def test_editar_404_csrf_e_login(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    assert cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/editar").status_code == 303
+    entrar(cliente)
+    assert cliente.get("/dividas/00000000-0000-0000-0000-0000000000ff/editar").status_code == 404
+    resposta = cliente.post(f"/dividas/{DIVIDA_FIADO_ID}/editar", data={"credor": "X"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.edicoes == []
+
+
+def test_falha_do_banco_ao_editar(cliente, base_dividas):
+    entrar(cliente)
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    resposta = _editar(cliente)
+    assert resposta.status_code in (500, 503) and 'value="Nilson (confirmado)"' in resposta.text

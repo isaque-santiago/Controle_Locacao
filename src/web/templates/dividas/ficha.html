@@ -11,7 +11,7 @@
     <p>{{ f.tipo_rotulo }}{% if dv.descricao %} · {{ dv.descricao }}{% endif %}</p>
     {% if f.moto %}<p class="mt-2">{{ f.moto.marca }} {{ f.moto.modelo }} {{ placa(f.moto.placa|placa_br) }}</p>{% endif %}
   </div>
-  <div class="acoes">{{ selo("Quitada", "ok") if f.saldo <= 0 else selo("Em aberto", "neutro") }}{% if f.saldo > 0 and not f.parcelas %}{{ botao("Registrar pagamento", href="/dividas/" ~ dv.id ~ "/pagar", variante="primario") }}{% endif %}</div>
+  <div class="acoes">{{ selo("Quitada", "ok") if f.saldo <= 0 else selo("Em aberto", "neutro") }}{{ botao("Editar", href="/dividas/" ~ dv.id ~ "/editar") }}{{ botao("Confirmar saldo", href="/dividas/" ~ dv.id ~ "/saldo") }}{% if f.saldo > 0 and not f.parcelas %}{{ botao("Registrar pagamento", href="/dividas/" ~ dv.id ~ "/pagar", variante="primario") }}{% endif %}</div>
 </header>
 
 <dl class="grade kpis">

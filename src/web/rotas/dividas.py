@@ -160,7 +160,7 @@ async def cadastrar_divida(request: Request, sessao: Sessao = Depends(exigir_don
 _PAGAR_DIVIDA = "dividas/pagar_divida.html"
 
 
-def _divida_para_pagar(divida_id: str) -> dict:
+def _ficha_ou_404(divida_id: str) -> dict:
     f = dados_dividas.ficha(_uuid_ou_404(divida_id))
     if f is None:
         raise HTTPException(status_code=404)
@@ -188,7 +188,7 @@ def _contexto_pagar_divida(f, contas, valores, erros=None, erro_geral=None):
 
 @router.get("/dividas/{divida_id}/pagar")
 def formulario_pagar_divida(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
-    f = _divida_para_pagar(divida_id)
+    f = _ficha_ou_404(divida_id)
     recusa = _sem_pagamento_direto(request, sessao, f)
     if recusa is not None:
         return recusa
@@ -197,7 +197,7 @@ def formulario_pagar_divida(request: Request, divida_id: str, sessao: Sessao = D
 
 
 def _pagar_divida(request, sessao, divida_id, entrada):
-    f = _divida_para_pagar(divida_id)
+    f = _ficha_ou_404(divida_id)
     recusa = _sem_pagamento_direto(request, sessao, f)
     if recusa is not None:
         return recusa
@@ -216,6 +216,77 @@ def _pagar_divida(request, sessao, divida_id, entrada):
 @router.post("/dividas/{divida_id}/pagar", dependencies=[Depends(validar_csrf)])
 async def pagar_divida(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
     return await run_in_threadpool(_pagar_divida, request, sessao, divida_id, await _entrada(request))
+
+
+_SALDO = "dividas/saldo.html"
+
+
+def _contexto_saldo(f, valores, erros=None, erro_geral=None):
+    divida_id = f["divida"]["id"]
+    return {"titulo": "Confirmar saldo", "f": f, "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
+            "acao": f"/dividas/{divida_id}/saldo", "voltar": f"/dividas/{divida_id}"}
+
+
+@router.get("/dividas/{divida_id}/saldo")
+def formulario_saldo(request: Request, divida_id: str, _: Sessao = Depends(exigir_dono)):
+    f = _ficha_ou_404(divida_id)
+    valores = formulario.saldo_inicial(f["divida"], f["saldo"], hoje_br())
+    return renderizar(request, _SALDO, _contexto_saldo(f, valores))
+
+
+def _confirmar_saldo(request, sessao, divida_id, entrada):
+    f = _ficha_ou_404(divida_id)
+    contexto = _contexto_saldo(f, formulario.texto_do_saldo(entrada))
+
+    def confirmar():
+        dados = formulario.ler_saldo_confirmado(entrada, hoje_br())
+        acoes_dividas.confirmar_saldo(f["divida"]["id"], dados["saldo_confirmado"], dados["confirmado_em"])
+        aviso = (mensagens.saldo_confirmado(dados["saldo_confirmado"]) if dados["saldo_confirmado"] is not None
+                 else mensagens.confirmacao_removida())
+        return _concluir(request, sessao, f"/dividas/{f['divida']['id']}", aviso)
+
+    return _devolver_formulario(request, _SALDO, contexto, confirmar)
+
+
+@router.post("/dividas/{divida_id}/saldo", dependencies=[Depends(validar_csrf)])
+async def confirmar_saldo(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_confirmar_saldo, request, sessao, divida_id, await _entrada(request))
+
+
+_EDITAR = "dividas/editar.html"
+
+
+def _contexto_editar(f, motos, valores, erros=None, erro_geral=None):
+    divida_id = f["divida"]["id"]
+    return {"titulo": "Editar dívida", "f": f, "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
+            "acao": f"/dividas/{divida_id}/editar", "voltar": f"/dividas/{divida_id}",
+            "editaveis": formulario.campos_editaveis(f["divida"]["tipo"]),
+            "motos": _opcoes_nova([], motos)["motos"]}
+
+
+@router.get("/dividas/{divida_id}/editar")
+def formulario_editar(request: Request, divida_id: str, _: Sessao = Depends(exigir_dono)):
+    f = _ficha_ou_404(divida_id)
+    contexto = _contexto_editar(f, dados_dividas.motos(), formulario.edicao_inicial(f["divida"]))
+    return renderizar(request, _EDITAR, contexto)
+
+
+def _editar(request, sessao, divida_id, entrada):
+    f = _ficha_ou_404(divida_id)
+    motos = dados_dividas.motos()
+    contexto = _contexto_editar(f, motos, formulario.texto_da_edicao(entrada))
+
+    def editar():
+        dados = formulario.ler_edicao_divida(entrada, f["divida"]["tipo"], {m["id"] for m in motos})
+        acoes_dividas.atualizar_divida(f["divida"]["id"], dados)
+        return _concluir(request, sessao, f"/dividas/{f['divida']['id']}", mensagens.divida_atualizada(dados["credor"]))
+
+    return _devolver_formulario(request, _EDITAR, contexto, editar)
+
+
+@router.post("/dividas/{divida_id}/editar", dependencies=[Depends(validar_csrf)])
+async def editar(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_editar, request, sessao, divida_id, await _entrada(request))
 
 
 # Rotas fixas (como /dividas/nova) devem ser declaradas antes desta, senão caem em /dividas/{divida_id}.

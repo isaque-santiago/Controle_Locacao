@@ -1081,6 +1081,8 @@ class BaseDividas:
         self.compras = []
         self.dividas_criadas = []
         self.pagamentos_diretos = []
+        self.edicoes = []
+        self.saldos = []
         self.fichas[DIVIDA_FIADO_ID] = ficha_divida_fiado()
         self.falhar_com = None
 
@@ -1120,6 +1122,19 @@ def base_dividas(monkeypatch):
         base.pagamentos_diretos.append((divida_id, data, valor, conta_id, observacoes))
         return {"id": "pg"}
 
+    def atualizar_divida(divida_id, dados):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.edicoes.append((divida_id, dados))
+        return {"id": divida_id, **dados}
+
+    def confirmar_saldo(divida_id, saldo, data):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.saldos.append((divida_id, saldo, data))
+        return {"id": divida_id}
+
     monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(
-        pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra, criar_divida=criar_divida, pagar_divida=pagar_divida))
+        pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra, criar_divida=criar_divida, pagar_divida=pagar_divida,
+        atualizar_divida=atualizar_divida, confirmar_saldo=confirmar_saldo))
     return base

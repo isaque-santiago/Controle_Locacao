@@ -132,6 +132,18 @@ def pagamento_divida_registrado(valor, quitada):
     return _toast(texto)
 
 
+def divida_atualizada(credor):
+    return _toast(f"Dívida de {credor} atualizada.")
+
+
+def saldo_confirmado(valor):
+    return _toast(f"Saldo confirmado em {moeda(valor)}. Ele passa a valer no lugar do saldo calculado.")
+
+
+def confirmacao_removida():
+    return _toast("Confirmação removida. Volta a valer o saldo calculado.")
+
+
 # ---------------------------------------------------------------- documentos --
 
 
