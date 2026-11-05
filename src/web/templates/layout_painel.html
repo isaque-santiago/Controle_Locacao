@@ -9,10 +9,10 @@
 <div class="app">
 
   <aside class="lateral" aria-label="Menu principal">
-    <a class="marca" href="/">
-      <span class="marca-simbolo" aria-hidden="true">CL</span>
+    <div class="marca">
+      <a class="marca-simbolo" href="/" aria-label="Controle de Locação: ir para o Dashboard">CL</a>
       <div><strong>Controle de Locação</strong><span class="sub">frota de motos</span></div>
-    </a>
+    </div>
     <nav aria-label="Seções do sistema">
       {% for grupo, itens in grupos_nav %}
       <div class="nav-grupo"><h2>{{ grupo }}</h2><ul class="nav-lista">
@@ -45,7 +45,7 @@
       <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema" title="Alternar tema">{{ icone('tema', 'ic-lua') }}{{ icone('sol', 'ic-sol') }}</button>
     </div>
     <header class="topo-movel">
-      <a class="marca" href="/"><span class="marca-simbolo" aria-hidden="true">CL</span><div><strong>Controle de Locação</strong></div></a>
+      <div class="marca"><a class="marca-simbolo" href="/" aria-label="Controle de Locação: ir para o Dashboard">CL</a><div><strong>Controle de Locação</strong></div></div>
       <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema">{{ icone('tema', 'ic-lua') }}{{ icone('sol', 'ic-sol') }}</button>
       <details class="conta conta-movel" data-conta>
         <summary class="avatar" aria-label="Menu da conta">{{ inicial }}</summary>
