@@ -7,6 +7,7 @@ from collections import defaultdict
 from datetime import date
 
 from src.domain import motos_lista
+from src.domain.contrato_motos import contratos_da_moto, contratos_por_moto
 from src.domain.ordenacao import interpretar
 from src.domain.paginacao import calcular_pagina
 from src.domain.valores import hoje_br
@@ -24,14 +25,15 @@ from src.services import (
 _LEITURAS_DE_KM_NA_FICHA = 8
 
 
+def _contratos_ativos_por_moto() -> dict[str, dict]:
+    """Contrato ativo de cada moto, contando a principal e as vinculadas (contrato com várias motos)."""
+    return contratos_por_moto(contratos.listar(), contratos.listar_vinculos())
+
+
 def _locatarios_por_moto() -> dict[str, str]:
     """Nome do cliente do contrato ativo de cada moto."""
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
-    return {
-        c["moto_id"]: nomes.get(c["cliente_id"], "—")
-        for c in contratos.listar()
-        if c["status"] == "ativo"
-    }
+    return {moto_id: nomes.get(c["cliente_id"], "—") for moto_id, c in _contratos_ativos_por_moto().items()}
 
 
 def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, ordem: str = "") -> dict:
@@ -72,10 +74,7 @@ def obter_moto(moto_id: str) -> dict | None:
 
 
 def _contrato_ativo(moto_id: str) -> dict | None:
-    return next(
-        (c for c in contratos.listar() if c["moto_id"] == moto_id and c["status"] == "ativo"),
-        None,
-    )
+    return _contratos_ativos_por_moto().get(moto_id)
 
 
 def _nome_do_cliente(cliente_id: str) -> str:
@@ -150,7 +149,7 @@ def _aba_documentos(moto: dict, hoje: date) -> dict:
 def _aba_contratos(moto: dict, hoje: date) -> dict:
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
     registros = sorted(
-        (c for c in contratos.listar() if c["moto_id"] == moto["id"]),
+        contratos_da_moto(moto["id"], contratos.listar(), contratos.listar_vinculos()),
         key=lambda c: c["data_inicio"],
         reverse=True,
     )
