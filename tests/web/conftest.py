@@ -464,6 +464,7 @@ class BaseContratos:
         self.pagamentos = {"b1": [{"data_pagamento": "2026-08-01"}]}
         self.vistorias = [{"tipo": "entrega", "data": "2026-08-01", "km": 10500, "nivel_combustivel": "cheio",
                            "checklist": {"freio_dianteiro": "avaria", "farol": "ok", "espelho_retrovisor": "avaria"}}]
+        self.vistorias_vinculada = []  # vistorias da moto vinculada (QRS4T21) do contrato
         self.manutencoes = [
             {"data_entrada": "2026-09-10", "tipo": "preventiva", "descricao": "Óleo <i>e filtro</i>", "km": 11000,
              "cobrar_do_cliente": True, "custo_total": Decimal("85")},
@@ -499,7 +500,8 @@ def base_contratos(monkeypatch):
     monkeypatch.setattr(dados_contratos, "cobrancas", SimpleNamespace(
         listar_por_contrato=lambda id_: base.cobrancas,
         historicos_pagamentos=lambda ids: {i: base.pagamentos.get(i, []) for i in ids}))
-    monkeypatch.setattr(dados_contratos, "vistorias", SimpleNamespace(listar_por_contrato=lambda id_: base.vistorias))
+    monkeypatch.setattr(dados_contratos, "vistorias", SimpleNamespace(
+        listar_por_contrato=lambda id_, moto_id=None, todas=False: base.vistorias_vinculada if moto_id else base.vistorias))
     monkeypatch.setattr(dados_contratos, "manutencao", SimpleNamespace(listar_manutencoes=lambda id_: base.manutencoes))
     return base
 

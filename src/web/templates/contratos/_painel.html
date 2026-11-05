@@ -13,14 +13,22 @@
 {% endcall %}
 {% else %}{{ estado_vazio("Nenhuma cobrança", "As cobranças deste contrato aparecerão aqui.") }}{% endif %}
 {% elif aba == "vistorias" %}
+{% macro grupo(lista) %}
 <div class="grade cols-2">
-{% for v in a.vistorias %}{% set r = v.registro %}
+{% for v in lista %}{% set r = v.registro %}
 {% call cartao(v.titulo, "vistoria-resumo") %}
 {% if r %}<dl class="vistoria-dados"><div><dt>Data</dt><dd class="mono">{{ r.data|data_br }}</dd></div><div><dt>Km</dt><dd class="mono">{{ r.km|milhar }} km</dd></div><div><dt>Combustível</dt><dd>{{ (r.nivel_combustivel or "—")|capitalize }}</dd></div><div><dt>Avarias</dt><dd>{{ v.avarias }}</dd></div></dl>
 {% else %}<p class="text-texto-2">Ainda não realizada{% if v.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>{% endif %}
 {% endcall %}
 {% endfor %}
 </div>
+{% endmacro %}
+{% if a.vistorias_extras %}<h3 class="rotulo">{% for m in a.motos if m.principal %}{{ m.placa|placa_br }} · moto principal{% endfor %}</h3>{% endif %}
+{{ grupo(a.vistorias) }}
+{% for extra in a.vistorias_extras %}
+<h3 class="rotulo">{{ extra.moto.placa|placa_br }} · {{ extra.moto.modelo }} (vinculada)</h3>
+{{ grupo(extra.vistorias) }}
+{% endfor %}
 {% else %}
 {% if a.manutencoes %}
 {% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Cobrada do cliente", ""), ("Custo", "num")], "Manutenções durante o contrato", recolhivel=True) %}

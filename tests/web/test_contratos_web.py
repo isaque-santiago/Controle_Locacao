@@ -132,3 +132,21 @@ def test_ficha_de_locacao_comum_nao_mostra_bloco_de_promessa(cliente, base_contr
     entrar(cliente)
     html = cliente.get(f"/contratos/{base_contratos.id}").text
     assert "Total da promessa" not in html and "Promessa de compra" not in html
+
+
+def test_aba_vistorias_do_contrato_com_vinculada_mostra_um_grupo_por_moto(cliente, base_contratos):
+    base_contratos.vistorias_vinculada = [{"tipo": "entrega", "data": "2026-08-01", "km": 5000, "nivel_combustivel": "1/2",
+                                          "checklist": {"farol": "avaria"}}]
+    entrar(cliente)
+    html = cliente.get(f"/contratos/{base_contratos.id}?aba=vistorias").text
+    assert "moto principal" in html and "(vinculada)" in html and "QRS-4T21" in html
+    assert html.count('class="cartao vistoria-resumo"') == 4  # entrega e devolução de cada uma das duas motos
+    assert "5.000 km" in html and "farol" in html
+
+
+def test_aba_vistorias_de_contrato_de_uma_moto_nao_mostra_grupos(cliente, base_contratos):
+    base_contratos.com_vinculada = False
+    entrar(cliente)
+    html = cliente.get(f"/contratos/{base_contratos.id}?aba=vistorias").text
+    assert "(vinculada)" not in html and "moto principal" not in html
+    assert html.count('class="cartao vistoria-resumo"') == 2
