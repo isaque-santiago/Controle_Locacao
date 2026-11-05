@@ -298,3 +298,37 @@ def ler_edicao_parcela(entrada: dict, valor_pago) -> dict:
     if erros:
         raise ErroDeCampos(erros)
     return dados
+
+
+# ---------------------------------------------------------------- editar pagamento --
+
+
+def edicao_pagamento_inicial(pagamento: dict) -> dict:
+    return {
+        "data": str(pagamento["data"])[:10], "valor": texto_moeda(pagamento["valor"]), "conta_id": pagamento.get("conta_id") or "",
+        "observacoes": pagamento.get("observacoes") or "", "data_estimada": "1" if pagamento.get("data_estimada") else "",
+    }
+
+
+def texto_da_edicao_pagamento(entrada: dict) -> dict:
+    return {campo: _texto(entrada, campo) for campo in ("data", "valor", "conta_id", "observacoes", "data_estimada")}
+
+
+def ler_edicao_pagamento(entrada: dict, limite, contas_validas: set[str]) -> dict:
+    """Pagamento corrigido, pronto para `dividas.atualizar_pagamento`. O valor vai de 0,01 a `limite` (ver
+    `dividas_lista.limite_do_pagamento`); a data pode ser marcada como aproximada (caixa `data_estimada` com `1`)."""
+    erros: dict[str, str] = {}
+    limite = Decimal(str(limite))
+    data = _coletar(erros, "data", _data_iso, _texto(entrada, "data"), "Data do pagamento", True)
+    valor = _coletar(erros, "valor", decimal_campo, entrada.get("valor"), "Valor pago", positivo=True)
+    if valor is not None and valor > limite:
+        erros["valor"] = f"Valor pago: não pode passar de {moeda(limite)}, o que falta mais este pagamento."
+    conta_id = _texto(entrada, "conta_id")
+    if conta_id and conta_id not in contas_validas:
+        erros["conta_id"] = "Conta: escolha uma das opções."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {
+        "data": date.fromisoformat(data), "valor": valor, "conta_id": conta_id or None,
+        "observacoes": _texto(entrada, "observacoes") or None, "data_estimada": _texto(entrada, "data_estimada") == "1",
+    }
