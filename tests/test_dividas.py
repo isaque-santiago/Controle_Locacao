@@ -235,3 +235,67 @@ def test_apagar_divida_chama_o_repositorio(monkeypatch):
     servico, feitos = _repo_edicao(monkeypatch)
     servico.apagar_divida("d1")
     assert feitos["apagadas"] == ["d1"]
+
+
+# ---------------------------------------------------------------- editar parcela e pagamento --
+
+
+def _repo_parcela(monkeypatch, valor_pago="0"):
+    from types import SimpleNamespace
+
+    from src.services import dividas as servico
+
+    feitos = {"parcelas": [], "pagamentos": []}
+    monkeypatch.setattr(servico, "dividas", SimpleNamespace(
+        obter_parcela=lambda id: {"vencimento_id": id, "valor": "1000", "valor_pago": valor_pago} if id != "x" else None,
+        obter_pagamento=lambda id: {"id": id} if id != "x" else None,
+        atualizar_parcela=lambda id, dados: feitos["parcelas"].append((id, dados)) or {"id": id},
+        atualizar_pagamento=lambda id, dados: feitos["pagamentos"].append((id, dados)) or {"id": id}))
+    return servico, feitos
+
+
+def test_atualizar_parcela_sem_pagamento_muda_vencimento_e_valor(monkeypatch):
+    servico, feitos = _repo_parcela(monkeypatch)
+    servico.atualizar_parcela("v1", date(2026, 12, 15), Decimal("1200"))
+    assert feitos["parcelas"] == [("v1", {"vencimento": "2026-12-15", "valor": "1200"})]
+
+
+def test_atualizar_parcela_so_com_vencimento_nao_toca_no_valor(monkeypatch):
+    servico, feitos = _repo_parcela(monkeypatch, valor_pago="400")
+    servico.atualizar_parcela("v1", date(2026, 12, 15))
+    servico.atualizar_parcela("v1", None)
+    assert feitos["parcelas"] == [("v1", {"vencimento": "2026-12-15"}), ("v1", {"vencimento": None})]
+
+
+def test_atualizar_parcela_recusa_valor_se_ja_tem_pagamento(monkeypatch):
+    servico, feitos = _repo_parcela(monkeypatch, valor_pago="400")
+    with pytest.raises(ValueError, match="já tem pagamento"):
+        servico.atualizar_parcela("v1", date(2026, 12, 15), Decimal("900"))
+    assert feitos["parcelas"] == []
+
+
+def test_atualizar_parcela_recusa_valor_nao_positivo_e_parcela_inexistente(monkeypatch):
+    servico, feitos = _repo_parcela(monkeypatch)
+    with pytest.raises(ValueError, match="positivo"):
+        servico.atualizar_parcela("v1", date(2026, 12, 15), Decimal("0"))
+    with pytest.raises(ValueError, match="não encontrada"):
+        servico.atualizar_parcela("x", date(2026, 12, 15))
+    assert feitos["parcelas"] == []
+
+
+def test_atualizar_pagamento_serializa_e_apara_as_observacoes(monkeypatch):
+    servico, feitos = _repo_parcela(monkeypatch)
+    servico.atualizar_pagamento("p1", date(2026, 10, 29), Decimal("900"), "c1", "  corrigido ", True)
+    assert feitos["pagamentos"] == [("p1", {"data": "2026-10-29", "valor": "900", "conta_id": "c1", "observacoes": "corrigido", "data_estimada": True})]
+
+
+def test_atualizar_pagamento_recusa_valor_nao_positivo(monkeypatch):
+    servico, feitos = _repo_parcela(monkeypatch)
+    with pytest.raises(ValueError, match="positivo"):
+        servico.atualizar_pagamento("p1", date(2026, 10, 29), Decimal("0"))
+    assert feitos["pagamentos"] == []
+
+
+def test_pagamento_devolve_o_do_repositorio(monkeypatch):
+    servico, _ = _repo_parcela(monkeypatch)
+    assert servico.pagamento("p1") == {"id": "p1"} and servico.pagamento("x") is None
