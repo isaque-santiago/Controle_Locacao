@@ -51,6 +51,7 @@ def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = 
         "frota_total": len(frota),
         "contagem": contagem,
         "ocupacao": painel.percentual_ocupacao(contagem),
+        "ativas": painel.total_ativas(contagem),
         "segmentos_medidor": painel.segmentos_medidor(contagem),
         "rosca": painel.segmentos_rosca(contagem),
         "descricao_medidor": painel.descricao_medidor(contagem),

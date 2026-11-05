@@ -56,6 +56,16 @@ def test_resultado_por_veiculo_recolhe_o_que_passa_de_cinco(cliente, monkeypatch
     assert '<details class="ver-mais">' in html
 
 
+def test_ocupacao_explica_a_base_da_conta_e_legenda_bate_com_a_rosca(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "3 de 5 ativas" in html
+    assert "Ocupação = alugadas ÷ motos ativas (5)" in html
+    legenda = re.search(r'aria-label="Frota por situação">(.*?)</ul>', html, re.S).group(1)
+    assert "60%" in legenda and "20%" in legenda
+    assert "—" in legenda  # inativas ficam fora da conta
+
+
 def test_nomes_vindos_do_banco_sao_escapados(cliente):
     entrar(cliente)
     html = cliente.get("/").text

@@ -1011,3 +1011,5 @@ a.mes-seta:hover {background: var(--superficie-hover); color: var(--texto);}
 .mes-seta-icone.seguinte {transform: rotate(90deg);}
 .mes-campo {min-height: var(--alvo); min-width: 11.5rem; padding: 0 var(--e3); border: 0; border-inline: 1px solid var(--linha); background: transparent; color: var(--texto); font: 600 14px var(--fonte-ui); text-align: center; cursor: pointer;}
 .mes-campo:focus-visible {outline: 3px solid var(--foco-halo); outline-offset: -3px;}
+.rosca-centro small + small {margin-top: 2px; font-size: 11px;}
+.legenda-nota {flex: 1 1 100%; margin: 0; font-size: 12.5px; color: var(--texto-3);}

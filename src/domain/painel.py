@@ -64,9 +64,14 @@ def contar_por_status(frota: list[dict]) -> dict[str, int]:
     return contagem
 
 
+def total_ativas(contagem: dict[str, int]) -> int:
+    """Motos ativas: tudo, menos as inativas."""
+    return sum(qtd for status, qtd in contagem.items() if status != "inativa")
+
+
 def percentual_ocupacao(contagem: dict[str, int]) -> int:
     """Alugadas sobre as motos ativas (as inativas não entram), em % inteiro."""
-    ativas = sum(qtd for status, qtd in contagem.items() if status != "inativa")
+    ativas = total_ativas(contagem)
     if not ativas:
         return 0
     return round(100 * contagem.get("alugada", 0) / ativas)
@@ -77,12 +82,19 @@ class SegmentoFrota:
     status: str
     quantidade: int
     rotulo: str  # ex.: "18 alugadas"
+    percentual: int | None = None  # % das motos ativas; None nas inativas (ficam fora da conta)
 
 
 def segmentos_frota(contagem: dict[str, int]) -> list[SegmentoFrota]:
     """Um segmento por status, na ordem do medidor e da legenda."""
+    ativas = total_ativas(contagem)
     return [
-        SegmentoFrota(status, contagem.get(status, 0), f"{contagem.get(status, 0)} {ROTULO_FROTA_PLURAL[status]}")
+        SegmentoFrota(
+            status,
+            contagem.get(status, 0),
+            f"{contagem.get(status, 0)} {ROTULO_FROTA_PLURAL[status]}",
+            round(100 * contagem.get(status, 0) / ativas) if ativas and status != "inativa" else None,
+        )
         for status in STATUS_FROTA
     ]
 

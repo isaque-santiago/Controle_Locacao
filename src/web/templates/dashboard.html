@@ -80,7 +80,7 @@
             <circle class="arco {{ arco.classe }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ arco.tamanho }} {{ 100 - arco.tamanho }}" stroke-dashoffset="{{ -arco.inicio }}"/>
             {% endfor %}
           </svg>
-          <span class="rosca-centro"><strong>{{ d.ocupacao }}%</strong><small>ocupação</small></span>
+          <span class="rosca-centro"><strong>{{ d.ocupacao }}%</strong><small>ocupação</small>{% if d.ativas and d.contagem %}<small>{{ d.contagem.alugada }} de {{ d.ativas }} ativas</small>{% endif %}</span>
         </div>
         {% endif %}
         <ul class="legenda legenda-detalhada" aria-label="Frota por situação">
@@ -89,10 +89,11 @@
             <i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>
             <span class="legenda-nome">{{ seg.rotulo.split(' ', 1)[1] }}</span>
             <strong class="mono">{{ seg.quantidade }}</strong>
-            <span class="legenda-pct mono">{{ ((100 * seg.quantidade / d.frota_total)|round|int if d.frota_total else 0) }}%</span>
+            <span class="legenda-pct mono">{% if seg.percentual is number %}{{ seg.percentual }}%{% elif seg.percentual is defined %}—{% else %}{{ ((100 * seg.quantidade / d.frota_total)|round|int if d.frota_total else 0) }}%{% endif %}</span>
           </li>
           {% endfor %}
         </ul>
+        {% if d.ativas %}<p class="legenda-nota">Ocupação = alugadas ÷ motos ativas ({{ d.ativas }}). Motos inativas não entram na conta.</p>{% endif %}
       </div>
     </section>
     {% endif %}
