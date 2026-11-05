@@ -1015,6 +1015,8 @@ def _linha_divida(id, credor, tipo="compra_parcelada", saldo="3000.00", situacao
 DIVIDA_ID = "00000000-0000-0000-0000-0000000000d1"
 PARCELA_ID = "00000000-0000-0000-0000-0000000000e8"
 PARCELA_PAGA_ID = "00000000-0000-0000-0000-0000000000e7"
+PAGAMENTO_ID = "00000000-0000-0000-0000-0000000000f7"
+PAGAMENTO_DIRETO_ID = "00000000-0000-0000-0000-0000000000f8"
 CONTA_ID = "00000000-0000-0000-0000-0000000000c1"
 MOTO_DIVIDA_ID = "00000000-0000-0000-0000-0000000000a1"
 DIVIDA_FIADO_ID = "00000000-0000-0000-0000-0000000000d2"
@@ -1083,6 +1085,14 @@ class BaseDividas:
         self.pagamentos_diretos = []
         self.edicoes = []
         self.apagadas = []
+        self.parcelas_editadas = []
+        self.pagamentos_editados = []
+        self.registros_pagamento = {
+            PAGAMENTO_ID: {"id": PAGAMENTO_ID, "divida_id": DIVIDA_ID, "vencimento_id": "v9", "data": "2026-10-28", "valor": "400.00",
+                           "conta_id": CONTA_ID, "observacoes": "pix <b>antigo</b>", "data_estimada": True},
+            PAGAMENTO_DIRETO_ID: {"id": PAGAMENTO_DIRETO_ID, "divida_id": DIVIDA_FIADO_ID, "vencimento_id": None, "data": "2026-10-10",
+                                  "valor": "300.00", "conta_id": None, "observacoes": None, "data_estimada": False},
+        }
         self.saldos = []
         self.fichas[DIVIDA_FIADO_ID] = ficha_divida_fiado()
         self.falhar_com = None
@@ -1110,7 +1120,8 @@ def base_dividas(monkeypatch):
 
     monkeypatch.setattr(dados_dividas, "dividas", SimpleNamespace(motos_para_selecao=lambda: base.motos,
         resumo=lambda: {"linhas": base.linhas, "totais": base.totais}, ficha=lambda id: base.fichas.get(id),
-        parcela=lambda id: base.parcelas.get(id), contas_ativas=lambda: base.contas))
+        parcela=lambda id: base.parcelas.get(id), contas_ativas=lambda: base.contas,
+        pagamento=lambda id: base.registros_pagamento.get(id)))
     def criar_divida(**dados):
         if base.falhar_com:
             raise base.falhar_com
@@ -1140,7 +1151,19 @@ def base_dividas(monkeypatch):
             raise base.falhar_com
         base.apagadas.append(divida_id)
 
+    def atualizar_parcela(vencimento_id, vencimento, valor):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.parcelas_editadas.append((vencimento_id, vencimento, valor))
+        return {"id": vencimento_id}
+
+    def atualizar_pagamento(pagamento_id, data, valor, conta_id, observacoes, data_estimada):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.pagamentos_editados.append((pagamento_id, data, valor, conta_id, observacoes, data_estimada))
+        return {"id": pagamento_id}
+
     monkeypatch.setattr(acoes_dividas, "dividas", SimpleNamespace(
-        apagar_divida=apagar_divida, pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra, criar_divida=criar_divida, pagar_divida=pagar_divida,
+        atualizar_parcela=atualizar_parcela, atualizar_pagamento=atualizar_pagamento, apagar_divida=apagar_divida, pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra, criar_divida=criar_divida, pagar_divida=pagar_divida,
         atualizar_divida=atualizar_divida, confirmar_saldo=confirmar_saldo))
     return base

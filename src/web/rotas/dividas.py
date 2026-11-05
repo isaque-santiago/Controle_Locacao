@@ -1,5 +1,6 @@
 """Dívidas: lista, ficha de cada dívida (parcelas e pagamentos) e o pagamento de parcela."""
 
+from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -216,6 +217,86 @@ def _pagar_divida(request, sessao, divida_id, entrada):
 @router.post("/dividas/{divida_id}/pagar", dependencies=[Depends(validar_csrf)])
 async def pagar_divida(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
     return await run_in_threadpool(_pagar_divida, request, sessao, divida_id, await _entrada(request))
+
+
+_EDITAR_PARCELA = "dividas/editar_parcela.html"
+
+
+def _contexto_editar_parcela(parcela, valores, erros=None, erro_geral=None):
+    return {
+        "titulo": "Editar parcela", "p": parcela, "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
+        "acao": f"/dividas/parcelas/{parcela['vencimento_id']}/editar", "voltar": f"/dividas/{parcela['divida_id']}",
+        "valor_trava": Decimal(str(parcela.get("valor_pago") or 0)) > 0,
+    }
+
+
+@router.get("/dividas/parcelas/{vencimento_id}/editar")
+def formulario_editar_parcela(request: Request, vencimento_id: str, _: Sessao = Depends(exigir_dono)):
+    parcela = _parcela_ou_404(vencimento_id)
+    return renderizar(request, _EDITAR_PARCELA, _contexto_editar_parcela(parcela, formulario.edicao_parcela_inicial(parcela)))
+
+
+def _editar_parcela(request, sessao, vencimento_id, entrada):
+    parcela = _parcela_ou_404(vencimento_id)
+    contexto = _contexto_editar_parcela(parcela, formulario.texto_da_edicao_parcela(entrada))
+
+    def editar():
+        dados = formulario.ler_edicao_parcela(entrada, parcela.get("valor_pago"))
+        acoes_dividas.atualizar_parcela(parcela["vencimento_id"], dados["vencimento"], dados.get("valor"))
+        return _concluir(request, sessao, f"/dividas/{parcela['divida_id']}", mensagens.parcela_atualizada(parcela.get("numero")))
+
+    return _devolver_formulario(request, _EDITAR_PARCELA, contexto, editar)
+
+
+@router.post("/dividas/parcelas/{vencimento_id}/editar", dependencies=[Depends(validar_csrf)])
+async def editar_parcela(request: Request, vencimento_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_editar_parcela, request, sessao, vencimento_id, await _entrada(request))
+
+
+_EDITAR_PAGAMENTO = "dividas/editar_pagamento.html"
+
+
+def _pagamento_e_ficha_ou_404(pagamento_id: str):
+    pagamento = dados_dividas.pagamento(_uuid_ou_404(pagamento_id))
+    if pagamento is None:
+        raise HTTPException(status_code=404)
+    return pagamento, _ficha_ou_404(pagamento["divida_id"])
+
+
+def _contexto_editar_pagamento(pagamento, f, contas, valores, erros=None, erro_geral=None):
+    limite = dividas_lista.limite_do_pagamento(pagamento, f["parcelas"], f["saldo"])
+    return {
+        "titulo": "Corrigir pagamento", "g": pagamento, "f": f, "v": valores, "erros": erros or {}, "erro_geral": erro_geral,
+        "acao": f"/dividas/pagamentos/{pagamento['id']}/editar", "voltar": f"/dividas/{pagamento['divida_id']}", "limite": limite,
+        "contas": [("", "Não informada"), *[(c["id"], c["nome"]) for c in contas]],
+    }
+
+
+@router.get("/dividas/pagamentos/{pagamento_id}/editar")
+def formulario_editar_pagamento(request: Request, pagamento_id: str, _: Sessao = Depends(exigir_dono)):
+    pagamento, f = _pagamento_e_ficha_ou_404(pagamento_id)
+    contexto = _contexto_editar_pagamento(pagamento, f, dados_dividas.contas(), formulario.edicao_pagamento_inicial(pagamento))
+    return renderizar(request, _EDITAR_PAGAMENTO, contexto)
+
+
+def _editar_pagamento(request, sessao, pagamento_id, entrada):
+    pagamento, f = _pagamento_e_ficha_ou_404(pagamento_id)
+    contas = dados_dividas.contas()
+    contexto = _contexto_editar_pagamento(pagamento, f, contas, formulario.texto_da_edicao_pagamento(entrada))
+
+    def editar():
+        dados = formulario.ler_edicao_pagamento(entrada, contexto["limite"], {c["id"] for c in contas})
+        acoes_dividas.atualizar_pagamento(
+            pagamento["id"], dados["data"], dados["valor"], dados["conta_id"], dados["observacoes"], dados["data_estimada"]
+        )
+        return _concluir(request, sessao, f"/dividas/{pagamento['divida_id']}", mensagens.pagamento_atualizado(dados["valor"]))
+
+    return _devolver_formulario(request, _EDITAR_PAGAMENTO, contexto, editar)
+
+
+@router.post("/dividas/pagamentos/{pagamento_id}/editar", dependencies=[Depends(validar_csrf)])
+async def editar_pagamento(request: Request, pagamento_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_editar_pagamento, request, sessao, pagamento_id, await _entrada(request))
 
 
 _SALDO = "dividas/saldo.html"

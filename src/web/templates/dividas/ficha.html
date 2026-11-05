@@ -38,7 +38,7 @@
       <td class="num mono" data-rotulo="Pago">{{ p.valor_pago|moeda }}</td>
       <td class="num mono" data-rotulo="Saldo">{{ p.saldo|moeda }}</td>
       <td data-rotulo="Situação">{{ selo(rotulo_parcela[p.situacao] ~ (" · " ~ p.dias_atraso ~ " d" if p.situacao == "atrasada" else ""), tom_parcela[p.situacao]) }}</td>
-      <td class="acao">{% if p.situacao != "paga" %}<a class="btn" href="/dividas/parcelas/{{ p.vencimento_id }}/pagar" aria-label="Pagar a parcela {{ p.numero if p.numero else '' }} de {{ dv.credor }}">Pagar</a>{% endif %}</td>
+      <td class="acao">{% if p.situacao != "paga" %}<a class="btn" href="/dividas/parcelas/{{ p.vencimento_id }}/pagar" aria-label="Pagar a parcela {{ p.numero if p.numero else '' }} de {{ dv.credor }}">Pagar</a> {% endif %}<a class="btn" href="/dividas/parcelas/{{ p.vencimento_id }}/editar" aria-label="Editar a parcela {{ p.numero if p.numero else '' }} de {{ dv.credor }}">Editar</a></td>
     </tr>
     {% endfor %}
   {% endcall %}
@@ -50,13 +50,14 @@
 <section class="cartao moto-lista-cards" aria-labelledby="t-pagamentos">
   <div class="cartao-cab"><h2 id="t-pagamentos">Pagamentos</h2></div>
   {% if f.pagamentos %}
-  {% call tabela([("Data", ""), ("Valor", "num"), ("Parcela", ""), ("Observações", "")], "Pagamentos feitos nesta dívida") %}
+  {% call tabela([("Data", ""), ("Valor", "num"), ("Parcela", ""), ("Observações", ""), ("Ação", "")], "Pagamentos feitos nesta dívida") %}
     {% for g in f.pagamentos %}
     <tr>
       <td class="topo mono">{{ g.data|data_br }}{% if g.data_estimada %} <small class="text-texto-2">estimada</small>{% endif %}</td>
       <td class="num mono" data-rotulo="Valor">{{ g.valor|moeda }}</td>
       <td data-rotulo="Parcela">{{ g.parcela_numero if g.parcela_numero else "—" }}</td>
       <td data-rotulo="Observações">{{ g.observacoes or "—" }}</td>
+      <td class="acao"><a class="btn" href="/dividas/pagamentos/{{ g.id }}/editar" aria-label="Corrigir o pagamento de {{ g.data|data_br }}">Corrigir</a></td>
     </tr>
     {% endfor %}
   {% endcall %}

@@ -29,3 +29,11 @@ def confirmar_saldo(divida_id, saldo, data):
 
 def apagar_divida(divida_id):
     return dividas.apagar_divida(divida_id)
+
+
+def atualizar_parcela(vencimento_id, vencimento, valor):
+    return dividas.atualizar_parcela(vencimento_id, vencimento, valor)
+
+
+def atualizar_pagamento(pagamento_id, data, valor, conta_id, observacoes, data_estimada):
+    return dividas.atualizar_pagamento(pagamento_id, data, valor, conta_id, observacoes, data_estimada)

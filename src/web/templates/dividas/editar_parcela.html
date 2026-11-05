@@ -1,0 +1,23 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar as voltar_link, cabecalho_pagina, aviso, campo %}
+{% block conteudo %}
+{{ voltar_link(voltar, "Voltar para a dívida") }}
+{{ cabecalho_pagina("Editar parcela", "Mude o vencimento (renegociação) ou o valor.") }}
+<form class="cartao" id="form-editar-parcela" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    <div class="largo"><b>{{ p.credor }}</b> · parcela {{ p.numero if p.numero else "sem número" }} · pago <span class="mono">{{ p.valor_pago|moeda }}</span> de <span class="mono">{{ p.valor|moeda }}</span></div>
+    {{ campo("f-vencimento-parcela", "Vencimento", nome="vencimento", valor=v.vencimento, tipo="date", erro=erros.vencimento, largo=True, ajuda="Deixe vazio se a data ainda não foi combinada.") }}
+    {% if valor_trava %}
+    <p class="largo aviso atencao" role="status"><span>Esta parcela já tem pagamento, então o valor não muda aqui. Para corrigir, edite o pagamento na ficha da dívida.</span></p>
+    {% else %}
+    {{ campo("f-valor-parcela-edicao", "Valor da parcela", nome="valor", valor=v.valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor, autocomplete="off", largo=True, ajuda="Muda só esta parcela; o total da dívida não é recalculado.") }}
+    {% endif %}
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="{{ voltar }}">Cancelar</a>
+    <button class="btn btn-primario" type="submit">Salvar alterações</button>
+  </div>
+</form>
+{% endblock %}

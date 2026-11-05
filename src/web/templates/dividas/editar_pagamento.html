@@ -1,0 +1,23 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar as voltar_link, cabecalho_pagina, aviso, campo, campo_lista, area_texto %}
+{% block conteudo %}
+{{ voltar_link(voltar, "Voltar para a dívida") }}
+{{ cabecalho_pagina("Corrigir pagamento", "Acerte data, valor, conta ou observações de um pagamento já lançado.") }}
+<form class="cartao" id="form-editar-pagamento" method="post" action="{{ acao }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    <div class="largo"><b>{{ f.divida.credor }}</b> · {{ f.tipo_rotulo }} · pagamento de <span class="mono">{{ g.data|data_br }}</span>{% if g.vencimento_id %} (de uma parcela){% else %} (direto, sem parcela){% endif %}</div>
+    {{ campo("f-data-pag-edicao", "Data do pagamento", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True) }}
+    <div class="campo largo"><label class="flex items-center gap-2" for="f-data-estimada"><input type="checkbox" id="f-data-estimada" name="data_estimada" value="1"{% if v.data_estimada == "1" %} checked{% endif %}><span>A data é aproximada (estimada)</span></label></div>
+    {{ campo("f-valor-pag-edicao", "Valor pago", nome="valor", valor=v.valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor, autocomplete="off", largo=True, ajuda="Pode ir até " ~ (limite|moeda) ~ " (o que falta mais este pagamento).") }}
+    {{ campo_lista("f-conta-pag-edicao", "Conta de onde saiu", contas, nome="conta_id", selecionado=v.conta_id, largo=True, erro=erros.conta_id) }}
+    {{ area_texto("f-obs-pag-edicao", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
+    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="{{ voltar }}">Cancelar</a>
+    <button class="btn btn-primario" type="submit">Salvar correção</button>
+  </div>
+</form>
+{% endblock %}

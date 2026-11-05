@@ -148,6 +148,14 @@ def divida_apagada(credor):
     return _toast(f"Dívida de {credor} apagada, com as parcelas e os pagamentos.")
 
 
+def parcela_atualizada(numero):
+    return _toast(f"Parcela {numero} atualizada." if numero else "Parcela atualizada.")
+
+
+def pagamento_atualizado(valor):
+    return _toast(f"Pagamento corrigido: {moeda(valor)}.")
+
+
 # ---------------------------------------------------------------- documentos --
 
 
