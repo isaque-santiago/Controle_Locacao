@@ -102,6 +102,7 @@ DADOS_PAINEL = {
     "frota_total": 5,
     "contagem": {"alugada": 3, "disponivel": 1, "manutencao": 1, "inativa": 0},
     "ocupacao": 60,
+    "ativas": 5,
     "segmentos_medidor": ["cheio", "cheio", "cheio", "oficina", ""],
     "rosca": [
         {"classe": "cheio", "inicio": 0.0, "tamanho": 60.0},
@@ -110,10 +111,10 @@ DADOS_PAINEL = {
     ],
     "descricao_medidor": "Frota de 5 motos: 3 alugadas, 1 disponíveis, 1 em manutenção, 0 inativas",
     "legenda": [
-        SimpleNamespace(status="alugada", quantidade=3, rotulo="3 alugadas"),
-        SimpleNamespace(status="disponivel", quantidade=1, rotulo="1 disponíveis"),
-        SimpleNamespace(status="manutencao", quantidade=1, rotulo="1 em manutenção"),
-        SimpleNamespace(status="inativa", quantidade=0, rotulo="0 inativas"),
+        SimpleNamespace(status="alugada", quantidade=3, rotulo="3 alugadas", percentual=60),
+        SimpleNamespace(status="disponivel", quantidade=1, rotulo="1 disponíveis", percentual=20),
+        SimpleNamespace(status="manutencao", quantidade=1, rotulo="1 em manutenção", percentual=20),
+        SimpleNamespace(status="inativa", quantidade=0, rotulo="0 inativas", percentual=None),
     ],
     "recebido": Decimal("1480.00"),
     "previsto": Decimal("2000.00"),

@@ -179,3 +179,16 @@ def test_limitar_lista_corta_no_limite_e_mantem_a_ordem():
     assert painel.limitar_lista(linhas, 3) == [0, 1, 2]
     assert painel.limitar_lista([1, 2], 5) == [1, 2]
     assert painel.limitar_lista(linhas, 0) == []
+
+
+def test_percentuais_da_legenda_usam_so_motos_ativas():
+    contagem = painel.contar_por_status(_frota(alugada=26, disponivel=6, manutencao=2, inativa=4))
+    assert painel.total_ativas(contagem) == 34
+    por_status = {s.status: s.percentual for s in painel.segmentos_frota(contagem)}
+    assert por_status == {"alugada": 76, "disponivel": 18, "manutencao": 6, "inativa": None}
+    assert painel.percentual_ocupacao(contagem) == por_status["alugada"]
+
+
+def test_percentuais_da_legenda_sem_motos_ativas():
+    contagem = painel.contar_por_status(_frota(inativa=2))
+    assert all(s.percentual is None for s in painel.segmentos_frota(contagem))
