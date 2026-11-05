@@ -1008,3 +1008,24 @@ O contrato com várias motos já tinha tela (etapa Moto do novo contrato, lista 
 - **Complemento (04/11/2026):** `/dividas/nova-divida` cadastra moto fiado, financiamento, fornecedor, rastreador e empréstimo (saldo confirmado opcional, com a data de hoje) e `/dividas/{id}/pagar` registra pagamento direto de dívida sem parcelas (valor até o saldo; dívida com parcelas paga-se pela parcela). Ambos são inserção em uma tabela só, sem RPC.
 - **Fora desta entrega:** editar ou apagar dívida, e confirmar ou corrigir o saldo de uma dívida já cadastrada pela tela.
 
+
+## 19. Vistoria por moto em contrato com várias motos (desenho aprovado em 05/11/2026)
+
+**Problema.** `vistorias` aceitava uma entrega e uma devolução por contrato (`unique (contrato_id, tipo)`), feitas na moto principal. A moto vinculada de um
+contrato com várias motos (ex.: Plano Conquista) ficava sem vistoria, sem fotos e sem km de devolução; o `km_atual` dela e os alertas de manutenção
+ficavam defasados.
+
+**Decisões (dono, 05/11/2026).**
+1. A tela **exige** a vistoria de todas as motos quando o contrato tem vinculadas; o banco aceita sem (contratos antigos não quebram).
+2. Contratos já carregados (ex.: Yangry) ganham a vistoria da vinculada de forma **retroativa pela tela**, que já lista os pendentes.
+3. Duas entregas: **PR 1** banco, regras, serviços e testes (resolve o km de devolução e os alertas); **PR 2** telas (formulários de novo contrato e de
+   encerramento com um bloco por moto, lista, comparação por moto e pendentes por moto).
+
+**PR 1.**
+- Migration: `unique (contrato_id, moto_id, tipo)`; gatilho que só aceita vistoria de moto do contrato (principal ou vinculada);
+  `rpc_criar_contrato_com_vistoria` e `rpc_encerrar_contrato_com_vistoria` ganham `p_vistorias_vinculadas jsonb default '[]'` (chamadas antigas seguem valendo).
+- Regras puras em `src/domain/vistorias_por_moto.py`: validar a lista (moto do contrato, sem repetição, km não menor que o atual), exigir todas as motos
+  e calcular as motos sem vistoria de cada tipo.
+- Repositório e serviços: as leituras de vistoria de um contrato continuam devolvendo as da moto principal por padrão (telas atuais não mudam) e aceitam
+  `moto_id` ou `todas` para as demais; criar e encerrar passam a receber as vistorias das vinculadas.
+- Fora do PR 1: telas. Até o PR 2, a lista de vistorias ainda mostra a placa da principal.
