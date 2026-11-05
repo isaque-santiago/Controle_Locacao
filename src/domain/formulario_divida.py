@@ -179,3 +179,90 @@ def ler_divida(entrada: dict, motos_validas: set[str]) -> dict:
         "descricao": _texto(entrada, "descricao") or None,
         "observacoes": _texto(entrada, "observacoes") or None,
     }
+
+
+# ---------------------------------------------------------------- editar e confirmar saldo --
+
+# Na compra parcelada, valor original = entrada + n x parcela é uma regra do banco: só os dados de identificação mudam.
+CAMPOS_EDICAO_COMPRA = ("credor", "moto_id", "descricao", "observacoes")
+CAMPOS_EDICAO = (
+    "credor", "valor_original", "numero_parcelas", "valor_parcela", "dia_vencimento", "moto_id", "descricao", "observacoes",
+)
+
+
+def campos_editaveis(tipo: str) -> tuple[str, ...]:
+    return CAMPOS_EDICAO_COMPRA if tipo == "compra_parcelada" else CAMPOS_EDICAO
+
+
+def edicao_inicial(divida: dict) -> dict:
+    """Texto inicial dos campos da edição, com o que a dívida tem hoje."""
+    def numero(campo):
+        return "" if divida.get(campo) is None else str(divida[campo])
+
+    def dinheiro(campo):
+        return "" if divida.get(campo) is None else texto_moeda(divida[campo])
+
+    return {
+        "credor": divida.get("credor") or "", "valor_original": dinheiro("valor_original"),
+        "numero_parcelas": numero("numero_parcelas"), "valor_parcela": dinheiro("valor_parcela"),
+        "dia_vencimento": numero("dia_vencimento"), "moto_id": divida.get("moto_id") or "",
+        "descricao": divida.get("descricao") or "", "observacoes": divida.get("observacoes") or "",
+    }
+
+
+def texto_da_edicao(entrada: dict) -> dict:
+    return {campo: _texto(entrada, campo) for campo in CAMPOS_EDICAO}
+
+
+def ler_edicao_divida(entrada: dict, tipo: str, motos_validas: set[str]) -> dict:
+    """Colunas da dívida a gravar. As mesmas regras do cadastro; na compra parcelada só credor, moto, descrição e observações
+    mudam (o total e as parcelas estão amarrados ao calendário já gerado)."""
+    erros: dict[str, str] = {}
+    credor = _texto(entrada, "credor")
+    if not credor:
+        erros["credor"] = "Credor: informe a quem se deve."
+    elif len(credor) > MAX_CREDOR:
+        erros["credor"] = f"Credor: use no máximo {MAX_CREDOR} caracteres."
+    moto_id = _texto(entrada, "moto_id")
+    if moto_id and moto_id not in motos_validas:
+        erros["moto_id"] = "Moto: escolha uma das opções."
+    dados = {"credor": credor, "moto_id": moto_id or None, "descricao": _texto(entrada, "descricao") or None,
+             "observacoes": _texto(entrada, "observacoes") or None}
+    if tipo != "compra_parcelada":
+        original = _coletar(erros, "valor_original", decimal_campo, entrada.get("valor_original") or "0", "Valor original")
+        texto_n, texto_parcela = _texto(entrada, "numero_parcelas"), _texto(entrada, "valor_parcela")
+        n = parcela = None
+        if texto_n or texto_parcela:
+            n = _coletar(erros, "numero_parcelas", inteiro_campo, texto_n, "Número de parcelas", 1, MAX_PARCELAS)
+            parcela = _coletar(erros, "valor_parcela", decimal_campo, texto_parcela, "Valor da parcela", positivo=True)
+        dia = None
+        if _texto(entrada, "dia_vencimento"):
+            dia = _coletar(erros, "dia_vencimento", inteiro_campo, _texto(entrada, "dia_vencimento"), "Dia do vencimento", 1, 31)
+        dados.update(valor_original=original, numero_parcelas=n, valor_parcela=parcela, dia_vencimento=dia)
+    if erros:
+        raise ErroDeCampos(erros)
+    return dados
+
+
+def saldo_inicial(divida: dict, saldo_atual, hoje: date) -> dict:
+    """Campos da confirmação de saldo: o confirmado de hoje (ou, sem ele, o saldo que o sistema calcula) e a data de hoje."""
+    confirmado = divida.get("saldo_confirmado")
+    return {"saldo": texto_moeda(confirmado if confirmado is not None else saldo_atual), "data": hoje.isoformat()}
+
+
+def texto_do_saldo(entrada: dict) -> dict:
+    return {"saldo": _texto(entrada, "saldo"), "data": _texto(entrada, "data")}
+
+
+def ler_saldo_confirmado(entrada: dict, hoje: date) -> dict:
+    """`acao=limpar` tira a confirmação (volta a valer o saldo calculado). Senão confirma: saldo de 0,00 para cima e data até hoje."""
+    if _texto(entrada, "acao") == "limpar":
+        return {"saldo_confirmado": None, "confirmado_em": None}
+    erros: dict[str, str] = {}
+    saldo = _coletar(erros, "saldo", decimal_campo, entrada.get("saldo"), "Saldo confirmado")
+    data = _coletar(erros, "data", _data_iso, _texto(entrada, "data"), "Data da confirmação", True)
+    if data is not None and date.fromisoformat(data) > hoje:
+        erros["data"] = "Data da confirmação: não pode ser no futuro."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {"saldo_confirmado": saldo, "confirmado_em": date.fromisoformat(data)}

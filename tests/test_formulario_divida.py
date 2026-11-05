@@ -168,3 +168,84 @@ def test_pagamento_direto_usa_a_mensagem_do_saldo_da_divida():
         f.ler_pagamento_parcela(_entrada(valor="5.000,00"), Decimal("3425"), CONTAS, alvo="da dívida")
     assert "não pode ser maior que o saldo da dívida (R$ 3.425,00)" in e.value.erros["valor"]
     assert f.ler_pagamento_parcela(_entrada(valor="3.425,00"), Decimal("3425"), CONTAS, alvo="da dívida")["quitada"] is True
+
+
+# ---------------------------------------------------------------- editar e confirmar saldo --
+
+DIVIDA_BANCO = {"credor": "Nilson", "valor_original": "9675.00", "numero_parcelas": None, "valor_parcela": None,
+                "dia_vencimento": None, "moto_id": None, "descricao": None, "observacoes": "Informado em 16/10"}
+
+
+def test_campos_editaveis_da_compra_parcelada_sao_so_os_de_identificacao():
+    assert f.campos_editaveis("compra_parcelada") == ("credor", "moto_id", "descricao", "observacoes")
+    assert "valor_original" in f.campos_editaveis("moto_fiado")
+
+
+def test_edicao_inicial_traz_o_que_a_divida_tem():
+    v = f.edicao_inicial({**DIVIDA_BANCO, "numero_parcelas": 24, "valor_parcela": "912.58", "dia_vencimento": 28, "moto_id": "m1"})
+    assert v["credor"] == "Nilson" and v["valor_original"] == "9.675,00" and v["numero_parcelas"] == "24"
+    assert v["valor_parcela"] == "912,58" and v["dia_vencimento"] == "28" and v["moto_id"] == "m1"
+    assert f.edicao_inicial(DIVIDA_BANCO)["numero_parcelas"] == "" and f.edicao_inicial(DIVIDA_BANCO)["valor_parcela"] == ""
+
+
+def _edicao(**extra):
+    return {**f.edicao_inicial(DIVIDA_BANCO), **extra}
+
+
+def test_edicao_de_moto_fiado_muda_valores_e_limpa_o_que_ficou_vazio():
+    d = f.ler_edicao_divida(_edicao(valor_original="9.000,00", observacoes="", moto_id="m1", dia_vencimento="10"), "moto_fiado", MOTOS)
+    assert d["valor_original"] == Decimal("9000.00") and d["observacoes"] is None and d["moto_id"] == "m1"
+    assert d["dia_vencimento"] == 10 and d["numero_parcelas"] is None and d["valor_parcela"] is None
+
+
+def test_edicao_da_compra_parcelada_ignora_valores_e_parcelas():
+    d = f.ler_edicao_divida(_edicao(credor="Álvaro", valor_original="1", numero_parcelas="2", valor_parcela="3"), "compra_parcelada", MOTOS)
+    assert set(d) == {"credor", "moto_id", "descricao", "observacoes"} and d["credor"] == "Álvaro"
+
+
+@pytest.mark.parametrize("campo,valor,erro", [
+    ("credor", "", "Credor"), ("credor", "x" * 121, "no máximo 120"), ("valor_original", "-1", "Valor original"),
+    ("numero_parcelas", "0", "Número de parcelas"), ("dia_vencimento", "32", "Dia do vencimento"), ("moto_id", "x", "Moto"),
+])
+def test_edicao_invalida_nao_passa(campo, valor, erro):
+    extra = {campo: valor}
+    if campo == "numero_parcelas":
+        extra["valor_parcela"] = "100"
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_divida(_edicao(**extra), "emprestimo", MOTOS)
+    assert campo in e.value.erros and erro in e.value.erros[campo]
+
+
+def test_edicao_exige_parcelas_e_valor_juntos():
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_divida(_edicao(numero_parcelas="10"), "emprestimo", MOTOS)
+    assert set(e.value.erros) == {"valor_parcela"}
+
+
+def test_saldo_inicial_prefere_o_confirmado_e_usa_hoje():
+    hoje = date(2026, 11, 5)
+    assert f.saldo_inicial({"saldo_confirmado": "3425.00"}, Decimal("5600"), hoje) == {"saldo": "3.425,00", "data": "2026-11-05"}
+    assert f.saldo_inicial({"saldo_confirmado": None}, Decimal("5600"), hoje)["saldo"] == "5.600,00"
+    assert f.saldo_inicial({"saldo_confirmado": "0"}, Decimal("5600"), hoje)["saldo"] == "0,00"
+
+
+def test_confirmar_saldo_le_valor_e_data():
+    d = f.ler_saldo_confirmado({"saldo": "3.425,00", "data": "2026-10-16", "acao": "confirmar"}, date(2026, 11, 5))
+    assert d == {"saldo_confirmado": Decimal("3425.00"), "confirmado_em": date(2026, 10, 16)}
+    assert f.ler_saldo_confirmado({"saldo": "0", "data": "2026-11-05"}, date(2026, 11, 5))["saldo_confirmado"] == Decimal("0.00")
+
+
+def test_limpar_a_confirmacao_nao_valida_campos():
+    assert f.ler_saldo_confirmado({"acao": "limpar", "saldo": "lixo", "data": ""}, date(2026, 11, 5)) == {
+        "saldo_confirmado": None, "confirmado_em": None}
+
+
+@pytest.mark.parametrize("entrada,campo,erro", [
+    ({"saldo": "", "data": "2026-11-05"}, "saldo", "Saldo confirmado"), ({"saldo": "-1", "data": "2026-11-05"}, "saldo", "Saldo confirmado"),
+    ({"saldo": "10", "data": ""}, "data", "Data da confirmação"), ({"saldo": "10", "data": "05/11/2026"}, "data", "Data da confirmação"),
+    ({"saldo": "10", "data": "2026-11-06"}, "data", "no futuro"),
+])
+def test_confirmar_saldo_recusa_entradas_invalidas(entrada, campo, erro):
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_saldo_confirmado(entrada, date(2026, 11, 5))
+    assert campo in e.value.erros and erro in e.value.erros[campo]
