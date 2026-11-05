@@ -74,3 +74,26 @@ def test_totais_ignoram_quitadas_e_pegam_o_vencimento_mais_proximo():
 def test_totais_sem_dividas():
     t = d.totais([])
     assert t["total_em_aberto"] == Decimal("0.00") and t["proximo_vencimento"] is None
+
+
+# ---------------------------------------------------------------- limite do pagamento --
+
+_PARCELAS = [
+    {"vencimento_id": "v1", "valor": "1000.00", "valor_pago": "1000.00"},
+    {"vencimento_id": "v2", "valor": "1000.00", "valor_pago": "400.00"},
+]
+
+
+def test_limite_de_pagamento_de_parcela_e_o_valor_da_parcela_menos_o_que_os_outros_cobriram():
+    # a parcela v2 tem R$ 400 pagos, e este pagamento é de R$ 150 desses 400: os outros cobriram 250
+    assert d.limite_do_pagamento({"vencimento_id": "v2", "valor": "150"}, _PARCELAS, "9999") == Decimal("750.00")
+    assert d.limite_do_pagamento({"vencimento_id": "v1", "valor": "1000"}, _PARCELAS, "0") == Decimal("1000.00")
+
+
+def test_limite_de_pagamento_direto_e_o_saldo_mais_o_proprio_valor():
+    assert d.limite_do_pagamento({"vencimento_id": None, "valor": "300"}, _PARCELAS, "7600") == Decimal("7900")
+    assert d.limite_do_pagamento({"valor": "300"}, [], Decimal("0")) == Decimal("300")
+
+
+def test_limite_com_parcela_desconhecida_cai_no_saldo_da_divida():
+    assert d.limite_do_pagamento({"vencimento_id": "x", "valor": "10"}, _PARCELAS, "90") == Decimal("100")
