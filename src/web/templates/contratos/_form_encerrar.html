@@ -3,8 +3,13 @@
 {% call form_dialogo("Encerrar contrato", acao, "Encerrar contrato", csrf_token, erro_geral) %}
   <div class="largo flex items-center gap-3">{{ placa(moto.placa|placa_br) }}<span class="text-texto-2">{{ cliente.nome }} · início <span class="mono text-texto">{{ contrato.data_inicio|data_br }}</span></span></div>
   {{ campo("f-data-enc", "Data de encerramento", nome="data_encerramento", valor=v.data_encerramento, tipo="date", obrigatorio=True, erro=erros.data_encerramento, largo=True, extra='min="' ~ contrato.data_inicio[:10] ~ '" ' ~ gatilho) }}
-  <h3 class="largo rotulo">Vistoria de devolução</h3>
+  <h3 class="largo rotulo">Vistoria de devolução{% if blocos_extras %} · {{ moto.placa|placa_br }} (principal){% endif %}</h3>
   {% include "contratos/_campos_vistoria.html" %}
+  {% for bloco in blocos_extras %}
+  <h3 class="largo rotulo">Vistoria de devolução · {{ bloco.moto.placa|placa_br }} · {{ bloco.moto.marca }} {{ bloco.moto.modelo }} (vinculada)</h3>
+  <input type="hidden" name="{{ bloco.pref }}moto" value="{{ bloco.moto.id }}">
+  {% with pref=bloco.pref, ajuda_km=bloco.ajuda_km %}{% include "contratos/_campos_vistoria.html" %}{% endwith %}
+  {% endfor %}
   <h3 class="largo rotulo">Caução e danos</h3>
   {% if avarias_resumo %}<p class="largo text-texto-2 text-[13px]">Avarias registradas na vistoria de entrega: {{ avarias_resumo }}. Use-as de base para o valor dos danos.</p>{% endif %}
   {{ campo("f-danos", "Danos a descontar da caução", nome="valor_danos", valor=v.valor_danos, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_danos, ajuda="Valor dos danos causados pelo cliente. É abatido da caução; o que passar dela é cobrado do cliente.", autocomplete="off", largo=True, extra=gatilho) }}

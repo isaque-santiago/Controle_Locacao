@@ -12,6 +12,7 @@ from fastapi.responses import RedirectResponse
 from starlette.concurrency import run_in_threadpool
 
 from src.domain import contratos_lista, formulario_contrato as formulario, formulario_vistoria, mensagens
+from src.domain import formulario_vistoria_por_moto as vistoria_por_moto
 from src.domain.contrato_motos import MAX_MOTOS_POR_CONTRATO
 from src.domain.formulario_moto import ErroDeCampos
 from src.domain.valores import hoje_br
@@ -92,13 +93,34 @@ def _contexto(etapa, rascunho, cliente, moto, **extra):
     }
 
 
-def _extra_confirmar(rascunho, moto):
-    """Resumo, prévia da agenda e campos da vistoria de entrega (etapa 4)."""
-    condicoes = rascunho["condicoes"]
+def _textos_da_vistoria(rascunho, moto, extras):
+    """Texto dos campos da vistoria: o da moto principal e o dos blocos das vinculadas (o digitado, se a lista de
+    motos for a mesma; senão o inicial)."""
     digitada = rascunho.get("vistoria_texto") if rascunho.get("vistoria_moto") == moto["id"] else None
+    guardado = rascunho.get("vistoria_extras") or {}
+    mesmas = guardado.get("ids") == [m["id"] for m in extras]
+    return {
+        **(digitada or formulario.vistoria_inicial(moto["km_atual"])),
+        **((guardado.get("texto") if mesmas else None) or vistoria_por_moto.textos_iniciais(extras)),
+    }
+
+
+def _blocos_extras(extras):
+    """Um bloco de vistoria por moto vinculada, com o prefixo dos campos e a ajuda do km."""
+    return [
+        {"moto": m, "pref": vistoria_por_moto.prefixo(n),
+         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(m['km_atual'])} km)."}
+        for n, m in enumerate(extras, start=1)
+    ]
+
+
+def _extra_confirmar(rascunho, moto):
+    """Resumo, prévia da agenda e campos da vistoria de entrega de cada moto (etapa 4)."""
+    condicoes = rascunho["condicoes"]
+    extras = _extras(rascunho, moto)
     return {
         "condicoes": condicoes, "valor_total": formulario.valor_total_promessa(condicoes), "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
-        "v": digitada or formulario.vistoria_inicial(moto["km_atual"]),
+        "v": _textos_da_vistoria(rascunho, moto, extras), "blocos_extras": _blocos_extras(extras),
         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(moto['km_atual'])} km) e vira o km inicial do contrato.",
         "itens_checklist": [(PREFIXO + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],
         "estados": [(e, _ESTADOS_ROTULO[e]) for e in ESTADOS_ITEM],
@@ -231,13 +253,15 @@ def _criar(request, sessao, entrada, fotos=()):
     condicoes = rascunho.get("condicoes")
     if cliente is None or moto is None or not condicoes:
         return _ir(_etapa_liberada(rascunho, cliente, moto))
+    extras = _extras(rascunho, moto)
     rascunho["vistoria_texto"] = formulario.texto_da_vistoria(entrada)
     rascunho["vistoria_moto"] = moto["id"]
+    rascunho["vistoria_extras"] = {"ids": [m["id"] for m in extras], "texto": vistoria_por_moto.texto_das_vinculadas(entrada, extras)}
     if entrada.get("acao") == "voltar":
         return _ir(3)
     contexto = _contexto(
         4, rascunho, cliente, moto, erros={}, erro_geral=None, busca="",
-        **{**_extra_confirmar(rascunho, moto), "v": rascunho["vistoria_texto"]},
+        **{**_extra_confirmar(rascunho, moto), "v": {**rascunho["vistoria_texto"], **rascunho["vistoria_extras"]["texto"]}},
     )
 
     def criar():
@@ -250,13 +274,18 @@ def _criar(request, sessao, entrada, fotos=()):
             formulario_vistoria.validar_fotos(resumo_fotos(fotos))
         except ErroDeCampos as erro:
             erros.update(erro.erros)
+        vistorias_extras = []
+        try:
+            vistorias_extras = vistoria_por_moto.ler_vistorias_vinculadas(entrada, extras)
+        except ErroDeCampos as erro:
+            erros.update(erro.erros)
         if erros:
             raise ErroDeCampos(erros)
-        vinculadas = [m["id"] for m in _extras(rascunho, moto)]
+        vinculadas = [m["id"] for m in extras]
         dados = {"moto_id": moto["id"], "cliente_id": cliente["id"], "km_inicial": vistoria["km"], **condicoes}
         if vinculadas:
             dados["motos_vinculadas"] = vinculadas
-        resultado = acoes_contratos.criar_contrato_com_vistoria(dados, vistoria)
+        resultado = acoes_contratos.criar_contrato_com_vistoria(dados, vistoria, vistorias_extras or None)
         rascunho.clear()
         contrato_id = resultado.get("contrato_id") if resultado else None
         falhas = acoes_vistorias.anexar_fotos_da_entrega(contrato_id, fotos) if fotos else 0

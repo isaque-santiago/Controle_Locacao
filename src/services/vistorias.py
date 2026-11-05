@@ -94,11 +94,11 @@ def url_foto(storage_path: str, expira_em: int = 300) -> str:
     return vistoria_fotos.url_assinada(storage_path, expira_em)
 
 
-def comparar_entrega_devolucao(contrato_id: str) -> dict:
-    """Compara os checklists de entrega e devolução do contrato lado a lado;
+def comparar_entrega_devolucao(contrato_id: str, moto_id: Optional[str] = None) -> dict:
+    """Compara os checklists de entrega e devolução de uma moto do contrato (a principal, por padrão) lado a lado;
     diferencas fica None enquanto algum dos dois ainda não foi registrado."""
-    entrega = vistorias.obter_por_contrato_e_tipo(contrato_id, "entrega")
-    devolucao = vistorias.obter_por_contrato_e_tipo(contrato_id, "devolucao")
+    entrega = vistorias.obter_por_contrato_e_tipo(contrato_id, "entrega", moto_id)
+    devolucao = vistorias.obter_por_contrato_e_tipo(contrato_id, "devolucao", moto_id)
 
     diferencas = None
     if entrega is not None and devolucao is not None:

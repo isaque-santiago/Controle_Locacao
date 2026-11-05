@@ -13,6 +13,13 @@ def _vistoria(**extra):
             **{f"item_{i}": "ok" for i in CHECKLIST_PADRAO}, **extra}
 
 
+def _bloco_vinculada(n, moto_id, **extra):
+    """Campos da vistoria de entrega da n-ésima moto vinculada (prefixo vinc<n>_ e o id da moto escondido)."""
+    campos = {"km": "1000", "nivel_combustivel": "cheio", "adicionais": "", "avarias": "",
+              **{f"item_{i}": "ok" for i in CHECKLIST_PADRAO}, **extra}
+    return {f"vinc{n}_{chave}": valor for chave, valor in campos.items()} | {f"vinc{n}_moto": moto_id}
+
+
 def _preparar(cliente, base, ate=4):
     """Percorre o assistente até a etapa `ate` com dados válidos (1 = só cliente, 2 = + moto, 3 = + condições)."""
     entrar(cliente)
@@ -91,7 +98,7 @@ def test_vincular_moto_extra_aparece_no_resumo_e_vai_no_payload(cliente, base_co
     assert "Motos vinculadas (1)" in html and "Vinculada · tirar" in html
     cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **CONDICOES})
     assert "Motos vinculadas (1)" in cliente.get(f"{BASE}?etapa=4").text
-    cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()})
+    cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria(), **_bloco_vinculada(1, extra)})
     dados, _ = acoes_contratos_falsas.chamadas[0]
     assert dados["motos_vinculadas"] == [extra]
 
@@ -278,3 +285,68 @@ def test_assistente_exige_dono_e_csrf(cliente, base_contratos):
     cliente.post("/logout", data={"csrf_token": csrf_da_sessao(cliente)})
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get(BASE).status_code == 403 and cliente.get(f"{BASE}/iniciar").status_code == 403
+
+
+def _com_vinculada(cliente, base):
+    token = _preparar(cliente, base, ate=2)
+    extra = base.moto_livre2["id"]
+    cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
+    cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **CONDICOES})
+    return token, extra
+
+
+def test_etapa_confirmar_tem_um_bloco_de_vistoria_por_moto_vinculada(cliente, base_contratos):
+    _, extra = _com_vinculada(cliente, base_contratos)
+    html = cliente.get(f"{BASE}?etapa=4").text
+    assert "moto principal" in html and "(vinculada)" in html
+    assert f'name="vinc1_moto" value="{extra}"' in html
+    for nome in ("km", "nivel_combustivel", "avarias", "item_farol_dianteiro"):
+        assert f'name="vinc1_{nome}"' in html
+    assert 'id="vvinc1_-km"' in html and "A vistoria de todas as motos do contrato é obrigatória" in html
+
+
+def test_etapa_confirmar_sem_vinculada_nao_muda(cliente, base_contratos):
+    _preparar(cliente, base_contratos, ate=3)
+    html = cliente.get(f"{BASE}?etapa=4").text
+    assert "vinc1_" not in html and "moto principal" not in html and 'id="v-km"' in html
+
+
+def test_criar_envia_a_vistoria_de_entrega_de_cada_vinculada(cliente, base_contratos, acoes_contratos_falsas):
+    token, extra = _com_vinculada(cliente, base_contratos)
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria(), **_bloco_vinculada(1, extra)})
+    assert resposta.status_code == 303 and len(acoes_contratos_falsas.chamadas) == 1
+    (vistoria_extra,) = acoes_contratos_falsas.vistorias_vinculadas[0]
+    assert vistoria_extra["moto_id"] == extra and vistoria_extra["km"] == 1000
+    assert vistoria_extra["checklist"]["farol_dianteiro"] == "ok"
+
+
+def test_criar_sem_a_vistoria_da_vinculada_volta_com_erro_e_nao_grava(cliente, base_contratos, acoes_contratos_falsas):
+    token, extra = _com_vinculada(cliente, base_contratos)
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()})
+    assert acoes_contratos_falsas.chamadas == []
+    assert resposta.status_code == 422 and "A lista de motos do contrato mudou" in resposta.text
+
+
+def test_erro_na_vinculada_volta_com_o_texto_digitado_e_nao_grava(cliente, base_contratos, acoes_contratos_falsas):
+    token, extra = _com_vinculada(cliente, base_contratos)
+    ruim = _bloco_vinculada(1, extra, km="abc")
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria(), **ruim})
+    assert acoes_contratos_falsas.chamadas == [] and resposta.status_code == 422
+    assert 'name="vinc1_km"' in resposta.text and 'value="abc"' in resposta.text
+    assert 'name="km"' in resposta.text and 'value="5000"' in resposta.text  # o texto da principal também volta
+
+
+def test_km_da_vinculada_menor_que_o_atual_e_recusado(cliente, base_contratos, acoes_contratos_falsas):
+    token, extra = _com_vinculada(cliente, base_contratos)
+    km_atual = base_contratos.moto_livre2["km_atual"]
+    resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria(), **_bloco_vinculada(1, extra, km=str(km_atual - 1))})
+    assert acoes_contratos_falsas.chamadas == [] and resposta.status_code == 422
+
+
+def test_texto_da_vinculada_sobrevive_a_voltar_e_reabrir(cliente, base_contratos):
+    token, extra = _com_vinculada(cliente, base_contratos)
+    cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria(), **_bloco_vinculada(1, extra, km="1234", avarias="risco no tanque"), "acao": "voltar"})
+    html = cliente.get(f"{BASE}?etapa=3").text  # volta para as condições
+    cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **CONDICOES})
+    html = cliente.get(f"{BASE}?etapa=4").text
+    assert 'value="1234"' in html and "risco no tanque" in html

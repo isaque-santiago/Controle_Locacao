@@ -11,5 +11,6 @@
 {% endcall %}
 {% else %}
 {% call cartao(k.titulo, "tracejado") %}<p class="text-texto-2">Ainda não realizada{% if k.tipo == "devolucao" %} — será registrada no encerramento do contrato{% endif %}.</p>
-{{ botao("Registrar vistoria de " ~ (k.titulo|lower), href="/vistorias/registrar?contrato=" ~ c.contrato.id, extra='hx-get="/vistorias/registrar?contrato=' ~ c.contrato.id ~ '" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endcall %}
+{% set destino = k.registrar or ("/vistorias/registrar?contrato=" ~ c.contrato.id) %}
+{{ botao("Registrar vistoria de " ~ (k.titulo|lower), href=destino, extra='hx-get="' ~ destino ~ '" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endcall %}
 {% endif %}

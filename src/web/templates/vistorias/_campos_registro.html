@@ -1,7 +1,7 @@
 {% from "componentes/macros.html" import campo, campo_lista, placa %}
 {# Etapa 2 do registro (diálogo e página). Contexto: c (contrato, cliente, moto, faltantes), v, erros, alterar_hx, ajuda_km, itens_checklist, estados, niveis, tipos. #}
-<input type="hidden" name="contrato" value="{{ c.contrato.id }}">
-<div class="largo flex flex-wrap items-center gap-3">{{ placa(c.moto.placa|placa_br) }}<span><b>{{ c.cliente.nome }}</b> · {{ c.moto.marca }} {{ c.moto.modelo }}</span><a class="btn" href="/vistorias/registrar"{{ alterar_hx|safe }}>Alterar contrato</a></div>
+<input type="hidden" name="contrato" value="{{ c.valor or c.contrato.id }}">
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(c.moto.placa|placa_br) }}<span><b>{{ c.cliente.nome }}</b> · {{ c.moto.marca }} {{ c.moto.modelo }}{% if c.vinculada %} · moto vinculada{% endif %}</span><a class="btn" href="/vistorias/registrar"{{ alterar_hx|safe }}>Alterar contrato</a></div>
 {{ campo_lista("v-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, largo=True) }}
 {% if erros.tipo %}<small class="msg-erro largo" role="alert">{{ erros.tipo }}</small>{% endif %}
 {{ campo("v-data", "Data", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True, extra='min="' ~ c.contrato.data_inicio[:10] ~ '" max="' ~ hoje ~ '"') }}

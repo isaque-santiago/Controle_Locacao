@@ -447,6 +447,7 @@ class BaseContratos:
         self.moto_livre2 = {"id": "00000000-0000-0000-0000-0000000000a3", "placa": "ABC1D23", "marca": "Honda", "modelo": "Pop 110",
                             "km_atual": 800, "status": "disponivel", "valor_locacao_sugerido": Decimal("200")}
         self.vinculadas = {}
+        self.com_vinculada = True  # motos_do_contrato devolve a QRS4T21 como vinculada
         self.contratos = [
             {"id": self.id, "cliente_id": self.cliente["id"], "moto_id": self.moto["id"], "status": "ativo",
              "data_inicio": "2026-08-01", "data_fim_prevista": None, "data_encerramento": None, "periodicidade": "semanal",
@@ -463,6 +464,7 @@ class BaseContratos:
         self.pagamentos = {"b1": [{"data_pagamento": "2026-08-01"}]}
         self.vistorias = [{"tipo": "entrega", "data": "2026-08-01", "km": 10500, "nivel_combustivel": "cheio",
                            "checklist": {"freio_dianteiro": "avaria", "farol": "ok", "espelho_retrovisor": "avaria"}}]
+        self.vistorias_vinculada = []  # vistorias da moto vinculada (QRS4T21) do contrato
         self.manutencoes = [
             {"data_entrada": "2026-09-10", "tipo": "preventiva", "descricao": "Óleo <i>e filtro</i>", "km": 11000,
              "cobrar_do_cliente": True, "custo_total": Decimal("85")},
@@ -489,7 +491,8 @@ def base_contratos(monkeypatch):
     frota = [base.moto, base.moto_livre, base.moto_livre2]
     monkeypatch.setattr(dados_contratos, "contratos", SimpleNamespace(
         listar=lambda: base.contratos, previa_agenda=previa_agenda, contar_vinculadas=lambda: base.vinculadas,
-        motos_do_contrato=lambda id_: [dict(base.moto, principal=True), dict(base.moto_livre, principal=False)]))
+        motos_do_contrato=lambda id_: [dict(base.moto, moto_id=base.moto["id"], principal=True)]
+        + ([dict(base.moto_livre, moto_id=base.moto_livre["id"], principal=False)] if base.com_vinculada else [])))
     monkeypatch.setattr(dados_contratos, "clientes", SimpleNamespace(
         listar=lambda: pessoas, obter=lambda id_: next((c for c in pessoas if c["id"] == id_), None)))
     monkeypatch.setattr(dados_contratos, "motos", SimpleNamespace(
@@ -497,7 +500,8 @@ def base_contratos(monkeypatch):
     monkeypatch.setattr(dados_contratos, "cobrancas", SimpleNamespace(
         listar_por_contrato=lambda id_: base.cobrancas,
         historicos_pagamentos=lambda ids: {i: base.pagamentos.get(i, []) for i in ids}))
-    monkeypatch.setattr(dados_contratos, "vistorias", SimpleNamespace(listar_por_contrato=lambda id_: base.vistorias))
+    monkeypatch.setattr(dados_contratos, "vistorias", SimpleNamespace(
+        listar_por_contrato=lambda id_, moto_id=None, todas=False: base.vistorias_vinculada if moto_id else base.vistorias))
     monkeypatch.setattr(dados_contratos, "manutencao", SimpleNamespace(listar_manutencoes=lambda id_: base.manutencoes))
     return base
 
@@ -508,18 +512,21 @@ class AcoesContratosFalsas:
     def __init__(self):
         self.chamadas: list[tuple] = []
         self.encerramentos: list[tuple] = []
+        self.vistorias_vinculadas: list = []  # vistorias das vinculadas de cada chamada (criar ou encerrar)
         self.falhar_com: Exception | None = None
 
-    def criar_contrato_com_vistoria(self, dados, vistoria):
+    def criar_contrato_com_vistoria(self, dados, vistoria, vistorias_vinculadas=None):
         if self.falhar_com is not None:
             raise self.falhar_com
         self.chamadas.append((dados, vistoria))
+        self.vistorias_vinculadas.append(vistorias_vinculadas)
         return {"contrato_id": "00000000-0000-0000-0000-0000000000e1"}
 
-    def encerrar_contrato_com_vistoria(self, contrato_id, data, vistoria, valor_danos, descricao_danos):
+    def encerrar_contrato_com_vistoria(self, contrato_id, data, vistoria, valor_danos, descricao_danos, vistorias_vinculadas=None):
         if self.falhar_com is not None:
             raise self.falhar_com
         self.encerramentos.append((contrato_id, data, vistoria, valor_danos, descricao_danos))
+        self.vistorias_vinculadas.append(vistorias_vinculadas)
         return {}
 
 
@@ -759,6 +766,8 @@ class BaseVistorias:
     def __init__(self):
         self.cliente = {"id": "c1", "nome": "Maria <b>Silva</b>"}
         self.moto = {"id": "m1", "placa": "BRA2E19", "marca": "Honda", "modelo": "CG 160", "km_atual": 12000}
+        self.vinculada = {"id": "00000000-0000-0000-0000-0000000000b9", "placa": "QRS4T21", "marca": "Yamaha", "modelo": "Factor", "km_atual": 5000}
+        self.vinculos = []  # linhas de contrato_motos: motos vinculadas (além da principal) de cada contrato
         self.contrato_sem_vistorias = "00000000-0000-0000-0000-0000000000d3"
         self.contratos = [
             {"id": CONTRATO_VISTORIAS, "cliente_id": "c1", "moto_id": "m1", "data_inicio": "2026-08-01", "data_encerramento": None, "status": "ativo"},
@@ -793,20 +802,27 @@ def base_vistorias(monkeypatch):
 
     base = BaseVistorias()
 
-    def comparar(contrato_id):
-        por_tipo = {v["tipo"]: v for v in base.registradas if v["contrato_id"] == contrato_id}
+    def da_moto(contrato_id, moto_id=None):
+        """Vistorias do contrato da moto pedida (por padrão, a principal do contrato)."""
+        principal = next((c["moto_id"] for c in base.contratos if c["id"] == contrato_id), None)
+        return [v for v in base.registradas if v["contrato_id"] == contrato_id and v["moto_id"] == (moto_id or principal)]
+
+    def comparar(contrato_id, moto_id=None):
+        por_tipo = {v["tipo"]: v for v in da_moto(contrato_id, moto_id)}
         return {"entrega": por_tipo.get("entrega"), "devolucao": por_tipo.get("devolucao"), "diferencas": None}
 
     monkeypatch.setattr(dados_vistorias, "vistorias", SimpleNamespace(
         listar=lambda: base.registradas, comparar_entrega_devolucao=comparar,
-        listar_por_contrato=lambda id_: [v for v in base.registradas if v["contrato_id"] == id_],
+        listar_por_contrato=lambda id_, moto_id=None, todas=False: da_moto(id_, moto_id),
         obter=lambda id_: next((v for v in base.registradas if v["id"] == id_), None),
         url_foto=lambda caminho: _url({"storage_path": caminho})))
-    monkeypatch.setattr(dados_vistorias, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    monkeypatch.setattr(dados_vistorias, "contratos", SimpleNamespace(
+        listar=lambda: base.contratos, listar_vinculos=lambda: base.vinculos))
     monkeypatch.setattr(dados_vistorias, "clientes", SimpleNamespace(
         listar=lambda: [base.cliente], obter=lambda id_: base.cliente if id_ == "c1" else None))
     monkeypatch.setattr(dados_vistorias, "motos", SimpleNamespace(
-        listar=lambda: [base.moto], obter=lambda id_: base.moto if id_ == "m1" else None))
+        listar=lambda: [base.moto, base.vinculada],
+        obter=lambda id_: next((m for m in (base.moto, base.vinculada) if m["id"] == id_), None)))
     return base
 
 

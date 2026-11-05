@@ -55,6 +55,16 @@ def _avarias(checklist):
     return ", ".join(nomes) or "Nenhuma"
 
 
+def _vistorias_da_moto(contrato_id, moto_id):
+    """Entrega e devolução de uma moto do contrato (a principal quando `moto_id` é None), com as avarias em texto."""
+    por_tipo = {v["tipo"]: v for v in vistorias.listar_por_contrato(contrato_id, moto_id)}
+    return [
+        {"tipo": tipo, "titulo": titulo, "registro": por_tipo.get(tipo),
+         "avarias": _avarias((por_tipo.get(tipo) or {}).get("checklist"))}
+        for tipo, titulo in _TIPOS_VISTORIA
+    ]
+
+
 def carregar_ficha(contrato, aba):
     """Cabeçalho de dados (sempre) e o conteúdo da aba pedida."""
     parcelas = sorted(cobrancas.listar_por_contrato(contrato["id"]), key=lambda c: c["vencimento"])
@@ -69,11 +79,10 @@ def carregar_ficha(contrato, aba):
             {**c, "pago_em": (historicos.get(c["id"]) or [{}])[-1].get("data_pagamento")} for c in parcelas
         ]
     elif aba == "vistorias":
-        por_tipo = {v["tipo"]: v for v in vistorias.listar_por_contrato(contrato["id"])}
-        dados["vistorias"] = [
-            {"tipo": tipo, "titulo": titulo, "registro": por_tipo.get(tipo),
-             "avarias": _avarias((por_tipo.get(tipo) or {}).get("checklist"))}
-            for tipo, titulo in _TIPOS_VISTORIA
+        dados["vistorias"] = _vistorias_da_moto(contrato["id"], None)
+        dados["vistorias_extras"] = [
+            {"moto": m, "vistorias": _vistorias_da_moto(contrato["id"], m["moto_id"])}
+            for m in dados["motos"] if not m["principal"]
         ]
     elif aba == "manutencoes":
         limite = str(contrato.get("data_encerramento") or hoje_br().isoformat())[:10]
@@ -127,6 +136,12 @@ def previa_agenda(condicoes):
 
 
 # ----------------------------------------------------------------- encerramento --
+
+def vinculadas_do_contrato(contrato_id):
+    """Motos vinculadas do contrato (sem a principal), com o km atual de cada uma, na ordem da view."""
+    frota = {m["id"]: m for m in motos.listar()}
+    return [frota[m["moto_id"]] for m in contratos.motos_do_contrato(contrato_id) if not m["principal"] and m["moto_id"] in frota]
+
 
 def previa_encerramento(contrato_id, data, valor_danos):
     """Caução, danos e cobranças que o encerramento cancelaria (`data` e `valor_danos` podem ser None)."""

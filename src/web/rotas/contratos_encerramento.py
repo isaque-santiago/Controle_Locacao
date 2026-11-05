@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.concurrency import run_in_threadpool
 
 from src.domain import formulario_contrato as formulario, mensagens
+from src.domain import formulario_vistoria_por_moto as vistoria_por_moto
+from src.domain.formulario_moto import ErroDeCampos
 from src.domain.entradas import decimal_campo
 from src.domain.valores import hoje_br
 from src.domain.vistorias import CHECKLIST_PADRAO, ESTADOS_ITEM, NIVEIS_COMBUSTIVEL, rotulo_item
@@ -54,11 +56,21 @@ def _previa(registro, v):
     )
 
 
-def _contexto(registro, v, erros=None, erro_geral=None):
+def _blocos_extras(extras):
+    """Um bloco de vistoria de devolução por moto vinculada, com o prefixo dos campos e a ajuda do km."""
+    return [
+        {"moto": m, "pref": vistoria_por_moto.prefixo(n),
+         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(m['km_atual'])} km)."}
+        for n, m in enumerate(extras, start=1)
+    ]
+
+
+def _contexto(registro, v, extras, erros=None, erro_geral=None):
     contrato, moto = registro["contrato"], registro["moto"]
     base = f"/contratos/{contrato['id']}/encerrar"
     return {
         **registro, "v": v, "erros": erros or {}, "erro_geral": erro_geral, "acao": base, "acao_previa": f"{base}/previa",
+        "blocos_extras": _blocos_extras(extras),
         "resumo": _previa(registro, v), "limite_impacto": LIMITE_IMPACTO,
         "avarias_resumo": dados_contratos.avarias_da_entrega(contrato["id"]),
         "ajuda_km": f"Vale como km final do contrato (início: {formatar_milhar(contrato['km_inicial'])} km).",
@@ -70,9 +82,10 @@ def _contexto(registro, v, erros=None, erro_geral=None):
 @router.get("/contratos/{contrato_id}/encerrar")
 def formulario_encerrar(request: Request, contrato_id: str, _: Sessao = Depends(exigir_dono)):
     registro = _ativo_ou_404(contrato_id)
+    extras = dados_contratos.vinculadas_do_contrato(contrato_id)
     v = {**formulario.condicoes_do_encerramento(hoje_br(), registro["contrato"]["data_inicio"]),
-         **formulario.vistoria_inicial(registro["moto"]["km_atual"])}
-    return renderizar(request, "contratos/_form_encerrar.html", _contexto(registro, v))
+         **formulario.vistoria_inicial(registro["moto"]["km_atual"]), **vistoria_por_moto.textos_iniciais(extras)}
+    return renderizar(request, "contratos/_form_encerrar.html", _contexto(registro, v, extras))
 
 
 @router.post("/contratos/{contrato_id}/encerrar/previa", dependencies=[Depends(validar_csrf)])
@@ -86,14 +99,27 @@ async def previa_encerrar(request: Request, contrato_id: str, _: Sessao = Depend
 def _encerrar(request, sessao, contrato_id, entrada):
     registro = _ativo_ou_404(contrato_id)
     contrato, cliente, moto = registro["contrato"], registro["cliente"], registro["moto"]
-    v = {**formulario.texto_do_encerramento(entrada), **formulario.texto_da_vistoria(entrada)}
-    contexto = _contexto(registro, v)
+    extras = dados_contratos.vinculadas_do_contrato(contrato_id)
+    v = {**formulario.texto_do_encerramento(entrada), **formulario.texto_da_vistoria(entrada),
+         **vistoria_por_moto.texto_das_vinculadas(entrada, extras)}
+    contexto = _contexto(registro, v, extras)
 
     def encerrar():
-        dados = formulario.ler_encerramento(entrada, contrato["data_inicio"], moto["km_atual"])
+        erros, dados, vistorias_extras = {}, None, []
+        try:
+            dados = formulario.ler_encerramento(entrada, contrato["data_inicio"], moto["km_atual"])
+        except ErroDeCampos as erro:
+            erros.update(erro.erros)
+        try:
+            vistorias_extras = vistoria_por_moto.ler_vistorias_vinculadas(entrada, extras)
+        except ErroDeCampos as erro:
+            erros.update(erro.erros)
+        if erros:
+            raise ErroDeCampos(erros)
         resumo = dados_contratos.previa_encerramento(contrato["id"], dados["data"], dados["valor_danos"])
         acoes_contratos.encerrar_contrato_com_vistoria(
             contrato["id"], dados["data"], dados["vistoria"], dados["valor_danos"], dados["descricao_danos"],
+            vistorias_extras or None,
         )
         devolucao = resumo["devolucao"]
         aviso = mensagens.contrato_encerrado(
