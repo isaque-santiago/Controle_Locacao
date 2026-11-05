@@ -25,3 +25,7 @@ def atualizar_divida(divida_id, dados):
 
 def confirmar_saldo(divida_id, saldo, data):
     return dividas.confirmar_saldo(divida_id, saldo, data)
+
+
+def apagar_divida(divida_id):
+    return dividas.apagar_divida(divida_id)

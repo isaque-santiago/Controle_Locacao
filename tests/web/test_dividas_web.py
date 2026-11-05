@@ -599,3 +599,64 @@ def test_falha_do_banco_ao_editar(cliente, base_dividas):
     base_dividas.falhar_com = RuntimeError("banco fora do ar")
     resposta = _editar(cliente)
     assert resposta.status_code in (500, 503) and 'value="Nilson (confirmado)"' in resposta.text
+
+
+# ---------------------------------------------------------------- apagar --
+
+
+def _apagar(cliente, divida_id=None, confirmar=True, **extra):
+    from tests.web.conftest import DIVIDA_ID, csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), **({"confirmar": "sim"} if confirmar else {}), **extra}
+    return cliente.post(f"/dividas/{divida_id or DIVIDA_ID}/apagar", data=dados, follow_redirects=False)
+
+
+def test_pagina_de_apagar_mostra_o_que_sai_junto_e_nao_apaga(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_ID}/apagar").text
+    assert "Apagar dívida" in html and "Isto não pode ser desfeito" in html
+    assert "<b>3</b> parcelas" in html and "<b>2</b> pagamentos" in html and "R$ 11.000,00" in html
+    assert 'name="confirmar" value="sim" required' in html and base_dividas.apagadas == []
+
+
+def test_ficha_tem_o_botao_apagar(cliente):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    assert f'href="/dividas/{DIVIDA_ID}/apagar"' in cliente.get(f"/dividas/{DIVIDA_ID}").text
+
+
+def test_apagar_com_confirmacao_apaga_e_volta_para_a_lista(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    resposta = _apagar(cliente)
+    assert resposta.status_code == 303 and resposta.headers["location"] == "/dividas"
+    assert base_dividas.apagadas == [DIVIDA_ID]
+    assert "apagada, com as parcelas e os pagamentos" in cliente.get("/dividas").text
+
+
+def test_apagar_sem_marcar_a_confirmacao_nao_apaga(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _apagar(cliente, confirmar=False)
+    assert resposta.status_code == 422 and base_dividas.apagadas == [] and "Marque a confirmação" in resposta.text
+
+
+def test_apagar_404_csrf_e_login(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    assert cliente.get(f"/dividas/{DIVIDA_ID}/apagar").status_code == 303
+    entrar(cliente)
+    assert cliente.get("/dividas/00000000-0000-0000-0000-0000000000ff/apagar").status_code == 404
+    assert _apagar(cliente, "00000000-0000-0000-0000-0000000000ff").status_code == 404
+    resposta = cliente.post(f"/dividas/{DIVIDA_ID}/apagar", data={"confirmar": "sim"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.apagadas == []
+
+
+def test_falha_do_banco_ao_apagar_mantem_a_pagina(cliente, base_dividas):
+    entrar(cliente)
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    resposta = _apagar(cliente)
+    assert resposta.status_code in (500, 503) and base_dividas.apagadas == [] and "Apagar dívida" in resposta.text

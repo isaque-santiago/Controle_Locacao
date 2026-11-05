@@ -289,6 +289,39 @@ async def editar(request: Request, divida_id: str, sessao: Sessao = Depends(exig
     return await run_in_threadpool(_editar, request, sessao, divida_id, await _entrada(request))
 
 
+_APAGAR = "dividas/apagar.html"
+
+
+def _contexto_apagar(f, erro_geral=None):
+    divida_id = f["divida"]["id"]
+    return {"titulo": "Apagar dívida", "f": f, "erro_geral": erro_geral, "acao": f"/dividas/{divida_id}/apagar",
+            "voltar": f"/dividas/{divida_id}"}
+
+
+@router.get("/dividas/{divida_id}/apagar")
+def confirmar_apagar(request: Request, divida_id: str, _: Sessao = Depends(exigir_dono)):
+    """Apagar não tem volta: esta página mostra o que sai junto e só o POST com a confirmação apaga."""
+    return renderizar(request, _APAGAR, _contexto_apagar(_ficha_ou_404(divida_id)))
+
+
+def _apagar(request, sessao, divida_id, entrada):
+    f = _ficha_ou_404(divida_id)
+    contexto = _contexto_apagar(f)
+
+    def apagar():
+        if entrada.get("confirmar") != "sim":
+            raise ValueError("Marque a confirmação para apagar a dívida.")
+        acoes_dividas.apagar_divida(f["divida"]["id"])
+        return _concluir(request, sessao, "/dividas", mensagens.divida_apagada(f["divida"]["credor"]))
+
+    return _devolver_formulario(request, _APAGAR, contexto, apagar)
+
+
+@router.post("/dividas/{divida_id}/apagar", dependencies=[Depends(validar_csrf)])
+async def apagar(request: Request, divida_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_apagar, request, sessao, divida_id, await _entrada(request))
+
+
 # Rotas fixas (como /dividas/nova) devem ser declaradas antes desta, senão caem em /dividas/{divida_id}.
 @router.get("/dividas/{divida_id}")
 def ficha(request: Request, divida_id: str, _: Sessao = Depends(exigir_dono)):

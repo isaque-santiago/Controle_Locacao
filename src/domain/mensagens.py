@@ -144,6 +144,10 @@ def confirmacao_removida():
     return _toast("Confirmação removida. Volta a valer o saldo calculado.")
 
 
+def divida_apagada(credor):
+    return _toast(f"Dívida de {credor} apagada, com as parcelas e os pagamentos.")
+
+
 # ---------------------------------------------------------------- documentos --
 
 
