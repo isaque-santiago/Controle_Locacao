@@ -96,3 +96,22 @@ def atualizar_divida(divida_id: str, dados: dict) -> dict:
 def apagar_divida(divida_id: str) -> None:
     """Apaga a dívida; as parcelas e os pagamentos saem junto (on delete cascade, num único comando)."""
     get_client().table("dividas").delete().eq("id", divida_id).execute()
+
+
+def obter_pagamento(pagamento_id: str):
+    """Um pagamento da dívida, ou None."""
+    achados = todos("pagamentos_divida", ordem="id", filtros={"id": pagamento_id})
+    return achados[0] if achados else None
+
+
+@invalida_cache
+def atualizar_parcela(vencimento_id: str, dados: dict) -> dict:
+    """Atualiza vencimento e/ou valor de uma parcela (uma tabela só, sem RPC)."""
+    return get_client().table("dividas_vencimentos").update(dados).eq("id", vencimento_id).execute().data[0]
+
+
+@invalida_cache
+def atualizar_pagamento(pagamento_id: str, dados: dict) -> dict:
+    """Corrige um pagamento (uma tabela só). Os gatilhos do banco recusam valor acima do saldo da parcela e
+    reavaliam se a parcela está paga."""
+    return get_client().table("pagamentos_divida").update(dados).eq("id", pagamento_id).execute().data[0]
