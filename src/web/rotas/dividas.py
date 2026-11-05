@@ -298,9 +298,10 @@ def _contexto_apagar(f, erro_geral=None):
             "voltar": f"/dividas/{divida_id}"}
 
 
-@router.get("/dividas/{divida_id}/apagar")
+@router.get("/dividas/{divida_id}/confirmar-exclusao")
 def confirmar_apagar(request: Request, divida_id: str, _: Sessao = Depends(exigir_dono)):
-    """Apagar não tem volta: esta página mostra o que sai junto e só o POST com a confirmação apaga."""
+    """Apagar não tem volta: esta página (só leitura, por isso fora de /apagar, que nenhum GET pode ter) mostra o que sai junto
+    e só o POST em /apagar, com a confirmação marcada e o CSRF, apaga."""
     return renderizar(request, _APAGAR, _contexto_apagar(_ficha_ou_404(divida_id)))
 
 

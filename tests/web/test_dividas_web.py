@@ -615,7 +615,7 @@ def test_pagina_de_apagar_mostra_o_que_sai_junto_e_nao_apaga(cliente, base_divid
     from tests.web.conftest import DIVIDA_ID
 
     entrar(cliente)
-    html = cliente.get(f"/dividas/{DIVIDA_ID}/apagar").text
+    html = cliente.get(f"/dividas/{DIVIDA_ID}/confirmar-exclusao").text
     assert "Apagar dívida" in html and "Isto não pode ser desfeito" in html
     assert "<b>3</b> parcelas" in html and "<b>2</b> pagamentos" in html and "R$ 11.000,00" in html
     assert 'name="confirmar" value="sim" required' in html and base_dividas.apagadas == []
@@ -625,7 +625,7 @@ def test_ficha_tem_o_botao_apagar(cliente):
     from tests.web.conftest import DIVIDA_ID
 
     entrar(cliente)
-    assert f'href="/dividas/{DIVIDA_ID}/apagar"' in cliente.get(f"/dividas/{DIVIDA_ID}").text
+    assert f'href="/dividas/{DIVIDA_ID}/confirmar-exclusao"' in cliente.get(f"/dividas/{DIVIDA_ID}").text
 
 
 def test_apagar_com_confirmacao_apaga_e_volta_para_a_lista(cliente, base_dividas):
@@ -644,12 +644,19 @@ def test_apagar_sem_marcar_a_confirmacao_nao_apaga(cliente, base_dividas):
     assert resposta.status_code == 422 and base_dividas.apagadas == [] and "Marque a confirmação" in resposta.text
 
 
+def test_nenhum_get_de_dividas_tem_apagar_no_caminho_e_o_apagar_so_aceita_post(cliente):
+    entrar(cliente)
+    from tests.web.conftest import DIVIDA_ID
+
+    assert cliente.get(f"/dividas/{DIVIDA_ID}/apagar").status_code == 405
+
+
 def test_apagar_404_csrf_e_login(cliente, base_dividas):
     from tests.web.conftest import DIVIDA_ID
 
-    assert cliente.get(f"/dividas/{DIVIDA_ID}/apagar").status_code == 303
+    assert cliente.get(f"/dividas/{DIVIDA_ID}/confirmar-exclusao").status_code == 303
     entrar(cliente)
-    assert cliente.get("/dividas/00000000-0000-0000-0000-0000000000ff/apagar").status_code == 404
+    assert cliente.get("/dividas/00000000-0000-0000-0000-0000000000ff/confirmar-exclusao").status_code == 404
     assert _apagar(cliente, "00000000-0000-0000-0000-0000000000ff").status_code == 404
     resposta = cliente.post(f"/dividas/{DIVIDA_ID}/apagar", data={"confirmar": "sim"}, follow_redirects=False)
     assert resposta.status_code in (400, 403) and base_dividas.apagadas == []
