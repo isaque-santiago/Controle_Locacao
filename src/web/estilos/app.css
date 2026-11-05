@@ -1018,3 +1018,4 @@ a.mes-seta:hover {background: var(--superficie-hover); color: var(--texto);}
 .kpi-barra > svg {display: block; width: 100%; height: 100%;}
 .kpi-barra-cheia {fill: var(--seg-cheio);}
 .kpi-variacao.neutro {color: var(--texto-2);}
+.kpi dd small.kpi-extra {color: var(--texto-2); margin-top: var(--e1);}

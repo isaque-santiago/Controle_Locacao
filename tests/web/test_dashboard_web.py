@@ -84,6 +84,25 @@ def test_ocultar_dados_pessoais_esconde_a_barra_de_progresso(cliente, monkeypatc
     assert 'role="progressbar"' not in html
 
 
+def test_manutencao_mostra_o_lancado_em_ordens_em_andamento(cliente, monkeypatch):
+    from decimal import Decimal
+
+    from src.web import dados_painel
+
+    dados = {**DADOS_PAINEL, "manutencao_aberta": {"quantidade": 2, "total": Decimal("340.00")}}
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: dados)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "Gasto com manutenção no mês" in html
+    assert "+ R$ 340 lançados em 2 ordens em andamento" in html
+
+
+def test_manutencao_sem_ordens_abertas_nao_mostra_linha_extra(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert "em andamento" not in html.split("Gasto com manutenção no mês", 1)[1].split("</dl>", 1)[0]
+
+
 def test_nomes_vindos_do_banco_sao_escapados(cliente):
     entrar(cliente)
     html = cliente.get("/").text

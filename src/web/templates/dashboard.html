@@ -21,7 +21,8 @@
   {{ kpi("Frota", d.frota_total ~ (" moto" if d.frota_total == 1 else " motos"), d.ocupacao ~ "% de ocupação") }}
   {{ kpi("Recebido no mês", dinc(d.recebido), "de " ~ (dinc(d.previsto)) ~ " previstos (" ~ d.percentual_recebido ~ "%)", variacao=d.variacoes.recebido if (d.variacoes and not oc) else None, variacao_neutra=True, progresso=(None if oc else d.percentual_recebido)) }}
   {{ kpi("Em atraso", dinc(d.atrasado), d.clientes_atrasados ~ (" cliente atrasado" if d.clientes_atrasados == 1 else " clientes atrasados"), atencao=(d.atrasado > 0), href="/cobrancas?aba=atrasadas") }}
-  {{ kpi("Manutenção no mês", dinc(d.manutencao_mes), d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), variacao=d.variacoes.manutencao if (d.variacoes and not oc) else None) }}
+  {% set ab = d.manutencao_aberta %}
+  {{ kpi("Gasto com manutenção no mês", dinc(d.manutencao_mes), d.ordens_concluidas ~ (" ordem concluída" if d.ordens_concluidas == 1 else " ordens concluídas"), extra=(("+ " ~ dinc(ab.total) ~ " lançados em " ~ ab.quantidade ~ (" ordem em andamento" if ab.quantidade == 1 else " ordens em andamento")) if (ab and ab.quantidade) else None), variacao=d.variacoes.manutencao if (d.variacoes and not oc) else None) }}
 </dl>
 
 {# "Hoje" vem logo após os KPIs: é o que o operador precisa agir primeiro. Em tela larga, fica ao lado de Atenção e Ocupação. #}

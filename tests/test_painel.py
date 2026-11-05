@@ -192,3 +192,14 @@ def test_percentuais_da_legenda_usam_so_motos_ativas():
 def test_percentuais_da_legenda_sem_motos_ativas():
     contagem = painel.contar_por_status(_frota(inativa=2))
     assert all(s.percentual is None for s in painel.segmentos_frota(contagem))
+
+
+def test_manutencao_em_andamento_soma_so_ordens_abertas():
+    ordens = [
+        {"status": "aberta", "custo_total": "120.50"},
+        {"status": "aberta", "custo_total": None},
+        {"status": "concluida", "custo_total": "999.00"},
+        {"status": "cancelada", "custo_total": "50.00"},
+    ]
+    assert painel.manutencao_em_andamento(ordens) == {"quantidade": 2, "total": Decimal("120.50")}
+    assert painel.manutencao_em_andamento([]) == {"quantidade": 0, "total": Decimal(0)}
