@@ -1029,3 +1029,9 @@ ficavam defasados.
 - Repositório e serviços: as leituras de vistoria de um contrato continuam devolvendo as da moto principal por padrão (telas atuais não mudam) e aceitam
   `moto_id` ou `todas` para as demais; criar e encerrar passam a receber as vistorias das vinculadas.
 - Fora do PR 1: telas. Até o PR 2, a lista de vistorias ainda mostra a placa da principal.
+
+**PR 2 (telas, entregue em 05/11/2026).**
+- Novo contrato (etapa Confirmar) e encerramento: um bloco de vistoria por moto vinculada, obrigatório (`exigir_todas`); campos `vinc<n>_...` e id da moto escondido para o formulário não descasar da lista; o texto digitado volta em caso de erro.
+- Vistorias: placa da moto da própria vistoria na lista; comparação com um grupo por moto vinculada; "Registrar vistoria" lista cada par contrato-moto pendente (`contrato` ou `contrato:moto`), o que dá a entrega retroativa dos contratos já carregados.
+- Ficha do contrato, aba Vistorias: um grupo por moto.
+- Fotos: só na moto principal na criação do contrato; as das outras motos entram depois, por "Adicionar fotos" na vistoria.
