@@ -103,6 +103,13 @@ def test_manutencao_sem_ordens_abertas_nao_mostra_linha_extra(cliente):
     assert "em andamento" not in html.split("Gasto com manutenção no mês", 1)[1].split("</dl>", 1)[0]
 
 
+def test_so_o_simbolo_da_marca_e_link_para_o_dashboard(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'class="marca-simbolo" href="/"' in html
+    assert '<a class="marca" href="/">' not in html
+
+
 def test_nomes_vindos_do_banco_sao_escapados(cliente):
     entrar(cliente)
     html = cliente.get("/").text

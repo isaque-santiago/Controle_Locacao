@@ -1019,3 +1019,7 @@ a.mes-seta:hover {background: var(--superficie-hover); color: var(--texto);}
 .kpi-barra-cheia {fill: var(--seg-cheio);}
 .kpi-variacao.neutro {color: var(--texto-2);}
 .kpi dd small.kpi-extra {color: var(--texto-2); margin-top: var(--e1);}
+/* Só o símbolo CL é link para o Dashboard (antes a faixa inteira da marca era clicável). */
+a.marca-simbolo {text-decoration: none; transition: filter 150ms ease;}
+a.marca-simbolo:hover {filter: brightness(1.08);}
+a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offset: 2px;}
