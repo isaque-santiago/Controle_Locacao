@@ -6,7 +6,13 @@ from unittest.mock import patch
 
 import pytest
 
-from src.domain.contrato_motos import MAX_MOTOS_POR_CONTRATO, normalizar_motos_vinculadas, todas_as_motos
+from src.domain.contrato_motos import (
+    MAX_MOTOS_POR_CONTRATO,
+    contratos_da_moto,
+    contratos_por_moto,
+    normalizar_motos_vinculadas,
+    todas_as_motos,
+)
 from src.services import contratos
 
 DADOS = {
@@ -91,3 +97,44 @@ def test_contar_vinculadas_ordena_pela_chave_composta_porque_contrato_motos_nao_
     with patch.object(repositorio, "todos", return_value=linhas) as todos:
         assert repositorio.contar_vinculadas() == {"c1": 2, "c2": 1}
     assert todos.call_args.args == ("contrato_motos",) and "id" not in todos.call_args.kwargs["ordem"]
+
+
+CONTRATOS = [
+    {"id": "c1", "moto_id": "m1", "cliente_id": "yangry", "status": "ativo"},
+    {"id": "c2", "moto_id": "m3", "cliente_id": "outro", "status": "ativo"},
+    {"id": "c3", "moto_id": "m4", "cliente_id": "antigo", "status": "encerrado"},
+]
+VINCULOS = [{"contrato_id": "c1", "moto_id": "m2"}, {"contrato_id": "c3", "moto_id": "m5"}]
+
+
+class TestContratosPorMoto:
+    def test_principal_e_vinculada_apontam_para_o_mesmo_contrato(self):
+        mapa = contratos_por_moto(CONTRATOS, VINCULOS)
+        assert mapa["m1"]["id"] == "c1"
+        assert mapa["m2"]["id"] == "c1"
+
+    def test_moto_de_contrato_com_uma_moto_so_continua_funcionando(self):
+        assert contratos_por_moto(CONTRATOS, VINCULOS)["m3"]["cliente_id"] == "outro"
+
+    def test_contrato_encerrado_nao_conta_nem_a_principal_nem_a_vinculada(self):
+        mapa = contratos_por_moto(CONTRATOS, VINCULOS)
+        assert "m4" not in mapa and "m5" not in mapa
+
+    def test_principal_vale_mais_que_vinculada_se_a_moto_aparecer_nos_dois(self):
+        vinculos = [{"contrato_id": "c1", "moto_id": "m3"}]
+        assert contratos_por_moto(CONTRATOS, vinculos)["m3"]["id"] == "c2"
+
+    def test_sem_vinculos(self):
+        assert set(contratos_por_moto(CONTRATOS, [])) == {"m1", "m3"}
+
+
+class TestContratosDaMoto:
+    def test_inclui_como_principal_e_como_vinculada(self):
+        assert [c["id"] for c in contratos_da_moto("m1", CONTRATOS, VINCULOS)] == ["c1"]
+        assert [c["id"] for c in contratos_da_moto("m2", CONTRATOS, VINCULOS)] == ["c1"]
+
+    def test_inclui_contratos_encerrados(self):
+        assert [c["id"] for c in contratos_da_moto("m5", CONTRATOS, VINCULOS)] == ["c3"]
+
+    def test_moto_sem_contrato(self):
+        assert contratos_da_moto("m9", CONTRATOS, VINCULOS) == []

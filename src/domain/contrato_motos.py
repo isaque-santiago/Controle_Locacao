@@ -27,3 +27,24 @@ def normalizar_motos_vinculadas(moto_principal_id: str, vinculadas: Optional[Ite
 def todas_as_motos(moto_principal_id: str, vinculadas: Optional[Iterable[str]]) -> list:
     """Todas as motos do contrato, a principal primeiro."""
     return [str(moto_principal_id).strip(), *normalizar_motos_vinculadas(moto_principal_id, vinculadas)]
+
+
+def contratos_por_moto(contratos: Iterable[dict], vinculos: Iterable[dict]) -> dict:
+    """{moto_id: contrato ativo}, contando a moto principal (`contratos.moto_id`) e as vinculadas
+    (`vinculos` = linhas de `contrato_motos` com `contrato_id` e `moto_id`). Se a mesma moto aparecer em
+    mais de um contrato ativo, a principal vale mais que a vinculada."""
+    ativos = {c["id"]: c for c in contratos if c["status"] == "ativo"}
+    mapa: dict = {}
+    for v in vinculos:
+        contrato = ativos.get(v["contrato_id"])
+        if contrato:
+            mapa[v["moto_id"]] = contrato
+    for contrato in ativos.values():
+        mapa[contrato["moto_id"]] = contrato
+    return mapa
+
+
+def contratos_da_moto(moto_id: str, contratos: Iterable[dict], vinculos: Iterable[dict]) -> list:
+    """Todos os contratos (de qualquer situação) em que a moto entra, como principal ou vinculada."""
+    ids_vinculados = {v["contrato_id"] for v in vinculos if v["moto_id"] == moto_id}
+    return [c for c in contratos if c["moto_id"] == moto_id or c["id"] in ids_vinculados]
