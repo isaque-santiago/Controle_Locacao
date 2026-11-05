@@ -31,6 +31,7 @@
   <button class="so-leitor" type="submit" name="acao" value="criar" tabindex="-1" aria-hidden="true">Criar contrato</button>
   {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
   <div class="formulario">
+    {% if blocos_extras %}<h3 class="largo rotulo">{{ moto.placa|placa_br }} · moto principal</h3>{% endif %}
     {% include "contratos/_campos_vistoria.html" %}
     <div class="campo largo{{ ' com-erro' if erros.fotos else '' }}">
       <label for="v-fotos">Fotos da entrega</label>
@@ -39,6 +40,12 @@
       {% if erros.fotos %}<small class="msg-erro" id="v-fotos-erro">{{ erros.fotos }}</small>{% endif %}
       {% with camera_id="v-fotos-camera" %}{% include "vistorias/_campo_camera.html" %}{% endwith %}
     </div>
+    {% for bloco in blocos_extras %}
+    <h3 class="largo rotulo">{{ bloco.moto.placa|placa_br }} · {{ bloco.moto.marca }} {{ bloco.moto.modelo }} (vinculada)</h3>
+    <input type="hidden" name="{{ bloco.pref }}moto" value="{{ bloco.moto.id }}">
+    {% with pref=bloco.pref, ajuda_km=bloco.ajuda_km %}{% include "contratos/_campos_vistoria.html" %}{% endwith %}
+    {% endfor %}
+    {% if blocos_extras %}<p class="largo text-texto-2 text-[13px]">A vistoria de todas as motos do contrato é obrigatória. Fotos das outras motos podem ser adicionadas depois, em Vistorias.</p>{% endif %}
   </div>
   <p class="text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
   <div class="rodape-acoes">

@@ -508,18 +508,21 @@ class AcoesContratosFalsas:
     def __init__(self):
         self.chamadas: list[tuple] = []
         self.encerramentos: list[tuple] = []
+        self.vistorias_vinculadas: list = []  # vistorias das vinculadas de cada chamada (criar ou encerrar)
         self.falhar_com: Exception | None = None
 
-    def criar_contrato_com_vistoria(self, dados, vistoria):
+    def criar_contrato_com_vistoria(self, dados, vistoria, vistorias_vinculadas=None):
         if self.falhar_com is not None:
             raise self.falhar_com
         self.chamadas.append((dados, vistoria))
+        self.vistorias_vinculadas.append(vistorias_vinculadas)
         return {"contrato_id": "00000000-0000-0000-0000-0000000000e1"}
 
-    def encerrar_contrato_com_vistoria(self, contrato_id, data, vistoria, valor_danos, descricao_danos):
+    def encerrar_contrato_com_vistoria(self, contrato_id, data, vistoria, valor_danos, descricao_danos, vistorias_vinculadas=None):
         if self.falhar_com is not None:
             raise self.falhar_com
         self.encerramentos.append((contrato_id, data, vistoria, valor_danos, descricao_danos))
+        self.vistorias_vinculadas.append(vistorias_vinculadas)
         return {}
 
 
