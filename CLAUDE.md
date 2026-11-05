@@ -27,7 +27,9 @@ rodando, use SEMPRE o projeto Supabase de **desenvolvimento** (dados fictícios)
    Na RLS (`is_dono()`, migration `20260922000000_restringe_rls_ao_dono.sql`) o UUID do
    dono é o do usuário de teste **desse** projeto. Não altere o UUID na migration versionada
    (é o de produção): gere um SQL único em pasta temporária, com o UUID de dev trocado, e
-   o usuário o cole no SQL Editor.
+   o usuário o cole no SQL Editor. Desde a migration `20261105120000_administradores.sql`, `is_dono()`
+   consulta a tabela `administradores`: ela herda o UUID que a função tinha em cada projeto, e outros
+   usuários entram por `insert` nessa tabela (README, "Administradores").
 2. **Segredos:** o usuário aponta `.env` (ignorado pelo git) para a URL e a
    anon key do projeto de dev. A IA não lê, não imprime e não commita esse arquivo. Antes de
    trocar, o usuário guarda o de produção fora do repositório (ex.: `~/backup-secrets-locacao/`).

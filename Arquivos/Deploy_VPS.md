@@ -156,6 +156,8 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
 
 > **Atenção:** a migration `20260922000000_restringe_rls_ao_dono.sql` fixa o UUID do dono de **produção**
 > (`is_dono()`). Nunca a aplique em um projeto cujo usuário tenha outro UUID, ou o RLS bloqueia todos os dados.
+> A migration `20261105120000_administradores.sql` (depois dela) lê o UUID da função e o move para a tabela `administradores`; a partir daí outros usuários
+> ganham acesso inserindo o `user_id` na tabela, sem mexer em migration.
 
 ## 7. Verificação pós-deploy (com o proprietário)
 
