@@ -19,16 +19,18 @@ def listar():
     return vistorias.listar()
 
 
-def listar_por_contrato(contrato_id: str):
-    return vistorias.listar_por_contrato(contrato_id)
+def listar_por_contrato(contrato_id: str, moto_id: Optional[str] = None, todas: bool = False):
+    """Vistorias do contrato: as da moto principal (padrão), as de uma moto (`moto_id`) ou de todas (`todas=True`)."""
+    return vistorias.listar_por_contrato(contrato_id, moto_id, todas)
 
 
 def obter(vistoria_id: str):
     return vistorias.obter(vistoria_id)
 
 
-def obter_por_contrato_e_tipo(contrato_id: str, tipo: str):
-    return vistorias.obter_por_contrato_e_tipo(contrato_id, tipo)
+def obter_por_contrato_e_tipo(contrato_id: str, tipo: str, moto_id: Optional[str] = None):
+    """Vistoria do tipo no contrato, da moto principal (padrão) ou da `moto_id` pedida."""
+    return vistorias.obter_por_contrato_e_tipo(contrato_id, tipo, moto_id)
 
 
 def checklist_padrao() -> dict:
