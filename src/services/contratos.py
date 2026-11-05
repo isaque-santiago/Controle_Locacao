@@ -6,16 +6,22 @@ from typing import Optional
 
 from src.domain.agenda_cobrancas import gerar_agenda
 from src.domain.contrato_motos import normalizar_motos_vinculadas
-from src.repositories import contratos
+from src.domain.vistorias_por_moto import exigir_todas_as_motos, validar_vistorias_vinculadas
+from src.repositories import contratos, motos as repo_motos
 
 
 def listar():
     return contratos.listar()
 
 
-def criar_com_vistoria(dados, vistoria):
+def _km_atual_por_moto() -> dict:
+    return {m["id"]: m["km_atual"] for m in repo_motos.listar()}
+
+
+def criar_com_vistoria(dados, vistoria, vistorias_vinculadas=None, exigir_todas=False):
     """Cria o contrato com a vistoria de entrega. `data_fim_prevista` ausente ou nula é contrato
-    por prazo indeterminado (a regra da operação)."""
+    por prazo indeterminado (a regra da operação). `vistorias_vinculadas` traz a vistoria de entrega de cada moto
+    vinculada; com `exigir_todas` (regra da tela) todas as vinculadas precisam ter a sua."""
     fim = dados.get("data_fim_prevista") or None
     if fim is not None and fim < dados["data_inicio"]:
         raise ValueError("O fim do contrato deve ser igual ou posterior ao início.")
@@ -30,7 +36,15 @@ def criar_com_vistoria(dados, vistoria):
         parcelas_pagas_inicial=dados.get("parcelas_pagas_inicial") or 0,
         primeira_cobranca=date.fromisoformat(dados["primeira_cobranca"]) if dados.get("primeira_cobranca") else None,
     )
-    return contratos.criar_com_vistoria({**dados, "data_fim_prevista": fim}, vistoria)
+    dados = {**dados, "data_fim_prevista": fim}
+    if exigir_todas:
+        exigir_todas_as_motos(dados["moto_id"], dados.get("motos_vinculadas"), vistorias_vinculadas)
+    if vistorias_vinculadas:
+        validadas = validar_vistorias_vinculadas(
+            dados["moto_id"], dados.get("motos_vinculadas"), vistorias_vinculadas, _km_atual_por_moto()
+        )
+        return contratos.criar_com_vistoria(dados, vistoria, validadas)
+    return contratos.criar_com_vistoria(dados, vistoria)
 
 
 def _validar_danos(valor_danos: Decimal, descricao_danos: Optional[str]) -> Optional[str]:
@@ -48,10 +62,24 @@ def encerrar_com_vistoria(
     vistoria,
     valor_danos: Decimal = Decimal("0"),
     descricao_danos: Optional[str] = None,
+    vistorias_vinculadas=None,
+    exigir_todas=False,
 ):
     """Encerra o contrato com a vistoria de devolução. Os danos são descontados da caução
-    (e o excedente é cobrado do cliente): a RPC calcula a devolução (`domain/caucao.py`)."""
+    (e o excedente é cobrado do cliente): a RPC calcula a devolução (`domain/caucao.py`).
+    `vistorias_vinculadas` traz a devolução de cada moto vinculada (com `exigir_todas`, todas precisam ter a sua)."""
     descricao = _validar_danos(valor_danos, descricao_danos)
+    if exigir_todas or vistorias_vinculadas:
+        motos_do_contrato = contratos.listar_motos_do_contrato(contrato_id)
+        principal = next((m["moto_id"] for m in motos_do_contrato if m["principal"]), None)
+        vinculadas = [m["moto_id"] for m in motos_do_contrato if not m["principal"]]
+        if principal is None:
+            raise ValueError("Contrato não encontrado.")
+        if exigir_todas:
+            exigir_todas_as_motos(principal, vinculadas, vistorias_vinculadas)
+        if vistorias_vinculadas:
+            validadas = validar_vistorias_vinculadas(principal, vinculadas, vistorias_vinculadas, _km_atual_por_moto())
+            return contratos.encerrar_com_vistoria(contrato_id, data, vistoria, valor_danos, descricao, validadas)
     return contratos.encerrar_com_vistoria(contrato_id, data, vistoria, valor_danos, descricao)
 
 
