@@ -2,7 +2,7 @@
 
 > Estudo para orientar a reformulação do Dashboard (`/`). Parte 1: o que a literatura e os produtos profissionais ensinam.
 > Parte 2: como isso se aplica a locação de motos. Parte 3: diagnóstico do Dashboard atual, com medições. Parte 4: proposta de
-> redesenho. **Nada foi implementado ainda: a proposta (parte 4) espera aprovação.**
+> redesenho. **Nada foi implementado ainda.** As decisões do dono sobre a proposta estão na seção 4.9 (05/11/2026); nenhuma fase foi iniciada.
 >
 > **Sobre as fontes.** Pesquisei na web em 05/11/2026. As fontes primárias são poucas (Stephen Few, WCAG, Carbon, NN/g, Cleveland e McGill via
 > resumos). O resto é prática de blogs e fornecedores: serve como heurística, não como regra. Onde um número vem de fornecedor
@@ -208,7 +208,7 @@ dependência de JavaScript.
 3. **Um indicador, uma definição, um lugar.** Toda a tela lê das mesmas fontes (as RPCs novas); o cálculo antigo sai do Dashboard.
 4. **Todo número tem contexto:** variação contra o período anterior (colorida pelo resultado) e, quando faz sentido, o previsto ou a meta.
 5. **Menos tipos de gráfico, mais clareza:** barras, linhas, sparkline e bullet. Sem rosca, sem velocímetro.
-6. **Mobile primeiro na ordem de leitura:** a primeira tela do celular já responde "quem cobrar hoje".
+6. **Desktop primeiro, celular funcional:** o uso principal será no computador (decisão 4); no celular a primeira tela ainda deve responder "quem cobrar hoje".
 7. **Honestidade de dados:** "sem dados" nunca vira zero; mês sem histórico fica claramente marcado; o caixa mostra o que o move.
 
 ### 4.2 Estrutura (wireframe em texto)
@@ -247,7 +247,7 @@ dependência de JavaScript.
 - **O seletor de mês passa para a aba Dinheiro**, onde de fato vale. O resto do painel é "hoje".
 - **"Modo compacto" e "ocultar dados" saem do cabeçalho** e viram um menu discreto (⋯) ou ícones; ocultar dados continua sem expor nada no HTML.
 
-### 4.3 Os quatro indicadores do topo (decisão a confirmar)
+### 4.3 Os quatro indicadores do topo (decidido em 05/11/2026)
 
 | # | Indicador | Por quê | Contexto no cartão |
 |---|---|---|---|
@@ -280,7 +280,7 @@ dependência de JavaScript.
 ### 4.6 Qualidade (itens de aceite)
 
 - Nenhum indicador aparece com dois valores; um teste compara as fontes.
-- Primeira tela do celular: A cobrar + Atraso por faixa + a lista Cobrar agora (primeiros itens), sem botões de configuração à frente.
+- Desktop: a aba Hoje cabe em uma tela. Celular (uso secundário, mas não descartado): a primeira tela traz A cobrar + Atraso por faixa + os primeiros itens de Cobrar agora, sem botões de configuração à frente.
 - Contraste 3:1 nos elementos gráficos e 4,5:1 no texto, nos dois temas; nenhum significado só por cor (faixas com rótulo e padrão).
 - Esqueleto por bloco e erro só no bloco afetado; "sem dados" ≠ R$ 0.
 - Mesmas funções do domínio, testadas (`src/domain`), sem lógica na rota; gráficos continuam em SVG sem script e sem estilo inline (política de conteúdo).
@@ -299,14 +299,25 @@ dependência de JavaScript.
 2. **Fase 2, contexto:** variação e sparkline nos cartões, barra de faixas de atraso, barra segmentada da frota, bullet de receita contra previsto.
 3. **Fase 3, o que falta:** próximos 7 dias, motos paradas, receita por moto, tempo parado, WhatsApp na lista.
 
-### 4.9 Decisões que preciso de você
+### 4.9 Decisões do dono (05/11/2026)
 
-1. **Abas ou rolagem única?** Recomendo abas (Hoje, Dinheiro, Frota), com Hoje como padrão.
-2. **Quais 4 indicadores no topo?** Sugeri A cobrar, Atraso por faixa, Frota e Caixa do mês.
-3. **Faixas de atraso:** sugiro 1-6, 7-14, 15-30 e 31+ dias (cobrança semanal). O corte de inadimplência continua configurável.
-4. **Você usa mais celular ou computador** para olhar o painel? Define o que vem primeiro.
-5. **Ação na lista:** manter só "Pagar" ou incluir "WhatsApp" (a mensagem já existe em Cobranças)?
-6. **Posso deixar o cálculo antigo fora do Dashboard** (os relatórios por moto seguem iguais)?
+| # | Pergunta | Decisão |
+|---|---|---|
+| 1 | Abas ou rolagem única? | **Abas** (Hoje, Dinheiro, Frota), com Hoje como padrão |
+| 2 | Os 4 indicadores do topo | **Aprovados**: A cobrar, Atraso por faixa, Frota e Caixa do mês |
+| 3 | Faixas de atraso | **Servem**: 1-6, 7-14, 15-30 e 31+ dias; o corte de inadimplência continua configurável |
+| 4 | Computador ou celular | O uso será **principalmente no computador**, sem descartar o celular: projetar desktop primeiro, com o celular funcional |
+| 5 | Ação na lista Cobrar agora | **"Pagar" e "WhatsApp"** (a mensagem de cobrança já existe em Cobranças) |
+| 6 | Cálculo antigo no Dashboard | **Pode sair**: o Dashboard passa a ler só das RPCs do financeiro; os relatórios por moto seguem como estão |
+
+**Combinado:** só documentar as decisões por enquanto. **Nenhuma fase (4.8) foi iniciada**; a Fase 1 começa quando o dono mandar.
+
+**O que cada decisão muda no projeto da Fase 1:**
+- **Abas** (1): cada aba tem URL própria (`/?aba=hoje|dinheiro|frota`), funciona sem JavaScript e mantém `mes`, `compacto` e `ocultar` na navegação; o seletor de mês vive só na aba Dinheiro.
+- **Faixas** (3): nova regra pura em `src/domain/financeiro.py` (faixa por dias de atraso, com os limites 6, 14 e 30 em constante nomeada), testada nas fronteiras (dia 6/7, 14/15, 30/31).
+- **Desktop primeiro** (4): a aba Hoje é desenhada para caber numa tela de computador (por volta de 1366×768 ou maior); no celular as colunas viram uma só, na ordem de leitura acima.
+- **WhatsApp** (5): a lista reaproveita a rota e a mensagem de `cobrancas_mensagem`; é um link por linha, sem enviar nada sozinho.
+- **Sem cálculo antigo** (6): `dados_painel.carregar` deixa de usar `services.dashboard.resumo` para receita e manutenção; um teste garante que nenhum indicador aparece com dois valores.
 
 ---
 
