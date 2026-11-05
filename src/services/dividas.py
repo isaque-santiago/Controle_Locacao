@@ -221,3 +221,43 @@ def confirmar_saldo(divida_id: str, saldo: Optional[Decimal], data: Optional[dat
 def apagar_divida(divida_id: str) -> None:
     """Apaga a dívida com as parcelas e os pagamentos. Irreversível: a tela pede confirmação antes."""
     dividas.apagar_divida(divida_id)
+
+
+def pagamento(pagamento_id: str) -> Optional[dict]:
+    return dividas.obter_pagamento(pagamento_id)
+
+
+def atualizar_parcela(vencimento_id: str, vencimento: Optional[date], valor: Optional[Decimal] = None) -> dict:
+    """Muda o vencimento (vazio = sem data) e, se a parcela ainda não tem pagamento, o valor."""
+    atual = dividas.obter_parcela(vencimento_id)
+    if atual is None:
+        raise ValueError("Parcela não encontrada.")
+    dados: dict = {"vencimento": vencimento.isoformat() if vencimento else None}
+    if valor is not None:
+        if valor <= 0:
+            raise ValueError("O valor da parcela deve ser positivo.")
+        if Decimal(str(atual.get("valor_pago") or 0)) > 0:
+            raise ValueError("Esta parcela já tem pagamento: o valor não pode mudar. Corrija o pagamento.")
+        dados["valor"] = str(valor)
+    return dividas.atualizar_parcela(vencimento_id, dados)
+
+
+def atualizar_pagamento(
+    pagamento_id: str,
+    data: date,
+    valor: Decimal,
+    conta_id: Optional[str] = None,
+    observacoes: Optional[str] = None,
+    data_estimada: bool = False,
+) -> dict:
+    """Corrige data, valor, conta, observações e se a data é aproximada. O limite do valor é conferido na tela (regra pura)
+    e, no banco, pelo gatilho da parcela."""
+    if valor <= 0:
+        raise ValueError("O valor do pagamento deve ser positivo.")
+    return dividas.atualizar_pagamento(pagamento_id, {
+        "data": data.isoformat(),
+        "valor": str(valor),
+        "conta_id": conta_id,
+        "observacoes": (observacoes or "").strip() or None,
+        "data_estimada": bool(data_estimada),
+    })

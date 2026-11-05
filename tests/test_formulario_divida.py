@@ -249,3 +249,102 @@ def test_confirmar_saldo_recusa_entradas_invalidas(entrada, campo, erro):
     with pytest.raises(ErroDeCampos) as e:
         f.ler_saldo_confirmado(entrada, date(2026, 11, 5))
     assert campo in e.value.erros and erro in e.value.erros[campo]
+
+
+# ---------------------------------------------------------------- trocar o tipo --
+
+
+def test_campos_editaveis_incluem_o_tipo_so_fora_da_compra_parcelada():
+    assert "tipo" in f.campos_editaveis("moto_fiado") and "tipo" not in f.campos_editaveis("compra_parcelada")
+
+
+def test_edicao_inicial_traz_o_tipo_atual():
+    assert f.edicao_inicial({**DIVIDA_BANCO, "tipo": "moto_fiado"})["tipo"] == "moto_fiado"
+
+
+def test_trocar_o_tipo_entre_os_cinco():
+    d = f.ler_edicao_divida(_edicao(tipo="financiamento"), "moto_fiado", MOTOS)
+    assert d["tipo"] == "financiamento"
+
+
+def test_sem_tipo_na_entrada_mantem_o_atual():
+    d = f.ler_edicao_divida(_edicao(tipo=""), "emprestimo", MOTOS)
+    assert d["tipo"] == "emprestimo"
+
+
+@pytest.mark.parametrize("tipo", ["compra_parcelada", "qualquer"])
+def test_nao_troca_para_compra_parcelada_nem_para_tipo_desconhecido(tipo):
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_divida(_edicao(tipo=tipo), "moto_fiado", MOTOS)
+    assert "tipo" in e.value.erros and "Tipo" in e.value.erros["tipo"]
+
+
+def test_a_compra_parcelada_ignora_o_tipo_enviado():
+    d = f.ler_edicao_divida(_edicao(tipo="moto_fiado"), "compra_parcelada", MOTOS)
+    assert "tipo" not in d
+
+
+# ---------------------------------------------------------------- editar parcela --
+
+PARCELA = {"vencimento": "2026-11-28", "valor": "1000.00"}
+
+
+def test_edicao_da_parcela_parte_do_que_ela_tem():
+    assert f.edicao_parcela_inicial(PARCELA) == {"vencimento": "2026-11-28", "valor": "1.000,00"}
+    assert f.edicao_parcela_inicial({"vencimento": None, "valor": "500"}) == {"vencimento": "", "valor": "500,00"}
+
+
+def test_parcela_sem_pagamento_muda_vencimento_e_valor():
+    d = f.ler_edicao_parcela({"vencimento": "2026-12-15", "valor": "1.200,00"}, Decimal("0"))
+    assert d == {"vencimento": date(2026, 12, 15), "valor": Decimal("1200.00")}
+
+
+def test_parcela_com_pagamento_so_muda_o_vencimento_e_ignora_o_valor():
+    d = f.ler_edicao_parcela({"vencimento": "2026-12-15", "valor": "abc"}, Decimal("400"))
+    assert d == {"vencimento": date(2026, 12, 15)}
+
+
+def test_vencimento_vazio_deixa_a_parcela_sem_data():
+    assert f.ler_edicao_parcela({"vencimento": "", "valor": "1000"}, Decimal("0"))["vencimento"] is None
+
+
+@pytest.mark.parametrize("entrada,campo,erro", [
+    ({"vencimento": "28/12/2026", "valor": "10"}, "vencimento", "Vencimento"),
+    ({"vencimento": "2026-12-01", "valor": ""}, "valor", "Valor da parcela"),
+    ({"vencimento": "2026-12-01", "valor": "0"}, "valor", "Valor da parcela"),
+    ({"vencimento": "2026-12-01", "valor": "-5"}, "valor", "Valor da parcela"),
+])
+def test_edicao_de_parcela_invalida(entrada, campo, erro):
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_parcela(entrada, Decimal("0"))
+    assert campo in e.value.erros and erro in e.value.erros[campo]
+
+
+# ---------------------------------------------------------------- editar pagamento --
+
+PAGAMENTO = {"data": "2026-10-28", "valor": "1000.00", "conta_id": "c1", "observacoes": None, "data_estimada": True}
+
+
+def test_edicao_do_pagamento_parte_do_que_ele_tem():
+    assert f.edicao_pagamento_inicial(PAGAMENTO) == {"data": "2026-10-28", "valor": "1.000,00", "conta_id": "c1", "observacoes": "", "data_estimada": "1"}
+    assert f.edicao_pagamento_inicial({**PAGAMENTO, "conta_id": None, "data_estimada": False})["data_estimada"] == ""
+
+
+def _pag(**extra):
+    return {"data": "2026-10-29", "valor": "900,00", "conta_id": "", "observacoes": " corrigido ", "data_estimada": "", **extra}
+
+
+def test_pagamento_corrigido():
+    d = f.ler_edicao_pagamento(_pag(conta_id="c2", data_estimada="1"), Decimal("1000"), CONTAS)
+    assert d == {"data": date(2026, 10, 29), "valor": Decimal("900.00"), "conta_id": "c2", "observacoes": "corrigido", "data_estimada": True}
+    assert f.ler_edicao_pagamento(_pag(), Decimal("1000"), CONTAS)["data_estimada"] is False
+
+
+@pytest.mark.parametrize("campo,valor,erro", [
+    ("data", "", "Data do pagamento"), ("data", "29/10/2026", "Data do pagamento"), ("valor", "", "Valor pago"),
+    ("valor", "0", "Valor pago"), ("valor", "1.000,01", "não pode passar de R$ 1.000,00"), ("conta_id", "x", "Conta"),
+])
+def test_edicao_de_pagamento_invalida(campo, valor, erro):
+    with pytest.raises(ErroDeCampos) as e:
+        f.ler_edicao_pagamento(_pag(**{campo: valor}), Decimal("1000"), CONTAS)
+    assert campo in e.value.erros and erro in e.value.erros[campo]

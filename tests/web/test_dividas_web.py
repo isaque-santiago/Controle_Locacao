@@ -667,3 +667,196 @@ def test_falha_do_banco_ao_apagar_mantem_a_pagina(cliente, base_dividas):
     base_dividas.falhar_com = RuntimeError("banco fora do ar")
     resposta = _apagar(cliente)
     assert resposta.status_code in (500, 503) and base_dividas.apagadas == [] and "Apagar dívida" in resposta.text
+
+
+# ---------------------------------------------------------------- trocar o tipo --
+
+
+def test_editar_moto_fiado_oferece_trocar_o_tipo_e_grava(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_FIADO_ID}/editar").text
+    assert 'name="tipo"' in html and "Trocar o tipo não mexe em parcelas nem pagamentos" in html
+    assert '<option value="moto_fiado" selected>' in html and "Compra parcelada</option>" not in html
+    assert _editar(cliente, tipo="financiamento").status_code == 303
+    assert base_dividas.edicoes[0][1]["tipo"] == "financiamento"
+
+
+def test_editar_compra_parcelada_nao_oferece_trocar_o_tipo(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    assert 'name="tipo"' not in cliente.get(f"/dividas/{DIVIDA_ID}/editar").text
+    assert _editar(cliente, DIVIDA_ID, tipo="moto_fiado").status_code == 303
+    assert "tipo" not in base_dividas.edicoes[0][1]
+
+
+def test_trocar_para_compra_parcelada_e_recusado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _editar(cliente, tipo="compra_parcelada")
+    assert resposta.status_code == 422 and base_dividas.edicoes == [] and "Tipo: escolha uma das opções" in resposta.text
+
+
+# ---------------------------------------------------------------- editar parcela --
+
+
+def _editar_parcela(cliente, vencimento_id=None, **extra):
+    from tests.web.conftest import PARCELA_ID, csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "vencimento": "2026-12-15", "valor": "1.200,00", **extra}
+    return cliente.post(f"/dividas/parcelas/{vencimento_id or PARCELA_ID}/editar", data=dados, follow_redirects=False)
+
+
+def test_ficha_oferece_editar_parcela_e_corrigir_pagamento(cliente):
+    from tests.web.conftest import DIVIDA_ID, PARCELA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_ID}").text
+    assert f'href="/dividas/parcelas/{PARCELA_ID}/editar"' in html and 'href="/dividas/parcelas/v7/editar"' in html
+    assert 'href="/dividas/pagamentos/g1/editar"' in html and "Corrigir" in html
+
+
+def test_formulario_de_parcela_sem_pagamento_deixa_mudar_o_valor(cliente):
+    from tests.web.conftest import PARCELA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/parcelas/{PARCELA_ID}/editar").text
+    assert "Editar parcela" in html and 'value="2026-11-28"' in html and 'name="valor"' in html and 'value="1.000,00"' in html
+    assert "o total da dívida não é recalculado" in html and "Celta &lt;b&gt;Zero&lt;/b&gt;" in html
+
+
+def test_formulario_de_parcela_com_pagamento_trava_o_valor(cliente):
+    from tests.web.conftest import PARCELA_PAGA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/parcelas/{PARCELA_PAGA_ID}/editar").text
+    assert 'name="vencimento"' in html and 'name="valor"' not in html and "já tem pagamento" in html
+
+
+def test_editar_parcela_grava_vencimento_e_valor_e_volta_para_a_ficha(cliente, base_dividas):
+    from datetime import date
+    from decimal import Decimal
+    from tests.web.conftest import DIVIDA_ID, PARCELA_ID
+
+    entrar(cliente)
+    resposta = _editar_parcela(cliente)
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_ID}"
+    assert base_dividas.parcelas_editadas == [(PARCELA_ID, date(2026, 12, 15), Decimal("1200.00"))]
+    assert "Parcela 8 atualizada." in cliente.get(f"/dividas/{DIVIDA_ID}").text
+
+
+def test_editar_parcela_com_pagamento_ignora_o_valor_enviado(cliente, base_dividas):
+    from datetime import date
+    from tests.web.conftest import PARCELA_PAGA_ID
+
+    entrar(cliente)
+    assert _editar_parcela(cliente, PARCELA_PAGA_ID, valor="1").status_code == 303
+    assert base_dividas.parcelas_editadas == [(PARCELA_PAGA_ID, date(2026, 12, 15), None)]
+
+
+def test_vencimento_vazio_deixa_a_parcela_sem_data(cliente, base_dividas):
+    from tests.web.conftest import PARCELA_ID
+
+    entrar(cliente)
+    assert _editar_parcela(cliente, vencimento="").status_code == 303
+    assert base_dividas.parcelas_editadas[0][:2] == (PARCELA_ID, None)
+
+
+def test_editar_parcela_com_erro_nao_grava_e_preserva_o_digitado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _editar_parcela(cliente, vencimento="15/12/2026", valor="0")
+    assert resposta.status_code == 422 and base_dividas.parcelas_editadas == []
+    assert "Vencimento" in resposta.text and "Valor da parcela" in resposta.text and 'value="15/12/2026"' in resposta.text
+
+
+def test_editar_parcela_404_csrf_login_e_falha_do_banco(cliente, base_dividas):
+    from tests.web.conftest import PARCELA_ID
+
+    assert cliente.get(f"/dividas/parcelas/{PARCELA_ID}/editar").status_code == 303
+    entrar(cliente)
+    assert cliente.get("/dividas/parcelas/00000000-0000-0000-0000-0000000000ff/editar").status_code == 404
+    assert cliente.get("/dividas/parcelas/xyz/editar").status_code == 404
+    resposta = cliente.post(f"/dividas/parcelas/{PARCELA_ID}/editar", data={"vencimento": "2026-12-15", "valor": "1"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.parcelas_editadas == []
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    falha = _editar_parcela(cliente)
+    assert falha.status_code in (500, 503) and 'value="1.200,00"' in falha.text
+
+
+# ---------------------------------------------------------------- corrigir pagamento --
+
+
+def _corrigir(cliente, pagamento_id=None, **extra):
+    from tests.web.conftest import PAGAMENTO_ID, csrf_da_sessao
+
+    dados = {"csrf_token": csrf_da_sessao(cliente), "data": "2026-10-29", "valor": "500,00", "conta_id": "", "observacoes": "corrigido", **extra}
+    return cliente.post(f"/dividas/pagamentos/{pagamento_id or PAGAMENTO_ID}/editar", data=dados, follow_redirects=False)
+
+
+def test_formulario_de_pagamento_parte_do_que_ele_tem_e_mostra_o_limite(cliente):
+    from tests.web.conftest import PAGAMENTO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/pagamentos/{PAGAMENTO_ID}/editar").text
+    assert "Corrigir pagamento" in html and 'value="2026-10-28"' in html and 'value="400,00"' in html
+    assert 'name="data_estimada" value="1" checked' in html and "(de uma parcela)" in html
+    # parcela v9: R$ 1.000,00 de valor, R$ 400,00 pagos (todos por este pagamento): vai até R$ 1.000,00
+    assert "Pode ir até R$ 1.000,00" in html
+    assert "pix &lt;b&gt;antigo&lt;/b&gt;" in html and "pix <b>antigo</b>" not in html
+
+
+def test_corrigir_grava_e_volta_para_a_ficha(cliente, base_dividas):
+    from datetime import date
+    from decimal import Decimal
+    from tests.web.conftest import CONTA_ID, DIVIDA_ID, PAGAMENTO_ID
+
+    entrar(cliente)
+    resposta = _corrigir(cliente, conta_id=CONTA_ID, data_estimada="1")
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/dividas/{DIVIDA_ID}"
+    assert base_dividas.pagamentos_editados == [(PAGAMENTO_ID, date(2026, 10, 29), Decimal("500.00"), CONTA_ID, "corrigido", True)]
+    assert "Pagamento corrigido: R$ 500,00." in cliente.get(f"/dividas/{DIVIDA_ID}").text
+
+
+def test_corrigir_sem_marcar_a_data_estimada_grava_falso(cliente, base_dividas):
+    entrar(cliente)
+    assert _corrigir(cliente).status_code == 303 and base_dividas.pagamentos_editados[0][-1] is False
+
+
+def test_valor_acima_do_limite_e_recusado(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _corrigir(cliente, valor="1.000,01")
+    assert resposta.status_code == 422 and base_dividas.pagamentos_editados == []
+    assert "não pode passar de R$ 1.000,00" in resposta.text and 'value="1.000,01"' in resposta.text
+
+
+def test_pagamento_direto_tem_limite_de_saldo_mais_o_proprio_valor(cliente, base_dividas):
+    from tests.web.conftest import DIVIDA_FIADO_ID, PAGAMENTO_DIRETO_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/pagamentos/{PAGAMENTO_DIRETO_ID}/editar").text
+    assert "(direto, sem parcela)" in html and "Pode ir até R$ 7.900,00" in html  # saldo 7.600 + 300
+    assert _corrigir(cliente, PAGAMENTO_DIRETO_ID, valor="7.900,00").status_code == 303
+    assert _corrigir(cliente, PAGAMENTO_DIRETO_ID, valor="7.900,01").status_code == 422
+    assert len(base_dividas.pagamentos_editados) == 1
+
+
+def test_conta_inexistente_e_data_invalida_sao_recusadas(cliente, base_dividas):
+    entrar(cliente)
+    resposta = _corrigir(cliente, conta_id="00000000-0000-0000-0000-00000000ffff", data="")
+    assert resposta.status_code == 422 and base_dividas.pagamentos_editados == []
+    assert "Conta: escolha uma das opções" in resposta.text and "Data do pagamento" in resposta.text
+
+
+def test_corrigir_pagamento_404_csrf_login_e_falha_do_banco(cliente, base_dividas):
+    from tests.web.conftest import PAGAMENTO_ID
+
+    assert cliente.get(f"/dividas/pagamentos/{PAGAMENTO_ID}/editar").status_code == 303
+    entrar(cliente)
+    assert cliente.get("/dividas/pagamentos/00000000-0000-0000-0000-0000000000ff/editar").status_code == 404
+    assert cliente.get("/dividas/pagamentos/xyz/editar").status_code == 404
+    resposta = cliente.post(f"/dividas/pagamentos/{PAGAMENTO_ID}/editar", data={"data": "2026-10-29", "valor": "1"}, follow_redirects=False)
+    assert resposta.status_code in (400, 403) and base_dividas.pagamentos_editados == []
+    base_dividas.falhar_com = RuntimeError("banco fora do ar")
+    falha = _corrigir(cliente)
+    assert falha.status_code in (500, 503) and 'value="500,00"' in falha.text

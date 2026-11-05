@@ -8,6 +8,10 @@
   {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
   <div class="formulario">
     {{ campo("f-credor", "Credor", nome="credor", valor=v.credor, obrigatorio=True, erro=erros.credor, autocomplete="off", largo=True) }}
+    {% if "tipo" in editaveis %}
+    {{ campo_lista("f-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, erro=erros.tipo, largo=True) }}
+    <p class="largo text-texto-2 text-[13px]">Trocar o tipo não mexe em parcelas nem pagamentos. Atenção: só o tipo "Fornecedor" soma ao saldo calculado os pedidos novos (despesas) do fornecedor ligado.</p>
+    {% endif %}
     {% if "valor_original" in editaveis %}
     {{ campo("f-original", "Valor original", nome="valor_original", valor=v.valor_original, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_original, autocomplete="off") }}
     {{ campo("f-dia", "Dia do vencimento", nome="dia_vencimento", valor=v.dia_vencimento, mono=True, inputmode="numeric", erro=erros.dia_vencimento, autocomplete="off", ajuda="De 1 a 31. Vazio se não há dia fixo.") }}
@@ -17,7 +21,7 @@
     {{ campo_lista("f-moto", "Moto ligada à dívida", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
     {{ campo("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, autocomplete="off", largo=True) }}
     {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
-    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. O tipo da dívida não muda; para o saldo, use "Confirmar saldo".</p>
+    <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. Para acertar o que falta pagar, use "Confirmar saldo". A compra parcelada não troca de tipo.</p>
   </div>
   <div class="rodape-acoes">
     <a class="btn" href="{{ voltar }}">Cancelar</a>

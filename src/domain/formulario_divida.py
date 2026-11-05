@@ -186,7 +186,7 @@ def ler_divida(entrada: dict, motos_validas: set[str]) -> dict:
 # Na compra parcelada, valor original = entrada + n x parcela é uma regra do banco: só os dados de identificação mudam.
 CAMPOS_EDICAO_COMPRA = ("credor", "moto_id", "descricao", "observacoes")
 CAMPOS_EDICAO = (
-    "credor", "valor_original", "numero_parcelas", "valor_parcela", "dia_vencimento", "moto_id", "descricao", "observacoes",
+    "tipo", "credor", "valor_original", "numero_parcelas", "valor_parcela", "dia_vencimento", "moto_id", "descricao", "observacoes",
 )
 
 
@@ -203,7 +203,7 @@ def edicao_inicial(divida: dict) -> dict:
         return "" if divida.get(campo) is None else texto_moeda(divida[campo])
 
     return {
-        "credor": divida.get("credor") or "", "valor_original": dinheiro("valor_original"),
+        "tipo": divida.get("tipo") or "", "credor": divida.get("credor") or "", "valor_original": dinheiro("valor_original"),
         "numero_parcelas": numero("numero_parcelas"), "valor_parcela": dinheiro("valor_parcela"),
         "dia_vencimento": numero("dia_vencimento"), "moto_id": divida.get("moto_id") or "",
         "descricao": divida.get("descricao") or "", "observacoes": divida.get("observacoes") or "",
@@ -216,7 +216,8 @@ def texto_da_edicao(entrada: dict) -> dict:
 
 def ler_edicao_divida(entrada: dict, tipo: str, motos_validas: set[str]) -> dict:
     """Colunas da dívida a gravar. As mesmas regras do cadastro; na compra parcelada só credor, moto, descrição e observações
-    mudam (o total e as parcelas estão amarrados ao calendário já gerado)."""
+    mudam (o total e as parcelas estão amarrados ao calendário já gerado). Nos outros tipos o tipo também pode mudar, entre os
+    cinco de `TIPOS_NOVA`; uma dívida nunca vira (nem deixa de ser) compra parcelada, porque essa tem calendário e regra de total."""
     erros: dict[str, str] = {}
     credor = _texto(entrada, "credor")
     if not credor:
@@ -229,6 +230,10 @@ def ler_edicao_divida(entrada: dict, tipo: str, motos_validas: set[str]) -> dict
     dados = {"credor": credor, "moto_id": moto_id or None, "descricao": _texto(entrada, "descricao") or None,
              "observacoes": _texto(entrada, "observacoes") or None}
     if tipo != "compra_parcelada":
+        tipo_novo = _texto(entrada, "tipo") or tipo
+        if tipo_novo not in TIPOS_NOVA:
+            erros["tipo"] = "Tipo: escolha uma das opções."
+        dados["tipo"] = tipo_novo
         original = _coletar(erros, "valor_original", decimal_campo, entrada.get("valor_original") or "0", "Valor original")
         texto_n, texto_parcela = _texto(entrada, "numero_parcelas"), _texto(entrada, "valor_parcela")
         n = parcela = None
@@ -266,3 +271,64 @@ def ler_saldo_confirmado(entrada: dict, hoje: date) -> dict:
     if erros:
         raise ErroDeCampos(erros)
     return {"saldo_confirmado": saldo, "confirmado_em": date.fromisoformat(data)}
+
+
+# ---------------------------------------------------------------- editar parcela --
+
+
+def edicao_parcela_inicial(parcela: dict) -> dict:
+    """Texto inicial dos campos: o vencimento (vazio se a parcela ainda não tem data) e o valor."""
+    return {"vencimento": str(parcela["vencimento"])[:10] if parcela.get("vencimento") else "", "valor": texto_moeda(parcela["valor"])}
+
+
+def texto_da_edicao_parcela(entrada: dict) -> dict:
+    return {"vencimento": _texto(entrada, "vencimento"), "valor": _texto(entrada, "valor")}
+
+
+def ler_edicao_parcela(entrada: dict, valor_pago) -> dict:
+    """Vencimento (pode ficar vazio: sem data) e, só se a parcela ainda não tem pagamento, o novo valor.
+
+    Com pagamento já feito o valor não muda: a parcela é marcada como paga a partir da soma dos pagamentos, então mexer no
+    valor deixaria esse estado desatualizado. Para corrigir, edite o pagamento."""
+    erros: dict[str, str] = {}
+    vencimento = _coletar(erros, "vencimento", _data_iso, _texto(entrada, "vencimento"), "Vencimento", False)
+    dados = {"vencimento": date.fromisoformat(vencimento) if vencimento else None}
+    if Decimal(str(valor_pago or 0)) == 0:
+        dados["valor"] = _coletar(erros, "valor", decimal_campo, entrada.get("valor"), "Valor da parcela", positivo=True)
+    if erros:
+        raise ErroDeCampos(erros)
+    return dados
+
+
+# ---------------------------------------------------------------- editar pagamento --
+
+
+def edicao_pagamento_inicial(pagamento: dict) -> dict:
+    return {
+        "data": str(pagamento["data"])[:10], "valor": texto_moeda(pagamento["valor"]), "conta_id": pagamento.get("conta_id") or "",
+        "observacoes": pagamento.get("observacoes") or "", "data_estimada": "1" if pagamento.get("data_estimada") else "",
+    }
+
+
+def texto_da_edicao_pagamento(entrada: dict) -> dict:
+    return {campo: _texto(entrada, campo) for campo in ("data", "valor", "conta_id", "observacoes", "data_estimada")}
+
+
+def ler_edicao_pagamento(entrada: dict, limite, contas_validas: set[str]) -> dict:
+    """Pagamento corrigido, pronto para `dividas.atualizar_pagamento`. O valor vai de 0,01 a `limite` (ver
+    `dividas_lista.limite_do_pagamento`); a data pode ser marcada como aproximada (caixa `data_estimada` com `1`)."""
+    erros: dict[str, str] = {}
+    limite = Decimal(str(limite))
+    data = _coletar(erros, "data", _data_iso, _texto(entrada, "data"), "Data do pagamento", True)
+    valor = _coletar(erros, "valor", decimal_campo, entrada.get("valor"), "Valor pago", positivo=True)
+    if valor is not None and valor > limite:
+        erros["valor"] = f"Valor pago: não pode passar de {moeda(limite)}, o que falta mais este pagamento."
+    conta_id = _texto(entrada, "conta_id")
+    if conta_id and conta_id not in contas_validas:
+        erros["conta_id"] = "Conta: escolha uma das opções."
+    if erros:
+        raise ErroDeCampos(erros)
+    return {
+        "data": date.fromisoformat(data), "valor": valor, "conta_id": conta_id or None,
+        "observacoes": _texto(entrada, "observacoes") or None, "data_estimada": _texto(entrada, "data_estimada") == "1",
+    }

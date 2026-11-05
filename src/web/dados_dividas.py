@@ -21,3 +21,7 @@ def contas():
 
 def motos():
     return dividas.motos_para_selecao()
+
+
+def pagamento(pagamento_id):
+    return dividas.pagamento(pagamento_id)

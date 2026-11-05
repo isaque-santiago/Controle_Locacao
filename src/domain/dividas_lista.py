@@ -88,3 +88,17 @@ def totais(linhas: list[dict]) -> dict:
         "proximo_vencimento": proximas[0][0] if proximas else None,
         "proximo_credor": proximas[0][1] if proximas else None,
     }
+
+
+def limite_do_pagamento(pagamento: dict, parcelas: list[dict], saldo_da_divida) -> Decimal:
+    """O maior valor que este pagamento pode passar a ter, sem estourar o que falta.
+
+    Pagamento de uma parcela: valor da parcela menos o que os outros pagamentos já cobriram. Pagamento direto (sem parcela):
+    saldo em aberto da dívida mais o próprio valor atual."""
+    atual = _dinheiro(pagamento.get("valor"))
+    vencimento_id = pagamento.get("vencimento_id")
+    if vencimento_id:
+        parcela = next((p for p in parcelas if p.get("vencimento_id") == vencimento_id), None)
+        if parcela is not None:
+            return _dinheiro(parcela["valor"]) - _dinheiro(parcela.get("valor_pago")) + atual
+    return _dinheiro(saldo_da_divida) + atual
