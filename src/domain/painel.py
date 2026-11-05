@@ -245,6 +245,13 @@ def ordens_concluidas_no_mes(manutencoes: list[dict], hoje: date) -> int:
     )
 
 
+def manutencao_em_andamento(manutencoes: list[dict]) -> dict:
+    """Ordens abertas agora e o que já foi lançado nelas (mão de obra + peças). Não entra no custo do mês até concluir."""
+    abertas = [m for m in manutencoes if m["status"] == "aberta"]
+    total = sum((Decimal(str(m.get("custo_total") or 0)) for m in abertas), Decimal(0))
+    return {"quantidade": len(abertas), "total": total}
+
+
 # ------------------------------------------------------------------ alertas --
 
 @dataclass(frozen=True)

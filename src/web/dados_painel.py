@@ -43,6 +43,7 @@ def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = 
         for c in painel.cobrancas_de_hoje(dados["cobrancas"], hoje)
     ]
 
+    ordens = manutencao.listar_manutencoes()
     mes_anterior = painel.nome_do_mes(painel.periodo_anterior(hoje)[0])
     resumo_financeiro = financeiro_servico.painel_seguro(mes, hoje)
 
@@ -70,7 +71,8 @@ def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = 
                 painel.variacao(dados["manutencao"], dados["manutencao_anterior"]), mes_anterior, subir_e_bom=False
             ),
         },
-        "ordens_concluidas": painel.ordens_concluidas_no_mes(manutencao.listar_manutencoes(), hoje),
+        "ordens_concluidas": painel.ordens_concluidas_no_mes(ordens, hoje),
+        "manutencao_aberta": painel.manutencao_em_andamento(ordens),
         "hoje": painel.limitar_lista(linhas_hoje),
         "hoje_total": len(linhas_hoje),
         "financeiro": resumo_financeiro,
