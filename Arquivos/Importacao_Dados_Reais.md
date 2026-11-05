@@ -226,8 +226,10 @@ O dono pediu para começar a carregar produção com o que já está completo, e
 02 (base: contas, fornecedores, veículos, multas), 03 (financeiro), 04 (clientes e contratos já em dev) e 05 (clientes e contratos novos), mais os desfazeres.
 Todas as cargas usam `importacoes_lote` com o prefixo `planilha-2026-11-03-prod-…` e rodam em transação única.
 
-**Ensaio (Postgres descartável, estado de produção = migrations 1 a 22 + seed):** o pacote aplica limpo, é idempotente (segunda rodada só avisa "já importado"),
-o gerador automático de cobranças não cria atraso retroativo e `desfazer_TUDO` volta o banco a zero. Totais: 32 veículos, 72 multas, 16 clientes, 12 contratos,
+**Estado real da produção (diagnóstico de 05/11/2026):** migrations 14 a 33 já aplicadas e banco só com os dados de exemplo do `seed_exemplos` (6 motos, 5 clientes, 3 contratos). Por isso o pacote ganhou um passo de limpeza (`00b`), que apaga só os dados de exemplo, com trava contra apagar dado real.
+
+**Ensaio (Postgres descartável, igual à produção: migrations 1 a 33 + seed + exemplos):** o pacote aplica limpo, é idempotente (segunda rodada só avisa "já importado"),
+o gerador automático de cobranças não cria atraso retroativo e `desfazer_TUDO` volta o banco a zero; o arquivo de migrations (01) é seguro de rodar de novo por cima do que já existe. Totais: 32 veículos, 72 multas, 16 clientes, 12 contratos,
 75 despesas. Os saldos dos contratos novos batem com a aba Frota da planilha (devido e recebido).
 
 **Entra na parcela 1:** tudo da foto de 03/11 que já estava no dev; 7 clientes novos com nome, CPF e telefone completos; telefones que faltavam em 4 clientes; contratos de
