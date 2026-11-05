@@ -75,10 +75,16 @@ def listar_motos_do_contrato(contrato_id: str) -> list:
     return sorted(linhas, key=lambda m: (not m["principal"], m["placa"]))
 
 
+def listar_vinculos() -> list:
+    """Linhas de `contrato_motos` (contrato_id, moto_id): as motos vinculadas de todos os contratos, numa consulta só.
+    A tabela não tem `id`, por isso a ordem é pela chave composta."""
+    return todos("contrato_motos", ordem=["contrato_id", "moto_id"])
+
+
 def contar_vinculadas() -> dict:
     """Quantas motos vinculadas (além da principal) cada contrato tem: {contrato_id: n}, numa consulta só."""
     contagem: dict = {}
-    for linha in todos("contrato_motos", ordem=["contrato_id", "moto_id"]):
+    for linha in listar_vinculos():
         contagem[linha["contrato_id"]] = contagem.get(linha["contrato_id"], 0) + 1
     return contagem
 

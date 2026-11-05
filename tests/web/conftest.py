@@ -241,6 +241,7 @@ class BaseMotos:
             {"id": "k1", "moto_id": self.motos[0]["id"], "cliente_id": "c1", "status": "ativo"},
         ]
         self.clientes = [{"id": "c1", "nome": "Joana <b>Prado</b>"}]
+        self.vinculos = []  # linhas de contrato_motos: motos vinculadas (além da principal) de cada contrato
         self.plano = [
             {"moto_id": self.motos[0]["id"], "situacao": "vencida", "km_restantes": -120, "dias_restantes": None},
         ]
@@ -297,7 +298,9 @@ def base_motos(monkeypatch):
             historico=lambda id_: base.leituras,
         ),
     )
-    monkeypatch.setattr(dados_motos, "contratos", SimpleNamespace(listar=lambda: base.contratos))
+    monkeypatch.setattr(
+        dados_motos, "contratos", SimpleNamespace(listar=lambda: base.contratos, listar_vinculos=lambda: base.vinculos)
+    )
     monkeypatch.setattr(dados_motos, "clientes", SimpleNamespace(listar=lambda: base.clientes))
     monkeypatch.setattr(dados_motos, "alertas", SimpleNamespace(listar_manutencao=lambda: base.plano))
     monkeypatch.setattr(

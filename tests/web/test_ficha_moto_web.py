@@ -141,3 +141,13 @@ def test_resposta_da_aba_traz_as_abas_fora_de_banda_com_a_nova_selecionada(clien
     assert html.count('aria-selected="true"') == 1
     pagina = cliente.get(f"/motos/{MOTO}?aba=documentos").text
     assert 'hx-swap-oob' not in pagina  # a página inteira não repete as abas
+
+
+def test_ficha_da_moto_vinculada_mostra_locatario_e_contrato(cliente, base_motos):
+    base_motos.motos[1]["status"] = "alugada"
+    base_motos.vinculos.append({"contrato_id": "k1", "moto_id": SEM_CONTRATO})
+    entrar(cliente)
+    cabecalho = cliente.get(f"/motos/{SEM_CONTRATO}").text
+    assert "Locada para Joana &lt;b&gt;Prado&lt;/b&gt; desde 01/07/2026." in cabecalho
+    contratos = cliente.get(f"/motos/{SEM_CONTRATO}/abas/contratos", headers=PAINEL).text
+    assert "01/07/2026" in contratos and "01/01/2026" not in contratos

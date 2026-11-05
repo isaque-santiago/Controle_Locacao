@@ -117,6 +117,11 @@ def encerrar_contrato(
     return contratos.encerrar_via_rpc(contrato_id, data, km_final, valor_danos, descricao)
 
 
+def listar_vinculos() -> list:
+    """Motos vinculadas de todos os contratos (linhas de `contrato_motos`), para resolver o locatário de cada moto."""
+    return contratos.listar_vinculos()
+
+
 def contar_vinculadas() -> dict:
     """{contrato_id: nº de motos vinculadas} de todos os contratos, para a lista."""
     return contratos.contar_vinculadas()
