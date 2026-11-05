@@ -15,32 +15,32 @@ TABELA = "contratos"
 
 
 @invalida_cache
-def criar_com_vistoria(dados, vistoria):
+def criar_com_vistoria(dados, vistoria, vistorias_vinculadas=None):
+    parametros = {"payload": dados, "p_vistoria": vistoria}
+    if vistorias_vinculadas:
+        parametros["p_vistorias_vinculadas"] = vistorias_vinculadas
     return (
         get_client()
-        .rpc(
-            "rpc_criar_contrato_com_vistoria",
-            {"payload": dados, "p_vistoria": vistoria},
-        )
+        .rpc("rpc_criar_contrato_com_vistoria", parametros)
         .execute()
         .data
     )
 
 
 @invalida_cache
-def encerrar_com_vistoria(contrato_id, data, vistoria, valor_danos, descricao_danos):
+def encerrar_com_vistoria(contrato_id, data, vistoria, valor_danos, descricao_danos, vistorias_vinculadas=None):
+    parametros = {
+        "p_contrato_id": contrato_id,
+        "p_data": data.isoformat(),
+        "p_vistoria": vistoria,
+        "p_valor_danos": str(valor_danos),
+        "p_descricao_danos": descricao_danos,
+    }
+    if vistorias_vinculadas:
+        parametros["p_vistorias_vinculadas"] = vistorias_vinculadas
     return (
         get_client()
-        .rpc(
-            "rpc_encerrar_contrato_com_vistoria",
-            {
-                "p_contrato_id": contrato_id,
-                "p_data": data.isoformat(),
-                "p_vistoria": vistoria,
-                "p_valor_danos": str(valor_danos),
-                "p_descricao_danos": descricao_danos,
-            },
-        )
+        .rpc("rpc_encerrar_contrato_com_vistoria", parametros)
         .execute()
         .data
     )
