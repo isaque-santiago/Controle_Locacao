@@ -65,3 +65,42 @@ def get_locador() -> dict:
     """
     dados = {campo: (_ler(f"LOCADOR_{campo.upper()}") or "").strip() for campo in CAMPOS_LOCADOR}
     return {campo: valor for campo, valor in dados.items() if valor}
+
+
+def get_evolution() -> dict:
+    """Dados da Evolution API para o envio de WhatsApp: `EVOLUTION_URL`, `EVOLUTION_APIKEY`, `EVOLUTION_INSTANCIA`
+    e `EVOLUTION_VERSAO` (1 ou 2; padrão 2). Ficam só no ambiente (Coolify) ou no `.env` de dev."""
+    dados = {
+        "url": (_ler("EVOLUTION_URL") or "").strip().rstrip("/"),
+        "apikey": (_ler("EVOLUTION_APIKEY") or "").strip(),
+        "instancia": (_ler("EVOLUTION_INSTANCIA") or "").strip(),
+        "versao": (_ler("EVOLUTION_VERSAO") or "2").strip(),
+    }
+    faltando = [nome for nome in ("url", "apikey", "instancia") if not dados[nome]]
+    if faltando:
+        raise RuntimeError("Evolution API não configurada: faltam " + ", ".join(f"EVOLUTION_{n.upper()}" for n in faltando) + ".")
+    if dados["versao"] not in ("1", "2"):
+        raise RuntimeError("EVOLUTION_VERSAO deve ser 1 ou 2.")
+    dados["versao"] = int(dados["versao"])
+    return dados
+
+
+def get_servico_mensagens() -> tuple[str, str]:
+    """E-mail e senha do usuário de serviço do envio de WhatsApp (`SERVICO_MENSAGENS_EMAIL` e `SERVICO_MENSAGENS_SENHA`)."""
+    email = (_ler("SERVICO_MENSAGENS_EMAIL") or "").strip()
+    senha = _ler("SERVICO_MENSAGENS_SENHA") or ""
+    if not email or not senha:
+        raise RuntimeError("Usuário de serviço não configurado: faltam SERVICO_MENSAGENS_EMAIL e SERVICO_MENSAGENS_SENHA.")
+    return email, senha
+
+
+def get_textos_whatsapp() -> dict:
+    """O que entra nos textos de WhatsApp: `WHATSAPP_EMPRESA` (saudação), `WHATSAPP_CONTATO` (como falar com o dono),
+    `WHATSAPP_PIX` (chave Pix estática, opcional) e `PORTAL_URL` (link do portal do locatário, opcional)."""
+    empresa = (_ler("WHATSAPP_EMPRESA") or get_locador().get("nome") or "").strip()
+    return {
+        "empresa": empresa or None,
+        "contato": (_ler("WHATSAPP_CONTATO") or "").strip() or None,
+        "pix": (_ler("WHATSAPP_PIX") or "").strip() or None,
+        "link_portal": (_ler("PORTAL_URL") or "").strip() or None,
+    }
