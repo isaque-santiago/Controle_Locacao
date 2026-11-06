@@ -226,6 +226,40 @@ segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); f
   /var/lib/dpkg/lock-frontend` (outro `apt-get` do runner segura o lock); basta reexecutar os jobs que falharam. E um PR do Dependabot que mexe
   em `requirements.txt` ou `ci.yml` pode conflitar com o anterior; comente `@dependabot rebase` e espere a CI do novo head.
 
+## 8.1 Envio automático por WhatsApp (Etapa 3 da seção 20 do plano)
+
+O envio roda como **Tarefa Agendada do Coolify**, em processo separado do site (nada de laço dentro do app). Ele só passa a enviar
+quando o dono liga a chave em Configurações; até lá a rodada termina na hora, sem mexer em nada.
+
+1. **Banco:** aplique `20261106120000_whatsapp_base.sql` e `20261106130000_whatsapp_leitura.sql` (e rode os roteiros
+   `supabase/verificar_whatsapp_base.sql` e `verificar_whatsapp_leitura.sql` no projeto de desenvolvimento).
+2. **Usuário de serviço:** em Authentication > Users crie um usuário só para o robô (com *Auto Confirm User* e senha forte) e, no SQL Editor,
+   `insert into servico_mensagens (user_id) select id from auth.users where email = 'EMAIL-DO-ROBO';`. Ele não enxerga nenhuma tabela: só executa
+   as RPCs `rpc_whatsapp_*`. A `service_role` não é usada.
+3. **Evolution:** crie uma instância **nova** para este app (chip dedicado), conecte o WhatsApp lendo o QR code e confira a versão da
+   Evolution no Swagger dela (`/docs`): o corpo do envio muda entre a v1 e a v2.
+4. **Variáveis no Coolify (aplicativo do Locação):**
+
+| Variável | Para quê |
+|---|---|
+| `SERVICO_MENSAGENS_EMAIL`, `SERVICO_MENSAGENS_SENHA` | usuário de serviço do passo 2 |
+| `EVOLUTION_URL`, `EVOLUTION_APIKEY`, `EVOLUTION_INSTANCIA` | endereço (use o interno do Docker, se houver rede em comum), chave e nome da instância |
+| `EVOLUTION_VERSAO` | `2` (padrão) ou `1` |
+| `WHATSAPP_EMPRESA` | nome na saudação (sem ela, usa `LOCADOR_NOME`) |
+| `WHATSAPP_CONTATO` | como o locatário fala com o dono, ex.: `o Alisson, no (11) 99999-0000`. O chip é dedicado e ninguém lê as respostas dele: sem contato, o texto manda falar com «a empresa» |
+| `WHATSAPP_PIX` (opcional) | chave Pix estática que entra nas cobranças |
+| `PORTAL_URL` (opcional) | link do portal nos avisos de troca de óleo e de acesso |
+
+5. **Tarefa agendada** (Coolify > aplicativo > *Scheduled Tasks*): comando `python -m src.enviar_mensagens_whatsapp`, frequência
+   `*/20 * * * *` (a cada 20 minutos; é seguro repetir). Saída: uma linha JSON com o resumo; código 0 = rodada feita, 2 = configuração faltando
+   ou recusada (variável, usuário de serviço, chave da Evolution), 1 = erro inesperado.
+6. **Primeiro uso:** em Configurações ligue o envio **mantendo o modo teste** e informe o número de teste (o seu). Tudo sai só para ele, com
+   «[TESTE]» no início, e é gravado com o id `teste:...`. Fique uma semana assim. Para sair do modo teste sem que o histórico de teste conte como
+   aviso já feito, rode antes no SQL Editor:
+   `update mensagens_whatsapp set status = 'cancelada', erro = 'Enviada em modo teste' where evolution_id like 'teste:%';`
+7. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
+   ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado.
+
 ## 9. Problemas comuns
 
 | Sintoma | Causa provável |
