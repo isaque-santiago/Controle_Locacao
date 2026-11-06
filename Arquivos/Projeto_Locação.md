@@ -835,7 +835,7 @@ banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusã
 
 ## 12. Backlog (v2 em diante)
 
-1. Envio automático de cobrança por WhatsApp (API oficial ou provedor) e resumo diário de vencimentos.
+1. Envio automático de cobrança por WhatsApp (API oficial ou provedor) e resumo diário de vencimentos. *(desenho do envio automático pela Evolution API na seção 20; o resumo diário por WhatsApp foi descartado, o Dashboard cumpre o papel)*
 2. Gestão de multas de trânsito com identificação do condutor e repasse ao locatário.
 3. Contrato em PDF gerado a partir de modelo (revisar o modelo com advogado).
 4. Portal do cliente para ver contrato, cobranças e enviar comprovante Pix. *(acesso básico do locatário — foto/hodômetro de troca de óleo — antecipado na Fase 7)*
@@ -1037,3 +1037,90 @@ ficavam defasados.
 - Vistorias: placa da moto da própria vistoria na lista; comparação com um grupo por moto vinculada; "Registrar vistoria" lista cada par contrato-moto pendente (`contrato` ou `contrato:moto`), o que dá a entrega retroativa dos contratos já carregados.
 - Ficha do contrato, aba Vistorias: um grupo por moto.
 - Fotos: só na moto principal na criação do contrato; as das outras motos entram depois, por "Adicionar fotos" na vistoria.
+
+
+## 20. Envio automático de mensagens por WhatsApp (desenho aprovado em 06/11/2026; nada implementado)
+
+Tira do backlog (seção 12, item 1) o envio automático por WhatsApp pela **Evolution API**. Hoje o dono só copia um texto de cobrança e cola no
+WhatsApp (`/cobrancas/{id}/mensagem`). A automação passa a ser o canal oficial dos avisos ao locatário: por isso ela não pode falhar em silêncio.
+
+### 20.1 Decisões do dono (05 e 06/11/2026)
+
+1. **Destinatário:** sempre o locatário. O dono acompanha tudo pelo sistema (Dashboard e alertas), não por WhatsApp.
+2. **Número:** só `clientes.whatsapp` (nunca `telefone`). Sem número, a mensagem fica `ignorada`, com o motivo.
+3. **Janela de envio:** 8h às 19h (America/Sao_Paulo), de segunda a sábado, sem feriados **nacionais** (calculados no código: fixos, Carnaval,
+   Sexta-feira Santa, Páscoa e Corpus Christi). O que cair fora da janela vai para o próximo horário válido. Feriados estaduais e municipais: fora.
+4. **Textos fixos no código** (um módulo só, para que ficar editável em Configurações seja fácil no futuro).
+5. **Uma mensagem por cliente por dia:** tudo o que for devido ao mesmo cliente no mesmo dia vai agrupado em um único texto, fácil de ler (ver 20.4).
+6. **Sem opt-out pelo cliente.** Os avisos são a automação da empresa; se o cliente pudesse desligá-los, o dono não saberia. Só o dono bloqueia o
+   envio, no cadastro do cliente (`nao_enviar_whatsapp`, com motivo e data). Resposta do cliente ("PARAR" etc.) não faz nada sozinha.
+7. **Sem resumo diário por WhatsApp ao dono.** O Dashboard cumpre esse papel (decisão adiada).
+8. **Chip dedicado e instância nova** na Evolution (a existente é de outro projeto). Instância e chip: a definir pelo dono.
+9. **Pix:** o texto de cobrança terá um espaço para a chave Pix estática do Cora, preenchido por configuração. Decisão de usar e de onde guardar: adiada.
+
+### 20.2 Quando cada mensagem sai
+
+| Tipo | Gatilho | Repetição |
+|---|---|---|
+| `lembrete_vespera` | Cobrança aberta que vence amanhã. Contrato `diario`: não envia. | Uma vez |
+| `lembrete_vencimento` | Cobrança aberta que vence hoje (todas as periodicidades). | Uma vez |
+| `atraso` | Cobrança atrasada, com o total **com encargos** (`domain/encargos.py`: multa + adicional por dia). | Dias 1, 3 e 7 de atraso; depois a cada 3 dias, até pagar, o contrato encerrar ou chegar ao máximo (padrão 10 mensagens, configurável) |
+| `inadimplencia` | Cobrança que atinge o corte `dias_inadimplencia` (Configurações). Aviso formal. | Uma vez |
+| `recibo_pagamento` | Pagamento registrado: valor pago e, se parcial, o saldo restante. | Uma vez por pagamento |
+| `cnh_proxima` / `cnh_vencida` | `vw_alertas_cnh`; antecedência = `alerta_cnh_dias`. | Próxima: uma vez. Vencida: como o atraso (1, 3, 7 e a cada 3 dias) |
+| `oleo_proxima` / `oleo_vencida` | `vw_alertas_manutencao` (troca de óleo); antecedência = `alerta_manutencao_dias` e `alerta_manutencao_km`. Leva o **link do portal** para registrar foto e hodômetro. | Como CNH |
+| `documento_proximo` / `documento_vencido` | `vw_alertas_documentos`; antecedência = `alerta_documento_dias`. Para quando o dono marca o documento como regularizado. | Como CNH |
+| `portal_acesso` / `portal_senha_alterada` | Criação do acesso ao portal (link) e troca de senha (aviso). Nunca leva a senha no texto. | Uma vez |
+
+**Documentos da moto (decisão do dono, 06/11/2026).** O aviso é ao locatário e **o instrui a regularizar**, não a falar com o dono. A instrução muda
+com o tipo: IPVA e licenciamento (pagar a guia), seguro (renovar), vistoria Detran (agendar e realizar), outro (usa a descrição). Como ainda não está
+definido quem paga o custo, o texto traz as duas formas, de modo neutro ("se o custo for seu, regularize; se for do proprietário, combine com ele").
+O texto pede o **comprovante**, que o locatário pode mandar pelo portal (quando existir, ver Etapa 6) ou pelo WhatsApp ao dono. Só o dono dá baixa no
+sistema; enviar o comprovante não baixa o documento sozinho.
+
+### 20.3 Arquitetura
+
+- **Fila e histórico:** tabela `mensagens_whatsapp` (cliente, tipo, referência, data de referência, número, texto, `status` em
+  `pendente|enviada|falhou|ignorada|cancelada`, tentativas, erro, `enviar_apos`, `enviada_em`). Índice único (tipo, referência, data de referência)
+  impede duplicar a mesma mensagem se o job rodar duas vezes. `clientes` ganha `nao_enviar_whatsapp`, `motivo_bloqueio_whatsapp` e `bloqueio_whatsapp_em`.
+- **Regras puras em `src/domain`** (com testes em `tests/`): quais mensagens são devidas hoje; textos e agrupamento; janela de horário e feriados;
+  normalização do número (`55` + DDD + número); quando parar de repetir.
+- **Cliente da Evolution** (`src/services/whatsapp.py`, `httpx`): `POST /message/sendText/{instância}` com o cabeçalho `apikey`. **Conferir** a versão
+  da Evolution da instância nova (v1 e v2 diferem no corpo da requisição) no Swagger dela antes de implementar. Testes com transporte falso; nenhum
+  teste chama a Evolution de verdade.
+- **Agendamento:** script `python -m scripts.enviar_mensagens` (gera as mensagens devidas, enfileira e envia), rodado como **Tarefa Agendada do
+  Coolify** a cada 15 a 30 minutos, em processo separado. Nada de laço dentro do processo web (1 worker, sessões em memória).
+- **Acesso ao banco sem usuário logado:** sem `service_role` (regra do projeto). Um usuário de serviço do Supabase Auth, sem acesso às tabelas, só
+  executa RPCs `SECURITY DEFINER` específicas (`rpc_mensagens_devidas`, `rpc_registrar_envio` etc.) que verificam o `auth.uid()` dele e devolvem só as
+  colunas necessárias. Operações em mais de uma tabela continuam em RPC (transação única).
+- **Segredos:** `EVOLUTION_URL`, `EVOLUTION_APIKEY`, `EVOLUTION_INSTANCIA` e a senha do usuário de serviço, como variáveis de ambiente do Coolify.
+  Nunca no repositório.
+- **Proteção do número:** intervalo aleatório de 20 a 60 s entre envios, textos com dados do cliente, só dentro da janela, verificação prévia de que o
+  número tem WhatsApp, chip dedicado, **modo teste** (tudo vai só para o número do dono) e chave geral liga/desliga em Configurações.
+- **Visibilidade para o dono (o sistema é o único canal de falha):** alerta no Dashboard de mensagens `falhou` ou `ignorada`, com o motivo (sem
+  WhatsApp, número inválido, Evolution fora do ar) e aviso de instância desconectada; histórico no detalhe do cliente; reenviar e cancelar pendentes.
+
+### 20.4 Texto das mensagens agrupadas
+
+Fácil de ler para o locatário, mesmo com vários assuntos: saudação curta com o nome; um bloco por assunto, o mais urgente primeiro (cobranças,
+depois documentos, depois manutenção e CNH); uma linha de ação em cada bloco; valores em `R$ 1.234,56` e datas em `dd/mm/aaaa`; teto de uns 5
+assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar com o dono quando passar disso.
+
+### 20.5 Etapas (um PR por etapa; não avançar sem os critérios de aceite)
+
+1. **Base:** migration (`mensagens_whatsapp`, campos de bloqueio, usuário de serviço e RPCs). *Aceite:* RPC recusa outro usuário; duplicata barrada pelo índice.
+2. **Regras puras:** devidas hoje, textos, agrupamento, janela, feriados nacionais, normalização do número, parada da repetição. *Aceite:* pytest verde com
+   os casos de borda (domingo, feriado, contrato diário, parcial, mês curto, dois assuntos no mesmo dia).
+3. **Cliente da Evolution e script de envio.** *Aceite:* testes com transporte falso (sucesso, falha, número sem WhatsApp, API fora do ar); script idempotente.
+4. **Telas:** histórico no cliente, bloqueio pelo dono, alertas de falha no Dashboard, Configurações (chave geral, modo teste, máximo de repetições). *Aceite:* só o dono vê e altera.
+5. **Implantação:** instância nova, tarefa agendada no Coolify, modo teste com o número do dono e liberação gradual. *Aceite:* uma semana em modo teste sem duplicata nem envio fora da janela.
+6. **Portal:** o locatário envia o comprovante de documento da moto; gera um aviso no sistema para o dono conferir e dar baixa (reaproveita
+   `privacidade_imagem.py`, validação de arquivo e Storage). Até lá, o texto cita só o WhatsApp.
+7. **Depois:** webhook da Evolution só para exibir respostas e status de entrega no sistema (sem agir sozinho), Pix do Cora nos textos e textos editáveis.
+
+### 20.6 Pendências
+
+- Instância e chip da Evolution (decisão do dono); versão da Evolution a conferir.
+- Uso e local da chave Pix do Cora nos textos.
+- Quem paga cada documento da moto (o texto cobre as duas formas por enquanto).
+- Texto final de cada mensagem: revisar com o dono antes da Etapa 3.
