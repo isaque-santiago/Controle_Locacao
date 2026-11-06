@@ -62,3 +62,13 @@ def test_maximo_de_avisos_invalido(valor):
 def test_texto_da_entrada_devolve_o_digitado():
     assert texto_da_entrada({"ativo": "on", "modo": "x", "numero_teste": " 11 9 ", "max_repeticoes": "7"}) == {
         "ativo": True, "modo": "teste", "numero_teste": "11 9", "max_repeticoes": "7", "confirmo": False}
+
+
+def test_motivo_do_bloqueio():
+    from src.domain.formulario_whatsapp import ler_bloqueio
+
+    assert ler_bloqueio({"motivo": "  Pediu ao dono  "}) == "Pediu ao dono"
+    for ruim in ("", "ab", "x" * 201):
+        with pytest.raises(ErroDeCampos) as erro:
+            ler_bloqueio({"motivo": ruim})
+        assert "Motivo:" in erro.value.erros["motivo"]

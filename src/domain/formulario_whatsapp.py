@@ -65,3 +65,16 @@ def ler_whatsapp(entrada: dict) -> dict:
         "whatsapp_numero_teste": numero,
         "whatsapp_max_repeticoes": maximo,
     }
+
+
+MOTIVO_MAXIMO = 200
+
+
+def ler_bloqueio(entrada: dict) -> str:
+    """Motivo para o cliente deixar de receber mensagens automáticas (fica registrado, com a data)."""
+    motivo = _texto(entrada, "motivo")
+    if len(motivo) < 3:
+        raise ErroDeCampos({"motivo": "Motivo: explique por que este cliente não deve receber mensagens (mínimo 3 letras)."})
+    if len(motivo) > MOTIVO_MAXIMO:
+        raise ErroDeCampos({"motivo": f"Motivo: use no máximo {MOTIVO_MAXIMO} caracteres."})
+    return motivo
