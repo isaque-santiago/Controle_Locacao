@@ -1111,7 +1111,7 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
 ### 20.5 Etapas (um PR por etapa; não avançar sem os critérios de aceite)
 
 1. **Base:** migration (`mensagens_whatsapp`, campos de bloqueio, usuário de serviço e RPCs). *Aceite:* RPC recusa outro usuário; duplicata barrada pelo índice.
-2. **Regras puras:** devidas hoje, textos, agrupamento, janela, feriados nacionais, normalização do número, parada da repetição. *Aceite:* pytest verde com
+2. **Regras puras** *(entregue em 06/11/2026: `feriados`, `janela_envio`, `numero_whatsapp`, `avisos_whatsapp` e `textos_whatsapp` em `src/domain`)*: devidas hoje, textos, agrupamento, janela, feriados nacionais, normalização do número, parada da repetição. *Aceite:* pytest verde com
    os casos de borda (domingo, feriado, contrato diário, parcial, mês curto, dois assuntos no mesmo dia).
 3. **Cliente da Evolution e script de envio.** *Aceite:* testes com transporte falso (sucesso, falha, número sem WhatsApp, API fora do ar); script idempotente.
 4. **Telas:** histórico no cliente, bloqueio pelo dono, alertas de falha no Dashboard, Configurações (chave geral, modo teste, máximo de repetições). *Aceite:* só o dono vê e altera.
@@ -1126,3 +1126,11 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
 - Uso e local da chave Pix do Cora nos textos.
 - Quem paga cada documento da moto (o texto cobre as duas formas por enquanto).
 - Texto final de cada mensagem: revisar com o dono antes da Etapa 3.
+- Escolhas da Etapa 2 que o dono ainda deve confirmar (todas mudam em um lugar só):
+  - o nome da empresa na saudação e **como falar com o dono** (nome e telefone), que aparecem em quase todo texto (`OpcoesTexto.empresa` e `contato`).
+    O chip é dedicado e ninguém lê as respostas dele: sem um contato no texto, a resposta do locatário se perde;
+  - o lembrete de **véspera** sai no último dia de envio antes do vencimento (vencimento de segunda é lembrado no sábado);
+  - os avisos "próxima" (CNH, documento, óleo) repetem, se continuarem pendentes, só depois de 30 dias;
+  - recibo e avisos do portal só saem para o que aconteceu nos últimos 2 dias (ao ligar o envio, o passado não vira mensagem);
+  - passando de 5 assuntos num dia, os mais urgentes vão e o resto fica para o dia seguinte;
+  - o aviso de atraso informa o total com encargos **do dia do envio**, e o texto diz que o valor aumenta a cada dia.
