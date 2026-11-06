@@ -14,6 +14,7 @@ from src.services import (
     configuracoes,
     dashboard,
     manutencao,
+    whatsapp_painel,
 )
 from src.services import financeiro as financeiro_servico
 
@@ -47,6 +48,7 @@ def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = 
     mes_anterior = painel.nome_do_mes(painel.periodo_anterior(hoje)[0])
     resumo_financeiro = financeiro_servico.painel_seguro(mes, hoje)
 
+    config = configuracoes.obter()
     return {
         "data_extenso": painel.data_por_extenso(hoje),
         "frota_total": len(frota),
@@ -82,9 +84,9 @@ def carregar(hoje: date | None = None, mes: str | None = None, compacto: bool = 
             resumo_financeiro["mes_texto"], resumo_financeiro["mes_anterior"], resumo_financeiro["mes_seguinte"], compacto, ocultar
         ),
         "alertas": painel.agrupar_alertas(
-            configuracoes.obter(),
+            config,
             alertas.listar_manutencao(),
             alertas.listar_documentos(),
             alertas.listar_cnh(),
-        ),
+        ) + whatsapp_painel.alertas(config),
     }

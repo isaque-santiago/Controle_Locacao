@@ -1,6 +1,6 @@
 {% extends "layout_painel.html" %}
 {% from "componentes/macros.html" import cabecalho_pagina, kpi, selo, placa, tabela, estado_vazio, icone %}
-{% set areas = {"manutencao": "/manutencao", "documentos": "/documentos", "clientes": "/clientes"} %}
+{% set areas = {"manutencao": "/manutencao", "documentos": "/documentos", "clientes": "/clientes", "mensagens": "/mensagens?filtro=problemas", "configuracoes": "/configuracoes#cfg-whatsapp"} %}
 {% set oc = d.ocultar %}
 {% set comp = d.compacto %}
 {# Com "ocultar dados pessoais" ligado, valores, nomes e placas saem trocados por pontos já no servidor (não vão nem no HTML). #}
