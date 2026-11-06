@@ -25,3 +25,12 @@ def normalizar_numero(texto) -> str | None:
     if len(assinante) == 8 and assinante[0] in "2345":
         return None  # telefone fixo: não recebe WhatsApp
     return "55" + digitos
+
+
+def formatar_numero(numero) -> str:
+    """5511988887777 -> (11) 98888-7777, para a tela; o que não for um número normalizado volta como veio."""
+    texto = str(numero or "")
+    if not re.fullmatch(r"55\d{10,11}", texto):
+        return texto
+    ddd, assinante = texto[2:4], texto[4:]
+    return f"({ddd}) {assinante[:-4]}-{assinante[-4:]}"

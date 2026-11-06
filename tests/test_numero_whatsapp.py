@@ -31,3 +31,11 @@ def test_numeros_invalidos(texto):
 def test_resultado_combina_com_a_regra_do_banco():
     import re
     assert re.fullmatch(r"55[0-9]{10,11}", normalizar_numero("(11) 98888-7777"))
+
+
+def test_formatar_numero_para_a_tela():
+    from src.domain.numero_whatsapp import formatar_numero
+
+    assert formatar_numero("5511988887777") == "(11) 98888-7777"
+    assert formatar_numero("551188887777") == "(11) 8888-7777"
+    assert formatar_numero(None) == "" and formatar_numero("abc") == "abc"
