@@ -1113,7 +1113,7 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
 1. **Base:** migration (`mensagens_whatsapp`, campos de bloqueio, usuário de serviço e RPCs). *Aceite:* RPC recusa outro usuário; duplicata barrada pelo índice.
 2. **Regras puras** *(entregue em 06/11/2026: `feriados`, `janela_envio`, `numero_whatsapp`, `avisos_whatsapp` e `textos_whatsapp` em `src/domain`)*: devidas hoje, textos, agrupamento, janela, feriados nacionais, normalização do número, parada da repetição. *Aceite:* pytest verde com
    os casos de borda (domingo, feriado, contrato diário, parcial, mês curto, dois assuntos no mesmo dia).
-3. **Cliente da Evolution e script de envio.** *Aceite:* testes com transporte falso (sucesso, falha, número sem WhatsApp, API fora do ar); script idempotente.
+3. **Cliente da Evolution e script de envio** *(entregue em 06/11/2026: `rpc_whatsapp_dados`, `services/evolution.py`, `services/whatsapp.py` e `python -m src.enviar_mensagens_whatsapp`; guia em `Deploy_VPS.md`, seção 8.1)*. *Aceite:* testes com transporte falso (sucesso, falha, número sem WhatsApp, API fora do ar); script idempotente.
 4. **Telas:** histórico no cliente, bloqueio pelo dono, alertas de falha no Dashboard, Configurações (chave geral, modo teste, máximo de repetições). *Aceite:* só o dono vê e altera.
 5. **Implantação:** instância nova, tarefa agendada no Coolify, modo teste com o número do dono e liberação gradual. *Aceite:* uma semana em modo teste sem duplicata nem envio fora da janela.
 6. **Portal:** o locatário envia o comprovante de documento da moto; gera um aviso no sistema para o dono conferir e dar baixa (reaproveita
@@ -1126,6 +1126,10 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
 - Uso e local da chave Pix do Cora nos textos.
 - Quem paga cada documento da moto (o texto cobre as duas formas por enquanto).
 - Texto final de cada mensagem: revisar com o dono antes da Etapa 3.
+- Aviso de **senha do portal alterada**: o tipo existe nas regras e nos textos, mas a troca de senha não deixa registro no banco, então ainda
+  não há de onde ler o evento. Precisa de uma tabela de eventos do portal (ou gravar a data da última troca), a decidir.
+- Ao sair do modo teste, cancelar o histórico de teste (SQL no guia de deploy, seção 8.1, passo 6).
+- Confirmar a versão da Evolution da instância nova (`EVOLUTION_VERSAO`) conferindo o corpo do envio no Swagger dela.
 - Escolhas da Etapa 2 que o dono ainda deve confirmar (todas mudam em um lugar só):
   - o nome da empresa na saudação e **como falar com o dono** (nome e telefone), que aparecem em quase todo texto (`OpcoesTexto.empresa` e `contato`).
     O chip é dedicado e ninguém lê as respostas dele: sem um contato no texto, a resposta do locatário se perde;
