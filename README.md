@@ -678,3 +678,13 @@ Para criar um administrador: crie o usuário em Authentication > Users (com "Aut
 - **Vistorias**: a lista mostra a placa da moto da própria vistoria; a comparação ganha um grupo de entrega e devolução por moto vinculada; **Registrar vistoria** lista cada par contrato-moto que ainda não tem as duas vistorias (o campo `contrato` vale o id do contrato ou `contrato:moto`) e registra na moto escolhida. É por aqui que os contratos já carregados (ex.: Plano Conquista do Yangry) ganham a **entrega retroativa** da moto vinculada.
 - **Ficha do contrato, aba Vistorias**: um grupo por moto do contrato.
 - Contrato de uma moto só fica exatamente como era. Desenho: seção 19 de `Arquivos/Projeto_Locação.md`.
+
+### Envio automático por WhatsApp (Etapa 1: base do banco)
+
+Desenho e etapas: seção 20 de `Arquivos/Projeto_Locação.md`. A Etapa 1 só prepara o banco; **nenhuma mensagem é enviada ainda**.
+Migration `20261106120000_whatsapp_base.sql` (compatível com a versão anterior do app):
+- `clientes` ganha `nao_enviar_whatsapp`, `motivo_bloqueio_whatsapp` e `bloqueio_whatsapp_em` (o bloqueio exige motivo e data; só o dono liga, nas telas da Etapa 4).
+- `mensagens_whatsapp` é a fila e o histórico; `mensagens_whatsapp_itens` lista os assuntos de cada mensagem e a chave única (tipo, referência, data) impede o mesmo aviso de sair duas vezes no mesmo dia. Só administradores enxergam as duas tabelas.
+- `servico_mensagens (user_id)` é o usuário de serviço (o robô do script agendado). Ele não lê nenhuma tabela: só chama `rpc_whatsapp_enfileirar` (pula duplicadas e clientes bloqueados; sem número válido grava `ignorada`), `rpc_whatsapp_reservar` (entrega as pendentes e as reserva por 10 min; cancela as de cliente bloqueado depois) e `rpc_whatsapp_registrar_resultado` (enviada, ignorada ou falha, com até 3 tentativas e espera de 30 min x tentativa). A `service_role` não é usada.
+
+Para criar o usuário de serviço: crie o usuário em Authentication > Users (com "Auto Confirm User") e rode no SQL Editor `insert into servico_mensagens (user_id) select id from auth.users where email = 'robo@exemplo.com';`. Para remover o acesso: `delete from servico_mensagens where user_id = (select id from auth.users where email = 'robo@exemplo.com');`. Roteiro de teste: `supabase/verificar_whatsapp_base.sql` (só em dev, termina em ROLLBACK). Nunca coloque senhas ou e-mails reais no repositório.

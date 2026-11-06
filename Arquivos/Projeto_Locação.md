@@ -1080,9 +1080,11 @@ sistema; enviar o comprovante não baixa o documento sozinho.
 
 ### 20.3 Arquitetura
 
-- **Fila e histórico:** tabela `mensagens_whatsapp` (cliente, tipo, referência, data de referência, número, texto, `status` em
-  `pendente|enviada|falhou|ignorada|cancelada`, tentativas, erro, `enviar_apos`, `enviada_em`). Índice único (tipo, referência, data de referência)
-  impede duplicar a mesma mensagem se o job rodar duas vezes. `clientes` ganha `nao_enviar_whatsapp`, `motivo_bloqueio_whatsapp` e `bloqueio_whatsapp_em`.
+- **Fila e histórico:** tabela `mensagens_whatsapp` (cliente, número, texto, `status` em `pendente|enviada|falhou|ignorada|cancelada`,
+  tentativas, erro, `enviar_apos`, `reservada_ate`, `enviada_em`, `evolution_id`) e a tabela `mensagens_whatsapp_itens`, com os assuntos de cada
+  mensagem agrupada (tipo, referência, data de referência). A chave única (tipo, referência, data) dos itens impede duplicar o mesmo aviso se o job
+  rodar duas vezes. *(Etapa 1 entregue em 06/11/2026: migration `20261106120000_whatsapp_base.sql`; a reserva por 10 min evita que dois scripts
+  peguem a mesma mensagem.)* `clientes` ganha `nao_enviar_whatsapp`, `motivo_bloqueio_whatsapp` e `bloqueio_whatsapp_em`.
 - **Regras puras em `src/domain`** (com testes em `tests/`): quais mensagens são devidas hoje; textos e agrupamento; janela de horário e feriados;
   normalização do número (`55` + DDD + número); quando parar de repetir.
 - **Cliente da Evolution** (`src/services/whatsapp.py`, `httpx`): `POST /message/sendText/{instância}` com o cabeçalho `apikey`. **Conferir** a versão
