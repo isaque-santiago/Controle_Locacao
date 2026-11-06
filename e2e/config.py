@@ -49,6 +49,7 @@ PAGINAS = (
     Pagina("Dashboard", "/"),
     Pagina("Contratos", "/contratos"),
     Pagina("Cobranças", "/cobrancas"),
+    Pagina("Mensagens", "/mensagens"),
     Pagina("Motos", "/motos"),
     Pagina("Clientes", "/clientes"),
     Pagina("Manutenção", "/manutencao"),
