@@ -1,0 +1,32 @@
+{% from "componentes/macros.html" import cartao, tabela, selo, aviso, botao, estado_vazio, area_texto, rc_titulo %}
+{% set base = "/clientes/" ~ cliente.id %}
+{% call cartao("Mensagens automáticas de WhatsApp") %}
+{% if cliente.nao_enviar_whatsapp %}
+{{ aviso("atencao", "Este cliente não recebe as mensagens automáticas" ~ (" desde " ~ (cliente.bloqueio_whatsapp_em|data_hora_br) if cliente.bloqueio_whatsapp_em else "") ~ ". Motivo: " ~ (cliente.motivo_bloqueio_whatsapp or "não informado") ~ ". Os avisos de cobrança, CNH, documentos e troca de óleo dele dependem de você.") }}
+<div class="acoes mt-4">{{ botao("Voltar a enviar mensagens", variante="primario", extra='hx-post="' ~ base ~ '/whatsapp/liberar" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Este cliente volta a receber as mensagens automáticas de WhatsApp." data-confirmar-titulo="Voltar a enviar mensagens" data-confirmar-rotulo="Voltar a enviar"') }}</div>
+{% else %}
+<p class="mb-4">{% if cliente.whatsapp %}As mensagens vão para <span class="mono">{{ cliente.whatsapp|telefone_br }}</span> (campo WhatsApp do cadastro).{% else %}{{ aviso("atencao", "Este cliente não tem WhatsApp cadastrado, então nenhuma mensagem pode ser enviada a ele. Preencha o campo WhatsApp em Editar.") }}{% endif %}</p>
+<form hx-post="{{ base }}/whatsapp/bloquear" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="find button" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <p class="text-texto-2 mb-2">Só você pode parar as mensagens de um cliente (ele não consegue pedir isso pelo WhatsApp). Enquanto estiver parado, nenhum aviso automático (cobrança, CNH, documentos, troca de óleo) sai para ele.</p>
+  {{ area_texto("wa-motivo", "Motivo para parar as mensagens", nome="motivo", valor=motivo_digitado or "", erro=(erros_whatsapp or {}).get("motivo"), largo=True, linhas=2, maximo=200) }}
+  <div class="acoes mt-2">{{ botao("Parar mensagens deste cliente", tipo="submit", variante="perigo") }}</div>
+</form>
+{% endif %}
+{% endcall %}
+{% call cartao("Histórico de mensagens") %}
+{% if a.erro_mensagens %}{{ aviso("erro", a.erro_mensagens) }}
+{% elif a.mensagens %}
+{% call tabela([("Quando", ""), ("Assuntos", ""), ("Situação", ""), ("Mensagem", "")], "Mensagens de WhatsApp deste cliente", recolhivel=True) %}
+{% for m in a.mensagens %}<tr data-recolhivel>
+{% call rc_titulo() %}<span class="mono">{{ m.criado_em|data_hora_br }}</span>{% endcall %}
+<td data-rotulo="Assuntos">{{ m.tipos|map("rotulo_assunto")|join(", ") or "—" }}</td>
+<td class="rc-cab" data-rotulo="Situação">{{ selo(m.status|rotulo_status_zap, m.status|tom_status_zap) }}{% if m.erro %}<br><small class="text-texto-2">{{ m.erro }}</small>{% endif %}</td>
+<td data-rotulo="Mensagem"><details class="texto-zap-detalhe"><summary>Ver texto</summary><pre class="texto-zap">{{ m.texto }}</pre></details></td>
+</tr>{% endfor %}
+{% endcall %}
+<p class="mt-2"><a href="/mensagens?filtro=todas">Ver todas as mensagens</a></p>
+{% else %}
+{{ estado_vazio("Nenhuma mensagem enviada", "As mensagens automáticas enviadas a este cliente aparecem aqui.") }}
+{% endif %}
+{% endcall %}

@@ -253,11 +253,14 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
 5. **Tarefa agendada** (Coolify > aplicativo > *Scheduled Tasks*): comando `python -m src.enviar_mensagens_whatsapp`, frequência
    `*/20 * * * *` (a cada 20 minutos; é seguro repetir). Saída: uma linha JSON com o resumo; código 0 = rodada feita, 2 = configuração faltando
    ou recusada (variável, usuário de serviço, chave da Evolution), 1 = erro inesperado.
-6. **Primeiro uso:** em Configurações ligue o envio **mantendo o modo teste** e informe o número de teste (o seu). Tudo sai só para ele, com
+6. **Primeiro uso:** aplique também `20261106140000_whatsapp_painel.sql` (e rode `verificar_whatsapp_painel.sql` em dev). Em Configurações > *Envio automático por WhatsApp* ligue o envio **mantendo o modo teste** e informe o número de teste (o seu). Tudo sai só para ele, com
    «[TESTE]» no início, e é gravado com o id `teste:...`. Fique uma semana assim. Para sair do modo teste sem que o histórico de teste conte como
    aviso já feito, rode antes no SQL Editor:
    `update mensagens_whatsapp set status = 'cancelada', erro = 'Enviada em modo teste' where evolution_id like 'teste:%';`
-7. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
+7. **Alertas no Dashboard (cartão «Precisa de atenção»):** *Envio automático parado* = a tarefa não roda há mais de 1h30 (veja o log no Coolify);
+   *WhatsApp desconectado* = ler o QR code de novo na Evolution; *Evolution fora do ar*; *Mensagens sem entrega* = abrir Mensagens (filtro «Com problema»)
+   e ligar para o cliente; *modo teste* = lembrete de que os clientes ainda não recebem.
+8. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
    ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado.
 
 ## 9. Problemas comuns

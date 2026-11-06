@@ -707,3 +707,12 @@ Já existe o envio de ponta a ponta, **desligado por padrão** (chave geral em `
 - `src/services/evolution.py`: cliente HTTP da Evolution (estado da instância, número tem WhatsApp, envio de texto; corpos da v1 e da v2). `src/services/whatsapp.py`: uma rodada = ler, aplicar as regras, enfileirar (a qualquer hora) e enviar dentro da janela, com pausa aleatória de 20 a 60 s entre mensagens. No **modo teste** tudo vai só ao número de teste.
 - `python -m src.enviar_mensagens_whatsapp` é o comando da Tarefa Agendada do Coolify; as variáveis e o passo a passo estão em `Arquivos/Deploy_VPS.md`, seção 8.1.
 - Conferido contra um Postgres do Supabase em Docker: a saída real de `rpc_whatsapp_dados` alimenta as regras, a mensagem gerada entra em `rpc_whatsapp_enfileirar` e uma segunda rodada não duplica nada.
+
+### Envio automático por WhatsApp (Etapa 4: telas do dono)
+
+Migration `20261106140000_whatsapp_painel.sql` (compatível com a versão anterior do app): `configuracoes` guarda quando a rodada rodou pela última vez, o estado da instância e o resumo (`rpc_whatsapp_registrar_rodada`, só usuário de serviço e administradores). Roteiro: `supabase/verificar_whatsapp_painel.sql` (só em dev, termina em ROLLBACK). A rodada agora confere a instância a cada execução e grava esse estado.
+- **Configurações > Envio automático por WhatsApp**: liga/desliga, modo teste ou envio aos clientes (este exige confirmação), número de teste e máximo de avisos por assunto, com o estado da instância e a hora da última rodada. É aqui que o envio se liga; nasce desligado.
+- **Mensagens** (menu Operação): lista das mensagens recentes com os filtros Com problema, Aguardando, Enviadas e Todas; mostra situação, motivo e tentativas, e abre o texto. **Reenviar** devolve à fila o que falhou; **Cancelar** vale para pendente ou falhada.
+- **Ficha do cliente, aba WhatsApp**: para onde as mensagens vão, histórico do cliente e o bloqueio. Só o dono para o envio de um cliente (com motivo; fica a data); o cliente não consegue pedir isso pelo WhatsApp.
+- **Dashboard, Precisa de atenção**: envio automático parado (sem rodada há mais de 1h30), WhatsApp desconectado, Evolution fora do ar, modo teste ligado e clientes cuja mensagem mais recente não foi entregue. Sem o envio ligado, nenhum desses alertas aparece.
+- As tabelas `mensagens_whatsapp*` não entram no backup manual (é histórico derivado, com dados pessoais).

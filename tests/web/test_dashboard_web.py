@@ -330,3 +330,19 @@ def test_financeiro_indisponivel_mostra_aviso_e_o_resto_do_dashboard_continua(cl
     assert 'type="month" name="mes"' in html
     assert "Receita mensal estimada" not in html and "Quem está devendo" not in html and "Resultado por veículo" not in html
     assert "Precisa de atenção" in html and "Ocupação da frota" in html and "Frota" in html
+
+
+def test_alertas_do_whatsapp_levam_para_mensagens_e_configuracoes(cliente, monkeypatch):
+    from src.domain.painel import ItemAlerta
+    from src.web import dados_painel
+    from tests.web.conftest import DADOS_PAINEL
+
+    alertas = [
+        ItemAlerta(2, "Mensagens sem entrega", "Maria: Número de WhatsApp inválido. e mais 1", "atencao", "mensagens"),
+        ItemAlerta(1, "WhatsApp em modo teste", "As mensagens vão só para o número de teste, não para os clientes.", "atencao", "configuracoes"),
+    ]
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: {**DADOS_PAINEL, "alertas": alertas})
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'href="/mensagens?filtro=problemas" aria-label="Abrir: Mensagens sem entrega"' in html
+    assert 'href="/configuracoes#cfg-whatsapp" aria-label="Abrir: WhatsApp em modo teste"' in html

@@ -8,7 +8,7 @@ from src.domain.paginacao import calcular_pagina
 TODOS = "todos"
 STATUS_ORDEM = ("ativo", "bloqueado", "inativo")
 STATUS_ROTULO = {"ativo": "Ativo", "bloqueado": "Bloqueado", "inativo": "Inativo"}
-ABAS_FICHA = (("resumo", "Resumo"), ("contratos", "Contratos"), ("pagamentos", "Pagamentos"), ("portal", "Portal"))
+ABAS_FICHA = (("resumo", "Resumo"), ("contratos", "Contratos"), ("pagamentos", "Pagamentos"), ("portal", "Portal"), ("whatsapp", "WhatsApp"))
 
 
 def status_valido(valor: str | None) -> str:

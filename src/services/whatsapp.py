@@ -5,7 +5,8 @@ Uma execução (`executar`) faz, nesta ordem:
 2. aplica as regras de `src/domain` e enfileira as mensagens devidas, já agrupadas por cliente. Isso acontece a
    qualquer hora: o que cair fora da janela (8h às 19h, segunda a sábado, sem feriado) fica marcado para o próximo
    horário válido;
-3. dentro da janela, envia as pendentes pela Evolution, com pausa aleatória entre elas, conferindo antes se o
+3. confere a instância do WhatsApp e grava o estado da rodada (o Dashboard avisa o dono se ela cair ou a rodada parar);
+4. dentro da janela, envia as pendentes pela Evolution, com pausa aleatória entre elas, conferindo antes se o
    número tem WhatsApp.
 
 No modo teste nada vai ao cliente: tudo sai para o número de teste, com um aviso no início, e o envio é gravado com
@@ -53,20 +54,24 @@ def _numero_e_texto(msg: dict, config: dict):
     return config["numero_teste"], aviso + msg["texto"], f"teste:{msg['id']}"
 
 
-def enviar_pendentes(evolution, config: dict, dormir=time.sleep, sorteio=random.uniform) -> dict:
+def estado_da_instancia(evolution) -> str:
+    """`open` (conectada), outro valor da Evolution (ex.: `close`) ou `indisponivel` (a Evolution não respondeu)."""
+    try:
+        return evolution.estado()
+    except EvolutionIndisponivel:
+        return "indisponivel"
+
+
+def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, sorteio=random.uniform) -> dict:
     """Envia as pendentes devidas. Devolve contagens: enviadas, ignoradas, falhas."""
     resumo = {"enviadas": 0, "ignoradas": 0, "falhas": 0, "parou_por": None}
     if config["modo_teste"] and not config["numero_teste"]:
         resumo["parou_por"] = "modo_teste_sem_numero"
         return resumo
-    if callable(evolution):  # o script só cria o cliente da Evolution quando há o que enviar
-        evolution = evolution()
-    try:
-        conectada = evolution.estado() == "open"
-    except EvolutionIndisponivel:
+    if estado == "indisponivel":
         resumo["parou_por"] = "evolution_indisponivel"
         return resumo
-    if not conectada:
+    if estado != "open":
         resumo["parou_por"] = "instancia_desconectada"
         return resumo
 
@@ -109,9 +114,16 @@ def executar(evolution, opcoes: OpcoesTexto, agora: datetime | None = None, dorm
 
     resumo = {"ativo": True, "modo_teste": config["modo_teste"],
               "fila": enfileirar_devidos(agora, opcoes, dados=bruto)}
+    # A instância é conferida a cada rodada (mesmo de noite), para o Dashboard avisar o dono antes de faltar mensagem.
+    evolution = evolution() if callable(evolution) else evolution
+    estado = estado_da_instancia(evolution)
     if dentro_da_janela(agora):
-        resumo["envio"] = enviar_pendentes(evolution, config, dormir, sorteio)
+        resumo["envio"] = enviar_pendentes(evolution, config, estado, dormir, sorteio)
     else:
         resumo["envio"] = {"parou_por": "fora_da_janela"}
+    try:
+        repo.registrar_rodada(estado, resumo)
+    except Exception:  # o aviso ao dono não pode derrubar uma rodada que já enviou mensagens
+        log.exception("Não foi possível registrar o estado da rodada.")
     log.info("rodada do WhatsApp: %s", resumo)
     return resumo

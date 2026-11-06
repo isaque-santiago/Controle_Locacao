@@ -30,7 +30,8 @@ def _bruto(ativo=True, modo_teste=False, numero_teste=None, whatsapp="(11) 98888
 class RepoFalso:
     def __init__(self, bruto, pendentes=()):
         self.bruto, self.pendentes = bruto, list(pendentes)
-        self.dias_lidos, self.enfileirado, self.resultados = [], [], []
+        self.dias_lidos, self.enfileirado, self.resultados, self.rodadas = [], [], [], []
+        self.falha_ao_registrar_rodada = False
 
     def dados(self, dia):
         self.dias_lidos.append(dia)
@@ -42,6 +43,11 @@ class RepoFalso:
 
     def reservar(self, limite):
         return self.pendentes[:limite]
+
+    def registrar_rodada(self, estado, resumo=None):
+        if self.falha_ao_registrar_rodada:
+            raise RuntimeError("banco fora do ar")
+        self.rodadas.append((estado, resumo))
 
     def registrar_resultado(self, mensagem_id, resultado, erro=None, evolution_id=None):
         self.resultados.append((mensagem_id, resultado, erro, evolution_id))
@@ -223,17 +229,37 @@ def test_modo_teste_sem_numero_de_teste_nao_envia(instalar):
     assert repo.enfileirado  # ainda enfileira: o histórico de teste acompanha a cadência real
 
 
-def test_aceita_fabrica_de_evolution_e_so_cria_quando_ha_o_que_enviar(instalar):
-    instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+def test_aceita_fabrica_de_evolution_e_so_a_cria_com_o_envio_ligado(instalar):
     criou = []
 
     def fabrica():
         criou.append(True)
         return EvolutionFalsa()
 
+    instalar(RepoFalso(_bruto(ativo=False)))
+    _executar(fabrica)
+    assert criou == []  # desligado: nem precisa da Evolution
+    instalar(RepoFalso(_bruto(), [_pendente("m1")]))
     resumo = _executar(fabrica)
     assert criou == [True] and resumo["envio"]["enviadas"] == 1
-    instalar(RepoFalso(_bruto(modo_teste=True, numero_teste=None), [_pendente("m1")]))
-    criou.clear()
-    _executar(fabrica)
-    assert criou == []  # modo teste sem número: nem chega a precisar da Evolution
+
+
+def test_grava_o_estado_da_instancia_a_cada_rodada_mesmo_fora_da_janela(instalar):
+    repo = instalar(RepoFalso(_bruto()))
+    _executar(EvolutionFalsa(estado="open"), agora=DOMINGO_10H)
+    assert [r[0] for r in repo.rodadas] == ["open"]
+    assert repo.rodadas[0][1]["envio"] == {"parou_por": "fora_da_janela"}
+
+
+def test_grava_instancia_desconectada_e_indisponivel(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+    _executar(EvolutionFalsa(estado="close"))
+    _executar(EvolutionFalsa(estado=EvolutionIndisponivel("fora")))
+    assert [r[0] for r in repo.rodadas] == ["close", "indisponivel"]
+
+
+def test_falha_ao_gravar_o_estado_nao_derruba_a_rodada(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+    repo.falha_ao_registrar_rodada = True
+    resumo = _executar(EvolutionFalsa())
+    assert resumo["envio"]["enviadas"] == 1

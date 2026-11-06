@@ -47,3 +47,17 @@ def formatar_placa(placa: str) -> str:
 def mascarar_cpf(cpf: str) -> str:
     digitos = "".join(c for c in cpf if c.isdigit())
     return "***." + digitos[3:6] + ".***-**" if len(digitos) == 11 else "***"
+
+
+def formatar_data_hora(momento) -> str:
+    """Instante (texto ISO do banco ou datetime) no horário de Brasília: '06/11/2026 14:35'. Sem valor: '—'."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    if not momento:
+        return "—"
+    if not isinstance(momento, datetime):
+        momento = datetime.fromisoformat(str(momento).replace("Z", "+00:00"))
+    if momento.tzinfo is not None:
+        momento = momento.astimezone(ZoneInfo("America/Sao_Paulo"))
+    return momento.strftime("%d/%m/%Y %H:%M")

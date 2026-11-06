@@ -117,3 +117,18 @@ def test_encerramento_com_danos_acima_da_caucao_gera_alerta_com_a_cobranca():
     )
     assert aviso.tom == ALERTA
     assert "cobrança de R$ 300,00" in aviso.texto
+
+
+def test_mensagens_do_whatsapp():
+    from src.domain import mensagens as m
+
+    assert m.whatsapp_cancelada().tom == "toast" and "cancelada" in m.whatsapp_cancelada().texto
+    assert "próxima rodada" in m.whatsapp_reenviada().texto
+    bloqueado = m.whatsapp_cliente_bloqueado("Maria")
+    assert bloqueado.tom == "alerta" and bloqueado.atencao and "Maria" in bloqueado.texto
+    assert m.whatsapp_cliente_liberado("Maria").tom == "toast"
+    assert "desligado" in m.whatsapp_controles_salvos(False, True).texto
+    teste = m.whatsapp_controles_salvos(True, True)
+    assert "modo teste" in teste.texto and not teste.atencao
+    real = m.whatsapp_controles_salvos(True, False)
+    assert "vão para os clientes" in real.texto and real.atencao

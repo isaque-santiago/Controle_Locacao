@@ -1,5 +1,5 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, campo, botao, aviso %}
+{% from "componentes/macros.html" import cabecalho_pagina, campo, botao, aviso, caixa %}
 {% block conteudo %}
 {% call cabecalho_pagina("Configurações", "Parâmetros do sistema") %}
 <span class="so-desktop">{{ botao("Salvar alterações", tipo="submit", variante="primario", extra='form="form-config"') }}</span>
@@ -37,6 +37,27 @@
   <p class="text-texto-2 text-[13px] mb-4"><span aria-hidden="true">*</span> Campo obrigatório. Quantidades vão de 0 a {{ limite|milhar }}.</p>
   <div class="rodape-acoes so-celular mb-6"><button class="btn btn-primario" type="submit">Salvar alterações</button></div>
 </form>
+<section class="cartao mb-4" id="cfg-whatsapp" aria-labelledby="cfg-whatsapp-titulo">
+  <h2 id="cfg-whatsapp-titulo">Envio automático por WhatsApp</h2>
+  <p class="text-texto-2 mb-4">Avisos de vencimento, atraso, recibos, CNH, documentos e troca de óleo enviados aos locatários, de segunda a sábado, das 8h às 19h, sem feriados nacionais. Veja o que foi enviado em <a href="/mensagens">Mensagens</a>.</p>
+  <p class="mb-4" id="cfg-zap-estado">Instância do WhatsApp: <strong>{{ zap.estado }}</strong>{% if zap.ultima_rodada %} · última rodada em <span class="mono">{{ zap.ultima_rodada|data_hora_br }}</span>{% endif %}</p>
+  <form method="post" action="/configuracoes/whatsapp" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if werro_geral %}<div class="mb-4">{{ aviso("erro", werro_geral) }}</div>{% endif %}
+    <div class="formulario">
+      {{ caixa("zap-ativo", "Enviar mensagens automáticas", nome="ativo", marcada=w.ativo, ajuda="Desligado por padrão. Com ele desligado, nada é enviado nem enfileirado.") }}
+      <fieldset class="escolha-modo campo largo">
+        <legend>Para quem as mensagens vão</legend>
+        <label><input type="radio" name="modo" value="teste"{% if w.modo == "teste" %} checked{% endif %}> <span><strong>Modo teste:</strong> tudo vai só para o número de teste abaixo, com «[TESTE]» no início. Use primeiro, por uma semana.</span></label>
+        <label><input type="radio" name="modo" value="real"{% if w.modo == "real" %} checked{% endif %}> <span><strong>Clientes:</strong> as mensagens vão para o WhatsApp de cada locatário.</span></label>
+      </fieldset>
+      {{ campo("zap-numero", "Número de teste", nome="numero_teste", valor=w.numero_teste, mono=True, inputmode="tel", erro=werros.numero_teste, ajuda="Seu celular com DDD. Obrigatório no modo teste.", autocomplete="off") }}
+      {{ campo("zap-max", "Máximo de avisos por assunto", nome="max_repeticoes", valor=w.max_repeticoes, mono=True, inputmode="numeric", obrigatorio=True, erro=werros.max_repeticoes, ajuda="Quantas vezes um mesmo atraso, CNH ou documento vencido pode ser avisado (de 1 a 100). Os avisos saem no 1º, 3º e 7º dia e depois a cada 3 dias.", autocomplete="off") }}
+      {{ caixa("zap-confirmo", "Entendi: com o modo teste desligado, as mensagens vão para os clientes", nome="confirmo", marcada=w.confirmo, erro=werros.confirmo, ajuda="Só é exigido ao ligar o envio para os clientes.") }}
+    </div>
+    <div class="acoes mt-4">{{ botao("Salvar controles do WhatsApp", tipo="submit", variante="primario") }}</div>
+  </form>
+</section>
 <section class="cartao" aria-labelledby="cfg-backup">
   <h2 id="cfg-backup">Backup manual</h2>
   <p class="text-texto-2 mb-4">Gera um ZIP com um CSV de cada uma das 15 tabelas. Contém dados pessoais; guarde em local privado. Fotos e comprovantes devem ser copiados separadamente do Storage. Evite outras alterações durante a geração, que pode levar alguns segundos. Recomendado semanalmente.</p>

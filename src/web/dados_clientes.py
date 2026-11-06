@@ -1,5 +1,6 @@
 """Fronteira de leitura das telas web de Clientes."""
 
+import logging
 from decimal import Decimal
 
 from src.domain import clientes_lista
@@ -8,6 +9,10 @@ from src.domain.paginacao import OPCOES_POR_PAGINA, calcular_pagina
 from src.domain.cnh_regras import situacao_cnh
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, configuracoes, contratos, motos, portal_locatario
+from src.web import dados_whatsapp
+
+
+logger = logging.getLogger(__name__)
 
 
 def carregar_lista(status, busca, pagina, por_pagina, ordem=""):
@@ -63,8 +68,15 @@ def carregar_ficha(cliente, aba, pagina=1):
     trocas = []
     if aba == "portal":
         trocas = sorted(listar_trocas(cliente["id"]), key=lambda t: t["criado_em"], reverse=True)
+    mensagens, erro_mensagens = [], None
+    if aba == "whatsapp":
+        try:
+            mensagens = dados_whatsapp.do_cliente(cliente["id"])
+        except Exception:
+            logger.exception("Não foi possível ler as mensagens de WhatsApp do cliente.")
+            erro_mensagens = "Não foi possível carregar o histórico de mensagens agora. Tente de novo em instantes."
     todas = sorted(parcelas, key=lambda x: x["vencimento"], reverse=True)
     recorte = calcular_pagina(len(todas), pagina, OPCOES_POR_PAGINA[0])
     return {"pagina_pagamentos": recorte, "parcelas_da_pagina": todas[recorte.inicio:recorte.fim],
-            "contrato_ativo": contrato_ativo, "trocas": trocas, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
+            "contrato_ativo": contrato_ativo, "trocas": trocas, "mensagens": mensagens, "erro_mensagens": erro_mensagens, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
             "historicos": historicos, "pago": pago, "em_aberto": em_aberto, "atrasado": atrasado}
