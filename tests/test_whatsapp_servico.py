@@ -221,3 +221,19 @@ def test_modo_teste_sem_numero_de_teste_nao_envia(instalar):
     resumo = _executar(evolution)
     assert resumo["envio"]["parou_por"] == "modo_teste_sem_numero" and evolution.enviados == [] and repo.resultados == []
     assert repo.enfileirado  # ainda enfileira: o histórico de teste acompanha a cadência real
+
+
+def test_aceita_fabrica_de_evolution_e_so_cria_quando_ha_o_que_enviar(instalar):
+    instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+    criou = []
+
+    def fabrica():
+        criou.append(True)
+        return EvolutionFalsa()
+
+    resumo = _executar(fabrica)
+    assert criou == [True] and resumo["envio"]["enviadas"] == 1
+    instalar(RepoFalso(_bruto(modo_teste=True, numero_teste=None), [_pendente("m1")]))
+    criou.clear()
+    _executar(fabrica)
+    assert criou == []  # modo teste sem número: nem chega a precisar da Evolution

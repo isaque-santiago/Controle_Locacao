@@ -59,6 +59,8 @@ def enviar_pendentes(evolution, config: dict, dormir=time.sleep, sorteio=random.
     if config["modo_teste"] and not config["numero_teste"]:
         resumo["parou_por"] = "modo_teste_sem_numero"
         return resumo
+    if callable(evolution):  # o script só cria o cliente da Evolution quando há o que enviar
+        evolution = evolution()
     try:
         conectada = evolution.estado() == "open"
     except EvolutionIndisponivel:
