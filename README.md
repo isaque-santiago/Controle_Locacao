@@ -688,3 +688,14 @@ Migration `20261106120000_whatsapp_base.sql` (compatível com a versão anterior
 - `servico_mensagens (user_id)` é o usuário de serviço (o robô do script agendado). Ele não lê nenhuma tabela: só chama `rpc_whatsapp_enfileirar` (pula duplicadas e clientes bloqueados; sem número válido grava `ignorada`), `rpc_whatsapp_reservar` (entrega as pendentes e as reserva por 10 min; cancela as de cliente bloqueado depois) e `rpc_whatsapp_registrar_resultado` (enviada, ignorada ou falha, com até 3 tentativas e espera de 30 min x tentativa). A `service_role` não é usada.
 
 Para criar o usuário de serviço: crie o usuário em Authentication > Users (com "Auto Confirm User") e rode no SQL Editor `insert into servico_mensagens (user_id) select id from auth.users where email = 'robo@exemplo.com';`. Para remover o acesso: `delete from servico_mensagens where user_id = (select id from auth.users where email = 'robo@exemplo.com');`. Roteiro de teste: `supabase/verificar_whatsapp_base.sql` (só em dev, termina em ROLLBACK). Nunca coloque senhas ou e-mails reais no repositório.
+
+### Envio automático por WhatsApp (Etapa 2: regras puras e textos)
+
+Só regras em `src/domain` (sem banco, sem rede); **nenhuma mensagem é enviada ainda**. O que cada módulo faz, com testes em `tests/`:
+- `feriados.py`: feriados nacionais por ano (fixos, Carnaval, Sexta-feira Santa, Corpus Christi).
+- `janela_envio.py`: 8h às 19h (America/Sao_Paulo), segunda a sábado, sem feriado nacional; leva o que cair fora para o próximo horário válido.
+- `numero_whatsapp.py`: transforma o que está em `clientes.whatsapp` em `55` + DDD + número; fixo ou número estranho vira `None` (aviso `ignorada`).
+- `avisos_whatsapp.py`: quais avisos são devidos no dia de envio (lembrete de véspera e de vencimento, atraso, inadimplência, recibo, CNH, documentos, óleo, portal). Atraso, CNH vencida, documento vencido e óleo vencida seguem a escala 1º, 3º e 7º dia e depois a cada 3 dias, com teto de 10 avisos por assunto (`ConfigAvisos.max_repeticoes`). Contrato diário só recebe o lembrete do dia.
+- `textos_whatsapp.py`: os textos (fixos no código) e o agrupamento: uma mensagem por cliente por dia, um bloco por assunto, mais urgente primeiro, até 5 assuntos (o resto sai no dia seguinte). `montar_payload` já devolve o formato de `rpc_whatsapp_enfileirar`.
+
+Desenho completo e decisões: seção 20 de `Arquivos/Projeto_Locação.md`.
