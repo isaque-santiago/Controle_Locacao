@@ -119,3 +119,11 @@ def test_achatar_mensagem_do_banco():
              "mensagens_whatsapp_itens": [{"tipo": "atraso"}, {"tipo": "cnh_proxima"}]}
     assert achatar(bruto) == {"id": "m1", "cliente_id": "c1", "status": "enviada", "cliente": "Maria", "tipos": ["atraso", "cnh_proxima"]}
     assert achatar({"id": "m2", "clientes": None, "mensagens_whatsapp_itens": None}) == {"id": "m2", "cliente": None, "tipos": []}
+
+
+def test_estado_da_instancia_em_portugues():
+    from src.domain.whatsapp_painel import estado_da_instancia
+
+    assert estado_da_instancia(None) == "ainda sem rodada" and estado_da_instancia("open") == "conectada"
+    assert "QR code" in estado_da_instancia("close") and estado_da_instancia("indisponivel") == "Evolution fora do ar"
+    assert estado_da_instancia("outro") == "outro"

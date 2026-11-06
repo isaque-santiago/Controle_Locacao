@@ -118,3 +118,13 @@ def achatar(registro: dict) -> dict:
     base["cliente"] = cliente.get("nome") if isinstance(cliente, dict) else None
     base["tipos"] = [i["tipo"] for i in registro.get("mensagens_whatsapp_itens") or []]
     return base
+
+
+def estado_da_instancia(estado: str | None) -> str:
+    """Texto do estado da instância gravado pela última rodada, para a tela de Configurações."""
+    if not estado:
+        return "ainda sem rodada"
+    return {
+        "open": "conectada", "close": "desconectada (leia o QR code na Evolution)",
+        "indisponivel": "Evolution fora do ar", "connecting": "conectando",
+    }.get(estado, estado)
