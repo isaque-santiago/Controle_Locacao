@@ -25,6 +25,7 @@ from src.web.rotas import cobrancas_mensagem as rotas_cobrancas_mensagem
 from src.web.rotas import cobrancas_pagamento as rotas_cobrancas_pagamento
 from src.web.rotas import clientes_formularios as rotas_clientes_formularios
 from src.web.rotas import clientes_portal as rotas_clientes_portal
+from src.web.rotas import clientes_whatsapp as rotas_clientes_whatsapp
 from src.web.rotas import contratos as rotas_contratos
 from src.web.rotas import contratos_encerramento as rotas_contratos_encerramento
 from src.web.rotas import contratos_novo as rotas_contratos_novo
@@ -101,6 +102,7 @@ def criar_app(
     app.include_router(rotas_paginas.router)
     app.include_router(rotas_clientes_formularios.router)
     app.include_router(rotas_clientes_portal.router)
+    app.include_router(rotas_clientes_whatsapp.router)
     app.include_router(rotas_clientes.router)
     # O assistente antes da ficha: /contratos/novo não pode cair em /contratos/{contrato_id}
     app.include_router(rotas_cobrancas_mensagem.router)
