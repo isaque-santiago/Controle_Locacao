@@ -33,3 +33,15 @@ def test_formatar_placa():
 
 def test_mascarar_cpf():
     assert mascarar_cpf("52998224725") == "***.982.***-**"
+
+
+def test_formatar_data_hora_no_horario_de_brasilia():
+    from datetime import datetime, timezone
+
+    from src.domain.formatadores import formatar_data_hora
+
+    assert formatar_data_hora("2026-11-06T17:35:00+00:00") == "06/11/2026 14:35"
+    assert formatar_data_hora("2026-11-06T02:10:00Z") == "05/11/2026 23:10"  # a data muda ao converter
+    assert formatar_data_hora(datetime(2026, 11, 6, 17, 35, tzinfo=timezone.utc)) == "06/11/2026 14:35"
+    assert formatar_data_hora("2026-11-06T14:35:00") == "06/11/2026 14:35"  # sem fuso: vale como está
+    assert formatar_data_hora(None) == "—"

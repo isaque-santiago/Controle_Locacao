@@ -19,7 +19,8 @@ from src.web.apresentacao import (
 )
 from src.domain.acesso_locatario import eh_email_de_locatario
 from src.domain.entradas import formatar_telefone
-from src.domain.formatadores import mascarar_cpf
+from src.domain.formatadores import formatar_data_hora, mascarar_cpf
+from src.domain.numero_whatsapp import formatar_numero
 
 RAIZ = Path(__file__).resolve().parents[2]
 PASTA_ESTATICOS = RAIZ / "static"
@@ -52,6 +53,8 @@ templates.env.filters["placa_br"] = formatar_placa
 templates.env.filters["milhar"] = formatar_milhar
 templates.env.filters["cpf_mascarado"] = mascarar_cpf
 templates.env.filters["telefone_br"] = formatar_telefone
+templates.env.filters["data_hora_br"] = formatar_data_hora
+templates.env.filters["numero_br"] = formatar_numero
 templates.env.globals["tom_status_moto"] = TOM_STATUS_MOTO
 
 
