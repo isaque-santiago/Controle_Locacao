@@ -235,3 +235,30 @@ def troca_oleo_registrada(excedeu=False, multa=None):
 
 def senha_alterada():
     return _toast("Senha alterada. Use a nova senha no próximo acesso.")
+
+
+# ----------------------------------------------------------------- WhatsApp --
+
+
+def whatsapp_cancelada():
+    return _toast("Mensagem cancelada: ela não será enviada.")
+
+
+def whatsapp_reenviada():
+    return _toast("Mensagem devolvida à fila: ela sai na próxima rodada, dentro do horário de envio.")
+
+
+def whatsapp_cliente_bloqueado(nome):
+    return _alerta(f"{nome} não receberá mais mensagens automáticas de WhatsApp. Os avisos dele passam a depender de você.", atencao=True)
+
+
+def whatsapp_cliente_liberado(nome):
+    return _toast(f"{nome} voltou a receber mensagens automáticas de WhatsApp.")
+
+
+def whatsapp_controles_salvos(ativo, modo_teste):
+    if not ativo:
+        return _toast("Envio automático de WhatsApp desligado.")
+    if modo_teste:
+        return _alerta("Envio ligado em modo teste: as mensagens vão só para o número de teste, não para os clientes.")
+    return _alerta("Envio ligado: a partir da próxima rodada as mensagens vão para os clientes.", atencao=True)
