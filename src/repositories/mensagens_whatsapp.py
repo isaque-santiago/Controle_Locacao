@@ -22,3 +22,8 @@ def registrar_resultado(mensagem_id: str, resultado: str, erro: str | None = Non
     return get_client().rpc("rpc_whatsapp_registrar_resultado", {
         "p_id": mensagem_id, "p_resultado": resultado, "p_erro": erro, "p_evolution_id": evolution_id,
     }).execute().data
+
+
+def registrar_rodada(estado: str, resumo: dict | None = None) -> None:
+    """Grava o que a rodada viu (estado da instância e resumo) para o Dashboard avisar o dono."""
+    get_client().rpc("rpc_whatsapp_registrar_rodada", {"p_estado": estado, "p_resumo": resumo}).execute()
