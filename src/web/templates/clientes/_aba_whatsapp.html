@@ -8,7 +8,7 @@
 <p class="mb-4">{% if cliente.whatsapp %}As mensagens vão para <span class="mono">{{ cliente.whatsapp|telefone_br }}</span> (campo WhatsApp do cadastro).{% else %}{{ aviso("atencao", "Este cliente não tem WhatsApp cadastrado, então nenhuma mensagem pode ser enviada a ele. Preencha o campo WhatsApp em Editar.") }}{% endif %}</p>
 <form hx-post="{{ base }}/whatsapp/bloquear" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="find button" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <p class="text-texto-2 mb-2">Só você pode parar as mensagens de um cliente (ele não consegue pedir isso pelo WhatsApp). Enquanto estiver parado, os avisos dele não saem e nada é cobrado sozinho.</p>
+  <p class="text-texto-2 mb-2">Só você pode parar as mensagens de um cliente (ele não consegue pedir isso pelo WhatsApp). Enquanto estiver parado, nenhum aviso automático (cobrança, CNH, documentos, troca de óleo) sai para ele.</p>
   {{ area_texto("wa-motivo", "Motivo para parar as mensagens", nome="motivo", valor=motivo_digitado or "", erro=(erros_whatsapp or {}).get("motivo"), largo=True, linhas=2, maximo=200) }}
   <div class="acoes mt-2">{{ botao("Parar mensagens deste cliente", tipo="submit", variante="perigo") }}</div>
 </form>
