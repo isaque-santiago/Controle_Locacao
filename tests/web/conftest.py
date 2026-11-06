@@ -1167,3 +1167,69 @@ def base_dividas(monkeypatch):
         atualizar_parcela=atualizar_parcela, atualizar_pagamento=atualizar_pagamento, apagar_divida=apagar_divida, pagar_parcela=pagar_parcela, criar_compra_parcelada=criar_compra, criar_divida=criar_divida, pagar_divida=pagar_divida,
         atualizar_divida=atualizar_divida, confirmar_saldo=confirmar_saldo))
     return base
+
+
+CLIENTE_ZAP = "00000000-0000-0000-0000-0000000000c1"
+MENSAGEM_FALHOU = "00000000-0000-0000-0000-0000000000e1"
+MENSAGEM_PENDENTE = "00000000-0000-0000-0000-0000000000e2"
+MENSAGEM_ENVIADA = "00000000-0000-0000-0000-0000000000e3"
+
+
+class BaseWhatsapp:
+    """Dados fictícios do serviço de WhatsApp usado por src/web/dados_whatsapp e acoes_whatsapp."""
+
+    def __init__(self):
+        def msg(id, status, **extra):
+            base = {"id": id, "cliente_id": CLIENTE_ZAP, "cliente": "Maria Souza", "numero": "5511988887777",
+                    "texto": "Olá, Maria! Segue um aviso:\n\n*Pagamento em atraso*", "status": status, "tentativas": 0, "erro": None,
+                    "enviar_apos": "2026-11-06T11:00:00+00:00", "criado_em": "2026-11-06T11:00:00+00:00", "tipos": ["atraso"]}
+            return {**base, **extra}
+
+        self.mensagens = [
+            msg(MENSAGEM_FALHOU, "falhou", tentativas=3, erro="A Evolution recusou o pedido (400)."),
+            msg(MENSAGEM_PENDENTE, "pendente", tipos=["cnh_proxima", "oleo_vencida"]),
+            msg(MENSAGEM_ENVIADA, "enviada", tentativas=1, criado_em="2026-11-05T11:00:00+00:00"),
+        ]
+        self.cancelados, self.reenviados, self.bloqueios, self.desbloqueios, self.controles = [], [], [], [], []
+        self.falhar_com = None
+
+
+@pytest.fixture(autouse=True)
+def base_whatsapp(monkeypatch):
+    from src.web import acoes_whatsapp, dados_whatsapp
+
+    base = BaseWhatsapp()
+
+    def checar():
+        if base.falhar_com:
+            raise base.falhar_com
+
+    def cancelar(i):
+        checar()
+        base.cancelados.append(i)
+
+    def reenviar(i):
+        checar()
+        base.reenviados.append(i)
+
+    def bloquear(i, motivo):
+        checar()
+        base.bloqueios.append((i, motivo))
+
+    def desbloquear(i):
+        checar()
+        base.desbloqueios.append(i)
+
+    def controles(dados):
+        checar()
+        base.controles.append(dados)
+        return dados
+
+    servico = SimpleNamespace(
+        listar_recentes=lambda *a, **k: list(base.mensagens),
+        listar_do_cliente=lambda cliente_id, *a, **k: [m for m in base.mensagens if m["cliente_id"] == cliente_id],
+        cancelar=cancelar, reenviar=reenviar, bloquear=bloquear, desbloquear=desbloquear, atualizar_controles=controles,
+    )
+    monkeypatch.setattr(dados_whatsapp, "whatsapp_painel", servico)
+    monkeypatch.setattr(acoes_whatsapp, "whatsapp_painel", servico)
+    return base

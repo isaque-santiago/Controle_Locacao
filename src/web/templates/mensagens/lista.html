@@ -1,0 +1,27 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, tabela, selo, botao, paginacao, estado_vazio, rc_titulo %}
+{% block conteudo %}
+{% call cabecalho_pagina("Mensagens", "WhatsApp enviado aos locatários") %}
+{{ botao("Controles do envio", href="/configuracoes#cfg-whatsapp") }}
+{% endcall %}
+<nav class="chips mb-4" aria-label="Filtrar por situação">{% for chave, rotulo, quantidade, url in chips %}<a class="chip" href="{{ url }}"{% if chave == filtro %} aria-current="true"{% endif %}>{{ rotulo }} <b>{{ quantidade }}</b></a>{% endfor %}</nav>
+<p class="so-leitor" role="status" aria-live="polite">{{ pagina.resumo() }}</p>
+{% if itens %}
+{% call tabela([("Quando", ""), ("Cliente", ""), ("Assuntos", ""), ("Situação", ""), ("Mensagem", ""), ("Ações", "col-acoes")], "Mensagens de WhatsApp", recolhivel=True) %}
+{% for m in itens %}<tr data-recolhivel>
+{% call rc_titulo() %}<span class="mono">{{ m.criado_em|data_hora_br }}</span>{% endcall %}
+<td data-rotulo="Cliente">{% if m.cliente_id %}<a href="/clientes/{{ m.cliente_id }}?aba=whatsapp">{{ m.cliente or "—" }}</a>{% else %}—{% endif %}{% if m.numero %}<br><span class="mono text-texto-2">{{ m.numero|numero_br }}</span>{% endif %}</td>
+<td data-rotulo="Assuntos">{{ m.assuntos|join(", ") or "—" }}</td>
+<td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[m.status], status_tom[m.status]) }}{% if m.erro %}<br><small class="text-texto-2">{{ m.erro }}</small>{% endif %}{% if m.status == "falhou" or m.tentativas %}<br><small class="text-texto-2">{{ m.tentativas }} tentativa(s)</small>{% endif %}{% if m.status == "pendente" and m.enviar_apos %}<br><small class="text-texto-2">sai a partir de {{ m.enviar_apos|data_hora_br }}</small>{% endif %}</td>
+<td data-rotulo="Mensagem"><details class="texto-zap-detalhe"><summary>Ver texto</summary><pre class="texto-zap">{{ m.texto }}</pre></details></td>
+<td class="c-acao"><div class="acoes-linha"><div class="botoes">
+{% if m.pode_reenviar %}<form method="post" action="/mensagens/{{ m.id }}/reenviar"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="voltar_para" value="{{ voltar_para }}"><button class="btn" type="submit">Reenviar</button></form>{% endif %}
+{% if m.pode_cancelar %}<form method="post" action="/mensagens/{{ m.id }}/cancelar"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="voltar_para" value="{{ voltar_para }}"><button class="btn btn-perigo" type="submit">Cancelar</button></form>{% endif %}
+</div></div></td>
+</tr>{% endfor %}
+{% endcall %}
+{{ paginacao(pagina.inicio + 1, pagina.fim, pagina.total, url_anterior, url_proxima) }}
+{% elif filtro != "todas" and contagem.todas %}{% call estado_vazio("Nada nesta situação", "Nenhuma mensagem se encaixa neste filtro. Veja todas para conferir o histórico.", "0") %}{{ botao("Ver todas", href="/mensagens?filtro=todas") }}{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma mensagem ainda", "Quando o envio automático estiver ligado, as mensagens aos locatários aparecem aqui.", "0") }}
+{% endif %}
+{% endblock %}

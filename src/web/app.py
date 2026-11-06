@@ -28,6 +28,7 @@ from src.web.rotas import clientes_portal as rotas_clientes_portal
 from src.web.rotas import contratos as rotas_contratos
 from src.web.rotas import contratos_encerramento as rotas_contratos_encerramento
 from src.web.rotas import contratos_novo as rotas_contratos_novo
+from src.web.rotas import mensagens as rotas_mensagens
 from src.web.rotas import motos as rotas_motos
 from src.web.rotas import motos_formularios as rotas_motos_formularios
 from src.web.rotas import manutencao as rotas_manutencao
@@ -116,6 +117,7 @@ def criar_app(
     app.include_router(rotas_documentos_formularios.router)
     app.include_router(rotas_documentos_regularizacao.router)
     app.include_router(rotas_documentos.router)
+    app.include_router(rotas_mensagens.router)
     app.include_router(rotas_dividas.router)
     app.include_router(rotas_relatorios.router)
     app.include_router(rotas_configuracoes.router)

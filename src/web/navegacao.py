@@ -14,6 +14,7 @@ class ItemNavegacao:
 DASHBOARD = ItemNavegacao("dashboard", "Dashboard", "painel", "/")
 CONTRATOS = ItemNavegacao("contratos", "Contratos", "contrato", "/contratos")
 COBRANCAS = ItemNavegacao("cobrancas", "Cobranças", "cobranca", "/cobrancas")
+MENSAGENS = ItemNavegacao("mensagens", "Mensagens", "documento", "/mensagens")
 MOTOS = ItemNavegacao("motos", "Motos", "moto", "/motos")
 CLIENTES = ItemNavegacao("clientes", "Clientes", "cliente", "/clientes")
 MANUTENCAO = ItemNavegacao("manutencao", "Manutenção", "manutencao", "/manutencao")
@@ -24,7 +25,7 @@ RELATORIOS = ItemNavegacao("relatorios", "Relatórios", "relatorio", "/relatorio
 CONFIGURACOES = ItemNavegacao("configuracoes", "Configurações", "config", "/configuracoes")
 
 GRUPOS: tuple[tuple[str, tuple[ItemNavegacao, ...]], ...] = (
-    ("Operação", (DASHBOARD, CONTRATOS, COBRANCAS)),
+    ("Operação", (DASHBOARD, CONTRATOS, COBRANCAS, MENSAGENS)),
     ("Cadastros", (MOTOS, CLIENTES)),
     ("Frota", (MANUTENCAO, DOCUMENTOS, VISTORIAS)),
     ("Gestão e sistema", (DIVIDAS, RELATORIOS, CONFIGURACOES)),
@@ -33,7 +34,7 @@ GRUPOS: tuple[tuple[str, tuple[ItemNavegacao, ...]], ...] = (
 # Destinos frequentes na barra inferior; o restante vai para a folha "Mais".
 BARRA_INFERIOR: tuple[ItemNavegacao, ...] = (DASHBOARD, CONTRATOS, COBRANCAS, MOTOS)
 FOLHA_MAIS: tuple[ItemNavegacao, ...] = (
-    CLIENTES, MANUTENCAO, DOCUMENTOS, VISTORIAS, DIVIDAS, RELATORIOS, CONFIGURACOES,
+    CLIENTES, MANUTENCAO, DOCUMENTOS, VISTORIAS, MENSAGENS, DIVIDAS, RELATORIOS, CONFIGURACOES,
 )
 
 TODOS: tuple[ItemNavegacao, ...] = tuple(i for _, itens in GRUPOS for i in itens)
