@@ -178,7 +178,7 @@ def _bloco_cnh(a: Aviso, op: OpcoesTexto):
     if a.tipo == "cnh_proxima":
         return "CNH perto de vencer", [
             f"Sua CNH vence em {formatar_data(d['validade'])} ({_plural(d['dias'], 'dia', 'dias')}).",
-            f"Depois de renovar, envie a nova CNH para {_contato(op)} atualizar o cadastro.",
+            f"Depois de renovar, envie a nova CNH para {_contato(op)}, para atualizar o cadastro.",
         ]
     return "CNH vencida", [
         f"Sua CNH venceu em {formatar_data(d['validade'])} (há {_plural(-d['dias'], 'dia', 'dias')}). "
