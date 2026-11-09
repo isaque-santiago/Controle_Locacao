@@ -9,10 +9,11 @@ from decimal import Decimal
 from typing import Callable, Optional
 
 from src.domain import financeiro, painel
-from src.domain.cobrar_agora import analisar_cobranca, atencao_financeira, parcelas_de_divida_atrasadas
+from src.domain import frota_parada
+from src.domain.cobrar_agora import analisar_cobranca, atencao_financeira, parcelas_de_divida_atrasadas, proximos_dias
 from src.domain.valores import hoje_br
 from src.repositories import contratos, financeiro as repositorio
-from src.services import clientes, cobrancas, configuracoes, motos
+from src.services import clientes, cobrancas, configuracoes, manutencao, motos
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,9 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
     config = configuracoes.obter()
     corte = _corte(config)
     frota = motos.listar()
+    lista_cobrancas = cobrancas.listar()
     cobranca = analisar_cobranca(
-        cobrancas.listar(),
+        lista_cobrancas,
         {c["id"]: c["nome"] for c in clientes.listar()},
         {m["id"]: m["placa"] for m in frota},
         Decimal(str(config["multa_atraso_valor"])),
@@ -74,15 +76,13 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
         detalhe = repositorio.detalhe_mensal(mes)
         entradas = financeiro.entradas_por_conta(detalhe["entradas_por_conta"])
         caixa = {"valor": atual["caixa"], "investimento": atual["investimento"], "serie": financeiro.sparkline([m["caixa"] for m in meses])}
-        pendencias = atencao_financeira(
-            parcelas_de_divida_atrasadas(repositorio.parcelas_de_divida()),
-            Decimal(str(detalhe["a_repassar"])),
-            entradas["sem_conta"],
-        )
+        parcelas = repositorio.parcelas_de_divida()
+        pendencias = atencao_financeira(parcelas_de_divida_atrasadas(parcelas), Decimal(str(detalhe["a_repassar"])), entradas["sem_conta"])
+        proximos = proximos_dias(lista_cobrancas, parcelas, hoje)
     except Exception:
         # O dinheiro do mês (RPCs) não pode esconder quem cobrar: sem ele, só o cartão do caixa e as pendências de dinheiro somem.
         logger.exception("Não foi possível ler o caixa do mês para a aba Hoje")
-        caixa, pendencias = None, []
+        caixa, pendencias, proximos = None, [], None
     return {
         "mes_texto": mes.strftime("%Y-%m"),
         "cobranca": cobranca,
@@ -96,6 +96,7 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
             "descricao": painel.descricao_medidor(contagem),
         },
         "caixa": caixa,
+        "proximos": proximos,
         "atencao_financeira": pendencias,
     }
 
@@ -154,17 +155,26 @@ def painel_dinheiro_seguro(mes_texto: Optional[str] = None, hoje: Optional[date]
 
 
 def painel_frota(hoje: Optional[date] = None) -> dict:
-    """Aba Frota: resultado de cada veículo (desde o início) e o gasto com manutenção do mês, que é o mesmo da aba Dinheiro."""
+    """Aba Frota: resultado de cada veículo (desde o início), motos paradas, tempo parado, receita por moto e o gasto com manutenção do mês,
+    que é o mesmo da aba Dinheiro."""
     hoje = hoje or hoje_br()
     mes = financeiro.primeiro_dia(hoje)
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
-    locatarios = {c["moto_id"]: nomes.get(c["cliente_id"], "—") for c in contratos.listar() if c["status"] == "ativo"}
+    lista_contratos = contratos.listar()
+    locatarios = {c["moto_id"]: nomes.get(c["cliente_id"], "—") for c in lista_contratos if c["status"] == "ativo"}
     categorias = financeiro.despesas_por_categoria(repositorio.detalhe_mensal(mes)["despesas_por_categoria"])
-    manutencao = next((c["valor"] for c in categorias["linhas"] if c["categoria"] == "manutencao"), Decimal("0.00"))
+    manut = next((c["valor"] for c in categorias["linhas"] if c["categoria"] == "manutencao"), Decimal("0.00"))
+    frota = motos.listar()
+    ordens = manutencao.listar_manutencoes()
+    ativas = painel.total_ativas(painel.contar_por_status(frota))
+    receita = financeiro.consolidar_mes(repositorio.resumo_mensal(mes, 1)[0])["receita"]
     return {
         "veiculos": financeiro.resultado_por_veiculo(repositorio.resultado_por_veiculo(), locatarios),
-        "manutencao_mes": manutencao,
+        "manutencao_mes": manut,
         "mes_rotulo": financeiro.rotulo_mes(mes),
+        "paradas": frota_parada.motos_paradas(frota, lista_contratos, ordens, hoje),
+        "tempo_parado": frota_parada.tempo_parado_no_mes(ordens, ativas, mes, hoje),
+        "receita_por_moto": frota_parada.receita_por_moto(receita, ativas),
     }
 
 

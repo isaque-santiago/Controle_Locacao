@@ -1166,3 +1166,10 @@ Faixas de atraso em valor (`faixas_de_atraso_em_valor`), barra segmentada da fro
 (`previsto_ate_hoje`), sparkline do caixa dos últimos 6 meses (`sparkline`) e variação do mês fechado (`variacoes_do_mes`; no mês corrente só aparece o mês anterior, porque
 as RPCs devolvem totais do mês e comparar mês parcial com mês inteiro seria injusto). Sem migration nova. Fica para a Fase 3: próximos 7 dias, motos paradas, receita por moto, tempo parado.
 
+
+
+### 21.2 Fase 3 (09/11/2026): o que faltava
+
+`proximos_dias` (entra e sai em 7 dias), `motos_paradas`, `tempo_parado_no_mes` e `receita_por_moto` (`domain/frota_parada.py`). O tempo parado usa as ordens de manutenção (aberta ou concluída) que caem
+no mês, então é uma medida real e não só a foto de hoje; as metas do setor (menos de 5%) vêm de fornecedores e servem só como alerta inicial. Sem migration nova. Com isso as três fases do estudo estão feitas.
+\n

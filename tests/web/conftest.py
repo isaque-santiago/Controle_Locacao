@@ -130,6 +130,7 @@ def _conteudo_hoje():
                   "serie": {"pontos": "3.0,21.0 60.0,12.0 117.0,3.0", "ultimo": {"x": 117.0, "y": 3.0}, "largura": 120, "altura": 24,
                             "primeiro": Decimal("-450.00"), "final": Decimal("-3451.93"), "minimo": Decimal("-3451.93"), "maximo": Decimal("-450.00")}},
         "atencao_financeira": [],
+        "proximos": {"dias": 7, "entra": Decimal("1250.00"), "n_entra": 5, "sai": Decimal("1536.23"), "n_sai": 1, "saldo": Decimal("-286.23")},
         "atencao": [
             SimpleNamespace(quantidade=1, titulo="Parcela de dívida atrasada", descricao="R$ 1.000,00 em atraso", tom="perigo", area="dividas"),
             SimpleNamespace(quantidade=2, titulo="Manutenção vencida", descricao="Óleo e mais 1", tom="perigo", area="manutencao"),
@@ -199,6 +200,10 @@ def _conteudo_frota():
         ],
         "ordens_concluidas": 1, "manutencao_aberta": {"quantidade": 0, "total": Decimal("0")},
         "manutencao_mes": Decimal("85.00"), "mes_rotulo": "outubro de 2026",
+        "receita_por_moto": Decimal("689.10"), "tempo_parado": {"dias": 12, "percentual": Decimal("8.0")},
+        "paradas": {"total": 2, "linhas": [
+            {"moto_id": "m3", "placa": "OSL8828", "motivo": "Em manutenção", "desde": date(2026, 9, 28), "dias": 8},
+            {"moto_id": "m4", "placa": "PMP2B63", "motivo": "Disponível", "desde": None, "dias": None}]},
         "veiculos": [
             {"moto_id": "m1", "placa": "POU7015", "locatario": "JOSE <u>HENRIQUE</u>", "receita": Decimal("8200.00"),
              "despesas": Decimal("900.00"), "resultado": Decimal("7300.00")},
