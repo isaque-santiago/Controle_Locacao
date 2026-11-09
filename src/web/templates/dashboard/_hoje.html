@@ -1,0 +1,69 @@
+{% from "dashboard/_apoio.html" import din, dinc, nome, plac, indisponivel with context %}
+{% from "componentes/macros.html" import kpi, selo, tabela, botao %}
+{% set areas = {"manutencao": "/manutencao", "documentos": "/documentos", "clientes": "/clientes", "dividas": "/dividas", "mensagens": "/mensagens?filtro=problemas", "configuracoes": "/configuracoes#cfg-whatsapp"} %}
+{% set h = d.hoje %}
+{% set comp = d.compacto %}
+
+{% if h.indisponivel %}
+{{ indisponivel("Cobrança de hoje") }}
+{% else %}
+{% set cb = h.cobranca %}
+{% set n_atraso = cb.contratos_em_atraso + cb.contratos_inadimplentes %}
+<dl class="grade kpis">
+  {{ kpi("A cobrar", dinc(cb.a_cobrar), (dinc(cb.vencem_hoje) ~ " vencem hoje · " ~ dinc(cb.em_atraso) ~ " em atraso"), atencao=(cb.a_cobrar > 0), href="/cobrancas?aba=atrasadas") }}
+  {{ kpi("Em atraso", dinc(cb.em_atraso), (n_atraso ~ (" contrato" if n_atraso == 1 else " contratos") ~ " · " ~ cb.contratos_inadimplentes ~ (" inadimplente" if cb.contratos_inadimplentes == 1 else " inadimplentes")), atencao=(cb.contratos_inadimplentes > 0), extra=("+ " ~ dinc(cb.encargos) ~ " de encargos" if cb.encargos > 0 else None), href="/cobrancas?aba=atrasadas") }}
+  {% set fr = h.frota %}
+  {{ kpi("Frota", fr.ocupacao ~ "% ocupada", fr.contagem.alugada ~ " de " ~ fr.ativas ~ " motos ativas alugadas", extra=(fr.contagem.disponivel ~ " livres · " ~ fr.contagem.manutencao ~ " em manutenção"), href="/?aba=frota") }}
+  {% if h.caixa %}
+  {{ kpi("Caixa do mês", din(h.caixa.valor), ("inclui " ~ dinc(h.caixa.investimento) ~ " de investimento em veículos") if h.caixa.investimento > 0 else "após dívidas e retiradas", atencao=(h.caixa.valor < 0), href="/?aba=dinheiro") }}
+  {% else %}
+  {{ kpi("Caixa do mês", "—", "indisponível agora") }}
+  {% endif %}
+</dl>
+{% endif %}
+
+<div class="dash dash-topo{% if comp or h.indisponivel %} dash-topo--simples{% endif %}">
+{% if not comp and not h.indisponivel %}
+<section class="cartao moto-lista-cards hoje-lista" aria-labelledby="t-cobrar">
+  <div class="cartao-cab"><h2 id="t-cobrar">Cobrar agora</h2><span class="text-texto-2 text-[13px]">{% if cb.total_linhas > cb.linhas|length %}mostrando {{ cb.linhas|length }} de {{ cb.total_linhas }} contratos, do maior atraso para o menor{% else %}vencendo hoje e atrasados{% endif %}</span></div>
+  {% if cb.linhas %}
+  {% call tabela([("Cliente", ""), ("Moto", ""), ("Atraso", ""), ("A cobrar", "num"), ("Situação", ""), ("Ação", "")], "Contratos com cobrança vencida ou que vence hoje, com encargos") %}
+    {% for c in cb.linhas %}
+    <tr>
+      <td class="topo font-medium">{{ nome(c.cliente) }}</td>
+      <td data-rotulo="Moto">{% if c.placa != "—" %}{{ plac(c.placa) }}{% else %}—{% endif %}</td>
+      <td class="mono" data-rotulo="Atraso">{% if c.dias_atraso %}{{ c.dias_atraso }} d{% else %}hoje{% endif %}</td>
+      <td class="num mono" data-rotulo="A cobrar">{{ din(c.total) }}</td>
+      <td data-rotulo="Situação">{% if c.faixa == "inadimplente" %}{{ selo("Inadimplente", "perigo") }}{% elif c.faixa == "em_atraso" %}{{ selo("Em atraso", "atencao") }}{% else %}{{ selo("Vence hoje", "neutro") }}{% endif %}</td>
+      <td class="acao">{% if c.cobranca_id %}<div class="flex flex-wrap gap-2">{{ botao("Pagar", href="/cobrancas/" ~ c.cobranca_id ~ "/pagar", aria="Registrar pagamento de " ~ nome(c.cliente)) }}{{ botao("WhatsApp", href="/cobrancas/" ~ c.cobranca_id ~ "/mensagem", aria="Mensagem de cobrança para " ~ nome(c.cliente), extra='hx-get="/cobrancas/' ~ c.cobranca_id ~ '/mensagem" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  {% endcall %}
+  {% if cb.total_linhas > cb.linhas|length %}
+  <p class="hoje-mais"><a class="btn" href="/cobrancas?aba=atrasadas">Ver todas as cobranças</a></p>
+  {% endif %}
+  {% else %}
+  <p class="text-texto-2">Nada para cobrar agora: nenhuma cobrança vencida nem vencendo hoje.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+<div class="dash-lateral">
+  <section class="cartao content-start" aria-labelledby="t-atencao">
+    <div class="cartao-cab"><h2 id="t-atencao">Atenção</h2></div>
+    {% if h.atencao %}
+    <ul class="pendencias">
+      {% for a in h.atencao %}
+      <li class="pendencia">
+        <span class="adesivo {{ a.tom }}" aria-hidden="true">{{ a.quantidade if a.quantidade is not none else "!" }}</span>
+        <div><strong>{{ a.titulo }}</strong><span class="det">{{ nome(a.descricao) }}</span></div>
+        {% if a.area %}<a class="btn" href="{{ areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-texto-2">Nada precisa de atenção agora.</p>
+    {% endif %}
+  </section>
+</div>
+</div>

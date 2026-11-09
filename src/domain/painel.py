@@ -256,11 +256,11 @@ def manutencao_em_andamento(manutencoes: list[dict]) -> dict:
 
 @dataclass(frozen=True)
 class ItemAlerta:
-    quantidade: int
+    quantidade: int | None  # None: pendência de dinheiro sem contagem (a tela mostra "!")
     titulo: str
     descricao: str
     tom: str  # TOM_PERIGO ou TOM_ATENCAO
-    area: str  # onde resolver: "manutencao", "documentos" ou "clientes"
+    area: str | None  # onde resolver: "manutencao", "documentos", "clientes"...; None: sem tela própria (sem botão Abrir)
 
 
 def _com_restante(texto: str, total: int, exibidos: int = 1) -> str:

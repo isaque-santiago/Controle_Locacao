@@ -1138,3 +1138,25 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
   - recibo e avisos do portal só saem para o que aconteceu nos últimos 2 dias (ao ligar o envio, o passado não vira mensagem);
   - passando de 5 assuntos num dia, os mais urgentes vão e o resto fica para o dia seguinte;
   - o aviso de atraso informa o total com encargos **do dia do envio**, e o texto diz que o valor aumenta a cada dia.
+
+---
+
+## 21. Redesenho do Dashboard, Fase 1 (09/11/2026)
+
+Decisões e estudo em [Estudo_Dashboard.md](Estudo_Dashboard.md) (seção 4.9). A Fase 1 é "só verdade e ordem":
+
+- **Abas** `/?aba=hoje|dinheiro|frota` (Hoje por padrão; cada uma com URL própria, sem JavaScript, mantendo `compacto` e `ocultar`; o seletor de mês só na aba Dinheiro).
+- **Um cálculo por indicador:** o Dashboard lê só de `services/financeiro` (`painel_hoje`, `painel_dinheiro`, `painel_frota`, cada um com a versão `*_seguro` que só avisa
+  "indisponível"). O cálculo antigo (`services/dashboard`) saiu; o caixa da aba Hoje é o mesmo número da aba Dinheiro (há teste), e o gasto com manutenção da aba Frota
+  é a categoria Manutenção da aba Dinheiro.
+- **Listas únicas:** *Cobrar agora* (`domain/cobrar_agora.analisar_cobranca`: por contrato, vencido + vence hoje + encargos, do maior atraso para o menor, com a cobrança
+  mais antiga para o botão Pagar e o link do WhatsApp) une "Hoje" e "Quem está devendo"; *Atenção* une "Precisa de atenção" e "Alertas e pendências"
+  (`atencao_financeira`: parcela de dívida atrasada, despesa a repassar, entrada sem conta; perigo antes de atenção).
+- **Cabeçalho:** os dois botões grandes viram o menu **Opções** (modo compacto, ocultar dados pessoais).
+- **Indicadores do topo (aba Hoje):** A cobrar, Em atraso, Frota e Caixa do mês, decididos em 05/11/2026.
+- **Medido no preview (dados do dev):** a página inteira tinha 10,3 telas no desktop e 15,9 no celular, com 17 indicadores e 6 tabelas; a aba Hoje tem 4 indicadores e 1 tabela
+  (1,9 tela no desktop de 1440 px; 5,9 no celular, com as abas e os quatro indicadores na primeira tela).
+- **Fica para as próximas fases** (Estudo, 4.8): variação e sparkline nos cartões, barra de faixas de atraso (1-6, 7-14, 15-30, 31+ dias), barra segmentada da frota, bullet de receita
+  contra previsto (Fase 2); próximos 7 dias, motos paradas, receita por moto, tempo parado (Fase 3). Abaixo de 1500 px a aba Hoje mostra *Atenção* abaixo de *Cobrar agora*
+  (o layout em duas colunas já existia e só começa em 1500 px, porque a tabela tem seis colunas).
+

@@ -25,7 +25,8 @@ def test_lista_oferece_pagar_so_em_hoje_e_atrasadas(cliente, base_cobrancas):
 
 def test_dashboard_leva_ao_pagamento_da_cobranca(cliente, base_cobrancas):
     entrar(cliente)
-    assert 'href="/cobrancas/c1/pagar"' in cliente.get("/").text
+    # Cobrar agora (aba Hoje) abre o pagamento da cobrança mais antiga de cada contrato
+    assert 'href="/cobrancas/00000000-0000-0000-0000-0000000000a1/pagar"' in cliente.get("/").text
 
 
 def test_formulario_em_dialogo_vem_so_com_o_formulario(cliente, base_cobrancas):

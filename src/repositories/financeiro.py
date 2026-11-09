@@ -3,6 +3,7 @@
 from datetime import date
 
 from src.db import get_client
+from src.repositories import dividas as repositorio_dividas
 from src.repositories.consultas import todos
 
 
@@ -28,3 +29,8 @@ def detalhe_mensal(mes: date) -> dict:
 
 def resultado_por_veiculo() -> list:
     return todos("vw_resultado_moto", ordem=("moto_id",))
+
+
+def parcelas_de_divida() -> list:
+    """Parcelas de todas as dívidas, com situação (view `vw_parcelas_divida`)."""
+    return repositorio_dividas.listar_todas_parcelas()

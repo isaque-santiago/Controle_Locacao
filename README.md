@@ -100,7 +100,7 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
 - **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com
   3:1 (`--borda-campo`); alvos de toque ≥ 44 px medidos em 13 páginas (390 e 1280 px), sem exceções; `/favicon.ico` deixou de dar 404.
-- **Variação mês a mês no Dashboard** ("Recebido no mês" e "Manutenção no mês"): compara o acumulado do mês (dia 1 até hoje) com o *mesmo
+- **Variação mês a mês no Dashboard** ("Recebido no mês" e "Manutenção no mês"; **saiu do Dashboard na Fase 1 do redesenho e volta na Fase 2**, as regras de `painel.py` continuam): compara o acumulado do mês (dia 1 até hoje) com o *mesmo
   intervalo* do mês anterior (`painel.periodo_anterior`: em 31/10 compara 01–30/09). Regras puras em `src/domain/painel.py`
   (`variacao`, `descrever_variacao`); recebido sobe = verde, manutenção sobe = vermelho, e o texto sempre diz "a mais"/"a menos". Sem
   base de comparação (mês anterior zerado) mostra o aviso; os dois zerados, nada. "Em atraso" e ocupação não têm variação: são fotos do
@@ -611,21 +611,31 @@ repositório (contêm CPF, telefone e dados reais), idempotente por lote (`impor
 locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
 `Arquivos/Importacao_Dados_Reais.md`.
 
-## Dashboard financeiro (Etapas 1 e 2)
+## Dashboard (em abas desde a Fase 1 do redesenho, 09/11/2026)
 
-O Dashboard (`/`) tem a seção **Financeiro**, com o mês escolhido em `?mes=aaaa-mm` (padrão: mês atual; mês futuro ou inválido volta ao atual).
-Mostra receita (e a da semana), despesas, resultado, caixa, investimento em veículos, parcelas de dívida, retiradas e aportes, receita mensal
-estimada, a receber, encargos de atraso, em atraso (até 14 dias), inadimplentes (15 dias ou mais), dívidas em aberto, o gráfico e a tabela dos
-últimos 6 meses, os maiores devedores, as entradas por conta, as despesas por categoria, o resultado por veículo (desde o início) e os alertas com semáforo.
+O Dashboard (`/`) tem três abas, cada uma com URL própria e sem JavaScript: **Hoje** (`/`), **Dinheiro** (`/?aba=dinheiro`) e **Frota** (`/?aba=frota`).
+Cada aba lê só o que mostra, e todas leem das mesmas fontes (`src/services/financeiro.py`): um indicador, uma definição, um lugar.
 
-- **Modo compacto** (`?compacto=1`): só os indicadores e os alertas. **Ocultar dados pessoais** (`?ocultar=1`): valores, nomes, placas e descrições
-  saem trocados por pontos já no servidor (nem vão no HTML) e os gráficos somem. Os botões ficam no cabeçalho e a navegação de mês mantém os dois.
+- **Hoje:** quatro indicadores (A cobrar = vencido + vence hoje; Em atraso, com os contratos e os inadimplentes pelo corte configurável; Frota, com a
+  ocupação sobre as motos ativas; Caixa do mês, dizendo quanto é investimento em veículos), a lista **Cobrar agora** (uma linha por contrato, do maior
+  atraso para o menor, com **Pagar** e **WhatsApp**, que abre a mensagem de cobrança) e a lista **Atenção** (manutenção, documentos, CNH, WhatsApp e
+  pendências de dinheiro, com o que está em perigo na frente). O que vence hoje leva a multa do dia, como na tela de pagamento.
+- **Dinheiro:** o mês escolhido em `?mes=aaaa-mm` (só aqui há seletor de mês): receita contra o previsto, despesas, resultado, caixa, investimento,
+  parcelas de dívida, retiradas e aportes, receita estimada, dívidas em aberto, os últimos 6 meses, as entradas por conta e as despesas por categoria.
+- **Frota:** ocupação (rosca e legenda), motos em manutenção, o gasto com manutenção do mês (o mesmo valor da categoria Manutenção em Dinheiro) e o
+  resultado por veículo.
+- **Menu Opções** (no cabeçalho): **Modo compacto** (`?compacto=1`: só os indicadores e a atenção) e **Ocultar dados pessoais** (`?ocultar=1`: valores,
+  nomes, placas e descrições saem trocados por pontos já no servidor, nem vão no HTML, e os gráficos somem). A aba e os dois modos seguem na navegação.
+- Se a leitura de uma aba falhar (migration pendente, banco fora do ar), só aquela aba mostra "indisponível" e o erro vai para o log; na aba Hoje, se
+  falhar só o caixa do mês, a cobrança e a frota continuam. **Sem as migrations `20261104120000` e `20261104130000` a aba Dinheiro e o caixa ficam indisponíveis.**
 - Os totais vêm de duas RPCs de leitura: `rpc_resumo_financeiro` (migration `20261104120000_resumo_financeiro.sql`, roteiro `supabase/verificar_resumo_financeiro.sql`)
   e `rpc_detalhe_financeiro` (migration `20261104130000_detalhe_financeiro.sql`, roteiro `supabase/verificar_detalhe_financeiro.sql`). Os roteiros terminam em ROLLBACK.
-  As regras ficam em `src/domain/financeiro.py`. **Sem as duas migrations aplicadas o Dashboard falha.**
+  As regras ficam em `src/domain/financeiro.py` e `src/domain/cobrar_agora.py`.
 - O corte entre "em atraso" e "inadimplente" é o parâmetro **Inadimplente a partir de (dias de atraso)** em Configurações (padrão 15, mínimo 1; migration `20261104140000_corte_inadimplencia.sql`, que deve ser aplicada antes de publicar o app novo).
 - Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
 - Os gráficos são SVG sem script e sem estilo inline (a política de conteúdo só aceita CSS do próprio site); a tabela ao lado traz os mesmos números.
+- **Saiu do Dashboard na Fase 1:** o cálculo antigo (`services/dashboard`), que dava números diferentes dos do financeiro (receita, manutenção, atraso). Com ele saiu a
+  variação mês a mês dos cartões, que volta na Fase 2 com a base certa (mesmo número de dias).
 
 ## Dívidas (telas)
 

@@ -97,47 +97,39 @@ class ServicoFalso:
         self.saidas.append(access_token)
 
 
-DADOS_PAINEL = {
-    "data_extenso": "terça-feira, 6 de outubro de 2026",
-    "frota_total": 5,
-    "contagem": {"alugada": 3, "disponivel": 1, "manutencao": 1, "inativa": 0},
-    "ocupacao": 60,
-    "ativas": 5,
-    "segmentos_medidor": ["cheio", "cheio", "cheio", "oficina", ""],
-    "rosca": [
-        {"classe": "cheio", "inicio": 0.0, "tamanho": 60.0},
-        {"classe": "oficina", "inicio": 60.0, "tamanho": 20.0},
-        {"classe": "livre", "inicio": 80.0, "tamanho": 20.0},
-    ],
-    "descricao_medidor": "Frota de 5 motos: 3 alugadas, 1 disponíveis, 1 em manutenção, 0 inativas",
-    "legenda": [
-        SimpleNamespace(status="alugada", quantidade=3, rotulo="3 alugadas", percentual=60),
-        SimpleNamespace(status="disponivel", quantidade=1, rotulo="1 disponíveis", percentual=20),
-        SimpleNamespace(status="manutencao", quantidade=1, rotulo="1 em manutenção", percentual=20),
-        SimpleNamespace(status="inativa", quantidade=0, rotulo="0 inativas", percentual=None),
-    ],
-    "recebido": Decimal("1480.00"),
-    "previsto": Decimal("2000.00"),
-    "percentual_recebido": 74,
-    "atrasado": Decimal("320.00"),
-    "clientes_atrasados": 1,
-    "manutencao_mes": Decimal("85.00"),
-    "ordens_concluidas": 1,
-    "variacoes": {
-        "recebido": {"seta": "↑", "tom": "bom", "texto": "R$ 120 a mais (+9%) que no mesmo período de setembro."},
-        "manutencao": {"seta": "↓", "tom": "bom", "texto": "R$ 40 a menos (−32%) que no mesmo período de setembro."},
-    },
-    "hoje": [
-        {"id": "c1", "cliente": "Joana <b>Prado</b>", "placa": "QRS4T21", "vencimento": "2026-10-01",
-         "valor": Decimal("320.00"), "atrasada": True, "dias_atraso": 5},
-        {"id": "c2", "cliente": "Marcos Teles", "placa": "BRA2E19", "vencimento": "2026-10-06",
-         "valor": Decimal("290.00"), "atrasada": False, "dias_atraso": 0},
-    ],
-    "compacto": False,
-    "ocultar": False,
-    "links": {"anterior": "?mes=2026-09", "seguinte": None, "atual": "", "compacto": "?mes=2026-10",
-              "ocultar": "?mes=2026-10&ocultar=1"},
-    "financeiro": {
+def _conteudo_hoje():
+    return {"hoje": {
+        "mes_texto": "2026-10",
+        "cobranca": {
+            "linhas": [
+                {"contrato_id": "k1", "cobranca_id": "00000000-0000-0000-0000-0000000000a1", "cliente": "Joana <b>Prado</b>",
+                 "placa": "QRS4T21", "dias_atraso": 44, "faixa": "inadimplente", "debito": Decimal("2100.00"), "hoje": Decimal("0.00"),
+                 "encargos": Decimal("176.00"), "total": Decimal("2276.00")},
+                {"contrato_id": "k2", "cobranca_id": "00000000-0000-0000-0000-0000000000a2", "cliente": "Marcos Teles", "placa": "BRA2E19",
+                 "dias_atraso": 6, "faixa": "em_atraso", "debito": Decimal("290.00"), "hoje": Decimal("0.00"),
+                 "encargos": Decimal("57.00"), "total": Decimal("347.00")},
+                {"contrato_id": "k3", "cobranca_id": "00000000-0000-0000-0000-0000000000a3", "cliente": "Diego", "placa": "—",
+                 "dias_atraso": 0, "faixa": "hoje", "debito": Decimal("0.00"), "hoje": Decimal("280.00"),
+                 "encargos": Decimal("15.00"), "total": Decimal("295.00")},
+            ],
+            "total_linhas": 3, "a_cobrar": Decimal("2670.00"), "em_atraso": Decimal("2390.00"), "vencem_hoje": Decimal("280.00"),
+            "encargos": Decimal("248.00"), "contratos_em_atraso": 1, "contratos_inadimplentes": 1, "contratos_so_hoje": 1,
+        },
+        "faixas": {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"},
+        "frota": {"total": 5, "contagem": {"alugada": 3, "disponivel": 1, "manutencao": 1, "inativa": 0}, "ativas": 5, "ocupacao": 60},
+        "caixa": {"valor": Decimal("-3451.93"), "investimento": Decimal("800.00")},
+        "atencao_financeira": [],
+        "atencao": [
+            SimpleNamespace(quantidade=1, titulo="Parcela de dívida atrasada", descricao="R$ 1.000,00 em atraso", tom="perigo", area="dividas"),
+            SimpleNamespace(quantidade=2, titulo="Manutenção vencida", descricao="Óleo e mais 1", tom="perigo", area="manutencao"),
+            SimpleNamespace(quantidade=1, titulo="Documento a vencer", descricao="próximos 30 dias", tom="atencao", area="documentos"),
+            SimpleNamespace(quantidade=None, titulo="Despesa a repassar ao locatário", descricao="R$ 40,00", tom="atencao", area=None),
+        ],
+    }}
+
+
+def _conteudo_dinheiro():
+    return {"dinheiro": {
         "mes": date(2026, 10, 1), "mes_texto": "2026-10", "mes_rotulo": "outubro de 2026", "mes_anterior": "2026-09",
         "mes_seguinte": None, "mes_maximo": "2026-10", "e_mes_atual": True, "anterior": None,
         "atual": {"mes": date(2026, 10, 1), "receita": Decimal("3445.50"), "despesas": Decimal("5161.20"),
@@ -150,21 +142,10 @@ DADOS_PAINEL = {
             {"mes": date(2026, 10, 1), "rotulo": "out./26", "receita": Decimal("3445.50"),
              "despesas": Decimal("5161.20"), "resultado": Decimal("-1715.70"), "caixa": Decimal("-3451.93")},
         ],
-        "devedores": {
-            "a_receber": Decimal("6849.00"), "encargos": Decimal("1003.00"), "contratos_em_aberto": 9,
-            "em_atraso": 6, "inadimplentes": 3,
-            "ranking": [
-                {"contrato_id": "k1", "cliente": "Ronildo <i>Souza</i>", "placa": "POT5B25", "dias_atraso": 23,
-                 "faixa": "inadimplente", "debito": Decimal("2100.00"), "encargos": Decimal("176.00"),
-                 "total": Decimal("2276.00")},
-                {"contrato_id": "k2", "cliente": "Diego", "placa": "—", "dias_atraso": 9, "faixa": "em_atraso",
-                 "debito": Decimal("687.00"), "encargos": Decimal("78.00"), "total": Decimal("765.00")},
-            ],
-        },
+        "previsto": Decimal("15650.00"), "percentual_previsto": 22,
         "dividas": {"total": Decimal("32014.34"), "moto_fiado": Decimal("32014.34")},
         "receita_estimada": Decimal("27155.00"),
         "receita_semana": Decimal("3245.50"),
-        "faixas": {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"},
         "grafico": {
             "largura": 600, "altura": 208, "y_base": 180, "y_rotulo": 200,
             "colunas": [
@@ -186,31 +167,62 @@ DADOS_PAINEL = {
                        {"categoria": "outros", "rotulo": "Outros", "valor": Decimal("139.00"), "proporcao": 4}],
             "total": Decimal("3874.00"),
         },
+    }}
+
+
+def _conteudo_frota():
+    return {"frota": {
+        "total": 5, "contagem": {"alugada": 3, "disponivel": 1, "manutencao": 1, "inativa": 0}, "ocupacao": 60, "ativas": 5,
+        "rosca": [
+            {"classe": "cheio", "inicio": 0.0, "tamanho": 60.0},
+            {"classe": "oficina", "inicio": 60.0, "tamanho": 20.0},
+            {"classe": "livre", "inicio": 80.0, "tamanho": 20.0},
+        ],
+        "descricao_medidor": "Frota de 5 motos: 3 alugadas, 1 disponíveis, 1 em manutenção, 0 inativas",
+        "legenda": [
+            SimpleNamespace(status="alugada", quantidade=3, rotulo="3 alugadas", percentual=60),
+            SimpleNamespace(status="disponivel", quantidade=1, rotulo="1 disponíveis", percentual=20),
+            SimpleNamespace(status="manutencao", quantidade=1, rotulo="1 em manutenção", percentual=20),
+            SimpleNamespace(status="inativa", quantidade=0, rotulo="0 inativas", percentual=None),
+        ],
+        "ordens_concluidas": 1, "manutencao_aberta": {"quantidade": 0, "total": Decimal("0")},
+        "manutencao_mes": Decimal("85.00"), "mes_rotulo": "outubro de 2026",
         "veiculos": [
             {"moto_id": "m1", "placa": "POU7015", "locatario": "JOSE <u>HENRIQUE</u>", "receita": Decimal("8200.00"),
              "despesas": Decimal("900.00"), "resultado": Decimal("7300.00")},
             {"moto_id": "m2", "placa": "—", "locatario": "—", "receita": Decimal("0.00"),
              "despesas": Decimal("120.00"), "resultado": Decimal("-120.00")},
         ],
-        "alertas": [
-            {"titulo": "Contratos inadimplentes (15 dias ou mais)", "valor": 3, "formato": "qtd", "tom": "perigo", "status": "Crítico"},
-            {"titulo": "Caixa do mês", "valor": Decimal("-3451.93"), "formato": "moeda", "tom": "perigo", "status": "Crítico"},
-            {"titulo": "Aportes de fora no mês", "valor": Decimal("120.00"), "formato": "moeda", "tom": "info", "status": "Info"},
-        ],
-    },
-    "alertas": [
-        SimpleNamespace(quantidade=2, titulo="Manutenção vencida", descricao="Óleo e mais 1", tom="perigo", area="manutencao"),
-        SimpleNamespace(quantidade=1, titulo="Documento a vencer", descricao="próximos 30 dias", tom="atencao", area="documentos"),
-    ],
-}
+    }}
+
+
+def painel_falso(aba="hoje", compacto=False, ocultar=False, ajustes=None, **extra):
+    """O dicionário que `dados_painel.carregar` devolve para a aba pedida, com dados fictícios.
+
+    `ajustes` troca campos de dentro do bloco da aba (`{"hoje": {"caixa": None}}`); `extra` troca chaves do topo."""
+    from src.domain import financeiro
+
+    conteudo = {"hoje": _conteudo_hoje, "dinheiro": _conteudo_dinheiro, "frota": _conteudo_frota}[aba]()
+    for chave, mudancas in (ajustes or {}).items():
+        conteudo[chave] = {**conteudo[chave], **mudancas}
+    bloco = conteudo.get("dinheiro", {})
+    links = financeiro.links_do_painel(
+        bloco.get("mes_texto"), bloco.get("mes_anterior"), bloco.get("mes_seguinte"), compacto, ocultar, aba)
+    return {
+        "data_extenso": "terça-feira, 6 de outubro de 2026", "aba": aba, "compacto": compacto, "ocultar": ocultar, "links": links,
+        "abas": [{"chave": c, "rotulo": r, "href": "/" + links["abas"][c], "ativa": c == aba} for c, r in financeiro.ABAS],
+        **conteudo, **extra,
+    }
 
 
 @pytest.fixture(autouse=True)
 def dados_painel_falsos(monkeypatch):
-    """Nenhum teste de rota fala com o Supabase: a camada de dados do Dashboard é trocada."""
+    """Nenhum teste de rota fala com o Supabase: a camada de dados do Dashboard é trocada por dados fictícios da aba pedida."""
+    from src.domain import financeiro
     from src.web import dados_painel
 
-    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: DADOS_PAINEL)
+    monkeypatch.setattr(dados_painel, "carregar", lambda *a, **k: painel_falso(
+        aba=financeiro.aba_do_painel(k.get("aba")), compacto=bool(k.get("compacto")), ocultar=bool(k.get("ocultar"))))
 
 
 def _moto(i, status="disponivel", **extra):

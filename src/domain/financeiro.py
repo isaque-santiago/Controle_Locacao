@@ -10,11 +10,9 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
-from src.domain.encargos import calcular_encargos
 
 # A partir de quantos dias de atraso o contrato passa de "em atraso" para "inadimplente".
 DIAS_INADIMPLENTE = 15
-MAX_DEVEDORES = 8
 _ZERO = Decimal("0.00")
 _CENTAVOS = Decimal("0.01")
 _MESES_CURTOS = ("jan.", "fev.", "mar.", "abr.", "mai.", "jun.", "jul.", "ago.", "set.", "out.", "nov.", "dez.")
@@ -119,62 +117,6 @@ def descricao_das_faixas(corte: int = DIAS_INADIMPLENTE) -> dict:
     }
 
 
-def analisar_devedores(
-    cobrancas: list[dict],
-    nomes_clientes: dict,
-    placas_motos: dict,
-    multa_valor: Decimal,
-    adicional_diario_valor: Decimal,
-    hoje: date,
-    corte: int = DIAS_INADIMPLENTE,
-    limite: int = MAX_DEVEDORES,
-) -> dict:
-    """Quem deve hoje: débito (saldo vencido), encargos de atraso e ranking por contrato.
-
-    Só entram cobranças atrasadas e com saldo. Cada contrato tem um único dia de atraso, o da
-    cobrança mais antiga em aberto. O ranking traz os `limite` maiores (débito + encargos)."""
-    por_contrato = defaultdict(lambda: {"debito": _ZERO, "encargos": _ZERO, "dias": 0})
-    for c in cobrancas:
-        saldo = Decimal(str(c.get("saldo") or 0))
-        if c.get("situacao") != "atrasada" or saldo <= 0:
-            continue
-        calculo = calcular_encargos(
-            tipo=c["tipo"],
-            saldo=saldo,
-            vencimento=date.fromisoformat(str(c["vencimento"])[:10]),
-            data_referencia=hoje,
-            multa_valor=multa_valor,
-            adicional_diario_valor=adicional_diario_valor,
-        )
-        item = por_contrato[(c["contrato_id"], c["cliente_id"], c["moto_id"])]
-        item["debito"] += saldo
-        item["encargos"] += calculo["encargos"]
-        item["dias"] = max(item["dias"], calculo["dias_atraso"])
-
-    linhas = [
-        {
-            "contrato_id": contrato,
-            "cliente": nomes_clientes.get(cliente, "—"),
-            "placa": placas_motos.get(moto, "—"),
-            "dias_atraso": v["dias"],
-            "faixa": faixa_de_atraso(v["dias"], corte),
-            "debito": v["debito"],
-            "encargos": v["encargos"],
-            "total": v["debito"] + v["encargos"],
-        }
-        for (contrato, cliente, moto), v in por_contrato.items()
-    ]
-    linhas.sort(key=lambda l: (l["total"], l["dias_atraso"]), reverse=True)
-    return {
-        "a_receber": sum((l["debito"] for l in linhas), _ZERO),
-        "encargos": sum((l["encargos"] for l in linhas), _ZERO),
-        "contratos_em_aberto": len(linhas),
-        "em_atraso": sum(1 for l in linhas if l["faixa"] == "em_atraso"),
-        "inadimplentes": sum(1 for l in linhas if l["faixa"] == "inadimplente"),
-        "ranking": linhas[:limite],
-    }
-
-
 def saldo_das_dividas(saldos: list[dict]) -> dict:
     """Saldo em aberto das dívidas (o confirmado pelo responsável, senão o calculado) e o total de motos fiado."""
     total = _ZERO
@@ -191,7 +133,7 @@ def saldo_das_dividas(saldos: list[dict]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Etapa 2: entradas por conta, despesas por categoria, resultado por veículo, alertas e gráfico
+# Etapa 2: entradas por conta, despesas por categoria, resultado por veículo, previsto e gráfico
 # ---------------------------------------------------------------------------
 
 SEM_CONTA = "Sem conta informada"
@@ -266,40 +208,14 @@ def resultado_por_veiculo(linhas: list[dict], locatarios: dict) -> list[dict]:
     return saida
 
 
-def alertas_financeiros(
-    devedores: dict,
-    mes: dict,
-    a_repassar: Decimal,
-    entradas_sem_conta: Decimal,
-    motos_em_manutencao: int,
-    corte: int = DIAS_INADIMPLENTE,
-) -> list[dict]:
-    """Indicadores com semáforo (como o quadro "Alertas e pendências" da planilha).
-
-    `tom` combina com os selos da tela: perigo (crítico), atencao, ok e info. `formato` diz se `valor` é dinheiro ou quantidade."""
-
-    def nivel(condicao: bool, tom: str) -> tuple[str, str]:
-        rotulos = {"perigo": "Crítico", "atencao": "Atenção", "ok": "OK", "info": "Info"}
-        escolhido = tom if condicao else "ok"
-        return escolhido, rotulos[escolhido]
-
-    total_a_cobrar = devedores["a_receber"] + devedores["encargos"]
-    faixas = descricao_das_faixas(corte)
-    itens = [
-        (f"Contratos inadimplentes ({faixas['inadimplente']})", devedores["inadimplentes"], "qtd", *nivel(devedores["inadimplentes"] > 0, "perigo")),
-        (f"Contratos em atraso ({faixas['em_atraso']})", devedores["em_atraso"], "qtd", *nivel(devedores["em_atraso"] > 0, "atencao")),
-        ("Caixa do mês", mes["caixa"], "moeda", *nivel(mes["caixa"] < 0, "perigo")),
-        ("Despesas a repassar ao locatário", a_repassar, "moeda", *nivel(a_repassar > 0, "atencao")),
-        ("Entradas do mês sem conta cadastrada", entradas_sem_conta, "moeda", *nivel(entradas_sem_conta > 0, "atencao")),
-        ("Motos em manutenção", motos_em_manutencao, "qtd", *nivel(motos_em_manutencao > 0, "atencao")),
-        ("Total a cobrar (débito + encargos)", total_a_cobrar, "moeda", *nivel(total_a_cobrar > 0, "atencao")),
-        ("Retiradas no mês", mes["retiradas"], "moeda", *nivel(mes["retiradas"] > 0, "atencao")),
-        ("Aportes de fora no mês", mes["aportes"], "moeda", "info", "Info"),
-    ]
-    return [
-        {"titulo": t, "valor": v, "formato": f, "tom": tom, "status": status}
-        for t, v, f, tom, status in itens
-    ]
+def previsto_do_mes(cobrancas: list[dict], mes: date) -> Decimal:
+    """O que o mês deveria render: as cobranças que vencem nele, sem caução e sem as canceladas (mesma regra de sempre)."""
+    prefixo = mes.strftime("%Y-%m")
+    return sum(
+        (Decimal(str(c.get("valor") or 0)) for c in cobrancas
+         if str(c["vencimento"])[:7] == prefixo and c.get("tipo") != "caucao" and c.get("situacao") != "cancelada"),
+        _ZERO,
+    )
 
 
 def colunas_evolucao(meses: list[dict], largura: int = 600, altura: int = 180, margem_rotulo: int = 28) -> dict:
@@ -327,9 +243,22 @@ def colunas_evolucao(meses: list[dict], largura: int = 600, altura: int = 180, m
     return {"largura": largura, "altura": altura + margem_rotulo, "y_base": altura, "y_rotulo": altura + margem_rotulo - 8, "colunas": colunas}
 
 
-def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = False) -> str:
-    """Texto do parâmetro da URL do Dashboard (`?mes=2026-09&compacto=1&ocultar=1`); vazio se nada foi escolhido."""
+# Abas do Dashboard: cada uma tem URL própria (`/?aba=dinheiro`), funciona sem JavaScript e mantém `compacto` e `ocultar`.
+ABAS = (("hoje", "Hoje"), ("dinheiro", "Dinheiro"), ("frota", "Frota"))
+ABA_PADRAO = "hoje"
+
+
+def aba_do_painel(texto: Optional[str]) -> str:
+    """Aba pedida na URL; vazia ou desconhecida vale a aba Hoje."""
+    return texto if texto in dict(ABAS) else ABA_PADRAO
+
+
+def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = False, aba: Optional[str] = None) -> str:
+    """Texto do parâmetro da URL do Dashboard (`?aba=dinheiro&mes=2026-09&compacto=1&ocultar=1`); vazio se nada foi escolhido.
+    A aba padrão (Hoje) não aparece na URL."""
     partes = []
+    if aba and aba != ABA_PADRAO:
+        partes.append(f"aba={aba}")
     if mes:
         partes.append(f"mes={mes}")
     if compacto:
@@ -345,13 +274,15 @@ def opcao_ligada(texto: Optional[str]) -> bool:
 
 
 def links_do_painel(
-    mes: str, mes_anterior: str, mes_seguinte: Optional[str], compacto: bool, ocultar: bool
+    mes: Optional[str], mes_anterior: Optional[str], mes_seguinte: Optional[str], compacto: bool, ocultar: bool, aba: str = ABA_PADRAO
 ) -> dict:
-    """Endereços (sem a barra inicial) dos botões do Dashboard: a navegação de mês e os interruptores mantêm o que já está ligado."""
+    """Endereços (sem a barra inicial) dos botões do Dashboard. Os interruptores e a navegação de mês mantêm o que já está ligado, e os
+    do mês só existem na aba Dinheiro (nas outras, `mes` vem vazio). `abas` traz o endereço de cada aba."""
     return {
-        "anterior": consulta(mes_anterior, compacto, ocultar),
-        "seguinte": consulta(mes_seguinte, compacto, ocultar) if mes_seguinte else None,
-        "atual": consulta(None, compacto, ocultar),
-        "compacto": consulta(mes, not compacto, ocultar),
-        "ocultar": consulta(mes, compacto, not ocultar),
+        "anterior": consulta(mes_anterior, compacto, ocultar, aba) if mes_anterior else None,
+        "seguinte": consulta(mes_seguinte, compacto, ocultar, aba) if mes_seguinte else None,
+        "atual": consulta(None, compacto, ocultar, aba),
+        "compacto": consulta(mes, not compacto, ocultar, aba),
+        "ocultar": consulta(mes, compacto, not ocultar, aba),
+        "abas": {chave: consulta(None, compacto, ocultar, chave) for chave, _ in ABAS},
     }
