@@ -102,12 +102,8 @@ def criar_acesso(cliente_id: str) -> dict:
 def redefinir_senha(cliente_id: str) -> dict:
     """Gera outra senha aleatória para o locatário. Devolve {"email", "senha"}.
 
-    Deixa o evento registrado para o aviso de WhatsApp; se o registro falhar, a senha nova continua valendo."""
+    Não gera aviso por WhatsApp: quem redefine é o dono, que entrega a senha pessoalmente."""
     resposta = _acesso("redefinir", cliente_id)
-    try:
-        portal_locatario.registrar_redefinicao_senha(cliente_id)
-    except Exception:
-        log.exception("Não foi possível registrar a redefinição de senha do portal.")
     return {"email": resposta["email"], "senha": resposta["senha"]}
 
 

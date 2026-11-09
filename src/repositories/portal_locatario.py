@@ -71,11 +71,6 @@ def _jwt_do_dono(cliente) -> str:
     return autorizacao.removeprefix("Bearer ")
 
 
-def registrar_redefinicao_senha(cliente_id: str) -> None:
-    """Deixa registrado que o dono gerou uma senha nova para o locatário (alimenta o aviso por WhatsApp)."""
-    get_client().rpc("rpc_portal_registrar_redefinicao_senha", {"p_cliente_id": cliente_id}).execute()
-
-
 @invalida_cache
 def gerenciar_acesso(acao: str, cliente_id: str) -> dict:
     """Chama a Edge Function criar-locatario (criar, redefinir ou remover o acesso).
