@@ -261,7 +261,7 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
    *WhatsApp desconectado* = ler o QR code de novo na Evolution; *Evolution fora do ar*; *Mensagens sem entrega* = abrir Mensagens (filtro «Com problema»)
    e ligar para o cliente; *modo teste* = lembrete de que os clientes ainda não recebem.
 8. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
-   ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado.
+   ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado. `tempo_esgotado` = a Evolution está lenta e a rodada parou antes de estourar o tempo da reserva (o que sobrou sai na próxima).
 
 ## 9. Problemas comuns
 

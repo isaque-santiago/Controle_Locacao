@@ -7,7 +7,7 @@ Endpoints usados (conferir contra a versão da instância, no Swagger dela, em `
 - `POST /message/sendText/{instancia}`: envia o texto. Evolution v2 recebe `number` e `text`; a v1 recebe
   `number` e `textMessage.text`. A escolha é `EVOLUTION_VERSAO`.
 
-Os erros dizem se vale tentar de novo: `EvolutionIndisponivel` (rede, 5xx, instância desconectada) volta para a fila;
+Os erros dizem se vale tentar de novo: `EvolutionIndisponivel` (rede, 5xx, 408, 429 e instância desconectada) volta para a fila;
 `EvolutionConfiguracaoInvalida` (chave recusada) para tudo; `ErroEnvio` é problema daquela mensagem. Nenhuma mensagem de
 erro leva o texto enviado, a chave ou o número inteiro.
 """
@@ -59,6 +59,8 @@ class ClienteEvolution:
             raise EvolutionIndisponivel(f"Sem resposta da Evolution ({type(erro).__name__}).") from erro
         if resposta.status_code in (401, 403):
             raise EvolutionConfiguracaoInvalida("A Evolution recusou a chave (EVOLUTION_APIKEY).")
+        if resposta.status_code in (408, 429):  # lenta ou pedindo para ir mais devagar: tentar de novo mais tarde
+            raise EvolutionIndisponivel(f"A Evolution pediu para tentar depois ({resposta.status_code}).")
         if resposta.status_code >= 500:
             raise EvolutionIndisponivel(f"A Evolution respondeu {resposta.status_code}.")
         if resposta.status_code == 404 and "/instance/" in caminho:
