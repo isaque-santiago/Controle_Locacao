@@ -29,7 +29,7 @@
     <tr>
       <td class="topo">{{ plac(p.placa) }}</td>
       <td data-rotulo="Situação">{{ p.motivo }}</td>
-      <td class="mono" data-rotulo="Desde">{{ (p.desde|data_br) if p.desde else "sem contrato anterior" }}</td>
+      <td class="mono" data-rotulo="Desde">{{ (p.desde|data_br) if p.desde else ("sem ordem aberta" if p.motivo == "Em manutenção" else "sem contrato anterior") }}</td>
       <td class="num mono" data-rotulo="Parada há">{% if p.dias is not none %}{{ p.dias }} {{ "dia" if p.dias == 1 else "dias" }}{% else %}—{% endif %}</td>
     </tr>
     {% endfor %}

@@ -466,3 +466,11 @@ def test_ocultar_mascara_placas_e_valores_da_fase_3(cliente):
 def test_modo_compacto_da_frota_esconde_a_lista_de_paradas(cliente):
     entrar(cliente)
     assert "Motos paradas" not in cliente.get("/?aba=frota&compacto=1").text
+
+
+def test_moto_em_manutencao_sem_ordem_aberta_diz_isso_em_vez_de_contrato_anterior(cliente, monkeypatch):
+    linha = {"moto_id": "m9", "placa": "PMZ8278", "motivo": "Em manutenção", "desde": None, "dias": None}
+    _com(monkeypatch, ajustes={"frota": {"paradas": {"total": 1, "linhas": [linha]}}})
+    entrar(cliente)
+    paradas = cliente.get("/?aba=frota").text.split('id="t-paradas"', 1)[1].split("</section>", 1)[0]
+    assert "sem ordem aberta" in paradas and "sem contrato anterior" not in paradas
