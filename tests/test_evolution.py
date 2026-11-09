@@ -67,6 +67,15 @@ def test_resposta_sem_id_devolve_vazio():
     assert _cliente(lambda req: httpx.Response(201, json={"status": "PENDING"})).enviar_texto("5511988887777", "x") == ""
 
 
+@pytest.mark.parametrize("status", [408, 429])
+def test_pedido_para_ir_mais_devagar_e_indisponibilidade_e_nao_erro_da_mensagem(status):
+    """Limite de requisições (429) ou tempo esgotado (408): a mensagem não é culpada, volta para a fila e a rodada para."""
+    with pytest.raises(EvolutionIndisponivel, match="tentar depois"):
+        _cliente(lambda req: httpx.Response(status, json={"message": "Too Many Requests"})).enviar_texto("5511988887777", "x")
+    with pytest.raises(EvolutionIndisponivel):
+        _cliente(lambda req: httpx.Response(status)).numero_tem_whatsapp("5511988887777")
+
+
 @pytest.mark.parametrize("status", [500, 502, 503])
 def test_erro_de_servidor_e_indisponibilidade(status):
     with pytest.raises(EvolutionIndisponivel):
