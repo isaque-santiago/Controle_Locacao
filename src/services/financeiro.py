@@ -1,11 +1,15 @@
-"""Dashboard financeiro: totais do mês, evolução de 6 meses, entradas, despesas, devedores, dívidas, veículos e alertas."""
+"""Dashboard: o que cada aba mostra (Hoje, Dinheiro e Frota), todas lendo das mesmas fontes (RPCs e views do financeiro).
+
+Cada indicador tem uma definição e um lugar só: o caixa, a receita e as despesas vêm de `rpc_resumo_financeiro`; entradas por conta,
+despesas por categoria e a receita da semana vêm de `rpc_detalhe_financeiro`; o que está vencido vem das cobranças."""
 
 import logging
 from datetime import date
 from decimal import Decimal
-from typing import Optional
+from typing import Callable, Optional
 
-from src.domain import financeiro
+from src.domain import financeiro, painel
+from src.domain.cobrar_agora import analisar_cobranca, atencao_financeira, parcelas_de_divida_atrasadas
 from src.domain.valores import hoje_br
 from src.repositories import contratos, financeiro as repositorio
 from src.services import clientes, cobrancas, configuracoes, motos
@@ -29,62 +33,122 @@ def _navegacao(mes: date, hoje: date) -> dict:
     }
 
 
-def painel_seguro(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict:
-    """Como `painel`, mas uma falha ao ler o financeiro (migration pendente, banco fora do ar) não derruba o Dashboard:
-    devolve só a navegação de mês com `indisponivel` verdadeiro, e o erro vai para o log."""
-    hoje = hoje or hoje_br()
+def _seguro(funcao: Callable[[], dict], rotulo: str, quando_falhar: Callable[[], dict]) -> dict:
+    """Roda `funcao`; se a leitura falhar (migration pendente, banco fora do ar) o erro vai para o log e a aba mostra só o aviso
+    de indisponível, em vez de derrubar o Dashboard inteiro."""
     try:
-        return painel(mes_texto, hoje)
+        return funcao()
     except Exception:
-        logger.exception("Não foi possível montar o painel financeiro")
-        mes = financeiro.mes_da_consulta(mes_texto, hoje)
-        return {**_navegacao(mes, hoje), "indisponivel": True}
+        logger.exception("Não foi possível montar a aba %s do Dashboard", rotulo)
+        return {**quando_falhar(), "indisponivel": True}
 
 
-def painel(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict:
-    """Tudo o que a seção Financeiro mostra para o mês pedido (`aaaa-mm`; vazio = mês atual).
-
-    Receita, despesas, resultado e caixa são do mês escolhido. Devedores, encargos, dívidas e receita
-    estimada são a posição de hoje, qualquer que seja o mês."""
-    hoje = hoje or hoje_br()
-    mes = financeiro.mes_da_consulta(mes_texto, hoje)
-    meses = [financeiro.consolidar_mes(m) for m in repositorio.resumo_mensal(mes, MESES_NA_EVOLUCAO)]
-    atual = meses[-1]
-    anterior = meses[-2] if len(meses) > 1 else None
-
-    config = configuracoes.obter()
+def _corte(config: dict) -> int:
     # Banco ainda sem a coluna (migration 20261104140000 pendente): vale o corte de sempre, 15 dias.
-    corte = int(config.get("dias_inadimplencia") or financeiro.DIAS_INADIMPLENTE)
-    devedores = financeiro.analisar_devedores(
+    return int(config.get("dias_inadimplencia") or financeiro.DIAS_INADIMPLENTE)
+
+
+# ------------------------------------------------------------------------------------------------ aba Hoje --
+
+
+def painel_hoje(hoje: Optional[date] = None) -> dict:
+    """Aba Hoje: o que cobrar agora, a frota e o caixa do mês corrente, mais as pendências de dinheiro."""
+    hoje = hoje or hoje_br()
+    mes = financeiro.primeiro_dia(hoje)
+    config = configuracoes.obter()
+    corte = _corte(config)
+    frota = motos.listar()
+    cobranca = analisar_cobranca(
         cobrancas.listar(),
         {c["id"]: c["nome"] for c in clientes.listar()},
-        {m["id"]: m["placa"] for m in motos.listar()},
+        {m["id"]: m["placa"] for m in frota},
         Decimal(str(config["multa_atraso_valor"])),
         Decimal(str(config["encargo_diario_valor"])),
         hoje,
         corte,
     )
-    dividas = financeiro.saldo_das_dividas(repositorio.saldos_dividas())
+    contagem = painel.contar_por_status(frota)
+    atual = financeiro.consolidar_mes(repositorio.resumo_mensal(mes, 1)[0])
     detalhe = repositorio.detalhe_mensal(mes)
     entradas = financeiro.entradas_por_conta(detalhe["entradas_por_conta"])
-    a_repassar = Decimal(str(detalhe["a_repassar"]))
-    contratos_lista = contratos.listar()
-    nomes = {c["id"]: c["nome"] for c in clientes.listar()}
-    locatarios = {c["moto_id"]: nomes.get(c["cliente_id"], "—") for c in contratos_lista if c["status"] == "ativo"}
-    em_manutencao = sum(1 for m in motos.listar() if m["status"] == "manutencao")
+    return {
+        "mes_texto": mes.strftime("%Y-%m"),
+        "cobranca": cobranca,
+        "faixas": financeiro.descricao_das_faixas(corte),
+        "frota": {
+            "total": len(frota),
+            "contagem": contagem,
+            "ativas": painel.total_ativas(contagem),
+            "ocupacao": painel.percentual_ocupacao(contagem),
+        },
+        "caixa": {"valor": atual["caixa"], "investimento": atual["investimento"]},
+        "atencao_financeira": atencao_financeira(
+            parcelas_de_divida_atrasadas(repositorio.parcelas_de_divida()),
+            Decimal(str(detalhe["a_repassar"])),
+            entradas["sem_conta"],
+        ),
+    }
+
+
+def painel_hoje_seguro(hoje: Optional[date] = None) -> dict:
+    hoje = hoje or hoje_br()
+    return _seguro(lambda: painel_hoje(hoje), "Hoje", lambda: {"mes_texto": financeiro.primeiro_dia(hoje).strftime("%Y-%m")})
+
+
+# -------------------------------------------------------------------------------------------- aba Dinheiro --
+
+
+def painel_dinheiro(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict:
+    """Aba Dinheiro para o mês pedido (`aaaa-mm`; vazio = mês atual).
+
+    Receita, despesas, resultado e caixa são do mês escolhido. Dívidas e receita estimada são a posição de hoje."""
+    hoje = hoje or hoje_br()
+    mes = financeiro.mes_da_consulta(mes_texto, hoje)
+    meses = [financeiro.consolidar_mes(m) for m in repositorio.resumo_mensal(mes, MESES_NA_EVOLUCAO)]
+    atual = meses[-1]
+    detalhe = repositorio.detalhe_mensal(mes)
+    previsto = financeiro.previsto_do_mes(cobrancas.listar(), mes)
     return {
         **_navegacao(mes, hoje),
         "atual": atual,
-        "anterior": anterior,
+        "anterior": meses[-2] if len(meses) > 1 else None,
         "evolucao": [{**m, "rotulo": financeiro.rotulo_mes_curto(m["mes"])} for m in meses],
-        "devedores": devedores,
-        "faixas": financeiro.descricao_das_faixas(corte),
-        "dividas": dividas,
-        "receita_estimada": financeiro.receita_mensal_estimada(contratos_lista),
+        "previsto": previsto,
+        "percentual_previsto": painel.percentual_recebido(atual["receita"], previsto),
+        "dividas": financeiro.saldo_das_dividas(repositorio.saldos_dividas()),
+        "receita_estimada": financeiro.receita_mensal_estimada(contratos.listar()),
         "receita_semana": Decimal(str(detalhe["receita_semana"])),
-        "entradas": entradas,
+        "entradas": financeiro.entradas_por_conta(detalhe["entradas_por_conta"]),
         "categorias": financeiro.despesas_por_categoria(detalhe["despesas_por_categoria"]),
-        "veiculos": financeiro.resultado_por_veiculo(repositorio.resultado_por_veiculo(), locatarios),
         "grafico": financeiro.colunas_evolucao(meses),
-        "alertas": financeiro.alertas_financeiros(devedores, atual, a_repassar, entradas["sem_conta"], em_manutencao, corte),
     }
+
+
+def painel_dinheiro_seguro(mes_texto: Optional[str] = None, hoje: Optional[date] = None) -> dict:
+    hoje = hoje or hoje_br()
+    return _seguro(
+        lambda: painel_dinheiro(mes_texto, hoje), "Dinheiro",
+        lambda: _navegacao(financeiro.mes_da_consulta(mes_texto, hoje), hoje),
+    )
+
+
+# ---------------------------------------------------------------------------------------------- aba Frota --
+
+
+def painel_frota(hoje: Optional[date] = None) -> dict:
+    """Aba Frota: resultado de cada veículo (desde o início) e o gasto com manutenção do mês, que é o mesmo da aba Dinheiro."""
+    hoje = hoje or hoje_br()
+    mes = financeiro.primeiro_dia(hoje)
+    nomes = {c["id"]: c["nome"] for c in clientes.listar()}
+    locatarios = {c["moto_id"]: nomes.get(c["cliente_id"], "—") for c in contratos.listar() if c["status"] == "ativo"}
+    categorias = financeiro.despesas_por_categoria(repositorio.detalhe_mensal(mes)["despesas_por_categoria"])
+    manutencao = next((c["valor"] for c in categorias["linhas"] if c["categoria"] == "manutencao"), Decimal("0.00"))
+    return {
+        "veiculos": financeiro.resultado_por_veiculo(repositorio.resultado_por_veiculo(), locatarios),
+        "manutencao_mes": manutencao,
+        "mes_rotulo": financeiro.rotulo_mes(mes),
+    }
+
+
+def painel_frota_seguro(hoje: Optional[date] = None) -> dict:
+    return _seguro(lambda: painel_frota(hoje), "Frota", lambda: {})
