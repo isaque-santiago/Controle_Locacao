@@ -1,13 +1,13 @@
 # Dependências de PRODUÇÃO (é o que a imagem Docker instala). Para testes e desenvolvimento use requirements-dev.txt.
-supabase==2.33.0
+supabase==2.34.1
 python-dateutil==3.0.0
-pydantic==2.14.2
+pydantic==2.14.3
 openpyxl==3.1.5
 pillow==13.0.0
 tzdata==2026.6
-fpdf2==2.8.8
+fpdf2==2.9.0
 fastapi==0.162.0
 uvicorn==0.54.0
 Jinja2==3.1.6
-python-multipart==0.0.32
+python-multipart==0.0.33
 httpx==0.28.1
