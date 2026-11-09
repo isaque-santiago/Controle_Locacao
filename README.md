@@ -719,8 +719,8 @@ Migration `20261106140000_whatsapp_painel.sql` (compatível com a versão anteri
 
 ### Aviso de senha do portal alterada (WhatsApp)
 
-Migration `20261109120000_portal_eventos_senha.sql` (compatível com a versão anterior do app): a troca de senha acontece no Supabase Auth e não deixava registro, então o aviso não tinha de onde nascer. Agora `portal_eventos` guarda cada troca e `rpc_whatsapp_dados` a entrega ao envio (o evento mais recente de cada cliente, dos últimos dias).
+Migration `20261109120000_portal_eventos_senha.sql` (compatível com a versão anterior do app): a troca de senha acontece no Supabase Auth e não deixava registro, então o aviso não tinha de onde nascer. Agora `portal_eventos` guarda cada troca feita pelo locatário e `rpc_whatsapp_dados` a entrega ao envio (o evento mais recente de cada cliente, dos últimos dias).
 - O **locatário** troca a própria senha no portal: o app chama `rpc_portal_registrar_troca_senha()` (no máximo um evento a cada 10 minutos por cliente; quem chama é identificado por `auth.uid()`).
-- O **dono** gera uma senha nova na aba Portal da ficha do cliente: o app chama `rpc_portal_registrar_redefinicao_senha(cliente_id)` (só administrador).
+- O **dono** gerar uma senha nova na aba Portal da ficha do cliente **não** gera aviso: ele entrega a senha pessoalmente (decisão do dono em 09/11/2026). A RPC `rpc_portal_registrar_redefinicao_senha`, criada na migration, fica sem uso.
 - O registro é o melhor possível: se falhar, a senha já trocada continua valendo e o erro só vai para o log. Senha recusada pelo Supabase não registra nada.
 - O texto ao locatário diz que a senha foi alterada e pede que avise o dono se não foi ele (a nova senha nunca vai na mensagem). Acesso novo continua sendo avisado a partir da criação do login. Só o dono lê `portal_eventos`. Roteiro: `supabase/verificar_portal_eventos_senha.sql` (só em dev, termina em ROLLBACK).

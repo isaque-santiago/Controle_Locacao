@@ -1127,7 +1127,7 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
 - Quem paga cada documento da moto (o texto cobre as duas formas por enquanto).
 - Texto final de cada mensagem: revisar com o dono antes da Etapa 3.
 - Aviso de **senha do portal alterada**: resolvido em 09/11/2026 (migration `20261109120000_portal_eventos_senha.sql`): `portal_eventos` guarda a troca
-  feita pelo locatário ou a redefinição feita pelo dono, e `rpc_whatsapp_dados` a entrega ao envio. O texto vale para as duas origens.
+  feita pelo locatário e `rpc_whatsapp_dados` a entrega ao envio. A redefinição feita pelo dono **não** gera aviso (decisão do dono: ele entrega a senha pessoalmente).
 - Ao sair do modo teste, cancelar o histórico de teste (SQL no guia de deploy, seção 8.1, passo 6).
 - Confirmar a versão da Evolution da instância nova (`EVOLUTION_VERSAO`) conferindo o corpo do envio no Swagger dela.
 - Escolhas da Etapa 2 que o dono ainda deve confirmar (todas mudam em um lugar só):
