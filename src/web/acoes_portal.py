@@ -13,3 +13,4 @@ def registrar_troca_oleo(cliente_id, contrato, km_texto, foto, nota, multa):
 def alterar_senha(servico, access_token, nova):
     """Troca a senha do próprio usuário no Supabase Auth, com o token da sessão dele."""
     servico.alterar_senha(access_token, nova)
+    portal_locatario.registrar_troca_senha()  # só depois da troca; não derruba nada se falhar

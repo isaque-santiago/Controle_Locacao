@@ -118,6 +118,16 @@ class TestAcessoDoLocatario:
             portal_locatario.remover_acesso("cli1")
         assert [c.args for c in funcao.call_args_list] == [("redefinir", "cli1"), ("remover", "cli1")]
 
+    def test_redefinir_nao_gera_aviso_de_whatsapp(self):
+        """Quem redefine é o dono, que entrega a senha pessoalmente: só a Edge Function é chamada."""
+        with (
+            patch(f"{REPO}.gerenciar_acesso", return_value={"ok": True, "email": "e", "senha": "s"}),
+            patch(f"{REPO}.registrar_troca_senha") as registrar,
+        ):
+            assert portal_locatario.redefinir_senha("cli1") == {"email": "e", "senha": "s"}
+        registrar.assert_not_called()
+        assert not hasattr(portal_locatario.portal_locatario, "registrar_redefinicao_senha")
+
     @pytest.mark.parametrize(
         "resposta,mensagem",
         [
@@ -165,3 +175,26 @@ class TestRepositorioAcesso:
             repositorio.gerenciar_acesso("criar", "cli1")
         opcoes = cliente.functions.invoke.call_args.kwargs["invoke_options"]
         assert opcoes["headers"] == {"Authorization": "Bearer jwt-da-requisicao"}
+
+
+class TestRegistroDaTrocaDeSenha:
+    def test_registra_pela_rpc_do_locatario(self):
+        with patch(f"{REPO}.registrar_troca_senha") as registrar:
+            portal_locatario.registrar_troca_senha()
+        registrar.assert_called_once_with()
+
+    def test_falha_vai_para_o_log_e_nao_sobe(self, caplog):
+        with patch(f"{REPO}.registrar_troca_senha", side_effect=RuntimeError("banco fora")):
+            portal_locatario.registrar_troca_senha()  # a senha já foi trocada: não pode levantar
+        assert "Não foi possível registrar a troca de senha" in caplog.text
+
+
+class TestRepositorioEventosDeSenha:
+    def test_troca_do_locatario_chama_a_rpc_sem_parametros(self):
+        from src.repositories import portal_locatario as repositorio
+
+        cliente = MagicMock()
+        with patch.object(repositorio, "get_client", return_value=cliente):
+            repositorio.registrar_troca_senha()
+        cliente.rpc.assert_called_once_with("rpc_portal_registrar_troca_senha")
+        cliente.rpc.return_value.execute.assert_called_once_with()

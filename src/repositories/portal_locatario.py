@@ -52,6 +52,11 @@ def alterar_senha(nova_senha: str) -> None:
     get_client().auth.update_user({"password": nova_senha})
 
 
+def registrar_troca_senha() -> None:
+    """Deixa registrado que o locatário logado trocou a própria senha (alimenta o aviso por WhatsApp)."""
+    get_client().rpc("rpc_portal_registrar_troca_senha").execute()
+
+
 # ---- Somente o dono ----------------------------------------------------------
 
 

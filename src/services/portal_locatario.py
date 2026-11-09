@@ -1,5 +1,6 @@
 """Orquestra o portal do locatário: papel do usuário, troca de óleo e vínculo de acesso."""
 
+import logging
 from decimal import Decimal
 from pathlib import PurePath
 
@@ -9,6 +10,8 @@ from src.domain.arquivos import validar_arquivo
 from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.troca_oleo import avaliar_troca_oleo, validar_km_informado
 from src.repositories import portal_locatario
+
+log = logging.getLogger(__name__)
 
 _CODIGO_REGRA_DE_NEGOCIO = "P0001"  # raise exception ... nas RPCs
 _EXTENSOES_PERMITIDAS = (".jpg", ".jpeg", ".png")
@@ -67,6 +70,16 @@ def registrar_troca_oleo(
         raise
 
 
+def registrar_troca_senha() -> None:
+    """Deixa registrado que o locatário trocou a própria senha, para o aviso de WhatsApp.
+
+    É o melhor possível: a senha já foi trocada, então uma falha aqui só vai para o log."""
+    try:
+        portal_locatario.registrar_troca_senha()
+    except Exception:
+        log.exception("Não foi possível registrar a troca de senha do portal.")
+
+
 # ---- Somente o dono ----------------------------------------------------------
 
 
@@ -87,7 +100,9 @@ def criar_acesso(cliente_id: str) -> dict:
 
 
 def redefinir_senha(cliente_id: str) -> dict:
-    """Gera outra senha aleatória para o locatário. Devolve {"email", "senha"}."""
+    """Gera outra senha aleatória para o locatário. Devolve {"email", "senha"}.
+
+    Não gera aviso por WhatsApp: quem redefine é o dono, que entrega a senha pessoalmente."""
     resposta = _acesso("redefinir", cliente_id)
     return {"email": resposta["email"], "senha": resposta["senha"]}
 
