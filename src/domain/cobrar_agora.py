@@ -4,7 +4,7 @@ Uma linha por contrato, com tudo que está vencido (débito) e o que vence hoje,
 Mesmas definições de `painel.cobrancas_de_hoje` (atrasadas e abertas que vencem hoje) e de `encargos.calcular_encargos`."""
 
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from src.domain.encargos import calcular_encargos
@@ -139,3 +139,15 @@ def atencao_financeira(parcelas_atrasadas: dict, a_repassar, entradas_sem_conta)
 def ordenar_atencao(itens: list[ItemAlerta]) -> list[ItemAlerta]:
     """Lista única de atenção: o que está em perigo vem antes do que só pede atenção; dentro de cada grupo, a ordem de chegada."""
     return sorted(itens, key=lambda i: 0 if i.tom == TOM_PERIGO else 1)
+
+
+def proximos_dias(cobrancas: list[dict], parcelas: list[dict], hoje: date, dias: int = 7) -> dict:
+    """O que entra e o que sai nos próximos `dias` dias. Entra: saldo das cobranças abertas (sem caução) que vencem de amanhã até o último dia; as de hoje
+    estão em Cobrar agora. Sai: saldo das parcelas de dívida a vencer de hoje até o último dia. `saldo` = entra - sai."""
+    ate = (hoje + timedelta(days=dias)).isoformat()
+    hoje_iso = hoje.isoformat()
+    entra = [c for c in cobrancas if c.get("situacao") == "aberta" and c.get("tipo") != "caucao" and hoje_iso < str(c["vencimento"])[:10] <= ate]
+    sai = [p for p in parcelas if p.get("situacao") == "a_vencer" and p.get("vencimento") and hoje_iso <= str(p["vencimento"])[:10] <= ate]
+    total_entra = sum((Decimal(str(c.get("saldo") or 0)) for c in entra), _ZERO)
+    total_sai = sum((Decimal(str(p.get("saldo") or 0)) for p in sai), _ZERO)
+    return {"dias": dias, "entra": total_entra, "n_entra": len(entra), "sai": total_sai, "n_sai": len(sai), "saldo": total_entra - total_sai}

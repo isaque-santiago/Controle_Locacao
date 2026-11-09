@@ -134,3 +134,20 @@ def test_faixas_de_atraso_agrupam_pelo_maior_atraso_do_contrato_e_somam_o_total_
 def test_faixas_sem_nada_vencido_ficam_zeradas_e_a_barra_vazia():
     r = c.analisar_cobranca([], {}, {}, MULTA, DIARIO, date(2026, 11, 10))
     assert [x["contratos"] for x in r["faixas_atraso"]] == [0, 0, 0, 0] and all(x["tamanho"] == 0.0 for x in r["faixas_atraso"])
+
+
+def test_proximos_dias_soma_o_que_entra_e_o_que_sai_numa_janela_de_7_dias():
+    cobrancas = [
+        _cobranca("hoje", saldo="999", vencimento="2026-11-10", situacao="aberta"),      # hoje: está em Cobrar agora
+        _cobranca("a", saldo="280", vencimento="2026-11-11", situacao="aberta"),
+        _cobranca("b", saldo="100.50", vencimento="2026-11-17", situacao="aberta"),
+        _cobranca("c", saldo="50", vencimento="2026-11-18", situacao="aberta"),           # fora da janela
+        _cobranca("d", saldo="500", vencimento="2026-11-12", situacao="aberta", tipo="caucao"),
+        _cobranca("e", saldo="70", vencimento="2026-11-12", situacao="atrasada"),
+    ]
+    parcelas = [{"situacao": "a_vencer", "vencimento": "2026-11-10", "saldo": "1000"}, {"situacao": "a_vencer", "vencimento": "2026-11-16", "saldo": "536.23"},
+                {"situacao": "a_vencer", "vencimento": "2026-11-20", "saldo": "9"}, {"situacao": "atrasada", "vencimento": "2026-11-01", "saldo": "7"},
+                {"situacao": "a_vencer", "vencimento": None, "saldo": "3"}]
+    r = c.proximos_dias(cobrancas, parcelas, HOJE)
+    assert r == {"dias": 7, "entra": Decimal("380.50"), "n_entra": 2, "sai": Decimal("1536.23"), "n_sai": 2, "saldo": Decimal("-1155.73")}
+    assert c.proximos_dias([], [], HOJE)["saldo"] == Decimal("0.00")
