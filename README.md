@@ -639,6 +639,9 @@ Cada aba lê só o que mostra, e todas leem das mesmas fontes (`src/services/fin
   em Dinheiro, *Receita* mostra um bullet contra o previsto, com a marca do esperado até hoje (as cobranças que já venceram), e os quatro cartões mostram a variação contra o
   mês anterior **só em mês fechado** (mês inteiro contra mês inteiro, colorida pelo resultado e sempre dita em texto); no mês corrente aparece o mês anterior, sem variação.
   Tudo é SVG sem script e sem estilo inline, com texto alternativo; com "ocultar dados" nenhum desenho aparece. Regras em `domain/cobrar_agora.py` e `domain/financeiro.py`.
+- **Fase 3 (o que faltava, 09/11/2026):** na aba Hoje, **Próximos 7 dias** (entra = cobranças abertas de amanhã em diante, sem caução; sai = parcelas de dívida a vencer, inclusive as de hoje;
+  saldo previsto). Na aba Frota, **Receita por moto** (receita do mês ÷ motos ativas), **Tempo parado no mês** (dias de moto na oficina ÷ motos ativas × dias do mês até hoje; alerta acima de 5%)
+  e **Motos paradas** (em manutenção desde a ordem aberta mais antiga, ou disponíveis desde o último contrato encerrado). Regras em `domain/frota_parada.py` e `domain/cobrar_agora.py`.
 - **Saiu do Dashboard na Fase 1:** o cálculo antigo (`services/dashboard`), que dava números diferentes dos do financeiro (receita, manutenção, atraso). Com ele saiu a
   variação mês a mês dos cartões, que voltou na Fase 2 com a base certa (só mês fechado).
 
