@@ -454,6 +454,10 @@ table.dados {width: 100%; border-collapse: collapse;}
 .abas button {flex: none; min-height: var(--alvo); padding: 0 var(--e4); border: 0; border-bottom: 3px solid transparent; background: none; color: var(--texto-2); font-weight: 500; cursor: pointer; margin-bottom: -1px;}
 .abas button:hover {color: var(--texto);}
 .abas button[aria-selected="true"] {color: var(--texto); border-bottom-color: var(--marca); font-weight: 600;}
+/* Abas que são links (Dashboard): mesma aparência das abas de botão, mas cada uma é uma página com URL própria. */
+.abas a {flex: none; display: inline-flex; align-items: center; min-height: var(--alvo); padding: 0 var(--e4); border-bottom: 3px solid transparent; color: var(--texto-2); font-weight: 500; text-decoration: none; margin-bottom: -1px;}
+.abas a:hover {color: var(--texto);}
+.abas a[aria-current="page"] {color: var(--texto); border-bottom-color: var(--marca); font-weight: 600;}
 .painel[hidden] {display: none;}
 
 /* ---------- Ficha ---------- */

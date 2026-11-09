@@ -1,0 +1,80 @@
+{% from "dashboard/_apoio.html" import din, dinc, nome, plac, indisponivel with context %}
+{% from "componentes/macros.html" import kpi, tabela %}
+{% set fr = d.frota %}
+{% set comp = d.compacto %}
+{% set ab = fr.manutencao_aberta %}
+
+<dl class="grade kpis">
+  {{ kpi("Frota", fr.total ~ (" moto" if fr.total == 1 else " motos"), fr.ativas ~ " ativas"~ ((" · " ~ fr.contagem.inativa ~ " inativas") if fr.contagem.inativa else "")) }}
+  {{ kpi("Ocupação", fr.ocupacao ~ "%", fr.contagem.alugada ~ " alugadas de " ~ fr.ativas ~ " ativas", extra=(fr.contagem.disponivel ~ " livres")) }}
+  {{ kpi("Em manutenção", fr.contagem.manutencao ~ (" moto" if fr.contagem.manutencao == 1 else " motos"), fr.ordens_concluidas ~ (" ordem concluída no mês" if fr.ordens_concluidas == 1 else " ordens concluídas no mês"), atencao=(fr.contagem.manutencao > 0), href="/manutencao") }}
+  {% if fr.indisponivel %}
+  {{ kpi("Gasto com manutenção no mês", "—", "indisponível agora") }}
+  {% else %}
+  {{ kpi("Gasto com manutenção no mês", dinc(fr.manutencao_mes), "mesmo valor da categoria Manutenção em Dinheiro", extra=(("+ " ~ dinc(ab.total) ~ " lançados em " ~ ab.quantidade ~ (" ordem em andamento" if ab.quantidade == 1 else " ordens em andamento")) if ab.quantidade else None)) }}
+  {% endif %}
+</dl>
+
+{% if not comp %}
+<div class="grade duas-colunas igualar mt-4">
+  <section class="cartao" aria-labelledby="t-ocupacao">
+    <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>
+    <div class="ocupacao-corpo">
+      {% if fr.rosca %}
+      <div class="rosca" role="img" aria-label="{{ fr.descricao_medidor }}">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="arco-fundo" cx="50" cy="50" r="40" pathLength="100"/>
+          {% for arco in fr.rosca %}
+          <circle class="arco {{ arco.classe }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ arco.tamanho }} {{ 100 - arco.tamanho }}" stroke-dashoffset="{{ -arco.inicio }}"/>
+          {% endfor %}
+        </svg>
+        <span class="rosca-centro"><strong>{{ fr.ocupacao }}%</strong><small>ocupação</small>{% if fr.ativas %}<small>{{ fr.contagem.alugada }} de {{ fr.ativas }} ativas</small>{% endif %}</span>
+      </div>
+      {% endif %}
+      <ul class="legenda legenda-detalhada" aria-label="Frota por situação">
+        {% for seg in fr.legenda %}
+        <li>
+          <i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>
+          <span class="legenda-nome">{{ seg.rotulo.split(' ', 1)[1] }}</span>
+          <strong class="mono">{{ seg.quantidade }}</strong>
+          <span class="legenda-pct mono">{% if seg.percentual is number %}{{ seg.percentual }}%{% elif seg.percentual is defined %}—{% else %}{{ ((100 * seg.quantidade / fr.total)|round|int if fr.total else 0) }}%{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if fr.ativas %}<p class="legenda-nota">Ocupação = alugadas ÷ motos ativas ({{ fr.ativas }}). Motos inativas não entram na conta.</p>{% endif %}
+    </div>
+  </section>
+
+  <section class="cartao moto-lista-cards" aria-labelledby="t-veiculos">
+    <div class="cartao-cab"><h2 id="t-veiculos">Resultado por veículo</h2><span class="text-texto-2 text-[13px]">do melhor ao pior · desde o início</span></div>
+    {% if fr.indisponivel %}
+    {{ indisponivel("Resultado por veículo") }}
+    {% elif fr.veiculos %}
+    {% set cols_veic = [("Moto", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")] %}
+    {% macro linha_veiculo(v) %}
+      <tr>
+        <td class="topo">{% if v.placa != "—" %}{{ plac(v.placa) }}{% else %}—{% endif %}</td>
+        <td data-rotulo="Locatário">{{ nome(v.locatario) }}</td>
+        <td class="num mono" data-rotulo="Receita">{{ din(v.receita) }}</td>
+        <td class="num mono" data-rotulo="Despesas">{{ din(v.despesas) }}</td>
+        <td class="num mono" data-rotulo="Resultado">{{ din(v.resultado) }}</td>
+      </tr>
+    {% endmacro %}
+    {# Mostra os 5 melhores; o restante fica recolhido (sem JavaScript). #}
+    {% call tabela(cols_veic, "Receita, despesas e resultado de cada veículo") %}
+      {% for v in fr.veiculos[:5] %}{{ linha_veiculo(v) }}{% endfor %}
+    {% endcall %}
+    {% if fr.veiculos|length > 5 %}
+    <details class="ver-mais">
+      <summary>Mostrar os outros {{ fr.veiculos|length - 5 }} veículos</summary>
+      {% call tabela(cols_veic, "Demais veículos, do melhor ao pior resultado") %}
+        {% for v in fr.veiculos[5:] %}{{ linha_veiculo(v) }}{% endfor %}
+      {% endcall %}
+    </details>
+    {% endif %}
+    {% else %}
+    <p class="text-texto-2">Nenhum veículo cadastrado.</p>
+    {% endif %}
+  </section>
+</div>
+{% endif %}

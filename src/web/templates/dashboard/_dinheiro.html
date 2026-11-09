@@ -1,0 +1,110 @@
+{% from "dashboard/_apoio.html" import din, dinc, nome, indisponivel with context %}
+{% from "componentes/macros.html" import kpi, selo, tabela, icone %}
+{% set f = d.dinheiro %}
+{% set comp = d.compacto %}
+{% set oc = d.ocultar %}
+
+<section aria-labelledby="t-financeiro">
+  <div class="cartao-cab">
+    <h2 id="t-financeiro">Dinheiro · {{ f.mes_rotulo }}</h2>
+    <form class="acoes seletor-mes" method="get" action="/" aria-label="Escolher o mês">
+      <div class="mes-segmentado">
+        {% if d.links.anterior %}<a class="mes-seta" href="/{{ d.links.anterior }}" aria-label="Mês anterior">{{ icone("chevron", "mes-seta-icone anterior") }}</a>{% endif %}
+        <label class="so-leitor" for="seletor-mes">Mês</label>
+        <input class="mes-campo" id="seletor-mes" type="month" name="mes" value="{{ f.mes_texto }}" max="{{ f.mes_maximo }}" data-envia-ao-mudar>
+        {% if d.links.seguinte %}<a class="mes-seta" href="/{{ d.links.seguinte }}" aria-label="Mês seguinte">{{ icone("chevron", "mes-seta-icone seguinte") }}</a>{% else %}<span class="mes-seta desativado" aria-hidden="true">{{ icone("chevron", "mes-seta-icone seguinte") }}</span>{% endif %}
+      </div>
+      <input type="hidden" name="aba" value="dinheiro">
+      {% if comp %}<input type="hidden" name="compacto" value="1">{% endif %}
+      {% if oc %}<input type="hidden" name="ocultar" value="1">{% endif %}
+      {# Sem JavaScript, o botão (ou Enter no campo) continua enviando o mês. #}
+      <button class="so-leitor" type="submit">Ver</button>
+      {% if not f.e_mes_atual %}<a class="btn btn-compacto" href="/{{ d.links.atual }}">Mês atual</a>{% endif %}
+    </form>
+  </div>
+
+  {% if f.indisponivel %}
+  {{ indisponivel("Dinheiro deste mês") }}
+  {% else %}
+  <dl class="grade kpis">
+    {{ kpi("Receita", din(f.atual.receita), "de " ~ dinc(f.previsto) ~ " previstos (" ~ f.percentual_previsto ~ "%)", extra=(("Semana: " ~ din(f.receita_semana)) if f.e_mes_atual else None), progresso=(None if oc else f.percentual_previsto)) }}
+    {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)") }}
+    {{ kpi("Resultado", din(f.atual.resultado), ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0)) }}
+    {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0)) }}
+  </dl>
+  <dl class="grade kpis kpis-5">
+    {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado") }}
+    {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês") }}
+    {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ din(f.atual.aportes)) }}
+    {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos") }}
+    {{ kpi("Dívidas em aberto", din(f.dividas.total), "motos fiado: " ~ din(f.dividas.moto_fiado), href="/dividas") }}
+  </dl>
+
+  {% if not comp %}
+  <div class="grade duas-colunas igualar mt-4">
+    <section class="cartao moto-lista-cards" aria-labelledby="t-evolucao">
+      <div class="cartao-cab"><h2 id="t-evolucao">Últimos 6 meses</h2></div>
+      {% set g = f.grafico %}
+      {% if not oc %}
+      <svg class="grafico-colunas" viewBox="0 0 {{ g.largura }} {{ g.altura }}" role="img" aria-label="Colunas de receita e de despesas por mês; os valores estão na tabela logo abaixo">
+        <line class="base" x1="0" y1="{{ g.y_base }}" x2="{{ g.largura }}" y2="{{ g.y_base }}"/>
+        {% for c in g.colunas %}
+        <rect class="col-receita" x="{{ c.receita.x }}" y="{{ c.receita.y }}" width="{{ c.receita.largura }}" height="{{ c.receita.altura }}"/>
+        <rect class="col-despesa" x="{{ c.despesas.x }}" y="{{ c.despesas.y }}" width="{{ c.despesas.largura }}" height="{{ c.despesas.altura }}"/>
+        <text x="{{ c.x_rotulo }}" y="{{ g.y_rotulo }}">{{ c.rotulo }}</text>
+        {% endfor %}
+      </svg>
+      <ul class="legenda-grafico" aria-hidden="true"><li class="receita"><i></i>Receita</li><li class="despesa"><i></i>Despesas</li></ul>
+      {% endif %}
+      {% call tabela([("Mês", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num"), ("Caixa", "num")], "Receita, despesas, resultado e caixa por mês") %}
+        {% for m in f.evolucao %}
+        <tr{% if m.mes == f.mes %} aria-current="true"{% endif %}>
+          <td class="topo font-medium">{{ m.rotulo }}</td>
+          <td class="num mono" data-rotulo="Receita">{{ din(m.receita) }}</td>
+          <td class="num mono" data-rotulo="Despesas">{{ din(m.despesas) }}</td>
+          <td class="num mono" data-rotulo="Resultado">{{ din(m.resultado) }}</td>
+          <td class="num mono" data-rotulo="Caixa">{{ din(m.caixa) }}</td>
+        </tr>
+        {% endfor %}
+      {% endcall %}
+    </section>
+
+    <div class="dash-lateral">
+      <section class="cartao" aria-labelledby="t-entradas">
+        <div class="cartao-cab"><h2 id="t-entradas">Entradas por conta</h2><span class="text-texto-2 text-[13px]">{{ f.mes_rotulo }}</span></div>
+        {% if f.entradas.linhas %}
+        <ul class="barras-lista">
+          {% for e in f.entradas.linhas %}
+          <li>
+            <span>{{ nome(e.conta) }}</span><strong class="mono">{{ din(e.valor) }}</strong>
+            {% if not oc %}<svg class="barra" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect class="barra-fundo" width="100" height="8"/><rect class="barra-cheia" width="{{ e.proporcao }}" height="8"/></svg>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="barras-total"><span>Total</span><span class="mono">{{ din(f.entradas.total) }}</span></p>
+        {% else %}
+        <p class="text-texto-2">Nenhuma entrada neste mês.</p>
+        {% endif %}
+      </section>
+
+      <section class="cartao" aria-labelledby="t-categorias">
+        <div class="cartao-cab"><h2 id="t-categorias">Despesas por categoria</h2><span class="text-texto-2 text-[13px]">{{ f.mes_rotulo }}</span></div>
+        {% if f.categorias.linhas %}
+        <ul class="barras-lista">
+          {% for c in f.categorias.linhas %}
+          <li>
+            <span>{{ c.rotulo }}</span><strong class="mono">{{ din(c.valor) }}</strong>
+            {% if not oc %}<svg class="barra" viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect class="barra-fundo" width="100" height="8"/><rect class="barra-cheia" width="{{ c.proporcao }}" height="8"/></svg>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="barras-total"><span>Total</span><span class="mono">{{ din(f.categorias.total) }}</span></p>
+        {% else %}
+        <p class="text-texto-2">Nenhuma despesa neste mês.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</section>

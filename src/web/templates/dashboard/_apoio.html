@@ -1,0 +1,14 @@
+{# Apoio das abas do Dashboard. Importe com `with context`: os macros leem `d.ocultar`.
+   Com "ocultar dados pessoais" ligado, valores, nomes e placas saem trocados por pontos já no servidor (não vão nem no HTML). #}
+{% from "componentes/macros.html" import placa %}
+{% macro din(v) -%}{% if d.ocultar %}R$ ••••{% else %}{{ v|moeda }}{% endif %}{%- endmacro %}
+{% macro dinc(v) -%}{% if d.ocultar %}R$ ••••{% else %}{{ v|moeda_compacta }}{% endif %}{%- endmacro %}
+{% macro nome(t) -%}{% if d.ocultar %}••••••{% else %}{{ t }}{% endif %}{%- endmacro %}
+{% macro plac(t) -%}{% if d.ocultar %}{{ placa("•••••••") }}{% else %}{{ placa(t|placa_br) }}{% endif %}{%- endmacro %}
+{# Aviso de aba (ou de bloco) que não carregou: o resto do Dashboard continua funcionando. #}
+{% macro indisponivel(titulo) -%}
+<div class="cartao vazio" role="status">
+  <h2>{{ titulo }} indisponível agora</h2>
+  <p>Não foi possível carregar estes números. O resto do Dashboard continua funcionando. Tente de novo em instantes; se continuar, avise quem cuida do sistema.</p>
+</div>
+{%- endmacro %}

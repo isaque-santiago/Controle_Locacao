@@ -25,12 +25,13 @@ def inicio(
     mes: str | None = Query(default=None),
     compacto: str | None = Query(default=None),
     ocultar: str | None = Query(default=None),
+    aba: str | None = Query(default=None),
     sessao: Sessao = Depends(exigir_sessao),
 ):
     if sessao.papel == PAPEL_LOCATARIO:
         return RedirectResponse("/portal", status_code=303)
     return renderizar(request, "dashboard.html", {"titulo": "Dashboard", "d": dados_painel.carregar(
-            mes=mes, compacto=financeiro.opcao_ligada(compacto), ocultar=financeiro.opcao_ligada(ocultar)
+            mes=mes, compacto=financeiro.opcao_ligada(compacto), ocultar=financeiro.opcao_ligada(ocultar), aba=aba
         )})
 
 
