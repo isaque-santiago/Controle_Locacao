@@ -231,7 +231,7 @@ segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); f
 O envio roda como **Tarefa Agendada do Coolify**, em processo separado do site (nada de laço dentro do app). Ele só passa a enviar
 quando o dono liga a chave em Configurações; até lá a rodada termina na hora, sem mexer em nada.
 
-1. **Banco:** aplique `20261106120000_whatsapp_base.sql` e `20261106130000_whatsapp_leitura.sql` (e rode os roteiros
+1. **Banco:** aplique `20261106120000_whatsapp_base.sql`, `20261106130000_whatsapp_leitura.sql`, `20261106140000_whatsapp_painel.sql` e `20261109120000_portal_eventos_senha.sql` (esta última, antes de publicar o app: ele passa a chamar as RPCs de senha; sem ela só o log registra o erro) (e rode os roteiros
    `supabase/verificar_whatsapp_base.sql` e `verificar_whatsapp_leitura.sql` no projeto de desenvolvimento).
 2. **Usuário de serviço:** em Authentication > Users crie um usuário só para o robô (com *Auto Confirm User* e senha forte) e, no SQL Editor,
    `insert into servico_mensagens (user_id) select id from auth.users where email = 'EMAIL-DO-ROBO';`. Ele não enxerga nenhuma tabela: só executa

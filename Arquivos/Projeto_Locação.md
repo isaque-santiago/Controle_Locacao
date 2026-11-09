@@ -1126,8 +1126,8 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
 - Uso e local da chave Pix do Cora nos textos.
 - Quem paga cada documento da moto (o texto cobre as duas formas por enquanto).
 - Texto final de cada mensagem: revisar com o dono antes da Etapa 3.
-- Aviso de **senha do portal alterada**: o tipo existe nas regras e nos textos, mas a troca de senha não deixa registro no banco, então ainda
-  não há de onde ler o evento. Precisa de uma tabela de eventos do portal (ou gravar a data da última troca), a decidir.
+- Aviso de **senha do portal alterada**: resolvido em 09/11/2026 (migration `20261109120000_portal_eventos_senha.sql`): `portal_eventos` guarda a troca
+  feita pelo locatário ou a redefinição feita pelo dono, e `rpc_whatsapp_dados` a entrega ao envio. O texto vale para as duas origens.
 - Ao sair do modo teste, cancelar o histórico de teste (SQL no guia de deploy, seção 8.1, passo 6).
 - Confirmar a versão da Evolution da instância nova (`EVOLUTION_VERSAO`) conferindo o corpo do envio no Swagger dela.
 - Escolhas da Etapa 2 que o dono ainda deve confirmar (todas mudam em um lugar só):
