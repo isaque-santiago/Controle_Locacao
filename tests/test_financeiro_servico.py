@@ -38,7 +38,7 @@ def _preparar(monkeypatch, config=None, falha_em=None):
     monkeypatch.setattr(financeiro, "repositorio", SimpleNamespace(
         resumo_mensal=resumo, detalhe_mensal=detalhe,
         saldos_dividas=lambda: [{"tipo": "moto_fiado", "saldo_calculado": "300", "saldo_confirmado": None}],
-        parcelas_de_divida=lambda: [{"situacao": "atrasada", "saldo": "1000"}, {"situacao": "a_vencer", "saldo": "1000"}],
+        parcelas_de_divida=lambda: [{"situacao": "atrasada", "saldo": "1000"}, {"situacao": "a_vencer", "saldo": "1000", "vencimento": "2026-11-12"}],
         resultado_por_veiculo=lambda: [{"moto_id": "m1", "placa": "POU7015", "receita_recebida": "100", "custo_manutencao": "25",
                                         "custo_documentos": "0", "custo_despesas": "0"}],
     ))
@@ -53,7 +53,10 @@ def _preparar(monkeypatch, config=None, falha_em=None):
         {"id": "k2", "contrato_id": "c1", "cliente_id": "cl1", "moto_id": "m1", "tipo": "locacao", "saldo": "280", "valor": "280",
          "vencimento": "2026-11-10", "situacao": "aberta"}]))
     monkeypatch.setattr(financeiro, "contratos", SimpleNamespace(listar=lambda: [
-        {"status": "ativo", "periodicidade": "mensal", "valor_periodo": "500", "moto_id": "m1", "cliente_id": "cl1"}]))
+        {"status": "ativo", "periodicidade": "mensal", "valor_periodo": "500", "moto_id": "m1", "cliente_id": "cl1"},
+        {"status": "encerrado", "moto_id": "m2", "cliente_id": "cl1", "data_encerramento": "2026-10-31"}]))
+    monkeypatch.setattr(financeiro, "manutencao", SimpleNamespace(listar_manutencoes=lambda: [
+        {"moto_id": "m3", "status": "aberta", "data_entrada": "2026-11-08", "data_saida": None}]))
     return pedidos
 
 
@@ -80,6 +83,8 @@ def test_painel_hoje_traz_cobranca_frota_caixa_e_atencao(monkeypatch):
     titulos = [i.titulo for i in p["atencao_financeira"]]
     assert titulos == ["Parcela de dívida atrasada", "Despesa a repassar ao locatário", "Entrada do mês sem conta"]
     assert p["faixas"] == {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"} and p["mes_texto"] == "2026-11"
+    # próximos 7 dias: nenhuma cobrança aberta depois de hoje na fixture; a parcela de dívida de 12/11 sai
+    assert p["proximos"]["entra"] == Decimal("0.00") and p["proximos"]["sai"] == Decimal("1000") and p["proximos"]["saldo"] == Decimal("-1000")
 
 
 def test_painel_hoje_usa_o_corte_das_configuracoes_e_cai_em_15_sem_a_coluna(monkeypatch):
@@ -94,7 +99,7 @@ def test_se_so_o_dinheiro_falhar_a_aba_hoje_ainda_mostra_quem_cobrar_e_a_frota(m
     _preparar(monkeypatch, falha_em="detalhe")
     with caplog.at_level("ERROR"):
         p = financeiro.painel_hoje_seguro(HOJE)
-    assert "indisponivel" not in p and p["caixa"] is None and p["atencao_financeira"] == []
+    assert "indisponivel" not in p and p["caixa"] is None and p["atencao_financeira"] == [] and p["proximos"] is None
     assert p["cobranca"]["total_linhas"] == 1 and p["frota"]["total"] == 3 and "caixa do mês" in caplog.text
 
 
@@ -155,6 +160,9 @@ def test_painel_frota_traz_veiculos_e_o_gasto_com_manutencao_da_mesma_fonte_do_d
     p = financeiro.painel_frota(HOJE)
     assert p["veiculos"][0]["placa"] == "POU7015" and p["veiculos"][0]["locatario"] == "JOSE" and p["veiculos"][0]["resultado"] == Decimal("75.00")
     assert p["manutencao_mes"] == Decimal("25.00") and p["mes_rotulo"] == "novembro de 2026"
+    # 3 motos ativas, receita do mês R$ 100 (fixture): 100 ÷ 3; oficina: m3 de 8 a 10/11 = 3 dias de 30 moto-dias
+    assert p["receita_por_moto"] == Decimal("33.33") and p["tempo_parado"] == {"dias": 3, "percentual": Decimal("10.0")}
+    assert [(l["placa"], l["motivo"], l["dias"]) for l in p["paradas"]["linhas"]] == [("OSL8828", "Disponível", 10), ("PMP2B63", "Em manutenção", 2)]
     # a categoria Manutenção da aba Dinheiro mostra o mesmo valor
     manut_dinheiro = next(c["valor"] for c in financeiro.painel_dinheiro(None, HOJE)["categorias"]["linhas"] if c["categoria"] == "manutencao")
     assert manut_dinheiro == p["manutencao_mes"]

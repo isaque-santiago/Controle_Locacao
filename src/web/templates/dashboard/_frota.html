@@ -13,9 +13,32 @@
   {% else %}
   {{ kpi("Gasto com manutenção no mês", dinc(fr.manutencao_mes), "mesmo valor da categoria Manutenção em Dinheiro", extra=(("+ " ~ dinc(ab.total) ~ " lançados em " ~ ab.quantidade ~ (" ordem em andamento" if ab.quantidade == 1 else " ordens em andamento")) if ab.quantidade else None)) }}
   {% endif %}
+  {% if not fr.indisponivel %}
+  {{ kpi("Receita por moto", din(fr.receita_por_moto) if fr.receita_por_moto is not none else "—", "receita do mês ÷ " ~ fr.ativas ~ " motos ativas") }}
+  {{ kpi("Tempo parado no mês", ((fr.tempo_parado.percentual ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de moto na oficina", atencao=(fr.tempo_parado.percentual is not none and fr.tempo_parado.percentual > 5)) }}
+  {% endif %}
 </dl>
 
 {% if not comp %}
+{% if not fr.indisponivel %}
+<section class="cartao moto-lista-cards mt-4" aria-labelledby="t-paradas">
+  <div class="cartao-cab"><h2 id="t-paradas">Motos paradas</h2><span class="text-texto-2 text-[13px]">{% if fr.paradas.total > fr.paradas.linhas|length %}mostrando {{ fr.paradas.linhas|length }} de {{ fr.paradas.total }}, as paradas há mais tempo primeiro{% else %}em manutenção ou disponíveis, há mais tempo primeiro{% endif %}</span></div>
+  {% if fr.paradas.linhas %}
+  {% call tabela([("Moto", ""), ("Situação", ""), ("Desde", ""), ("Parada há", "num")], "Motos em manutenção ou disponíveis, com há quantos dias") %}
+    {% for p in fr.paradas.linhas %}
+    <tr>
+      <td class="topo">{{ plac(p.placa) }}</td>
+      <td data-rotulo="Situação">{{ p.motivo }}</td>
+      <td class="mono" data-rotulo="Desde">{{ (p.desde|data_br) if p.desde else "sem contrato anterior" }}</td>
+      <td class="num mono" data-rotulo="Parada há">{% if p.dias is not none %}{{ p.dias }} {{ "dia" if p.dias == 1 else "dias" }}{% else %}—{% endif %}</td>
+    </tr>
+    {% endfor %}
+  {% endcall %}
+  {% else %}
+  <p class="text-texto-2">Nenhuma moto parada: todas as ativas estão alugadas.</p>
+  {% endif %}
+</section>
+{% endif %}
 <div class="grade duas-colunas igualar mt-4">
   <section class="cartao" aria-labelledby="t-ocupacao">
     <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>

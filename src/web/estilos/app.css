@@ -1065,3 +1065,10 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .ocupacao-numero strong {font: 700 32px/1 var(--fonte-num, inherit);}
 .ocupacao-numero span {color: var(--texto-2); font-size: 13px;}
 .ocupacao-barra .barra-seg {height: 14px;}
+
+/* ---------- Dashboard, Fase 3: resumo em linhas (Próximos 7 dias) ---------- */
+.linhas-resumo {display: grid; margin: 0;}
+.linhas-resumo > div {display: flex; justify-content: space-between; align-items: baseline; gap: var(--e4); padding: var(--e2) 0; border-top: 1px solid var(--linha-sutil);}
+.linhas-resumo > div:first-child {border-top: 0;}
+.linhas-resumo dt {color: var(--texto-2);}
+.linhas-resumo dd {margin: 0; text-align: right;}

@@ -50,6 +50,18 @@
 {% endif %}
 
 <div class="dash-lateral">
+  {% if h.proximos %}
+  {% set px = h.proximos %}
+  <section class="cartao content-start" aria-labelledby="t-proximos">
+    <div class="cartao-cab"><h2 id="t-proximos">Próximos {{ px.dias }} dias</h2></div>
+    <dl class="linhas-resumo">
+      <div><dt>Entra</dt><dd class="mono">{{ din(px.entra) }} <small class="text-texto-2">({{ px.n_entra }} {{ "cobrança" if px.n_entra == 1 else "cobranças" }})</small></dd></div>
+      <div><dt>Sai</dt><dd class="mono">{{ din(px.sai) }} <small class="text-texto-2">({{ px.n_sai }} {{ "parcela de dívida" if px.n_sai == 1 else "parcelas de dívida" }})</small></dd></div>
+      <div><dt>Saldo previsto</dt><dd class="mono font-semibold">{{ din(px.saldo) }}</dd></div>
+    </dl>
+    <p class="text-texto-2 text-[13px] mt-2">As cobranças que vencem hoje não entram aqui; as parcelas de dívida de hoje entram.</p>
+  </section>
+  {% endif %}
   <section class="cartao content-start" aria-labelledby="t-atencao">
     <div class="cartao-cab"><h2 id="t-atencao">Atenção</h2></div>
     {% if h.atencao %}

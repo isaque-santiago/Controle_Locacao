@@ -405,3 +405,64 @@ def test_ocultar_esconde_barras_bullet_e_sparkline_e_mascara_a_legenda_das_faixa
     assert 'class="barra-seg"' not in hoje and 'class="spark"' not in hoje and "R$ 2.100,00" not in hoje and "R$ 290,00" not in hoje
     assert "faixas-legenda" in hoje and "31 dias ou mais" in hoje
     assert 'class="barra-seg"' not in cliente.get("/?aba=frota&ocultar=1").text
+
+
+# ------------------------------------------------------------------------ Fase 3: o que faltava --
+
+
+def test_proximos_dias_mostra_entra_sai_e_saldo_previsto(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    caixa = html.split('id="t-proximos"', 1)[1].split("</section>", 1)[0]
+    assert "Próximos 7 dias" in html and "R$ 1.250,00" in caixa and "(5 cobranças)" in caixa
+    assert "R$ 1.536,23" in caixa and "(1 parcela de dívida)" in caixa and "R$ -286,23" in caixa and "Saldo previsto" in caixa
+
+
+def test_sem_a_leitura_do_dinheiro_nao_ha_card_de_proximos_dias(cliente, monkeypatch):
+    _com(monkeypatch, ajustes={"hoje": {"proximos": None}})
+    entrar(cliente)
+    assert "Próximos 7 dias" not in cliente.get("/").text
+
+
+def test_frota_tem_receita_por_moto_e_tempo_parado(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=frota").text
+    assert "Receita por moto" in html and "R$ 689,10" in html and "receita do mês ÷ 5 motos ativas" in html
+    assert "Tempo parado no mês" in html and "8.0%" in html and "12 dias de moto na oficina" in html
+
+
+def test_tempo_parado_acima_de_5_por_cento_pede_atencao(cliente, monkeypatch):
+    def classe_do_cartao(html):
+        return re.search(r'<div class="(kpi[^"]*)"><dt>Tempo parado no mês', html).group(1)
+
+    entrar(cliente)
+    assert "atencao" in classe_do_cartao(cliente.get("/?aba=frota").text)  # 8,0% na fixture
+    _com(monkeypatch, ajustes={"frota": {"tempo_parado": {"dias": 1, "percentual": Decimal("2.0")}}})
+    assert "atencao" not in classe_do_cartao(cliente.get("/?aba=frota").text)
+
+
+def test_motos_paradas_lista_motivo_desde_e_dias(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=frota").text
+    paradas = html.split('id="t-paradas"', 1)[1].split("</section>", 1)[0]
+    assert "OSL-8828" in paradas and "Em manutenção" in paradas and "28/09/2026" in paradas and "8 dias" in paradas
+    assert "PMP-2B63" in paradas and "Disponível" in paradas and "sem contrato anterior" in paradas
+
+
+def test_sem_motos_paradas_diz_que_todas_estao_alugadas(cliente, monkeypatch):
+    _com(monkeypatch, ajustes={"frota": {"paradas": {"total": 0, "linhas": []}}})
+    entrar(cliente)
+    assert "Nenhuma moto parada" in cliente.get("/?aba=frota").text
+
+
+def test_ocultar_mascara_placas_e_valores_da_fase_3(cliente):
+    entrar(cliente)
+    hoje = cliente.get("/?ocultar=1").text
+    assert "R$ 1.250,00" not in hoje and "R$ -286,23" not in hoje and "Próximos 7 dias" in hoje
+    frota = cliente.get("/?aba=frota&ocultar=1").text
+    assert "OSL-8828" not in frota and "R$ 689,10" not in frota and "Motos paradas" in frota
+
+
+def test_modo_compacto_da_frota_esconde_a_lista_de_paradas(cliente):
+    entrar(cliente)
+    assert "Motos paradas" not in cliente.get("/?aba=frota&compacto=1").text
