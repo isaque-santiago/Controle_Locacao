@@ -980,6 +980,7 @@ class BasePortal:
             ],
         }
         self.registros = []
+        self.trocas_de_senha = []
         self.resultado = {"excedeu": False, "multa_valor": None}
         self.falhar_com = None
 
@@ -997,7 +998,8 @@ def base_portal(monkeypatch):
         return base.resultado
 
     monkeypatch.setattr(dados_portal, "portal_locatario", SimpleNamespace(dados_portal=lambda: base.dados))
-    monkeypatch.setattr(acoes_portal, "portal_locatario", SimpleNamespace(registrar_troca_oleo=registrar))
+    monkeypatch.setattr(acoes_portal, "portal_locatario", SimpleNamespace(
+        registrar_troca_oleo=registrar, registrar_troca_senha=lambda: base.trocas_de_senha.append(True)))
     return base
 
 

@@ -151,6 +151,7 @@ def test_altera_a_senha_com_o_token_da_propria_sessao(cliente, servico, base_por
                             follow_redirects=False)
     assert resposta.status_code == 303 and resposta.headers["location"] == "/portal"
     assert len(servico.senhas) == 1 and servico.senhas[0][1] == SENHA_NOVA and servico.senhas[0][0].startswith("access-")
+    assert base_portal.trocas_de_senha == [True]  # a troca fica registrada para o aviso de WhatsApp
     assert "Senha alterada." in cliente.get("/portal").text
 
 
@@ -168,6 +169,7 @@ def test_senha_invalida_volta_com_o_erro_no_campo_e_sem_repetir_a_senha(cliente,
         assert resposta.status_code == 422 and trecho in resposta.text and 'aria-invalid="true"' in resposta.text
         assert nova not in resposta.text and "<details class=\"cartao\" open>" in resposta.text  # a senha nunca volta na página
     assert servico.senhas == []
+    assert base_portal.trocas_de_senha == []
 
 
 def test_senha_recusada_pelo_supabase_aparece_no_campo(cliente, servico, base_portal):
@@ -177,6 +179,7 @@ def test_senha_recusada_pelo_supabase_aparece_no_campo(cliente, servico, base_po
     servico.senha_recusada = SenhaNaoAlterada("Escolha uma senha diferente da atual.")
     resposta = cliente.post("/portal/senha", data={"csrf_token": _token(cliente), "nova": SENHA_NOVA, "confirmacao": SENHA_NOVA})
     assert resposta.status_code == 422 and "Escolha uma senha diferente da atual." in resposta.text and SENHA_NOVA not in resposta.text
+    assert base_portal.trocas_de_senha == []  # senha recusada: nada a avisar
 
 
 def test_senha_exige_csrf(cliente, servico, base_portal):

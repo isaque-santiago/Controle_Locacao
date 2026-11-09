@@ -118,6 +118,31 @@ class TestAcessoDoLocatario:
             portal_locatario.remover_acesso("cli1")
         assert [c.args for c in funcao.call_args_list] == [("redefinir", "cli1"), ("remover", "cli1")]
 
+    def test_redefinir_registra_o_evento_para_o_aviso_de_whatsapp(self):
+        with (
+            patch(f"{REPO}.gerenciar_acesso", return_value={"ok": True, "email": "e", "senha": "s"}),
+            patch(f"{REPO}.registrar_redefinicao_senha") as registrar,
+        ):
+            assert portal_locatario.redefinir_senha("cli1") == {"email": "e", "senha": "s"}
+        registrar.assert_called_once_with("cli1")
+
+    def test_falha_ao_registrar_a_redefinicao_nao_derruba_a_senha_nova(self, caplog):
+        with (
+            patch(f"{REPO}.gerenciar_acesso", return_value={"ok": True, "email": "e", "senha": "s"}),
+            patch(f"{REPO}.registrar_redefinicao_senha", side_effect=RuntimeError("banco fora")),
+        ):
+            assert portal_locatario.redefinir_senha("cli1")["senha"] == "s"
+        assert "Não foi possível registrar a redefinição" in caplog.text
+
+    def test_remover_e_criar_nao_registram_troca_de_senha(self):
+        with (
+            patch(f"{REPO}.gerenciar_acesso", return_value={"ok": True, "email": "e", "senha": "s"}),
+            patch(f"{REPO}.registrar_redefinicao_senha") as registrar,
+        ):
+            portal_locatario.criar_acesso("cli1")
+            portal_locatario.remover_acesso("cli1")
+        registrar.assert_not_called()
+
     @pytest.mark.parametrize(
         "resposta,mensagem",
         [
@@ -165,3 +190,34 @@ class TestRepositorioAcesso:
             repositorio.gerenciar_acesso("criar", "cli1")
         opcoes = cliente.functions.invoke.call_args.kwargs["invoke_options"]
         assert opcoes["headers"] == {"Authorization": "Bearer jwt-da-requisicao"}
+
+
+class TestRegistroDaTrocaDeSenha:
+    def test_registra_pela_rpc_do_locatario(self):
+        with patch(f"{REPO}.registrar_troca_senha") as registrar:
+            portal_locatario.registrar_troca_senha()
+        registrar.assert_called_once_with()
+
+    def test_falha_vai_para_o_log_e_nao_sobe(self, caplog):
+        with patch(f"{REPO}.registrar_troca_senha", side_effect=RuntimeError("banco fora")):
+            portal_locatario.registrar_troca_senha()  # a senha já foi trocada: não pode levantar
+        assert "Não foi possível registrar a troca de senha" in caplog.text
+
+
+class TestRepositorioEventosDeSenha:
+    def test_troca_do_locatario_chama_a_rpc_sem_parametros(self):
+        from src.repositories import portal_locatario as repositorio
+
+        cliente = MagicMock()
+        with patch.object(repositorio, "get_client", return_value=cliente):
+            repositorio.registrar_troca_senha()
+        cliente.rpc.assert_called_once_with("rpc_portal_registrar_troca_senha")
+        cliente.rpc.return_value.execute.assert_called_once_with()
+
+    def test_redefinicao_do_dono_manda_o_cliente(self):
+        from src.repositories import portal_locatario as repositorio
+
+        cliente = MagicMock()
+        with patch.object(repositorio, "get_client", return_value=cliente):
+            repositorio.registrar_redefinicao_senha("cli1")
+        cliente.rpc.assert_called_once_with("rpc_portal_registrar_redefinicao_senha", {"p_cliente_id": "cli1"})

@@ -52,6 +52,11 @@ def alterar_senha(nova_senha: str) -> None:
     get_client().auth.update_user({"password": nova_senha})
 
 
+def registrar_troca_senha() -> None:
+    """Deixa registrado que o locatário logado trocou a própria senha (alimenta o aviso por WhatsApp)."""
+    get_client().rpc("rpc_portal_registrar_troca_senha").execute()
+
+
 # ---- Somente o dono ----------------------------------------------------------
 
 
@@ -64,6 +69,11 @@ def _jwt_do_dono(cliente) -> str:
     if not autorizacao.startswith("Bearer "):
         raise ValueError("Sessão expirada. Entre novamente.")
     return autorizacao.removeprefix("Bearer ")
+
+
+def registrar_redefinicao_senha(cliente_id: str) -> None:
+    """Deixa registrado que o dono gerou uma senha nova para o locatário (alimenta o aviso por WhatsApp)."""
+    get_client().rpc("rpc_portal_registrar_redefinicao_senha", {"p_cliente_id": cliente_id}).execute()
 
 
 @invalida_cache
