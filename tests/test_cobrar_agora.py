@@ -107,3 +107,30 @@ def test_ordenar_atencao_poe_o_perigo_na_frente_sem_trocar_a_ordem_dentro_do_gru
              ItemAlerta(4, "D", "", "perigo", None)]
     assert [i.titulo for i in c.ordenar_atencao(itens)] == ["B", "D", "A", "C"]
     assert c.ordenar_atencao([]) == []
+
+
+# ---------------------------------------------------------------- faixas de atraso em valor --
+
+
+def test_faixas_de_atraso_agrupam_pelo_maior_atraso_do_contrato_e_somam_o_total_vencido():
+    hoje = date(2026, 11, 10)
+    cobrancas = [
+        _cobranca("a", contrato="a", saldo="100", vencimento="2026-11-04"),   # 6 dias
+        _cobranca("b", contrato="b", saldo="200", vencimento="2026-11-03"),   # 7 dias
+        _cobranca("c", contrato="c", saldo="300", vencimento="2026-10-26"),   # 15 dias
+        _cobranca("d", contrato="d", saldo="400", vencimento="2026-10-10"),   # 31 dias
+        _cobranca("e", contrato="d", saldo="50", vencimento="2026-11-05"),    # mesmo contrato: entra na faixa do maior atraso
+        _cobranca("f", contrato="f", saldo="999", vencimento="2026-11-10", situacao="aberta"),  # só hoje: fica de fora
+    ]
+    r = c.analisar_cobranca(cobrancas, {}, {}, MULTA, DIARIO, hoje)
+    f = {x["classe"]: x for x in r["faixas_atraso"]}
+    assert [(x["rotulo"], x["contratos"], x["valor"]) for x in r["faixas_atraso"]] == [
+        ("1 a 6 dias", 1, Decimal("100")), ("7 a 14 dias", 1, Decimal("200")), ("15 a 30 dias", 1, Decimal("300")), ("31 dias ou mais", 1, Decimal("450"))]
+    assert sum(x["valor"] for x in r["faixas_atraso"]) == r["em_atraso"] == Decimal("1050")
+    assert round(sum(x["tamanho"] for x in r["faixas_atraso"]), 6) == 100.0 and f["f1"]["inicio"] == 0.0
+    assert round(f["f2"]["inicio"], 4) == round(f["f1"]["tamanho"], 4)
+
+
+def test_faixas_sem_nada_vencido_ficam_zeradas_e_a_barra_vazia():
+    r = c.analisar_cobranca([], {}, {}, MULTA, DIARIO, date(2026, 11, 10))
+    assert [x["contratos"] for x in r["faixas_atraso"]] == [0, 0, 0, 0] and all(x["tamanho"] == 0.0 for x in r["faixas_atraso"])

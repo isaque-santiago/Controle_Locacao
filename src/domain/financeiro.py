@@ -10,6 +10,8 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
+from src.domain.painel import descrever_variacao, variacao
+
 
 # A partir de quantos dias de atraso o contrato passa de "em atraso" para "inadimplente".
 DIAS_INADIMPLENTE = 15
@@ -74,6 +76,49 @@ def consolidar_mes(bruto: dict) -> dict:
         "resultado": resultado,
         "caixa": resultado - investimento - parcelas - retiradas + aportes,
         "margem": margem(receita, resultado),
+    }
+
+
+def previsto_ate_hoje(cobrancas: list[dict], mes: date, hoje: date) -> Decimal:
+    """Do previsto do mês, o que já deveria ter entrado: as cobranças que vencem até `hoje` (mês passado: o mês todo)."""
+    prefixo = mes.strftime("%Y-%m")
+    limite = hoje.isoformat()
+    return sum(
+        (Decimal(str(c.get("valor") or 0)) for c in cobrancas
+         if str(c["vencimento"])[:7] == prefixo and str(c["vencimento"])[:10] <= limite
+         and c.get("tipo") != "caucao" and c.get("situacao") != "cancelada"),
+        _ZERO,
+    )
+
+
+def sparkline(valores: list, largura: int = 120, altura: int = 24, margem: int = 3) -> Optional[dict]:
+    """Pontos de uma linha mínima (sem eixos) para ler a tendência; o número exato fica no cartão. Série de valores iguais vira linha reta
+    no meio; com menos de 2 valores devolve None (sem tendência a mostrar). `margem` deixa o ponto final inteiro dentro do quadro."""
+    numeros = [Decimal(str(v)) for v in valores]
+    if len(numeros) < 2:
+        return None
+    minimo, maximo = min(numeros), max(numeros)
+    faixa = maximo - minimo
+    util = altura - 2 * margem
+    pontos = []
+    for i, v in enumerate(numeros):
+        x = round(margem + i * (largura - 2 * margem) / (len(numeros) - 1), 1)
+        y = round(altura / 2 if not faixa else margem + util - float((v - minimo) / faixa) * util, 1)
+        pontos.append((x, y))
+    return {
+        "pontos": " ".join(f"{x},{y}" for x, y in pontos), "ultimo": {"x": pontos[-1][0], "y": pontos[-1][1]},
+        "largura": largura, "altura": altura, "primeiro": numeros[0], "final": numeros[-1], "minimo": minimo, "maximo": maximo,
+    }
+
+
+def variacoes_do_mes(atual: dict, anterior: Optional[dict], nome_do_mes_anterior: str) -> Optional[dict]:
+    """Variação de receita, despesas, resultado e caixa contra o mês anterior, só para mês fechado (mês inteiro contra mês inteiro; no mês
+    corrente a comparação seria injusta). Cor pelo resultado: receita, resultado e caixa subindo é bom; despesa subindo é ruim."""
+    if anterior is None:
+        return None
+    sobe_e_bom = {"receita": True, "despesas": False, "resultado": True, "caixa": True}
+    return {
+        k: descrever_variacao(variacao(atual[k], anterior[k]), nome_do_mes_anterior, bom) for k, bom in sobe_e_bom.items()
     }
 
 
