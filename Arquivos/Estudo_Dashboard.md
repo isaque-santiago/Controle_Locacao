@@ -2,7 +2,7 @@
 
 > Estudo para orientar a reformulação do Dashboard (`/`). Parte 1: o que a literatura e os produtos profissionais ensinam.
 > Parte 2: como isso se aplica a locação de motos. Parte 3: diagnóstico do Dashboard atual, com medições. Parte 4: proposta de
-> redesenho. As decisões do dono sobre a proposta estão na seção 4.9 (05/11/2026). **Fase 1 implementada em 09/11/2026** (abas, cálculo único, listas únicas, menu Opções); Fases 2 e 3 pendentes.
+> redesenho. As decisões do dono sobre a proposta estão na seção 4.9 (05/11/2026). **Fase 1 implementada em 09/11/2026** (abas, cálculo único, listas únicas, menu Opções); **Fase 2 em 09/11/2026** (faixas de atraso, barra da frota, bullet, sparkline e variação do mês fechado); Fase 3 pendente.
 >
 > **Sobre as fontes.** Pesquisei na web em 05/11/2026. As fontes primárias são poucas (Stephen Few, WCAG, Carbon, NN/g, Cleveland e McGill via
 > resumos). O resto é prática de blogs e fornecedores: serve como heurística, não como regra. Onde um número vem de fornecedor

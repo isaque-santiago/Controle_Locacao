@@ -634,8 +634,13 @@ Cada aba lê só o que mostra, e todas leem das mesmas fontes (`src/services/fin
 - O corte entre "em atraso" e "inadimplente" é o parâmetro **Inadimplente a partir de (dias de atraso)** em Configurações (padrão 15, mínimo 1; migration `20261104140000_corte_inadimplencia.sql`, que deve ser aplicada antes de publicar o app novo).
 - Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
 - Os gráficos são SVG sem script e sem estilo inline (a política de conteúdo só aceita CSS do próprio site); a tabela ao lado traz os mesmos números.
+- **Fase 2 (contexto nos cartões, 09/11/2026):** *Em atraso* ganha a barra e a legenda por faixa (1 a 6, 7 a 14, 15 a 30 e 31 dias ou mais, pelo maior atraso do
+  contrato; a soma é o total em atraso); *Frota* troca a rosca por uma barra segmentada (na aba Hoje e na aba Frota); *Caixa do mês* ganha a sparkline dos últimos 6 meses;
+  em Dinheiro, *Receita* mostra um bullet contra o previsto, com a marca do esperado até hoje (as cobranças que já venceram), e os quatro cartões mostram a variação contra o
+  mês anterior **só em mês fechado** (mês inteiro contra mês inteiro, colorida pelo resultado e sempre dita em texto); no mês corrente aparece o mês anterior, sem variação.
+  Tudo é SVG sem script e sem estilo inline, com texto alternativo; com "ocultar dados" nenhum desenho aparece. Regras em `domain/cobrar_agora.py` e `domain/financeiro.py`.
 - **Saiu do Dashboard na Fase 1:** o cálculo antigo (`services/dashboard`), que dava números diferentes dos do financeiro (receita, manutenção, atraso). Com ele saiu a
-  variação mês a mês dos cartões, que volta na Fase 2 com a base certa (mesmo número de dias).
+  variação mês a mês dos cartões, que voltou na Fase 2 com a base certa (só mês fechado).
 
 ## Dívidas (telas)
 
