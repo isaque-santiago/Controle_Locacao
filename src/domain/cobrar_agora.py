@@ -13,12 +13,33 @@ from src.domain.formatadores import formatar_moeda
 from src.domain.painel import TOM_ATENCAO, TOM_PERIGO, ItemAlerta
 
 MAX_COBRAR_AGORA = 8
+# Faixas de atraso do Dashboard (cobrança semanal): menor dia, maior dia (None = sem limite), rótulo, classe de cor.
+FAIXAS_ATRASO = ((1, 6, "1 a 6 dias", "f1"), (7, 14, "7 a 14 dias", "f2"), (15, 30, "15 a 30 dias", "f3"), (31, None, "31 dias ou mais", "f4"))
 FAIXA_HOJE = "hoje"
 _ZERO = Decimal("0.00")
 
 
 def _faixa(dias: int, corte: int) -> str:
     return FAIXA_HOJE if dias == 0 else faixa_de_atraso(dias, corte)
+
+
+def faixas_de_atraso_em_valor(linhas: list[dict]) -> list[dict]:
+    """O que está vencido por faixa de atraso: contratos e valor (o débito, sem encargos), mais `inicio` e `tamanho` (0 a 100) para a barra.
+    Cada contrato cai numa faixa só, pelo maior atraso dele; quem só vence hoje (0 dia) fica de fora. A soma dos valores é o total em atraso."""
+    faixas = [{"rotulo": r, "classe": c, "contratos": 0, "valor": _ZERO} for _, _, r, c in FAIXAS_ATRASO]
+    for l in linhas:
+        for f, (minimo, maximo, _, _) in zip(faixas, FAIXAS_ATRASO):
+            if l["dias_atraso"] >= minimo and (maximo is None or l["dias_atraso"] <= maximo):
+                f["contratos"] += 1
+                f["valor"] += l["debito"]
+                break
+    total = sum((f["valor"] for f in faixas), _ZERO)
+    inicio = 0.0
+    for f in faixas:
+        f["tamanho"] = float(100 * f["valor"] / total) if total else 0.0
+        f["inicio"] = inicio
+        inicio += f["tamanho"]
+    return faixas
 
 
 def analisar_cobranca(
@@ -88,6 +109,7 @@ def analisar_cobranca(
         "contratos_em_atraso": sum(1 for l in todas if l["faixa"] == "em_atraso"),
         "contratos_inadimplentes": sum(1 for l in todas if l["faixa"] == "inadimplente"),
         "contratos_so_hoje": sum(1 for l in todas if l["faixa"] == FAIXA_HOJE),
+        "faixas_atraso": faixas_de_atraso_em_valor(todas),
     }
 
 

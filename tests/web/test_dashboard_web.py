@@ -198,7 +198,7 @@ def test_dinheiro_mostra_totais_do_mes_em_reais_e_a_receita_contra_o_previsto(cl
     html = cliente.get("/?aba=dinheiro").text
     assert "Dinheiro · outubro de 2026" in html
     assert "R$ 3.445,50" in html and "R$ 5.161,20" in html and "R$ -1.715,70" in html and "-50% de margem" in html
-    assert "de R$ 15.650 previstos (22%)" in html and 'role="progressbar"' in html and "Semana: R$ 3.245,50" in html
+    assert "de R$ 15.650 previstos (22%) · esperado até hoje: 57%" in html and "Semana: R$ 3.245,50" in html
     assert "R$ 27.155,00" in html and "R$ 32.014,34" in html and 'href="/dividas"' in html
     assert "R$ -3.451,93" in html and "R$ 1.056,23" in html
 
@@ -262,12 +262,12 @@ def test_frota_mostra_ocupacao_manutencao_e_veiculos(cliente):
     assert "Resultado por veículo" in html and "POU-7015" in html and "R$ 7.300,00" in html and "R$ -120,00" in html
 
 
-def test_frota_rosca_tem_texto_alternativo_um_arco_por_situacao_e_a_base_da_conta(cliente):
+def test_frota_tem_barra_segmentada_com_texto_alternativo_um_trecho_por_situacao_e_a_base_da_conta(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
-    rosca = re.search(r'<div class="rosca" role="img" aria-label="([^"]+)">(.*?)</div>', html, re.S)
-    assert rosca and "3 alugadas" in rosca.group(1)
-    assert len(re.findall(r'<circle class="arco \w+"', rosca.group(2))) == 3 and "60%" in rosca.group(2)
+    barra = re.search(r'<svg class="barra-seg" [^>]*aria-label="([^"]+)">(.*?)</svg>', html, re.S)
+    assert barra and "3 alugadas" in barra.group(1) and 'class="rosca"' not in html
+    assert re.findall(r'class="seg (\w+)"', barra.group(2)) == ["cheio", "oficina", "livre"] and "60%" in html and "style=" not in barra.group(0)
     assert "Ocupação = alugadas ÷ motos ativas (5). Motos inativas não entram na conta." in html
 
 
@@ -316,7 +316,7 @@ def test_ocultar_dados_pessoais_troca_valores_nomes_e_placas_em_todas_as_abas(cl
 def test_ocultar_esconde_os_graficos_e_as_barras_cujas_proporcoes_revelariam_valores(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=dinheiro&ocultar=1").text
-    assert "grafico-colunas" not in html and 'class="barra"' not in html and 'role="progressbar"' not in html
+    assert "grafico-colunas" not in html and 'class="barra"' not in html and 'class="bullet"' not in html
     assert 'type="hidden" name="ocultar" value="1"' in html and "Mostrar dados pessoais" in html
 
 
@@ -333,3 +333,75 @@ def test_modo_compacto_das_outras_abas_mostra_so_os_indicadores(cliente):
     assert "Receita mensal estimada" in dinheiro and "Últimos 6 meses" not in dinheiro and "Entradas por conta" not in dinheiro
     frota = cliente.get("/?aba=frota&compacto=1").text
     assert "Gasto com manutenção no mês" in frota and "Ocupação da frota" not in frota and "Resultado por veículo" not in frota
+
+
+# ------------------------------------------------------------------------ Fase 2: contexto nos cartões --
+
+
+def test_em_atraso_mostra_a_barra_e_a_legenda_das_faixas(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    barra = re.search(r'<svg class="barra-seg" [^>]*aria-label="(Atraso por faixa[^"]+)">(.*?)</svg>', html, re.S)
+    assert barra and "7 a 14 dias" in barra.group(1) and re.findall(r'class="seg (f\d)"', barra.group(2)) == ["f2", "f4"]
+    legenda = html.split('class="faixas-legenda"', 1)[1].split("</ul>", 1)[0]
+    for texto in ("1 a 6 dias", "7 a 14 dias", "15 a 30 dias", "31 dias ou mais", "R$ 2.100,00", "R$ 290,00", "(1)", "(0)"):
+        assert texto in legenda
+
+
+def test_sem_nada_em_atraso_nao_desenha_a_barra(cliente, monkeypatch):
+    bloco = painel_falso()["hoje"]["cobranca"]
+    _com(monkeypatch, ajustes={"hoje": {"cobranca": {**bloco, "em_atraso": Decimal("0"), "linhas": [], "total_linhas": 0}}})
+    entrar(cliente)
+    assert "faixas-legenda" not in cliente.get("/").text
+
+
+def test_frota_na_aba_hoje_tem_barra_e_o_caixa_tem_sparkline_com_texto_alternativo(cliente):
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert 'aria-label="Frota de 5 motos: 3 alugadas, 1 disponíveis, 1 em manutenção, 0 inativas"' in html
+    spark = re.search(r'<svg class="spark" [^>]*aria-label="([^"]+)">(.*?)</svg>', html, re.S)
+    assert spark and "Caixa dos últimos 6 meses, de R$ -450,00 a R$ -3.451,93" in spark.group(1)
+    assert 'points="3.0,21.0 60.0,12.0 117.0,3.0"' in spark.group(2) and "style=" not in spark.group(0)
+
+
+def test_caixa_sem_serie_nao_desenha_sparkline(cliente, monkeypatch):
+    caixa = painel_falso()["hoje"]["caixa"]
+    _com(monkeypatch, ajustes={"hoje": {"caixa": {**caixa, "serie": None}}})
+    entrar(cliente)
+    assert 'class="spark"' not in cliente.get("/").text
+
+
+def test_receita_tem_bullet_com_a_marca_do_esperado_ate_hoje(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=dinheiro").text
+    bullet = re.search(r'<svg class="bullet" [^>]*aria-label="([^"]+)">(.*?)</svg>', html, re.S)
+    assert bullet and "22% do previsto; esperado até hoje: 57%" in bullet.group(1)
+    assert 'class="bullet-valor" y="4" width="22"' in bullet.group(2) and 'class="bullet-marca" x1="57"' in bullet.group(2)
+
+
+def test_mes_corrente_mostra_o_mes_anterior_e_nao_uma_variacao_injusta(cliente, monkeypatch):
+    anterior = {**painel_falso("dinheiro")["dinheiro"]["atual"], "receita": Decimal("5500.40")}
+    _com(monkeypatch, ajustes={"dinheiro": {"anterior": anterior}})
+    entrar(cliente)
+    html = cliente.get("/?aba=dinheiro").text
+    assert "mês anterior: R$ 5.500,40" in html and "kpi-variacao" not in html
+
+
+def test_mes_fechado_mostra_variacao_colorida_pelo_resultado_em_texto(cliente, monkeypatch):
+    v = {"receita": {"seta": "↑", "tom": "bom", "texto": "R$ 200 a mais (+20%) que no mesmo período de setembro."},
+         "despesas": {"seta": "↑", "tom": "ruim", "texto": "R$ 100 a mais (+25%) que no mesmo período de setembro."},
+         "resultado": None, "caixa": {"seta": "↓", "tom": "ruim", "texto": "R$ 150 a menos (−150%) que no mesmo período de setembro."}}
+    _com(monkeypatch, ajustes={"dinheiro": {"variacoes": v, "e_mes_atual": False, "mes_seguinte": "2026-11"}})
+    entrar(cliente)
+    html = cliente.get("/?aba=dinheiro").text
+    assert 'class="kpi-variacao bom"' in html and 'class="kpi-variacao ruim"' in html
+    assert "R$ 200 a mais (+20%)" in html and "R$ 150 a menos" in html
+    assert "R$ 200 a mais" not in cliente.get("/?aba=dinheiro&ocultar=1").text
+
+
+def test_ocultar_esconde_barras_bullet_e_sparkline_e_mascara_a_legenda_das_faixas(cliente):
+    entrar(cliente)
+    hoje = cliente.get("/?ocultar=1").text
+    assert 'class="barra-seg"' not in hoje and 'class="spark"' not in hoje and "R$ 2.100,00" not in hoje and "R$ 290,00" not in hoje
+    assert "faixas-legenda" in hoje and "31 dias ou mais" in hoje
+    assert 'class="barra-seg"' not in cliente.get("/?aba=frota&ocultar=1").text

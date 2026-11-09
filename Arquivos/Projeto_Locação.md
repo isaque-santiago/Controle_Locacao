@@ -1160,3 +1160,9 @@ Decisões e estudo em [Estudo_Dashboard.md](Estudo_Dashboard.md) (seção 4.9). 
   contra previsto (Fase 2); próximos 7 dias, motos paradas, receita por moto, tempo parado (Fase 3). Abaixo de 1500 px a aba Hoje mostra *Atenção* abaixo de *Cobrar agora*
   (o layout em duas colunas já existia e só começa em 1500 px, porque a tabela tem seis colunas).
 
+### 21.1 Fase 2 (09/11/2026): contexto nos cartões
+
+Faixas de atraso em valor (`faixas_de_atraso_em_valor`), barra segmentada da frota (no lugar da rosca), bullet da receita contra o previsto com a marca do esperado até hoje
+(`previsto_ate_hoje`), sparkline do caixa dos últimos 6 meses (`sparkline`) e variação do mês fechado (`variacoes_do_mes`; no mês corrente só aparece o mês anterior, porque
+as RPCs devolvem totais do mês e comparar mês parcial com mês inteiro seria injusto). Sem migration nova. Fica para a Fase 3: próximos 7 dias, motos paradas, receita por moto, tempo parado.
+

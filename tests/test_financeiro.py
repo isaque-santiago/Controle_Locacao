@@ -115,3 +115,39 @@ def test_links_fora_da_aba_dinheiro_nao_tem_navegacao_de_mes():
     l = financeiro.links_do_painel(None, None, None, False, True, "hoje")
     assert l["anterior"] is None and l["seguinte"] is None and l["compacto"] == "?compacto=1&ocultar=1" and l["ocultar"] == ""
     assert l["abas"]["hoje"] == "?ocultar=1"
+
+
+def test_previsto_ate_hoje_so_conta_o_que_ja_venceu_no_mes():
+    cobrancas = [
+        {"vencimento": "2026-11-03", "valor": "280", "tipo": "locacao", "situacao": "paga"},
+        {"vencimento": "2026-11-10", "valor": "100", "tipo": "locacao", "situacao": "aberta"},
+        {"vencimento": "2026-11-11", "valor": "50", "tipo": "locacao", "situacao": "aberta"},
+        {"vencimento": "2026-11-05", "valor": "500", "tipo": "caucao", "situacao": "paga"},
+        {"vencimento": "2026-11-06", "valor": "999", "tipo": "locacao", "situacao": "cancelada"},
+        {"vencimento": "2026-10-30", "valor": "7", "tipo": "locacao", "situacao": "atrasada"},
+    ]
+    assert financeiro.previsto_ate_hoje(cobrancas, date(2026, 11, 1), date(2026, 11, 10)) == Decimal("380")
+    assert financeiro.previsto_ate_hoje(cobrancas, date(2026, 11, 1), date(2026, 11, 30)) == Decimal("430")
+    assert financeiro.previsto_ate_hoje(cobrancas, date(2026, 10, 1), date(2026, 11, 10)) == Decimal("7")  # mês passado: todo
+
+
+def test_sparkline_normaliza_a_serie_e_deixa_o_ponto_final_dentro_do_quadro():
+    s = financeiro.sparkline([Decimal("0"), Decimal("50"), Decimal("100")], largura=120, altura=24, margem=3)
+    assert s["pontos"] == "3.0,21.0 60.0,12.0 117.0,3.0" and s["ultimo"] == {"x": 117.0, "y": 3.0}
+    assert (s["primeiro"], s["final"], s["minimo"], s["maximo"]) == (0, 100, 0, 100)
+    queda = financeiro.sparkline([100, 0])
+    assert queda["pontos"] == "3.0,3.0 117.0,21.0"
+
+
+def test_sparkline_de_serie_constante_e_reta_no_meio_e_curta_demais_nao_tem_tendencia():
+    assert financeiro.sparkline([5, 5, 5])["pontos"] == "3.0,12.0 60.0,12.0 117.0,12.0"
+    assert financeiro.sparkline([5]) is None and financeiro.sparkline([]) is None
+
+
+def test_variacoes_do_mes_cor_pelo_resultado_e_so_com_mes_anterior():
+    atual = {"receita": Decimal("1200"), "despesas": Decimal("500"), "resultado": Decimal("700"), "caixa": Decimal("-50")}
+    anterior = {"receita": Decimal("1000"), "despesas": Decimal("400"), "resultado": Decimal("600"), "caixa": Decimal("100")}
+    v = financeiro.variacoes_do_mes(atual, anterior, "setembro")
+    assert v["receita"]["tom"] == "bom" and v["receita"]["seta"] == "↑" and "R$ 200 a mais (+20%) que no mesmo período de setembro" in v["receita"]["texto"]
+    assert v["despesas"]["tom"] == "ruim" and v["resultado"]["tom"] == "bom" and v["caixa"]["tom"] == "ruim" and v["caixa"]["seta"] == "↓"
+    assert financeiro.variacoes_do_mes(atual, None, "setembro") is None

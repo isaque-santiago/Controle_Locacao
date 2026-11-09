@@ -69,10 +69,11 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
     )
     contagem = painel.contar_por_status(frota)
     try:
-        atual = financeiro.consolidar_mes(repositorio.resumo_mensal(mes, 1)[0])
+        meses = [financeiro.consolidar_mes(m) for m in repositorio.resumo_mensal(mes, MESES_NA_EVOLUCAO)]
+        atual = meses[-1]
         detalhe = repositorio.detalhe_mensal(mes)
         entradas = financeiro.entradas_por_conta(detalhe["entradas_por_conta"])
-        caixa = {"valor": atual["caixa"], "investimento": atual["investimento"]}
+        caixa = {"valor": atual["caixa"], "investimento": atual["investimento"], "serie": financeiro.sparkline([m["caixa"] for m in meses])}
         pendencias = atencao_financeira(
             parcelas_de_divida_atrasadas(repositorio.parcelas_de_divida()),
             Decimal(str(detalhe["a_repassar"])),
@@ -91,6 +92,8 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
             "contagem": contagem,
             "ativas": painel.total_ativas(contagem),
             "ocupacao": painel.percentual_ocupacao(contagem),
+            "segmentos": painel.segmentos_rosca(contagem),
+            "descricao": painel.descricao_medidor(contagem),
         },
         "caixa": caixa,
         "atencao_financeira": pendencias,
@@ -115,7 +118,9 @@ def painel_dinheiro(mes_texto: Optional[str] = None, hoje: Optional[date] = None
     meses = [financeiro.consolidar_mes(m) for m in repositorio.resumo_mensal(mes, MESES_NA_EVOLUCAO)]
     atual = meses[-1]
     detalhe = repositorio.detalhe_mensal(mes)
-    previsto = financeiro.previsto_do_mes(cobrancas.listar(), mes)
+    lista_cobrancas = cobrancas.listar()
+    previsto = financeiro.previsto_do_mes(lista_cobrancas, mes)
+    esperado = financeiro.previsto_ate_hoje(lista_cobrancas, mes, hoje)
     return {
         **_navegacao(mes, hoje),
         "atual": atual,
@@ -123,6 +128,11 @@ def painel_dinheiro(mes_texto: Optional[str] = None, hoje: Optional[date] = None
         "evolucao": [{**m, "rotulo": financeiro.rotulo_mes_curto(m["mes"])} for m in meses],
         "previsto": previsto,
         "percentual_previsto": painel.percentual_recebido(atual["receita"], previsto),
+        # Onde a receita deveria estar hoje (as cobranças que já venceram), para o bullet: marca = esperado ÷ previsto do mês
+        "esperado_ate_hoje": esperado,
+        "percentual_esperado": painel.percentual_recebido(esperado, previsto),
+        "variacoes": None if mes == financeiro.primeiro_dia(hoje) else financeiro.variacoes_do_mes(
+            atual, meses[-2] if len(meses) > 1 else None, painel.nome_do_mes(financeiro.somar_meses(mes, -1))),
         "dividas": financeiro.saldo_das_dividas(repositorio.saldos_dividas()),
         "receita_estimada": financeiro.receita_mensal_estimada(contratos.listar()),
         "receita_semana": Decimal(str(detalhe["receita_semana"])),

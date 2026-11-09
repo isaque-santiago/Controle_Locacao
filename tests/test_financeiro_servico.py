@@ -65,14 +65,18 @@ def test_painel_hoje_traz_cobranca_frota_caixa_e_atencao(monkeypatch):
 
     p = financeiro.painel_hoje(HOJE)
 
-    assert pedidos["resumo"] == [(date(2026, 11, 1), 1)] and pedidos["detalhe"] == [date(2026, 11, 1)]
+    assert pedidos["resumo"] == [(date(2026, 11, 1), 6)] and pedidos["detalhe"] == [date(2026, 11, 1)]
     cobranca = p["cobranca"]
     # 9 dias de atraso na k1 (15 + 7 x 9 = 78) e a multa do dia na k2 (15)
     assert cobranca["total_linhas"] == 1 and cobranca["linhas"][0]["cliente"] == "JOSE" and cobranca["linhas"][0]["placa"] == "POU7015"
     assert cobranca["em_atraso"] == Decimal("100") and cobranca["vencem_hoje"] == Decimal("280") and cobranca["a_cobrar"] == Decimal("380")
     assert cobranca["encargos"] == Decimal("93.00") and cobranca["linhas"][0]["cobranca_id"] == "k1"
-    assert p["frota"] == {"total": 3, "contagem": {"alugada": 1, "disponivel": 1, "manutencao": 1, "inativa": 0}, "ativas": 3, "ocupacao": 33}
-    assert p["caixa"] == {"valor": Decimal("25.00"), "investimento": Decimal("20.00")}  # 100 - 40 - 20 - 10 - 5
+    assert {k: p["frota"][k] for k in ("total", "contagem", "ativas", "ocupacao")} == {
+        "total": 3, "contagem": {"alugada": 1, "disponivel": 1, "manutencao": 1, "inativa": 0}, "ativas": 3, "ocupacao": 33}
+    assert [s["classe"] for s in p["frota"]["segmentos"]] == ["cheio", "oficina", "livre"] and "3 motos" in p["frota"]["descricao"]
+    assert p["caixa"]["valor"] == Decimal("25.00") and p["caixa"]["investimento"] == Decimal("20.00")  # 100 - 40 - 20 - 10 - 5
+    assert p["caixa"]["serie"]["final"] == Decimal("25.00") and len(p["caixa"]["serie"]["pontos"].split()) == 6
+    assert [f["contratos"] for f in cobranca["faixas_atraso"]] == [0, 1, 0, 0]  # 9 dias de atraso: faixa de 7 a 14
     titulos = [i.titulo for i in p["atencao_financeira"]]
     assert titulos == ["Parcela de dívida atrasada", "Despesa a repassar ao locatário", "Entrada do mês sem conta"]
     assert p["faixas"] == {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"} and p["mes_texto"] == "2026-11"
@@ -118,6 +122,7 @@ def test_painel_dinheiro_do_mes_atual(monkeypatch):
     assert len(p["grafico"]["colunas"]) == 6
     # previsto: as cobranças que vencem em novembro (100 + 280); a receita do mês é a mesma da aba Hoje (R$ 100)
     assert p["previsto"] == Decimal("380") and p["percentual_previsto"] == 26
+    assert p["esperado_ate_hoje"] == Decimal("380") and p["percentual_esperado"] == 100 and p["variacoes"] is None  # mês corrente: sem variação
     assert p["dividas"]["total"] == Decimal("300") and p["receita_estimada"] == Decimal("500.00") and p["receita_semana"] == Decimal("70")
     assert [l["conta"] for l in p["entradas"]["linhas"]] == ["Quezia", "Sem conta informada"]
     assert p["categorias"]["linhas"][0]["rotulo"] == "Investimento em veículo"
@@ -128,6 +133,7 @@ def test_painel_dinheiro_de_mes_passado_oferece_o_seguinte_e_mes_invalido_volta_
     p = financeiro.painel_dinheiro("2026-08", HOJE)
     assert pedidos["resumo"] == [(date(2026, 8, 1), 6)] and not p["e_mes_atual"]
     assert p["mes_seguinte"] == "2026-09" and p["mes_anterior"] == "2026-07"
+    assert p["variacoes"]["receita"]["tom"] == "neutro" and "Igual" in p["variacoes"]["receita"]["texto"]  # mês fechado: compara com o anterior
     assert financeiro.painel_dinheiro("2030-01", HOJE)["mes_texto"] == "2026-11"
     assert financeiro.painel_dinheiro("abc", HOJE)["mes_texto"] == "2026-11"
 
