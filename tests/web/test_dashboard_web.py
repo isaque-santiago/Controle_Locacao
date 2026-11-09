@@ -218,6 +218,7 @@ def test_dinheiro_tem_evolucao_com_texto_alternativo_entradas_e_categorias(clien
     assert len(re.findall(r'class="col-receita"', grafico.group(2))) == 2 and "set./26" in grafico.group(2)
     assert "Entradas por conta" in html and "Sem conta informada" in html and "R$ 2.180,00" in html
     assert "Despesas por categoria" in html and "Manutenção" in html and "R$ 3.735,00" in html and "R$ 3.874,00" in html
+    assert 'class="dash-lateral dash-lateral--coluna"' in html  # entradas e categorias empilhadas ao lado do gráfico, não espremidas lado a lado
 
 
 def test_seletor_de_mes_so_existe_na_aba_dinheiro_e_leva_a_aba_junto(cliente):
