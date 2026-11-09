@@ -2,7 +2,7 @@
 
 > Estudo para orientar a reformulação do Dashboard (`/`). Parte 1: o que a literatura e os produtos profissionais ensinam.
 > Parte 2: como isso se aplica a locação de motos. Parte 3: diagnóstico do Dashboard atual, com medições. Parte 4: proposta de
-> redesenho. **Nada foi implementado ainda.** As decisões do dono sobre a proposta estão na seção 4.9 (05/11/2026); nenhuma fase foi iniciada.
+> redesenho. As decisões do dono sobre a proposta estão na seção 4.9 (05/11/2026). **Fase 1 implementada em 09/11/2026** (abas, cálculo único, listas únicas, menu Opções); Fases 2 e 3 pendentes.
 >
 > **Sobre as fontes.** Pesquisei na web em 05/11/2026. As fontes primárias são poucas (Stephen Few, WCAG, Carbon, NN/g, Cleveland e McGill via
 > resumos). O resto é prática de blogs e fornecedores: serve como heurística, não como regra. Onde um número vem de fornecedor
@@ -310,7 +310,7 @@ dependência de JavaScript.
 | 5 | Ação na lista Cobrar agora | **"Pagar" e "WhatsApp"** (a mensagem de cobrança já existe em Cobranças) |
 | 6 | Cálculo antigo no Dashboard | **Pode sair**: o Dashboard passa a ler só das RPCs do financeiro; os relatórios por moto seguem como estão |
 
-**Combinado:** só documentar as decisões por enquanto. **Nenhuma fase (4.8) foi iniciada**; a Fase 1 começa quando o dono mandar.
+**Combinado:** documentar as decisões e só então começar. **Fase 1 feita em 09/11/2026** (ver a seção 21 do `Projeto_Locação.md`); as Fases 2 e 3 não foram iniciadas.
 
 **O que cada decisão muda no projeto da Fase 1:**
 - **Abas** (1): cada aba tem URL própria (`/?aba=hoje|dinheiro|frota`), funciona sem JavaScript e mantém `mes`, `compacto` e `ocultar` na navegação; o seletor de mês vive só na aba Dinheiro.
