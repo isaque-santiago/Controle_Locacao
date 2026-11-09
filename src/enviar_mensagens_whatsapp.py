@@ -27,7 +27,8 @@ log = logging.getLogger("locacao.whatsapp")
 
 def _cliente_evolution() -> ClienteEvolution:
     dados = get_evolution()
-    return ClienteEvolution(dados["url"], dados["apikey"], dados["instancia"], dados["versao"])
+    return ClienteEvolution(dados["url"], dados["apikey"], dados["instancia"], dados["versao"],
+                            timeout=whatsapp.TIMEOUT_CHAMADA_SEGUNDOS)
 
 
 def principal() -> int:

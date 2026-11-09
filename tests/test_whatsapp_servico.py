@@ -263,3 +263,67 @@ def test_falha_ao_gravar_o_estado_nao_derruba_a_rodada(instalar):
     repo.falha_ao_registrar_rodada = True
     resumo = _executar(EvolutionFalsa())
     assert resumo["envio"]["enviadas"] == 1
+
+
+# ----------------------------------------------------- reserva e orçamento de tempo --
+
+
+def test_lote_pequeno_cabe_na_reserva_mesmo_no_pior_caso():
+    """O pior caso de uma rodada (todas as pausas no máximo e as duas chamadas de cada mensagem estourando o tempo) tem de
+    caber na reserva do banco, senão a rodada seguinte poderia pegar as mesmas mensagens."""
+    pior = (whatsapp.LOTE - 1) * whatsapp.PAUSA_MAXIMA + whatsapp.LOTE * whatsapp.PIOR_CASO_POR_MENSAGEM
+    assert pior <= whatsapp.RESERVA_SEGUNDOS - whatsapp.MARGEM_SEGUNDOS
+
+
+def test_reserva_do_codigo_e_a_mesma_do_banco():
+    import re
+    from pathlib import Path
+
+    sql = (Path(__file__).resolve().parents[1] / "supabase" / "migrations" / "20261106120000_whatsapp_base.sql").read_text(encoding="utf-8")
+    minutos = int(re.search(r"reservada_ate = now\(\) \+ interval '(\d+) minutes'", sql).group(1))
+    assert minutos * 60 == whatsapp.RESERVA_SEGUNDOS
+
+
+def test_reserva_so_o_tamanho_do_lote(instalar):
+    pedidos = []
+
+    class Repo(RepoFalso):
+        def reservar(self, limite):
+            pedidos.append(limite)
+            return super().reservar(limite)
+
+    instalar(Repo(_bruto(), []))
+    _executar(EvolutionFalsa())
+    assert pedidos == [whatsapp.LOTE] and whatsapp.LOTE <= 5
+
+
+def test_para_de_enviar_quando_o_tempo_da_reserva_acabaria(instalar):
+    """Evolution lenta: com o relógio andando mais que o previsto, a rodada para antes de estourar a reserva."""
+    repo = instalar(RepoFalso(_bruto(), [_pendente(f"m{i}") for i in range(5)]))
+    evolution = EvolutionFalsa()
+    relogio_atual = [0.0]
+
+    def dormir(segundos):
+        relogio_atual[0] += segundos + 200  # cada pausa "demora" 200 s a mais (simula tudo lento)
+
+    resumo = whatsapp.enviar_pendentes(
+        evolution, {"modo_teste": False, "numero_teste": None}, "open",
+        dormir=dormir, sorteio=lambda a, b: 30, relogio=lambda: relogio_atual[0])
+    assert resumo["parou_por"] == "tempo_esgotado"
+    assert 1 <= resumo["enviadas"] < 5 and len(evolution.enviados) == resumo["enviadas"]
+    assert len(repo.resultados) == resumo["enviadas"]  # as não enviadas nem foram registradas: voltam à fila sozinhas
+
+
+def test_sem_lentidao_o_orcamento_nao_interfere(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente(f"m{i}") for i in range(5)]))
+    resumo = whatsapp.enviar_pendentes(EvolutionFalsa(), {"modo_teste": False, "numero_teste": None}, "open",
+                                       dormir=lambda s: None, sorteio=lambda a, b: 30, relogio=lambda: 0.0)
+    assert resumo["enviadas"] == 5 and resumo["parou_por"] is None and len(repo.resultados) == 5
+
+
+def test_limite_de_requisicoes_para_a_rodada_e_devolve_a_mensagem_a_fila(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1", "5511900000001"), _pendente("m2")]))
+    evolution = EvolutionFalsa(falhas={"5511900000001": EvolutionIndisponivel("A Evolution pediu para tentar depois (429).")})
+    resumo = _executar(evolution)
+    assert resumo["envio"]["parou_por"] == "evolution_indisponivel" and resumo["envio"]["enviadas"] == 0
+    assert [r[:2] for r in repo.resultados] == [("m1", "falhou")]  # volta para a fila com espera; m2 nem foi tentada

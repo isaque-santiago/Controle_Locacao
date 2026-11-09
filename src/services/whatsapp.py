@@ -30,8 +30,16 @@ from src.services.evolution import (
 
 log = logging.getLogger("locacao.whatsapp")
 
-LOTE = 8                          # mensagens reservadas por execução (cabe na reserva de 10 min com as pausas)
+# Uma rodada reserva um lote (a reserva dura RESERVA_SEGUNDOS no banco, em `rpc_whatsapp_reservar`) e o envia com pausas.
+# Se a rodada passasse do tempo da reserva, a rodada seguinte poderia pegar as mesmas mensagens e enviá-las de novo.
+# Por isso o lote é pequeno e há um orçamento de tempo: antes de cada mensagem, se o pior caso dela não couber na reserva,
+# a rodada para (o que não foi enviado volta para a fila quando a reserva vence).
+LOTE = 5                          # mensagens reservadas por execução
 PAUSA_MINIMA, PAUSA_MAXIMA = 20, 60   # segundos entre uma mensagem e outra
+TIMEOUT_CHAMADA_SEGUNDOS = 20     # tempo máximo de cada chamada à Evolution (conferir o número e enviar: 2 por mensagem)
+RESERVA_SEGUNDOS = 600            # o mesmo `interval '10 minutes'` de rpc_whatsapp_reservar
+MARGEM_SEGUNDOS = 30
+PIOR_CASO_POR_MENSAGEM = 2 * TIMEOUT_CHAMADA_SEGUNDOS
 
 
 def enfileirar_devidos(agora: datetime, opcoes: OpcoesTexto, dados: dict | None = None) -> dict:
@@ -62,7 +70,8 @@ def estado_da_instancia(evolution) -> str:
         return "indisponivel"
 
 
-def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, sorteio=random.uniform) -> dict:
+def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, sorteio=random.uniform,
+                     relogio=time.monotonic) -> dict:
     """Envia as pendentes devidas. Devolve contagens: enviadas, ignoradas, falhas."""
     resumo = {"enviadas": 0, "ignoradas": 0, "falhas": 0, "parou_por": None}
     if config["modo_teste"] and not config["numero_teste"]:
@@ -76,9 +85,13 @@ def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, so
         return resumo
 
     pendentes = repo.reservar(LOTE)
+    inicio = relogio()
     for i, msg in enumerate(pendentes):
         if i:
             dormir(sorteio(PAUSA_MINIMA, PAUSA_MAXIMA))
+        if relogio() - inicio + PIOR_CASO_POR_MENSAGEM > RESERVA_SEGUNDOS - MARGEM_SEGUNDOS:
+            resumo["parou_por"] = "tempo_esgotado"  # as que sobraram voltam à fila quando a reserva vence
+            break
         numero, texto, id_registro = _numero_e_texto(msg, config)
         try:
             if not evolution.numero_tem_whatsapp(numero):

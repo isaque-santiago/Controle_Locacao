@@ -85,3 +85,12 @@ def test_evolution_criada_sob_demanda_e_fechada(ambiente, monkeypatch):
 
     monkeypatch.setattr(script.whatsapp, "executar", executar)
     assert script.principal() == 0 and fechou == [True]
+
+
+def test_cliente_da_evolution_usa_o_tempo_limite_do_servico(monkeypatch):
+    monkeypatch.setattr(script, "get_evolution", lambda: {"url": "https://evo.exemplo.com", "apikey": "k", "instancia": "i", "versao": 2})
+    cliente = script._cliente_evolution()
+    try:
+        assert cliente._http.timeout.read == script.whatsapp.TIMEOUT_CHAMADA_SEGUNDOS == 20
+    finally:
+        cliente.fechar()
