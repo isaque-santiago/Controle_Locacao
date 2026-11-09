@@ -243,9 +243,22 @@ def colunas_evolucao(meses: list[dict], largura: int = 600, altura: int = 180, m
     return {"largura": largura, "altura": altura + margem_rotulo, "y_base": altura, "y_rotulo": altura + margem_rotulo - 8, "colunas": colunas}
 
 
-def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = False) -> str:
-    """Texto do parâmetro da URL do Dashboard (`?mes=2026-09&compacto=1&ocultar=1`); vazio se nada foi escolhido."""
+# Abas do Dashboard: cada uma tem URL própria (`/?aba=dinheiro`), funciona sem JavaScript e mantém `compacto` e `ocultar`.
+ABAS = (("hoje", "Hoje"), ("dinheiro", "Dinheiro"), ("frota", "Frota"))
+ABA_PADRAO = "hoje"
+
+
+def aba_do_painel(texto: Optional[str]) -> str:
+    """Aba pedida na URL; vazia ou desconhecida vale a aba Hoje."""
+    return texto if texto in dict(ABAS) else ABA_PADRAO
+
+
+def consulta(mes: Optional[str] = None, compacto: bool = False, ocultar: bool = False, aba: Optional[str] = None) -> str:
+    """Texto do parâmetro da URL do Dashboard (`?aba=dinheiro&mes=2026-09&compacto=1&ocultar=1`); vazio se nada foi escolhido.
+    A aba padrão (Hoje) não aparece na URL."""
     partes = []
+    if aba and aba != ABA_PADRAO:
+        partes.append(f"aba={aba}")
     if mes:
         partes.append(f"mes={mes}")
     if compacto:
@@ -261,13 +274,15 @@ def opcao_ligada(texto: Optional[str]) -> bool:
 
 
 def links_do_painel(
-    mes: str, mes_anterior: str, mes_seguinte: Optional[str], compacto: bool, ocultar: bool
+    mes: Optional[str], mes_anterior: Optional[str], mes_seguinte: Optional[str], compacto: bool, ocultar: bool, aba: str = ABA_PADRAO
 ) -> dict:
-    """Endereços (sem a barra inicial) dos botões do Dashboard: a navegação de mês e os interruptores mantêm o que já está ligado."""
+    """Endereços (sem a barra inicial) dos botões do Dashboard. Os interruptores e a navegação de mês mantêm o que já está ligado, e os
+    do mês só existem na aba Dinheiro (nas outras, `mes` vem vazio). `abas` traz o endereço de cada aba."""
     return {
-        "anterior": consulta(mes_anterior, compacto, ocultar),
-        "seguinte": consulta(mes_seguinte, compacto, ocultar) if mes_seguinte else None,
-        "atual": consulta(None, compacto, ocultar),
-        "compacto": consulta(mes, not compacto, ocultar),
-        "ocultar": consulta(mes, compacto, not ocultar),
+        "anterior": consulta(mes_anterior, compacto, ocultar, aba) if mes_anterior else None,
+        "seguinte": consulta(mes_seguinte, compacto, ocultar, aba) if mes_seguinte else None,
+        "atual": consulta(None, compacto, ocultar, aba),
+        "compacto": consulta(mes, not compacto, ocultar, aba),
+        "ocultar": consulta(mes, compacto, not ocultar, aba),
+        "abas": {chave: consulta(None, compacto, ocultar, chave) for chave, _ in ABAS},
     }

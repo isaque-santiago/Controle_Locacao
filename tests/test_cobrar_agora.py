@@ -98,3 +98,12 @@ def test_atencao_financeira_lista_so_o_que_existe():
     assert itens[0].quantidade == 2 and itens[0].tom == "perigo" and itens[0].area == "dividas" and itens[0].descricao == "R$ 1.250,50 em atraso"
     assert itens[1].quantidade is None and itens[1].area is None and itens[1].descricao == "R$ 40,00" and itens[1].tom == "atencao"
     assert c.atencao_financeira({"quantidade": 0, "valor": Decimal("0")}, 0, Decimal("0")) == []
+
+
+def test_ordenar_atencao_poe_o_perigo_na_frente_sem_trocar_a_ordem_dentro_do_grupo():
+    from src.domain.painel import ItemAlerta
+
+    itens = [ItemAlerta(1, "A", "", "atencao", "x"), ItemAlerta(2, "B", "", "perigo", "x"), ItemAlerta(3, "C", "", "atencao", None),
+             ItemAlerta(4, "D", "", "perigo", None)]
+    assert [i.titulo for i in c.ordenar_atencao(itens)] == ["B", "D", "A", "C"]
+    assert c.ordenar_atencao([]) == []

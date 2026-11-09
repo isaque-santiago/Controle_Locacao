@@ -112,3 +112,8 @@ def atencao_financeira(parcelas_atrasadas: dict, a_repassar, entradas_sem_conta)
     if sem_conta > 0:
         itens.append(ItemAlerta(None, "Entrada do mês sem conta", formatar_moeda(sem_conta), TOM_ATENCAO, None))
     return itens
+
+
+def ordenar_atencao(itens: list[ItemAlerta]) -> list[ItemAlerta]:
+    """Lista única de atenção: o que está em perigo vem antes do que só pede atenção; dentro de cada grupo, a ordem de chegada."""
+    return sorted(itens, key=lambda i: 0 if i.tom == TOM_PERIGO else 1)

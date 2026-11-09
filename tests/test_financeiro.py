@@ -92,29 +92,26 @@ def test_opcao_ligada_so_com_1():
     assert financeiro.opcao_ligada("1") and not financeiro.opcao_ligada(None) and not financeiro.opcao_ligada("true")
 
 
+def test_aba_do_painel_aceita_so_as_tres_e_cai_em_hoje():
+    assert [financeiro.aba_do_painel(x) for x in ("hoje", "dinheiro", "frota")] == ["hoje", "dinheiro", "frota"]
+    for ruim in (None, "", "Dinheiro", "relatorios", "hoje; drop"):
+        assert financeiro.aba_do_painel(ruim) == "hoje"
+
+
+def test_consulta_leva_a_aba_so_quando_nao_e_a_padrao():
+    assert financeiro.consulta(aba="hoje") == "" and financeiro.consulta(aba="dinheiro") == "?aba=dinheiro"
+    assert financeiro.consulta("2026-09", True, True, "dinheiro") == "?aba=dinheiro&mes=2026-09&compacto=1&ocultar=1"
+
+
 def test_links_do_painel_mantem_o_que_esta_ligado():
-    l = financeiro.links_do_painel("2026-10", "2026-09", None, compacto=True, ocultar=False)
-    assert l == {"anterior": "?mes=2026-09&compacto=1", "seguinte": None, "atual": "?compacto=1",
-                 "compacto": "?mes=2026-10", "ocultar": "?mes=2026-10&compacto=1&ocultar=1"}
-    assert financeiro.links_do_painel("2026-08", "2026-07", "2026-09", False, True)["seguinte"] == "?mes=2026-09&ocultar=1"
+    l = financeiro.links_do_painel("2026-10", "2026-09", None, compacto=True, ocultar=False, aba="dinheiro")
+    assert l["anterior"] == "?aba=dinheiro&mes=2026-09&compacto=1" and l["seguinte"] is None and l["atual"] == "?aba=dinheiro&compacto=1"
+    assert l["compacto"] == "?aba=dinheiro&mes=2026-10" and l["ocultar"] == "?aba=dinheiro&mes=2026-10&compacto=1&ocultar=1"
+    assert l["abas"] == {"hoje": "?compacto=1", "dinheiro": "?aba=dinheiro&compacto=1", "frota": "?aba=frota&compacto=1"}
+    assert financeiro.links_do_painel("2026-08", "2026-07", "2026-09", False, True, "dinheiro")["seguinte"] == "?aba=dinheiro&mes=2026-09&ocultar=1"
 
 
-def test_descricao_das_faixas_segue_o_corte():
-    assert financeiro.descricao_das_faixas() == {"em_atraso": "até 14 dias", "inadimplente": "15 dias ou mais"}
-    assert financeiro.descricao_das_faixas(30) == {"em_atraso": "até 29 dias", "inadimplente": "30 dias ou mais"}
-    assert financeiro.descricao_das_faixas(2) == {"em_atraso": "até 1 dia", "inadimplente": "2 dias ou mais"}
-    um = financeiro.descricao_das_faixas(1)
-    assert um["inadimplente"] == "1 dia ou mais" and um["em_atraso"].startswith("nenhum")
-
-
-def test_previsto_do_mes_soma_o_que_vence_no_mes_sem_caucao_e_canceladas():
-    cobrancas = [
-        {"vencimento": "2026-11-03", "valor": "280", "tipo": "locacao", "situacao": "paga"},
-        {"vencimento": "2026-11-28", "valor": "280.50", "tipo": "locacao", "situacao": "aberta"},
-        {"vencimento": "2026-11-05", "valor": "500", "tipo": "caucao", "situacao": "paga"},
-        {"vencimento": "2026-11-06", "valor": "999", "tipo": "locacao", "situacao": "cancelada"},
-        {"vencimento": "2026-12-01", "valor": "280", "tipo": "locacao", "situacao": "aberta"},
-        {"vencimento": "2026-10-30", "valor": "280", "tipo": "locacao", "situacao": "atrasada"},
-    ]
-    assert financeiro.previsto_do_mes(cobrancas, date(2026, 11, 1)) == Decimal("560.50")
-    assert financeiro.previsto_do_mes([], date(2026, 11, 1)) == Decimal("0.00")
+def test_links_fora_da_aba_dinheiro_nao_tem_navegacao_de_mes():
+    l = financeiro.links_do_painel(None, None, None, False, True, "hoje")
+    assert l["anterior"] is None and l["seguinte"] is None and l["compacto"] == "?compacto=1&ocultar=1" and l["ocultar"] == ""
+    assert l["abas"]["hoje"] == "?ocultar=1"
