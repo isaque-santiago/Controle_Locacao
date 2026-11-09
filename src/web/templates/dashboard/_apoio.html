@@ -12,3 +12,17 @@
   <p>Não foi possível carregar estes números. O resto do Dashboard continua funcionando. Tente de novo em instantes; se continuar, avise quem cuida do sistema.</p>
 </div>
 {%- endmacro %}
+
+{# Desenhos mínimos em SVG (sem script e sem estilo inline). Com "ocultar dados", as proporções revelariam valores, então nada é desenhado. #}
+{% macro barra_segmentos(segmentos, descricao) -%}
+{% if not d.ocultar and segmentos %}<svg class="barra-seg" viewBox="0 0 100 10" preserveAspectRatio="none" role="img" aria-label="{{ descricao }}"><rect class="barra-seg-fundo" width="100" height="10"/>{% for s in segmentos %}{% if s.tamanho %}<rect class="seg {{ s.classe }}" x="{{ s.inicio }}" width="{{ s.tamanho }}" height="10"/>{% endif %}{% endfor %}</svg>{% endif %}
+{%- endmacro %}
+{% macro bullet(percentual, marca, descricao) -%}
+{% if not d.ocultar %}<svg class="bullet" viewBox="0 0 100 12" preserveAspectRatio="none" role="img" aria-label="{{ descricao }}"><rect class="bullet-fundo" width="100" height="12"/><rect class="bullet-valor" y="4" width="{{ [percentual, 100]|min }}" height="4"/><line class="bullet-marca" x1="{{ [marca, 100]|min }}" x2="{{ [marca, 100]|min }}" y1="0.5" y2="11.5"/></svg>{% endif %}
+{%- endmacro %}
+{% macro sparkline(s, descricao) -%}
+{% if not d.ocultar and s %}<svg class="spark" viewBox="0 0 {{ s.largura }} {{ s.altura }}" role="img" aria-label="{{ descricao }}"><polyline points="{{ s.pontos }}"/><circle cx="{{ s.ultimo.x }}" cy="{{ s.ultimo.y }}" r="2.4"/></svg>{% endif %}
+{%- endmacro %}
+{% macro legenda_faixas(faixas) -%}
+<ul class="faixas-legenda">{% for f in faixas %}<li><i class="seg-ponto {{ f.classe }}" aria-hidden="true"></i><span>{{ f.rotulo }}</span> <b class="mono">{{ din(f.valor) }}</b> <small>({{ f.contratos }})</small></li>{% endfor %}</ul>
+{%- endmacro %}

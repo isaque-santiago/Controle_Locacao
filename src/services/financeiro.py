@@ -92,6 +92,8 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
             "contagem": contagem,
             "ativas": painel.total_ativas(contagem),
             "ocupacao": painel.percentual_ocupacao(contagem),
+            "segmentos": painel.segmentos_rosca(contagem),
+            "descricao": painel.descricao_medidor(contagem),
         },
         "caixa": caixa,
         "atencao_financeira": pendencias,

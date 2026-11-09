@@ -1,4 +1,4 @@
-{% from "dashboard/_apoio.html" import din, dinc, nome, indisponivel with context %}
+{% from "dashboard/_apoio.html" import din, dinc, nome, indisponivel, bullet with context %}
 {% from "componentes/macros.html" import kpi, selo, tabela, icone %}
 {% set f = d.dinheiro %}
 {% set comp = d.compacto %}
@@ -27,10 +27,12 @@
   {{ indisponivel("Dinheiro deste mês") }}
   {% else %}
   <dl class="grade kpis">
-    {{ kpi("Receita", din(f.atual.receita), "de " ~ dinc(f.previsto) ~ " previstos (" ~ f.percentual_previsto ~ "%)", extra=(("Semana: " ~ din(f.receita_semana)) if f.e_mes_atual else None), progresso=(None if oc else f.percentual_previsto)) }}
-    {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)") }}
-    {{ kpi("Resultado", din(f.atual.resultado), ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0)) }}
-    {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0)) }}
+    {% set v = f.variacoes if (f.variacoes and not oc) else None %}
+    {% set visual_receita %}{{ bullet(f.percentual_previsto, f.percentual_esperado, "Receita de " ~ f.percentual_previsto ~ "% do previsto; esperado até hoje: " ~ f.percentual_esperado ~ "%") }}{% endset %}
+    {{ kpi("Receita", din(f.atual.receita), "de " ~ dinc(f.previsto) ~ " previstos (" ~ f.percentual_previsto ~ "%) · esperado até hoje: " ~ f.percentual_esperado ~ "%", extra=(("Semana: " ~ din(f.receita_semana) ~ (" · mês anterior: " ~ din(f.anterior.receita) if f.anterior else "")) if f.e_mes_atual else None), visual=visual_receita, variacao=v.receita if v else None) }}
+    {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)", variacao=v.despesas if v else None) }}
+    {{ kpi("Resultado", din(f.atual.resultado), ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0), variacao=v.resultado if v else None) }}
+    {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0), variacao=v.caixa if v else None) }}
   </dl>
   <dl class="grade kpis kpis-5">
     {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado") }}
