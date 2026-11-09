@@ -68,9 +68,20 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
         corte,
     )
     contagem = painel.contar_por_status(frota)
-    atual = financeiro.consolidar_mes(repositorio.resumo_mensal(mes, 1)[0])
-    detalhe = repositorio.detalhe_mensal(mes)
-    entradas = financeiro.entradas_por_conta(detalhe["entradas_por_conta"])
+    try:
+        atual = financeiro.consolidar_mes(repositorio.resumo_mensal(mes, 1)[0])
+        detalhe = repositorio.detalhe_mensal(mes)
+        entradas = financeiro.entradas_por_conta(detalhe["entradas_por_conta"])
+        caixa = {"valor": atual["caixa"], "investimento": atual["investimento"]}
+        pendencias = atencao_financeira(
+            parcelas_de_divida_atrasadas(repositorio.parcelas_de_divida()),
+            Decimal(str(detalhe["a_repassar"])),
+            entradas["sem_conta"],
+        )
+    except Exception:
+        # O dinheiro do mês (RPCs) não pode esconder quem cobrar: sem ele, só o cartão do caixa e as pendências de dinheiro somem.
+        logger.exception("Não foi possível ler o caixa do mês para a aba Hoje")
+        caixa, pendencias = None, []
     return {
         "mes_texto": mes.strftime("%Y-%m"),
         "cobranca": cobranca,
@@ -81,16 +92,13 @@ def painel_hoje(hoje: Optional[date] = None) -> dict:
             "ativas": painel.total_ativas(contagem),
             "ocupacao": painel.percentual_ocupacao(contagem),
         },
-        "caixa": {"valor": atual["caixa"], "investimento": atual["investimento"]},
-        "atencao_financeira": atencao_financeira(
-            parcelas_de_divida_atrasadas(repositorio.parcelas_de_divida()),
-            Decimal(str(detalhe["a_repassar"])),
-            entradas["sem_conta"],
-        ),
+        "caixa": caixa,
+        "atencao_financeira": pendencias,
     }
 
 
 def painel_hoje_seguro(hoje: Optional[date] = None) -> dict:
+    """Se a leitura de cobranças e frota falhar, a aba mostra o aviso; se só o caixa falhar, `caixa` vem vazio e o resto aparece."""
     hoje = hoje or hoje_br()
     return _seguro(lambda: painel_hoje(hoje), "Hoje", lambda: {"mes_texto": financeiro.primeiro_dia(hoje).strftime("%Y-%m")})
 

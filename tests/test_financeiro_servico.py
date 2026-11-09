@@ -86,8 +86,17 @@ def test_painel_hoje_usa_o_corte_das_configuracoes_e_cai_em_15_sem_a_coluna(monk
     assert financeiro.painel_hoje(HOJE)["cobranca"]["contratos_em_atraso"] == 1
 
 
-def test_painel_hoje_seguro_nao_derruba_se_a_leitura_falhar(monkeypatch, caplog):
+def test_se_so_o_dinheiro_falhar_a_aba_hoje_ainda_mostra_quem_cobrar_e_a_frota(monkeypatch, caplog):
     _preparar(monkeypatch, falha_em="detalhe")
+    with caplog.at_level("ERROR"):
+        p = financeiro.painel_hoje_seguro(HOJE)
+    assert "indisponivel" not in p and p["caixa"] is None and p["atencao_financeira"] == []
+    assert p["cobranca"]["total_linhas"] == 1 and p["frota"]["total"] == 3 and "caixa do mês" in caplog.text
+
+
+def test_painel_hoje_seguro_avisa_so_se_cobranca_ou_frota_falharem(monkeypatch, caplog):
+    _preparar(monkeypatch)
+    monkeypatch.setattr(financeiro.cobrancas, "listar", lambda: (_ for _ in ()).throw(RuntimeError("banco fora do ar")))
     with caplog.at_level("ERROR"):
         p = financeiro.painel_hoje_seguro(HOJE)
     assert p == {"mes_texto": "2026-11", "indisponivel": True} and "aba Hoje" in caplog.text
