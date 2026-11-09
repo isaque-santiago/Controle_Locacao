@@ -4,7 +4,7 @@
 {% block conteudo %}
 {% call cabecalho_pagina("Dashboard", d.data_extenso|capitalize) %}
   {# As duas preferências saem do cabeçalho para um menu discreto (mesmo componente dos filtros, que fecha ao clicar fora ou com Esc). #}
-  <details class="filtro-col" data-filtro>
+  <details class="filtro-col opcoes-dash" data-filtro>
     <summary class="btn" aria-label="Opções do Dashboard">{{ icone("mais") }}<span>Opções</span></summary>
     <nav class="chips filtro-opcoes" aria-label="Opções do Dashboard">
       <a class="chip" href="/{{ d.links.compacto }}">{{ "Sair do modo compacto" if d.compacto else "Modo compacto" }}</a>

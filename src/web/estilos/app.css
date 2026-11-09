@@ -1001,6 +1001,9 @@ main:has(.dash) {max-width: 1600px;}
 .dash-topo > .cartao, .dash-lateral > .cartao {margin: 0;}
 .dash-lateral {grid-auto-rows: 1fr;}
 @media (min-width: 1500px) {.dash-topo:not(.dash-topo--simples) .dash-lateral {grid-auto-rows: auto;}}
+/* Menu Opções do Dashboard: botão do tamanho do texto, também no celular (onde os filtros ocupam a linha toda). */
+.cabecalho .acoes .opcoes-dash {width: auto;}
+.cabecalho .acoes .opcoes-dash summary {justify-content: center;}
 /* Entradas e categorias ao lado do gráfico (aba Dinheiro): empilhadas, cada uma com a coluna inteira. */
 .dash-lateral.dash-lateral--coluna {grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; align-content: start;}
 .hoje-lista {display: flex; flex-direction: column;}
