@@ -104,3 +104,16 @@ def get_textos_whatsapp() -> dict:
         "pix": (_ler("WHATSAPP_PIX") or "").strip() or None,
         "link_portal": (_ler("PORTAL_URL") or "").strip() or None,
     }
+
+
+EXECUTORES_DO_ENVIO = ("python", "n8n")
+
+
+def get_executor_do_envio() -> str:
+    """Quem envia as mensagens de WhatsApp: `python` (o próprio script, padrão) ou `n8n` (o script só prepara e enfileira;
+    o n8n reserva, envia e registra). Variável `WHATSAPP_EXECUTOR`."""
+    valor = (_ler("WHATSAPP_EXECUTOR") or "python").strip().lower()
+    if valor not in EXECUTORES_DO_ENVIO:
+        raise RuntimeError("WHATSAPP_EXECUTOR deve ser python ou n8n.")
+    return valor
+

@@ -46,3 +46,21 @@ def test_textos_usam_o_nome_do_locador_quando_nao_ha_empresa(monkeypatch):
     _ambiente(monkeypatch, {"WHATSAPP_EMPRESA": "LA Motos", "LOCADOR_NOME": "Outro", "WHATSAPP_PIX": "chave", "PORTAL_URL": "https://p"})
     textos = config.get_textos_whatsapp()
     assert textos["empresa"] == "LA Motos" and textos["pix"] == "chave" and textos["link_portal"] == "https://p"
+
+
+def test_executor_do_envio_padrao_e_python(monkeypatch):
+    _ambiente(monkeypatch, {})
+    assert config.get_executor_do_envio() == "python"
+
+
+@pytest.mark.parametrize("valor, esperado", [("n8n", "n8n"), (" N8N ", "n8n"), ("python", "python"), ("", "python")])
+def test_executor_do_envio_aceita_python_e_n8n(monkeypatch, valor, esperado):
+    _ambiente(monkeypatch, {"WHATSAPP_EXECUTOR": valor})
+    assert config.get_executor_do_envio() == esperado
+
+
+def test_executor_do_envio_invalido(monkeypatch):
+    _ambiente(monkeypatch, {"WHATSAPP_EXECUTOR": "zapier"})
+    with pytest.raises(RuntimeError, match="python ou n8n"):
+        config.get_executor_do_envio()
+
