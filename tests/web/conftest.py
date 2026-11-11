@@ -988,6 +988,9 @@ def base_configuracoes(monkeypatch):
     return base
 
 
+DOC_PORTAL_VENCIDO = "00000000-0000-0000-0000-0000000000a1"
+DOC_PORTAL_AGUARDANDO = "00000000-0000-0000-0000-0000000000a2"
+DOC_PORTAL_RECUSADO = "00000000-0000-0000-0000-0000000000a3"
 CONTRATO_PORTAL = "00000000-0000-0000-0000-0000000000f1"
 CONTRATO_PORTAL_SEM_PLANO = "00000000-0000-0000-0000-0000000000f2"
 
@@ -1009,6 +1012,16 @@ class BasePortal:
             ],
         }
         self.registros = []
+        self.documentos = [
+            {"documento_id": DOC_PORTAL_VENCIDO, "placa": "BRA2E19", "modelo": "CG", "tipo": "ipva", "descricao": None, "ano_referencia": 2026,
+             "vencimento": "2026-10-05", "situacao": "vencido", "envio_status": None, "envio_em": None, "envio_motivo": None},
+            {"documento_id": DOC_PORTAL_AGUARDANDO, "placa": "BRA2E19", "modelo": "CG", "tipo": "seguro", "descricao": None, "ano_referencia": 2026,
+             "vencimento": "2026-11-20", "situacao": "a_vencer", "envio_status": "enviado", "envio_em": "2026-11-10T15:30:00+00:00", "envio_motivo": None},
+            {"documento_id": DOC_PORTAL_RECUSADO, "placa": "BRA2E19", "modelo": "CG", "tipo": "licenciamento", "descricao": None, "ano_referencia": 2026,
+             "vencimento": "2026-12-30", "situacao": "em_dia", "envio_status": "recusado", "envio_em": "2026-11-09T12:00:00+00:00", "envio_motivo": "Foto cortada"},
+        ]
+        self.comprovantes_enviados = []
+        self.erro_nos_documentos = None
         self.trocas_de_senha = []
         self.resultado = {"excedeu": False, "multa_valor": None}
         self.falhar_com = None
@@ -1026,9 +1039,21 @@ def base_portal(monkeypatch):
         base.registros.append((cliente_id, contrato["contrato_id"], km_texto, foto, nota, multa))
         return base.resultado
 
-    monkeypatch.setattr(dados_portal, "portal_locatario", SimpleNamespace(dados_portal=lambda: base.dados))
+    def documentos():
+        if base.erro_nos_documentos:
+            raise base.erro_nos_documentos
+        return [dict(d) for d in base.documentos]
+
+    def enviar_comprovante(cliente_id, documento_id, nome, conteudo, observacao):
+        if base.falhar_com:
+            raise base.falhar_com
+        base.comprovantes_enviados.append((cliente_id, documento_id, nome, conteudo, observacao))
+        return {"id": "e1", "status": "enviado"}
+
+    monkeypatch.setattr(dados_portal, "portal_locatario", SimpleNamespace(dados_portal=lambda: base.dados, documentos_do_locatario=documentos))
     monkeypatch.setattr(acoes_portal, "portal_locatario", SimpleNamespace(
-        registrar_troca_oleo=registrar, registrar_troca_senha=lambda: base.trocas_de_senha.append(True)))
+        registrar_troca_oleo=registrar, registrar_troca_senha=lambda: base.trocas_de_senha.append(True),
+        enviar_comprovante_documento=enviar_comprovante))
     return base
 
 
