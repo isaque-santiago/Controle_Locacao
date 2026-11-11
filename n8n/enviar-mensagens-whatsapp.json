@@ -1,0 +1,941 @@
+{
+  "name": "Envio de WhatsApp (executor do Controle de Locação)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "44b1c62e-337b-5c76-8034-7a726e821fe6",
+      "name": "Agendamento",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "supabase_url",
+              "value": "https://SEU-PROJETO.supabase.co",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "evolution_url",
+              "value": "https://evolution.SEU-DOMINIO.com.br",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "evolution_instancia",
+              "value": "locacao",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "evolution_versao",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "a5",
+              "name": "lote",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "a6",
+              "name": "pausa_minima_s",
+              "value": 20,
+              "type": "number"
+            },
+            {
+              "id": "a7",
+              "name": "pausa_maxima_s",
+              "value": 60,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c183692d-f952-57f3-ade9-3b6c9a2bb2f6",
+      "name": "Configuração",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "Preencha supabase_url, evolution_url e evolution_instancia (nenhum é segredo). O lote, o tempo limite de 20 s por chamada e o tempo máximo do fluxo (540 s) vêm da conta do pior caso: cabem na reserva de 10 minutos do banco. Não aumente sem refazer a conta.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.supabase_url }}/auth/v1/token?grant_type=password",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpCustomAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}"
+      },
+      "id": "1492b840-39f1-5e30-8875-8ebe7c2b58e5",
+      "name": "Entrar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ],
+      "credentials": {
+        "httpCustomAuth": {
+          "id": "SUPABASE_LOGIN",
+          "name": "Supabase — usuário de serviço (login)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Configuração').first().json.evolution_url }}/instance/connectionState/{{ $('Configuração').first().json.evolution_instancia }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "15b49597-3119-53cb-9366-404a4ffa8170",
+      "name": "Estado da instância",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EVOLUTION_APIKEY",
+          "name": "Evolution — apikey"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Estado da instância do WhatsApp, no mesmo vocabulário do app: open, close (ou outro da Evolution), indisponivel, config_invalida.\nconst r = $input.first().json;\nlet estado;\nif (r.error || r.statusCode === undefined) estado = 'indisponivel';\nelse if ([401, 403, 404].includes(r.statusCode)) estado = 'config_invalida';\nelse if ([408, 429].includes(r.statusCode) || r.statusCode >= 500) estado = 'indisponivel';\nelse { const b = r.body || {}; estado = String((b.instance || b).state || 'desconhecido'); }\nreturn [{ json: { estado, aberta: estado === 'open' } }];\n"
+      },
+      "id": "991a7e7f-68fa-5c0f-a1e2-5f0ff716bd7c",
+      "name": "Avaliar estado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.aberta }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1f469564-49fc-53f9-9856-ad3a13f24ed7",
+      "name": "Instância aberta?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.supabase_url }}/rest/v1/rpc/rpc_whatsapp_registrar_rodada",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Entrar').first().json.body.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_estado: $('Avaliar estado').first().json.estado, p_resumo: { executor: 'n8n', parou_por: 'instancia_nao_aberta' } }) }}"
+      },
+      "id": "012e7ad4-2c2f-565f-aeab-e54b96d9c139",
+      "name": "Registrar rodada (sem envio)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        480
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_ANON",
+          "name": "Supabase — chave anônima (apikey)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.supabase_url }}/rest/v1/rpc/rpc_whatsapp_reservar",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Entrar').first().json.body.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_limite: $('Configuração').first().json.lote }) }}"
+      },
+      "id": "cbbc5598-8b3c-59d6-be07-3af9b524d6a4",
+      "name": "Reservar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_ANON",
+          "name": "Supabase — chave anônima (apikey)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.supabase_url }}/rest/v1/rpc/rpc_whatsapp_registrar_rodada",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Entrar').first().json.body.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_estado: 'open', p_resumo: { executor: 'n8n', reservadas: ($('Reservar').first().json.body || []).length } }) }}"
+      },
+      "id": "65b714d9-1f00-5175-a2e2-daea9e4a0155",
+      "name": "Registrar rodada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_ANON",
+          "name": "Supabase — chave anônima (apikey)"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Uma entrada por mensagem reservada (vazio = nada a enviar agora: portão da janela fechado ou fila vazia).\nconst lote = $('Reservar').first().json.body || [];\nreturn lote.map(m => ({ json: m }));\n"
+      },
+      "id": "826dc8ee-20fa-5521-b783-9fda10a70171",
+      "name": "Lote",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "4dbbe225-3082-56f3-984a-bf2ce81a1b4a",
+      "name": "Cada mensagem",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "80631bbd-f7af-5311-91f2-89ef4ae6def0",
+      "name": "Fim",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $runIndex === 0 ? 0 : Math.floor(Math.random() * ($('Configuração').first().json.pausa_maxima_s - $('Configuração').first().json.pausa_minima_s + 1)) + $('Configuração').first().json.pausa_minima_s }}",
+        "unit": "seconds"
+      },
+      "id": "41409678-920a-5285-a53c-585ebe36476e",
+      "name": "Pausa",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        200
+      ],
+      "notes": "Pausa aleatória entre mensagens (não antes da primeira): protege o número de banimento.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.evolution_url }}/chat/whatsappNumbers/{{ $('Configuração').first().json.evolution_instancia }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ numbers: [$('Cada mensagem').item.json.numero_envio] }) }}"
+      },
+      "id": "34202a4f-b990-55e3-8f09-9f687dca9061",
+      "name": "Número tem WhatsApp?",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EVOLUTION_APIKEY",
+          "name": "Evolution — apikey"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Classificação dos erros da Evolution (a mesma de src/services/evolution.py):\n//   408/429/5xx/rede  -> a mensagem não é culpada: volta para a fila e o fluxo PARA (parar);\n//   401/403/404       -> chave ou instância inválida: PARA sem registrar (a reserva vence sozinha) (parar_sem_registro);\n//   demais 4xx        -> problema só desta mensagem: registra a falha e SEGUE (continuar).\nfunction classificar(r) {\n  if (r.error || r.statusCode === undefined) return { acao: 'parar', erro: 'Sem resposta da Evolution.' };\n  if ([401, 403, 404].includes(r.statusCode)) return { acao: 'parar_sem_registro' };\n  if ([408, 429].includes(r.statusCode)) return { acao: 'parar', erro: `A Evolution pediu para tentar depois (${r.statusCode}).` };\n  if (r.statusCode >= 500) return { acao: 'parar', erro: `A Evolution respondeu ${r.statusCode}.` };\n  if (r.statusCode >= 400) return { acao: 'continuar', erro: `A Evolution recusou o pedido (${r.statusCode}).` };\n  return null;\n}\nconst id = $('Cada mensagem').item.json.id;\nconst r = $json;\nconst falha = classificar(r);\nif (falha) return { json: { id, resultado: 'falhou', ...falha } };\nconst existe = Array.isArray(r.body) && r.body.length > 0 && r.body[0].exists === true;\nif (!existe) return { json: { id, resultado: 'ignorada', acao: 'continuar', erro: 'O número não tem WhatsApp.' } };\nreturn { json: { id, acao: 'enviar' } };\n"
+      },
+      "id": "cfa056b2-7ae6-58b6-924c-c263814263f7",
+      "name": "Avaliar número",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "s1",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "enviar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "enviar"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "f5f1f266-e02a-5b12-9034-4c2ca2c365eb",
+      "name": "Direcionar número",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2860,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.evolution_url }}/message/sendText/{{ $('Configuração').first().json.evolution_instancia }}",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Configuração').first().json.evolution_versao === 1 ? { number: $('Cada mensagem').item.json.numero_envio, options: { delay: 1200, presence: 'composing' }, textMessage: { text: $('Cada mensagem').item.json.texto_envio } } : { number: $('Cada mensagem').item.json.numero_envio, text: $('Cada mensagem').item.json.texto_envio, delay: 1200 }) }}"
+      },
+      "id": "637c5895-3dde-5b56-a054-2c688f5196af",
+      "name": "Enviar texto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3080,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "EVOLUTION_APIKEY",
+          "name": "Evolution — apikey"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Classificação dos erros da Evolution (a mesma de src/services/evolution.py):\n//   408/429/5xx/rede  -> a mensagem não é culpada: volta para a fila e o fluxo PARA (parar);\n//   401/403/404       -> chave ou instância inválida: PARA sem registrar (a reserva vence sozinha) (parar_sem_registro);\n//   demais 4xx        -> problema só desta mensagem: registra a falha e SEGUE (continuar).\nfunction classificar(r) {\n  if (r.error || r.statusCode === undefined) return { acao: 'parar', erro: 'Sem resposta da Evolution.' };\n  if ([401, 403, 404].includes(r.statusCode)) return { acao: 'parar_sem_registro' };\n  if ([408, 429].includes(r.statusCode)) return { acao: 'parar', erro: `A Evolution pediu para tentar depois (${r.statusCode}).` };\n  if (r.statusCode >= 500) return { acao: 'parar', erro: `A Evolution respondeu ${r.statusCode}.` };\n  if (r.statusCode >= 400) return { acao: 'continuar', erro: `A Evolution recusou o pedido (${r.statusCode}).` };\n  return null;\n}\nconst id = $('Cada mensagem').item.json.id;\nconst r = $json;\nconst falha = classificar(r);\nif (falha) return { json: { id, resultado: 'falhou', ...falha } };\nconst chave = (r.body && r.body.key) || {};\nreturn { json: { id, resultado: 'enviada', acao: 'continuar', evolution_id: chave.id || null } };\n"
+      },
+      "id": "a8be5927-7519-50ff-b0a9-96ff790eb24f",
+      "name": "Avaliar envio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3300,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "continuar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "continuar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "parar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "parar"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "a829c4cd-8a3a-5e8e-b1e5-09b2ed44f1ef",
+      "name": "Direcionar resultado",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3520,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.supabase_url }}/rest/v1/rpc/rpc_whatsapp_registrar_resultado",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Entrar').first().json.body.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_id: $json.id, p_resultado: $json.resultado, p_erro: $json.erro || null, p_evolution_id: $json.evolution_id || null }) }}"
+      },
+      "id": "5cb10c0a-8362-51f6-a2b1-c73b95a8e1fe",
+      "name": "Registrar e continuar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3740,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_ANON",
+          "name": "Supabase — chave anônima (apikey)"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Configuração').first().json.supabase_url }}/rest/v1/rpc/rpc_whatsapp_registrar_resultado",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Entrar').first().json.body.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ p_id: $json.id, p_resultado: $json.resultado, p_erro: $json.erro || null, p_evolution_id: $json.evolution_id || null }) }}"
+      },
+      "id": "a32ad8d6-d1c0-5d5e-9ac5-6b1dde195088",
+      "name": "Registrar e parar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3740,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SUPABASE_ANON",
+          "name": "Supabase — chave anônima (apikey)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "a3e2efb2-dcb6-5ef3-8cce-64ef018bc543",
+      "name": "Parar: configuração da Evolution",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3740,
+        480
+      ],
+      "notes": "A Evolution recusou a chave ou a instância. Nada é registrado: a reserva vence sozinha em 10 minutos e a mensagem volta para a fila. Corrija a credencial/instância.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Agendamento": {
+      "main": [
+        [
+          {
+            "node": "Configuração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração": {
+      "main": [
+        [
+          {
+            "node": "Entrar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entrar": {
+      "main": [
+        [
+          {
+            "node": "Estado da instância",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado da instância": {
+      "main": [
+        [
+          {
+            "node": "Avaliar estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar estado": {
+      "main": [
+        [
+          {
+            "node": "Instância aberta?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Instância aberta?": {
+      "main": [
+        [
+          {
+            "node": "Reservar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar rodada (sem envio)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reservar": {
+      "main": [
+        [
+          {
+            "node": "Registrar rodada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar rodada": {
+      "main": [
+        [
+          {
+            "node": "Lote",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lote": {
+      "main": [
+        [
+          {
+            "node": "Cada mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cada mensagem": {
+      "main": [
+        [
+          {
+            "node": "Fim",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pausa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pausa": {
+      "main": [
+        [
+          {
+            "node": "Número tem WhatsApp?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Número tem WhatsApp?": {
+      "main": [
+        [
+          {
+            "node": "Avaliar número",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar número": {
+      "main": [
+        [
+          {
+            "node": "Direcionar número",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Direcionar número": {
+      "main": [
+        [
+          {
+            "node": "Enviar texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Direcionar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar texto": {
+      "main": [
+        [
+          {
+            "node": "Avaliar envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avaliar envio": {
+      "main": [
+        [
+          {
+            "node": "Direcionar resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Direcionar resultado": {
+      "main": [
+        [
+          {
+            "node": "Registrar e continuar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar e parar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parar: configuração da Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar e continuar": {
+      "main": [
+        [
+          {
+            "node": "Cada mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "executionTimeout": 540,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "all",
+    "saveManualExecutions": false
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
