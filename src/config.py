@@ -96,11 +96,16 @@ def get_servico_mensagens() -> tuple[str, str]:
 
 def get_textos_whatsapp() -> dict:
     """O que entra nos textos de WhatsApp: `WHATSAPP_EMPRESA` (saudação), `WHATSAPP_CONTATO` (como falar com o dono),
-    `WHATSAPP_PIX` (chave Pix estática, opcional) e `PORTAL_URL` (link do portal do locatário, opcional)."""
+    `WHATSAPP_PIX` (chave Pix estática, opcional) e `PORTAL_URL` (link do portal do locatário, opcional).
+
+    Com o link do portal definido, os avisos de documento convidam o locatário a enviar o comprovante pelo portal
+    (`comprovante_no_portal`), além de poder mandar ao dono."""
     empresa = (_ler("WHATSAPP_EMPRESA") or get_locador().get("nome") or "").strip()
+    link_portal = (_ler("PORTAL_URL") or "").strip() or None
     return {
         "empresa": empresa or None,
         "contato": (_ler("WHATSAPP_CONTATO") or "").strip() or None,
         "pix": (_ler("WHATSAPP_PIX") or "").strip() or None,
-        "link_portal": (_ler("PORTAL_URL") or "").strip() or None,
+        "link_portal": link_portal,
+        "comprovante_no_portal": link_portal is not None,
     }
