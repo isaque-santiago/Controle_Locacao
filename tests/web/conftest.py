@@ -883,6 +883,12 @@ class BaseDocumentos:
             doc("00000000-0000-0000-0000-0000000000e5", "m2", "outro", -3, valor=None),
         ]
         self.url_assinada = "https://projeto.supabase.co/storage/v1/object/sign/documentos/"
+        # envio do locatário aguardando conferência do documento e2 (seguro a vencer)
+        self.envios = [{"id": "00000000-0000-0000-0000-0000000000b1", "documento_id": "00000000-0000-0000-0000-0000000000e2",
+                        "cliente_id": "c1", "arquivo_path": "portal/c1/arq.pdf", "observacao": "Paguei <b>hoje</b>", "status": "enviado",
+                        "motivo_recusa": None, "enviado_em": "2026-11-10T15:30:00+00:00", "conferido_em": None,
+                        "clientes": {"nome": "Maria Souza"}}]
+        self.historico = {}
 
 
 @pytest.fixture(autouse=True)
@@ -896,7 +902,10 @@ def base_documentos(monkeypatch):
     monkeypatch.setattr(dados_documentos, "documentos", SimpleNamespace(
         listar_todos=lambda: base.documentos,
         obter=lambda id_: next((d for d in base.documentos if d["id"] == id_), None),
-        url_comprovante=lambda caminho: base.url_assinada + caminho + "?token=x"))
+        url_comprovante=lambda caminho: base.url_assinada + caminho + "?token=x",
+        comprovantes_aguardando=lambda: list(base.envios),
+        comprovante_aguardando=lambda id_: next((e for e in base.envios if e["documento_id"] == id_ and e["status"] == "enviado"), None),
+        historico_de_comprovantes=lambda id_: base.historico.get(id_, [e for e in base.envios if e["documento_id"] == id_])))
     return base
 
 

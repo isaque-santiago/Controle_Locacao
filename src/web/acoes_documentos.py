@@ -26,3 +26,13 @@ def anexar_comprovante(documento_id, moto_id, arquivo):
 def regularizar_documento(documento_id, data_regularizacao):
     """Marca como regularizado; devolve também a sugestão do documento do ano seguinte, quando houver."""
     return documentos.regularizar(documento_id, data_regularizacao)
+
+
+def aceitar_comprovante(envio_id, data_regularizacao):
+    """Regulariza o documento com o comprovante do locatário; devolve também a sugestão do documento do ano seguinte."""
+    return documentos.aceitar_comprovante(envio_id, data_regularizacao)
+
+
+def recusar_comprovante(envio_id, motivo):
+    documentos.recusar_comprovante(envio_id, motivo)
+

@@ -42,6 +42,7 @@ from src.web.rotas import configuracoes as rotas_configuracoes
 from src.web.rotas import portal as rotas_portal
 from src.web.rotas import portal_documentos as rotas_portal_documentos
 from src.web.rotas import relatorios as rotas_relatorios
+from src.web.rotas import documentos_comprovantes as rotas_documentos_comprovantes
 from src.web.rotas import documentos_formularios as rotas_documentos_formularios
 from src.web.rotas import documentos_regularizacao as rotas_documentos_regularizacao
 from src.web.rotas import vistorias as rotas_vistorias
@@ -118,6 +119,7 @@ def criar_app(
     # As abas estáticas precisam vir antes de /manutencao/{id}/{acao}.
     app.include_router(rotas_manutencao_finalizacao.router)
     app.include_router(rotas_documentos_formularios.router)
+    app.include_router(rotas_documentos_comprovantes.router)
     app.include_router(rotas_documentos_regularizacao.router)
     app.include_router(rotas_documentos.router)
     app.include_router(rotas_mensagens.router)

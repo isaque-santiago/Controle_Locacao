@@ -1,0 +1,50 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso, cartao, campo, caixa, area_texto, selo, tabela, estado_vazio, rc_titulo %}
+{% block conteudo %}
+{{ voltar("/documentos", "Voltar para documentos") }}
+{{ cabecalho_pagina("Conferir comprovante", nome) }}
+{% if erro_geral %}<div class="mb-4">{{ aviso("erro", erro_geral) }}</div>{% endif %}
+{% if envio %}
+{% call cartao("Comprovante enviado pelo locatário") %}
+<dl class="grade-dados">
+  <div><dt>Locatário</dt><dd>{{ envio.cliente or "—" }}</dd></div>
+  <div><dt>Enviado em</dt><dd class="mono">{{ envio.enviado_em|data_hora_br }}</dd></div>
+  <div><dt>Documento</dt><dd>{{ tipo_rotulo }} {{ registro.documento.ano_referencia or registro.documento.descricao or "" }} · vence <span class="mono">{{ registro.documento.vencimento|data_br }}</span></dd></div>
+  {% if envio.observacao %}<div><dt>Observação do locatário</dt><dd>{{ envio.observacao }}</dd></div>{% endif %}
+</dl>
+<p class="mt-3"><a class="btn" href="/documentos/{{ registro.documento.id }}/comprovante-enviado/arquivo" target="_blank" rel="noopener noreferrer">Abrir o comprovante (nova aba)</a></p>
+<p class="text-texto-2 mt-2">Confira se o comprovante é deste documento, da moto certa e legível. Só depois de aceitar o documento sai das pendências.</p>
+{% endcall %}
+<form class="cartao mb-4" id="form-aceitar" method="post" action="/documentos/{{ registro.documento.id }}/comprovante-enviado/aceitar" novalidate>
+  <h2>Aceitar e regularizar</h2>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="formulario">
+    {{ campo("a-data", "Data de regularização", nome="data", valor=v.data, tipo="date", obrigatorio=True, erro=erros.data, largo=True) }}
+    {% if proximo %}{{ caixa("a-proximo", "Cadastrar em seguida o documento de " ~ proximo.ano_referencia, nome="criar_proximo", marcada=v.criar_proximo, ajuda="Abre o cadastro já preenchido, com o vencimento em branco para você informar.") }}{% endif %}
+  </div>
+  <p class="text-texto-2 text-[13px] my-2">O arquivo do locatário passa a ser o comprovante do documento.</p>
+  <div class="rodape-acoes"><button class="btn btn-primario" type="submit">Aceitar e regularizar</button></div>
+</form>
+<form class="cartao mb-4" id="form-recusar" method="post" action="/documentos/{{ registro.documento.id }}/comprovante-enviado/recusar" novalidate>
+  <h2>Recusar</h2>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <p class="text-texto-2 mb-2">O locatário vê o motivo no portal e pode enviar outro comprovante.</p>
+  {{ area_texto("r-motivo", "Motivo da recusa", nome="motivo", valor=motivo, erro=erros_recusa.motivo, largo=True, linhas=2, maximo=200) }}
+  <div class="rodape-acoes"><button class="btn btn-perigo" type="submit">Recusar comprovante</button></div>
+</form>
+{% else %}
+{{ estado_vazio("Nenhum comprovante aguardando conferência", "Quando o locatário enviar um comprovante deste documento pelo portal, ele aparece aqui.") }}
+{% endif %}
+{% if historico %}
+{% call cartao("Histórico de comprovantes deste documento") %}
+{% call tabela([("Enviado em", ""), ("Locatário", ""), ("Situação", ""), ("Motivo da recusa", "")], "Comprovantes enviados para este documento", recolhivel=True) %}
+{% for h in historico %}<tr data-recolhivel>
+{% call rc_titulo() %}<span class="mono">{{ h.enviado_em|data_hora_br }}</span>{% endcall %}
+<td data-rotulo="Locatário">{{ h.cliente or "—" }}</td>
+<td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[h.status], status_tom[h.status]) }}</td>
+<td data-rotulo="Motivo da recusa">{{ h.motivo_recusa or "—" }}</td>
+</tr>{% endfor %}
+{% endcall %}
+{% endcall %}
+{% endif %}
+{% endblock %}
