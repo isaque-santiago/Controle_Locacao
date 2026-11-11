@@ -149,3 +149,14 @@ def test_envio_parado_cita_a_tarefa_ou_o_n8n():
     item = alertas_whatsapp(_config(whatsapp_ultima_rodada_em=None), [], AGORA)[0]
     assert "n8n" in item.descricao and "Coolify" in item.descricao
 
+
+def test_chave_ou_instancia_recusada_tem_alerta_proprio_e_nao_diz_desconectado():
+    itens = alertas_whatsapp(_config(whatsapp_ultimo_estado="config_invalida"), [], AGORA)
+    assert [(i.titulo, i.tom, i.area) for i in itens] == [("Evolution recusou a chave ou a instância", "perigo", "mensagens")]
+
+
+def test_estado_config_invalida_em_portugues():
+    from src.domain.whatsapp_painel import estado_da_instancia
+
+    assert estado_da_instancia("config_invalida") == "chave ou instância recusada pela Evolution"
+

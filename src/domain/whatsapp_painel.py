@@ -96,6 +96,8 @@ def alertas_whatsapp(config: dict, mensagens: list[dict], agora: datetime) -> li
         estado = config.get("whatsapp_ultimo_estado")
         if estado == "indisponivel":
             itens.append(ItemAlerta(1, "Evolution fora do ar", "As mensagens ficam na fila e voltam a sair quando ela responder.", TOM_PERIGO, "mensagens"))
+        elif estado == "config_invalida":
+            itens.append(ItemAlerta(1, "Evolution recusou a chave ou a instância", "Confira a credencial e o nome da instância (no n8n ou nas variáveis EVOLUTION_*). Nada é enviado até corrigir.", TOM_PERIGO, "mensagens"))
         elif estado and estado != "open":
             itens.append(ItemAlerta(1, "WhatsApp desconectado", "Leia o QR code da instância na Evolution para voltar a enviar.", TOM_PERIGO, "mensagens"))
 
@@ -135,4 +137,5 @@ def estado_da_instancia(estado: str | None) -> str:
     return {
         "open": "conectada", "close": "desconectada (leia o QR code na Evolution)",
         "indisponivel": "Evolution fora do ar", "connecting": "conectando",
+        "config_invalida": "chave ou instância recusada pela Evolution",
     }.get(estado, estado)
