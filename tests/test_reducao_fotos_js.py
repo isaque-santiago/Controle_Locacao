@@ -5,7 +5,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 JS = (RAIZ / "static" / "js" / "app.js").read_text(encoding="utf-8")
 CAMPOS = {
-    "src/web/templates/portal.html": 2,  # foto do painel e da nota
+    "src/web/templates/portal.html": 3,  # foto do painel, da nota e o comprovante de documento (o JS só reduz JPEG/PNG acima de 4 MB; PDF passa direto)
     "src/web/templates/vistorias/_campos_registro.html": 1,
     "src/web/templates/vistorias/_campos_fotos.html": 1,
     "src/web/templates/vistorias/_campo_camera.html": 1,  # «Tirar foto agora», incluído nas três telas de vistoria
