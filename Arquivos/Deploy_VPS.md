@@ -231,7 +231,7 @@ segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); f
 O envio roda como **Tarefa Agendada do Coolify**, em processo separado do site (nada de laço dentro do app). Ele só passa a enviar
 quando o dono liga a chave em Configurações; até lá a rodada termina na hora, sem mexer em nada.
 
-1. **Banco:** aplique `20261106120000_whatsapp_base.sql`, `20261106130000_whatsapp_leitura.sql`, `20261106140000_whatsapp_painel.sql` e `20261109120000_portal_eventos_senha.sql` (esta última, antes de publicar o app: ele passa a chamar a RPC da troca de senha; sem ela só o log registra o erro) (e rode os roteiros
+1. **Banco:** aplique `20261106120000_whatsapp_base.sql`, `20261106130000_whatsapp_leitura.sql`, `20261106140000_whatsapp_painel.sql`, `20261109120000_portal_eventos_senha.sql` e `20261111120000_whatsapp_executor_n8n.sql` (esta última, antes de publicar o app: ele passa a chamar a RPC da troca de senha; sem ela só o log registra o erro) (e rode os roteiros
    `supabase/verificar_whatsapp_base.sql` e `verificar_whatsapp_leitura.sql` no projeto de desenvolvimento).
 2. **Usuário de serviço:** em Authentication > Users crie um usuário só para o robô (com *Auto Confirm User* e senha forte) e, no SQL Editor,
    `insert into servico_mensagens (user_id) select id from auth.users where email = 'EMAIL-DO-ROBO';`. Ele não enxerga nenhuma tabela: só executa
@@ -249,6 +249,7 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
 | `WHATSAPP_CONTATO` | como o locatário fala com o dono, ex.: `o Alisson, no (11) 99999-0000`. O chip é dedicado e ninguém lê as respostas dele: sem contato, o texto manda falar com «a empresa» |
 | `WHATSAPP_PIX` (opcional) | chave Pix estática que entra nas cobranças |
 | `PORTAL_URL` (opcional) | link do portal nos avisos de troca de óleo e de acesso |
+| `WHATSAPP_EXECUTOR` (opcional) | `python` (padrão: a tarefa prepara **e envia**) ou `n8n` (a tarefa só prepara; o n8n envia, ver 8.2) |
 
 5. **Tarefa agendada** (Coolify > aplicativo > *Scheduled Tasks*): comando `python -m src.enviar_mensagens_whatsapp`, frequência
    `*/20 * * * *` (a cada 20 minutos; é seguro repetir). Saída: uma linha JSON com o resumo; código 0 = rodada feita, 2 = configuração faltando
@@ -262,6 +263,30 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
    e ligar para o cliente; *modo teste* = lembrete de que os clientes ainda não recebem.
 8. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
    ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado. `tempo_esgotado` = a Evolution está lenta e a rodada parou antes de estourar o tempo da reserva (o que sobrou sai na próxima).
+
+## 8.2 Executor n8n (alternativa ao envio pela tarefa do Coolify)
+
+O n8n pode fazer o **envio** no lugar da tarefa do Coolify. A tarefa continua preparando (regras, textos, fila e o «portão» da janela de
+horário); o n8n reserva as mensagens prontas, envia pela Evolution e registra o resultado. Guia completo, credenciais e fluxo:
+`n8n/README.md`. Decidido em 11/11/2026; o grupo de locatários **não** faz parte disto.
+
+1. **Banco e app juntos:** a migration `20261111120000_whatsapp_executor_n8n.sql` faz a reserva exigir o envio ligado e o portão da
+   janela aberto, e o portão é gravado pela versão nova da tarefa. Aplique a migration e publique o app na mesma janela; entre uma e
+   outra o envio fica parado (padrão seguro). Rode `supabase/verificar_whatsapp_executor_n8n.sql` em dev.
+2. **n8n local** (só conexões de saída, sem porta aberta; `GENERIC_TIMEZONE=America/Sao_Paulo`; `N8N_ENCRYPTION_KEY` guardada fora do
+   repositório; atualização mensal; execuções com dados pessoais com poda curta). Importe `n8n/enviar-mensagens-whatsapp.json`, crie as
+   3 credenciais, preencha o nó «Configuração» e teste em modo teste.
+3. **A Evolution precisa ser alcançável pelo n8n local** (hoje atrás do Traefik da VPS, protegida pela apikey). Confira que a URL pública
+   responde só com a apikey certa e que o nome da instância é o da instância nova.
+4. **Trocar o executor:** no Coolify, `WHATSAPP_EXECUTOR=n8n`. Voltar atrás é trocar para `python` (e desativar o fluxo no n8n): as duas formas
+   usam a mesma reserva do banco, então nunca enviam a mesma mensagem duas vezes, nem se rodarem juntas por engano.
+5. **Alertas no Dashboard:** «Envio automático parado» (o n8n, ou a tarefa em modo `python`, não registra a rodada há mais de 1h30),
+   «Preparação dos avisos parada» (só o preparo parou: o n8n segue, mas nada novo é enfileirado nem liberado) e «Evolution recusou a chave ou a
+   instância» (401, 403 ou 404). Nada sai à noite, domingo ou feriado porque o portão está fechado, não por regra do n8n.
+6. **Se o computador do n8n ficar desligado**, a fila acumula e o aviso aparece em até 1h30; ao ligar, o envio retoma (mensagens fora da janela
+   esperam a próxima abertura).
+7. **Limitação conhecida:** a janela vale no início de cada reserva. Uma execução que começa às 18h58 pode terminar alguns minutos depois das 19h
+   (acontece igual no envio em Python).
 
 ## 9. Problemas comuns
 

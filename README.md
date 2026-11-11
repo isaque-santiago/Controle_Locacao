@@ -742,3 +742,12 @@ Migration `20261109120000_portal_eventos_senha.sql` (compatível com a versão a
 - O **dono** gerar uma senha nova na aba Portal da ficha do cliente **não** gera aviso: ele entrega a senha pessoalmente (decisão do dono em 09/11/2026). A RPC `rpc_portal_registrar_redefinicao_senha`, criada na migration, fica sem uso.
 - O registro é o melhor possível: se falhar, a senha já trocada continua valendo e o erro só vai para o log. Senha recusada pelo Supabase não registra nada.
 - O texto ao locatário diz que a senha foi alterada e pede que avise o dono se não foi ele (a nova senha nunca vai na mensagem). Acesso novo continua sendo avisado a partir da criação do login. Só o dono lê `portal_eventos`. Roteiro: `supabase/verificar_portal_eventos_senha.sql` (só em dev, termina em ROLLBACK).
+
+### Executor n8n do envio de WhatsApp (opcional)
+
+O n8n pode **enviar** as mensagens no lugar da tarefa do Coolify; as regras, os textos, a fila e as telas continuam no app. Fluxo, credenciais e testes em `n8n/README.md`; operação em `Arquivos/Deploy_VPS.md`, seção 8.2.
+- Migration `20261111120000_whatsapp_executor_n8n.sql`: o **portão da janela** (`whatsapp_envio_liberado_ate`, gravado pelo preparo: no máximo 25 minutos à frente e nunca depois das 19h; fechado fora da janela) e o envio ligado passam a ser condição de `rpc_whatsapp_reservar`, que devolve `numero_envio` e `texto_envio` já resolvidos para o modo teste; `rpc_whatsapp_registrar_preparo` guarda o batimento do preparo. Roteiro: `supabase/verificar_whatsapp_executor_n8n.sql` (termina em ROLLBACK).
+- `WHATSAPP_EXECUTOR=python|n8n` (padrão `python`): com `n8n` a tarefa só prepara (enfileira e abre o portão). O Dashboard ganhou «Preparação dos avisos parada» e «Evolution recusou a chave ou a instância».
+- `n8n/enviar-mensagens-whatsapp.json`: o fluxo (22 nós, sem segredos). `tests/test_fluxo_n8n.py` confere o arquivo; `n8n/teste/executar_cenarios.py` o executa num n8n de verdade contra um servidor falso (16 verificações).
+- Validação do banco sem Docker (que não subia): um Postgres em WebAssembly (PGlite) com esboços do Supabase aplicou as 40 migrations e rodou os 15 roteiros `verificar_*.sql`.
+

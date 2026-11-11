@@ -1120,6 +1120,15 @@ assuntos por mensagem, com os mais urgentes em destaque e um pedido para falar c
    `privacidade_imagem.py`, validação de arquivo e Storage). Até lá, o texto cita só o WhatsApp.
 7. **Depois:** webhook da Evolution só para exibir respostas e status de entrega no sistema (sem agir sozinho), Pix do Cora nos textos e textos editáveis.
 
+### 20.5.1 Executor n8n (decisão de 11/11/2026)
+
+A equipe avalia o n8n e escolheu o papel de **executor do envio**: ele só reserva, envia pela Evolution e registra; as regras, os textos, a fila,
+o modo teste e a janela de horário continuam no app (Python, testado). Entregue: migration `20261111120000_whatsapp_executor_n8n.sql` (portão da
+janela, modo teste resolvido no banco, batimento do preparo), `WHATSAPP_EXECUTOR`, o fluxo `n8n/enviar-mensagens-whatsapp.json` e seus testes.
+Riscos assumidos: mais um sistema para manter (n8n local, só conexões de saída), falhas críticas de segurança do n8n em 2026 (não expor, atualizar),
+fluxo fora do pytest (mitigado por testes estáticos e pelo executor de cenários), computador local ligado 24 h. **Em aberto:** o grupo de locatários
+(objetivo, privacidade e consentimento ainda por decidir; um grupo onde todos postam não serve para avisos individuais) e onde o n8n roda de vez.
+
 ### 20.6 Pendências
 
 - Instância e chip da Evolution (decisão do dono); versão da Evolution a conferir.
