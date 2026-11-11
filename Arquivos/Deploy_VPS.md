@@ -231,7 +231,7 @@ segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); f
 O envio roda como **Tarefa Agendada do Coolify**, em processo separado do site (nada de laço dentro do app). Ele só passa a enviar
 quando o dono liga a chave em Configurações; até lá a rodada termina na hora, sem mexer em nada.
 
-1. **Banco:** aplique `20261106120000_whatsapp_base.sql`, `20261106130000_whatsapp_leitura.sql`, `20261106140000_whatsapp_painel.sql` e `20261109120000_portal_eventos_senha.sql` (esta última, antes de publicar o app: ele passa a chamar a RPC da troca de senha; sem ela só o log registra o erro) (e rode os roteiros
+1. **Banco:** aplique `20261106120000_whatsapp_base.sql`, `20261106130000_whatsapp_leitura.sql`, `20261106140000_whatsapp_painel.sql`, `20261109120000_portal_eventos_senha.sql`, `20261112120000_comprovantes_documentos.sql` e `20261112130000_whatsapp_comprovante_enviado.sql` (esta última, antes de publicar o app: ele passa a chamar a RPC da troca de senha; sem ela só o log registra o erro) (e rode os roteiros
    `supabase/verificar_whatsapp_base.sql` e `verificar_whatsapp_leitura.sql` no projeto de desenvolvimento).
 2. **Usuário de serviço:** em Authentication > Users crie um usuário só para o robô (com *Auto Confirm User* e senha forte) e, no SQL Editor,
    `insert into servico_mensagens (user_id) select id from auth.users where email = 'EMAIL-DO-ROBO';`. Ele não enxerga nenhuma tabela: só executa
@@ -262,6 +262,12 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
    e ligar para o cliente; *modo teste* = lembrete de que os clientes ainda não recebem.
 8. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
    ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado. `tempo_esgotado` = a Evolution está lenta e a rodada parou antes de estourar o tempo da reserva (o que sobrou sai na próxima).
+
+9. **Comprovantes de documento pelo portal (Etapa 6):** aplique as migrations `20261112120000_comprovantes_documentos.sql` e
+   `20261112130000_whatsapp_comprovante_enviado.sql` **antes** de publicar o app (sem elas o portal, a lista de Documentos e o Dashboard seguem
+   funcionando, só sem esta parte, e o erro vai para o log). Confira no Supabase que o bucket `documentos` continua **privado** e que existe a
+   política `locatario_envia_comprovantes_documentos` (o locatário só envia para a própria pasta `portal/<cliente_id>/`). O dono confere em
+   Documentos (selo «Comprovante a conferir») e o Dashboard avisa; enquanto há comprovante aguardando, o WhatsApp não insiste no documento.
 
 ## 9. Problemas comuns
 
