@@ -24,6 +24,13 @@ def registrar_resultado(mensagem_id: str, resultado: str, erro: str | None = Non
     }).execute().data
 
 
+def registrar_preparo(liberado_ate: datetime | None, resumo: dict | None = None) -> None:
+    """Grava o "portão" do envio (até quando está liberado; None = fechado) e o batimento do preparo das mensagens."""
+    get_client().rpc("rpc_whatsapp_registrar_preparo", {
+        "p_liberado_ate": liberado_ate.isoformat() if liberado_ate else None, "p_resumo": resumo,
+    }).execute()
+
+
 def registrar_rodada(estado: str, resumo: dict | None = None) -> None:
     """Grava o que a rodada viu (estado da instância e resumo) para o Dashboard avisar o dono."""
     get_client().rpc("rpc_whatsapp_registrar_rodada", {"p_estado": estado, "p_resumo": resumo}).execute()

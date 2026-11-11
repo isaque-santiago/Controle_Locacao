@@ -30,8 +30,9 @@ def _bruto(ativo=True, modo_teste=False, numero_teste=None, whatsapp="(11) 98888
 class RepoFalso:
     def __init__(self, bruto, pendentes=()):
         self.bruto, self.pendentes = bruto, list(pendentes)
-        self.dias_lidos, self.enfileirado, self.resultados, self.rodadas = [], [], [], []
+        self.dias_lidos, self.enfileirado, self.resultados, self.rodadas, self.preparos = [], [], [], [], []
         self.falha_ao_registrar_rodada = False
+        self.falha_ao_registrar_preparo = False
 
     def dados(self, dia):
         self.dias_lidos.append(dia)
@@ -43,6 +44,11 @@ class RepoFalso:
 
     def reservar(self, limite):
         return self.pendentes[:limite]
+
+    def registrar_preparo(self, liberado_ate, resumo=None):
+        if self.falha_ao_registrar_preparo:
+            raise RuntimeError("banco fora do ar")
+        self.preparos.append((liberado_ate, resumo))
 
     def registrar_rodada(self, estado, resumo=None):
         if self.falha_ao_registrar_rodada:
@@ -74,8 +80,11 @@ class EvolutionFalsa:
         return f"EVO-{len(self.enviados)}"
 
 
-def _pendente(id, numero="5511988887777"):
-    return {"id": id, "cliente_id": "cli-1", "numero": numero, "texto": "Olá, Maria!", "tentativas": 0}
+def _pendente(id, numero="5511988887777", **extra):
+    """Pendente como `rpc_whatsapp_reservar` entrega: `numero_envio` e `texto_envio` já resolvidos para o modo teste."""
+    base = {"id": id, "cliente_id": "cli-1", "numero": numero, "texto": "Olá, Maria!", "tentativas": 0,
+            "modo_teste": False, "numero_envio": numero, "texto_envio": "Olá, Maria!"}
+    return {**base, **extra}
 
 
 @pytest.fixture
@@ -86,9 +95,9 @@ def instalar(monkeypatch):
     return _instalar
 
 
-def _executar(evolution, agora=QUINTA_10H, pausas=None):
+def _executar(evolution, agora=QUINTA_10H, pausas=None, executor="python"):
     pausas = pausas if pausas is not None else []
-    return whatsapp.executar(evolution, OP, agora, dormir=pausas.append, sorteio=lambda a, b: 30)
+    return whatsapp.executar(evolution, OP, agora, dormir=pausas.append, sorteio=lambda a, b: 30, executor=executor)
 
 
 # ---------------------------------------------------------------- desligado --
@@ -210,14 +219,17 @@ def test_o_erro_registrado_nao_leva_o_numero_inteiro(instalar):
 # -------------------------------------------------------------- modo teste --
 
 
-def test_modo_teste_manda_so_para_o_numero_de_teste_com_aviso(instalar):
-    repo = instalar(RepoFalso(_bruto(modo_teste=True, numero_teste="5511977776666"), [_pendente("m1")]))
+def test_envia_o_numero_e_o_texto_resolvidos_pelo_banco_para_o_modo_teste(instalar):
+    """O banco decide o que vai no modo teste (número de teste e aviso «[TESTE]»); o Python só envia o que recebe e registra o
+    resultado sem inventar o id (quem grava `teste:<id>` é `rpc_whatsapp_registrar_resultado`)."""
+    pendente = _pendente("m1", modo_teste=True, numero_envio="5511977776666",
+                         texto_envio="[TESTE] Esta mensagem iria para 55119****7777.\n\nOlá, Maria!")
+    repo = instalar(RepoFalso(_bruto(modo_teste=True, numero_teste="5511977776666"), [pendente]))
     evolution = EvolutionFalsa()
     resumo = _executar(evolution)
     numero, texto = evolution.enviados[0]
     assert numero == "5511977776666" and texto.startswith("[TESTE] Esta mensagem iria para 55119****7777.")
-    assert texto.endswith("Olá, Maria!")
-    assert repo.resultados == [("m1", "enviada", None, "teste:m1")]
+    assert repo.resultados == [("m1", "enviada", None, "EVO-1")]
     assert resumo["modo_teste"] is True
 
 
@@ -327,3 +339,73 @@ def test_limite_de_requisicoes_para_a_rodada_e_devolve_a_mensagem_a_fila(instala
     resumo = _executar(evolution)
     assert resumo["envio"]["parou_por"] == "evolution_indisponivel" and resumo["envio"]["enviadas"] == 0
     assert [r[:2] for r in repo.resultados] == [("m1", "falhou")]  # volta para a fila com espera; m2 nem foi tentada
+
+
+# ------------------------------------------------------------- preparo e executor --
+
+
+def test_preparo_grava_o_portao_25_minutos_a_frente_dentro_da_janela(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+    _executar(EvolutionFalsa(), agora=QUINTA_10H)
+    liberado, resumo = repo.preparos[0]
+    assert liberado == datetime(2026, 11, 12, 10, 25, tzinfo=FUSO)
+    assert resumo["fila"]["enfileiradas"] == 1 and resumo["executor"] == "python"
+
+
+def test_portao_nao_passa_do_fechamento_e_fecha_fora_da_janela(instalar):
+    repo = instalar(RepoFalso(_bruto()))
+    _executar(EvolutionFalsa(), agora=datetime(2026, 11, 12, 18, 50, tzinfo=FUSO))
+    _executar(EvolutionFalsa(), agora=QUINTA_20H)
+    _executar(EvolutionFalsa(), agora=DOMINGO_10H)
+    assert [p[0] for p in repo.preparos] == [datetime(2026, 11, 12, 19, 0, tzinfo=FUSO), None, None]
+
+
+def test_preparo_e_gravado_antes_de_enviar(instalar):
+    """O envio do próprio Python também passa pelo portão no banco: ele tem de estar aberto antes da reserva."""
+    ordem = []
+
+    class Repo(RepoFalso):
+        def registrar_preparo(self, liberado_ate, resumo=None):
+            ordem.append("preparo")
+            return super().registrar_preparo(liberado_ate, resumo)
+
+        def reservar(self, limite):
+            ordem.append("reservar")
+            return super().reservar(limite)
+
+    instalar(Repo(_bruto(), [_pendente("m1")]))
+    _executar(EvolutionFalsa())
+    assert ordem == ["preparo", "reservar"]
+
+
+def test_envio_desligado_nao_grava_preparo(instalar):
+    repo = instalar(RepoFalso(_bruto(ativo=False)))
+    assert _executar(EvolutionFalsa()) == {"ativo": False}
+    assert repo.preparos == []
+
+
+def test_falha_ao_gravar_o_preparo_nao_derruba_a_rodada(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+    repo.falha_ao_registrar_preparo = True
+    assert _executar(EvolutionFalsa())["envio"]["enviadas"] == 1
+
+
+def test_executor_n8n_so_prepara_e_nunca_toca_na_evolution(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
+    criou = []
+
+    def fabrica():
+        criou.append(True)
+        return EvolutionFalsa()
+
+    resumo = _executar(fabrica, executor="n8n")
+    assert criou == [] and resumo["envio"] == {"parou_por": "executor_n8n"} and resumo["executor"] == "n8n"
+    assert resumo["fila"]["enfileiradas"] == 1 and repo.enfileirado  # o preparo (regras e fila) é daqui
+    assert repo.preparos[0][0] == datetime(2026, 11, 12, 10, 25, tzinfo=FUSO)  # e o portão também
+    assert repo.resultados == [] and repo.rodadas == []  # reservar, enviar e registrar a rodada são do n8n
+
+
+def test_executor_n8n_com_o_envio_desligado_nao_faz_nada(instalar):
+    repo = instalar(RepoFalso(_bruto(ativo=False)))
+    assert _executar(EvolutionFalsa(), executor="n8n") == {"ativo": False}
+    assert repo.preparos == [] and repo.enfileirado == []

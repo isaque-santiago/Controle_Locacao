@@ -6,6 +6,9 @@ Entra com o usuário de serviço (`SERVICO_MENSAGENS_EMAIL` e `SERVICO_MENSAGENS
 `rpc_whatsapp_*` (a `service_role` não é usada), e chama `src.services.whatsapp.executar`. Rode a cada 15 a 30 minutos:
 é seguro repetir. Fica em `src/` porque a imagem de produção só leva `src/` e `static/`.
 
+Quem envia é escolhido por `WHATSAPP_EXECUTOR`: `python` (padrão: esta tarefa prepara e envia) ou `n8n` (esta tarefa só prepara:
+enfileira e abre o portão da janela; o n8n reserva, envia e registra).
+
 Saída: uma linha JSON com o resumo da rodada. Código de saída: 0 = rodada feita (mesmo com o envio desligado ou a
 Evolution fora do ar, que voltam na próxima rodada); 2 = configuração faltando ou recusada (variável de ambiente,
 usuário de serviço, chave da Evolution); 1 = erro inesperado.
@@ -16,7 +19,7 @@ import logging
 import sys
 
 from src import db
-from src.config import get_evolution, get_servico_mensagens, get_textos_whatsapp
+from src.config import get_evolution, get_executor_do_envio, get_servico_mensagens, get_textos_whatsapp
 from src.domain.textos_whatsapp import OpcoesTexto
 from src.services import whatsapp
 from src.services.autenticacao import CredenciaisInvalidas, ServicoAutenticacao
@@ -36,6 +39,7 @@ def principal() -> int:
     try:
         email, senha = get_servico_mensagens()
         opcoes = OpcoesTexto(**get_textos_whatsapp())
+        executor = get_executor_do_envio()
         tokens = ServicoAutenticacao().entrar(email, senha)
     except RuntimeError as erro:
         log.error("Configuração faltando: %s", erro)
@@ -53,7 +57,7 @@ def principal() -> int:
 
     try:
         with db.usar_cliente(db.criar_cliente_autenticado(tokens.access_token)):
-            resumo = whatsapp.executar(evolution, opcoes)
+            resumo = whatsapp.executar(evolution, opcoes, executor=executor)
     except RuntimeError as erro:
         log.error("Configuração faltando: %s", erro)
         return 2

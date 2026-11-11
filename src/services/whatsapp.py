@@ -5,12 +5,13 @@ Uma execução (`executar`) faz, nesta ordem:
 2. aplica as regras de `src/domain` e enfileira as mensagens devidas, já agrupadas por cliente. Isso acontece a
    qualquer hora: o que cair fora da janela (8h às 19h, segunda a sábado, sem feriado) fica marcado para o próximo
    horário válido;
-3. confere a instância do WhatsApp e grava o estado da rodada (o Dashboard avisa o dono se ela cair ou a rodada parar);
-4. dentro da janela, envia as pendentes pela Evolution, com pausa aleatória entre elas, conferindo antes se o
-   número tem WhatsApp.
+3. grava o "portão" do envio (até quando está liberado, nunca além do fechamento da janela) e o batimento do preparo;
+4. com `executor="python"`: confere a instância do WhatsApp, grava o estado da rodada (o Dashboard avisa o dono se ela cair
+   ou a rodada parar) e, dentro da janela, envia as pendentes pela Evolution, com pausa aleatória entre elas, conferindo antes
+   se o número tem WhatsApp. Com `executor="n8n"` o envio é do n8n: aqui só se prepara.
 
-No modo teste nada vai ao cliente: tudo sai para o número de teste, com um aviso no início, e o envio é gravado com
-o id `teste:...` (para o histórico de teste poder ser desfeito ao ligar o envio de verdade).
+No modo teste nada vai ao cliente: o banco entrega já resolvidos o número de teste e o texto com o aviso «[TESTE]», e grava
+o envio com o id `teste:...` (para o histórico de teste poder ser desfeito ao ligar o envio de verdade).
 Rodar duas vezes seguidas não duplica nada (chave única no banco e reserva das pendentes).
 """
 
@@ -21,7 +22,7 @@ from datetime import datetime
 
 from src.domain.avisos_whatsapp import avisos_devidos
 from src.domain.dados_whatsapp import clientes_da_leitura, config_do_envio, entradas_das_regras
-from src.domain.janela_envio import FUSO, dentro_da_janela, proximo_horario_valido
+from src.domain.janela_envio import FUSO, dentro_da_janela, liberado_ate, proximo_horario_valido
 from src.domain.textos_whatsapp import OpcoesTexto, montar_payload
 from src.repositories import mensagens_whatsapp as repo
 from src.services.evolution import (
@@ -54,14 +55,6 @@ def enfileirar_devidos(agora: datetime, opcoes: OpcoesTexto, dados: dict | None 
     return repo.enfileirar(mensagens)
 
 
-def _numero_e_texto(msg: dict, config: dict):
-    """No modo teste, o número de teste e o texto com o aviso; fora dele, o do cliente."""
-    if not config["modo_teste"]:
-        return msg["numero"], msg["texto"], msg["id"]
-    aviso = f"[TESTE] Esta mensagem iria para {mascarar_numero(msg['numero'])}.\n\n"
-    return config["numero_teste"], aviso + msg["texto"], f"teste:{msg['id']}"
-
-
 def estado_da_instancia(evolution) -> str:
     """`open` (conectada), outro valor da Evolution (ex.: `close`) ou `indisponivel` (a Evolution não respondeu)."""
     try:
@@ -92,7 +85,8 @@ def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, so
         if relogio() - inicio + PIOR_CASO_POR_MENSAGEM > RESERVA_SEGUNDOS - MARGEM_SEGUNDOS:
             resumo["parou_por"] = "tempo_esgotado"  # as que sobraram voltam à fila quando a reserva vence
             break
-        numero, texto, id_registro = _numero_e_texto(msg, config)
+        # `numero_envio` e `texto_envio` já vêm do banco resolvidos para o modo teste (número de teste e aviso «[TESTE]»)
+        numero, texto = msg["numero_envio"], msg["texto_envio"]
         try:
             if not evolution.numero_tem_whatsapp(numero):
                 repo.registrar_resultado(msg["id"], "ignorada", "O número não tem WhatsApp.")
@@ -110,14 +104,17 @@ def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, so
             repo.registrar_resultado(msg["id"], "falhou", mascarar_numero(str(erro)))
             resumo["falhas"] += 1
             continue
-        id_gravado = id_registro if config["modo_teste"] else (id_evolution or None)
-        repo.registrar_resultado(msg["id"], "enviada", None, id_gravado)
+        repo.registrar_resultado(msg["id"], "enviada", None, id_evolution or None)  # em modo teste o banco grava teste:<id>
         resumo["enviadas"] += 1
     return resumo
 
 
-def executar(evolution, opcoes: OpcoesTexto, agora: datetime | None = None, dormir=time.sleep, sorteio=random.uniform) -> dict:
-    """Uma rodada completa (o script agendado chama isto a cada 15 a 30 minutos)."""
+def executar(evolution, opcoes: OpcoesTexto, agora: datetime | None = None, dormir=time.sleep, sorteio=random.uniform,
+             executor: str = "python") -> dict:
+    """Uma rodada completa (o script agendado chama isto a cada 15 a 30 minutos).
+
+    O preparo (ler, aplicar as regras, enfileirar e abrir o portão da janela) é sempre daqui. O envio é do `executor`:
+    `python` envia nesta mesma rodada; `n8n` não envia nada (o n8n reserva, envia e registra por conta própria)."""
     agora = (agora or datetime.now(FUSO)).astimezone(FUSO)
     momento = proximo_horario_valido(agora)
     bruto = repo.dados(momento.date())
@@ -125,8 +122,18 @@ def executar(evolution, opcoes: OpcoesTexto, agora: datetime | None = None, dorm
     if not config["ativo"]:
         return {"ativo": False}
 
-    resumo = {"ativo": True, "modo_teste": config["modo_teste"],
+    resumo = {"ativo": True, "modo_teste": config["modo_teste"], "executor": executor,
               "fila": enfileirar_devidos(agora, opcoes, dados=bruto)}
+    # O portão da janela vale para qualquer executor: sem ele aberto, a reserva não entrega nada.
+    try:
+        repo.registrar_preparo(liberado_ate(agora), {"fila": resumo["fila"], "executor": executor})
+    except Exception:
+        log.exception("Não foi possível registrar o preparo (portão e batimento).")
+    if executor == "n8n":
+        resumo["envio"] = {"parou_por": "executor_n8n"}
+        log.info("rodada do WhatsApp (só preparo): %s", resumo)
+        return resumo
+
     # A instância é conferida a cada rodada (mesmo de noite), para o Dashboard avisar o dono antes de faltar mensagem.
     evolution = evolution() if callable(evolution) else evolution
     estado = estado_da_instancia(evolution)
