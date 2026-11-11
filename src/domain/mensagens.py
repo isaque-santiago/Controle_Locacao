@@ -262,3 +262,14 @@ def whatsapp_controles_salvos(ativo, modo_teste):
     if modo_teste:
         return _alerta("Envio ligado em modo teste: as mensagens vão só para o número de teste, não para os clientes.")
     return _alerta("Envio ligado: a partir da próxima rodada as mensagens vão para os clientes.", atencao=True)
+
+
+# ------------------------------------------------- comprovante de documento (portal) --
+
+
+def comprovante_enviado(documento):
+    return _toast(f"Comprovante de {documento} enviado. O proprietário vai conferir e dar baixa no documento.")
+
+
+def comprovante_recusado(documento):
+    return _toast(f"Comprovante de {documento} recusado. O locatário vê o motivo no portal e pode enviar outro.")

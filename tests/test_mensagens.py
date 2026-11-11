@@ -132,3 +132,12 @@ def test_mensagens_do_whatsapp():
     assert "modo teste" in teste.texto and not teste.atencao
     real = m.whatsapp_controles_salvos(True, False)
     assert "vão para os clientes" in real.texto and real.atencao
+
+
+def test_mensagens_do_comprovante_de_documento():
+    from src.domain import mensagens as m
+
+    enviado = m.comprovante_enviado("IPVA 2026")
+    assert enviado.tom == "toast" and "IPVA 2026" in enviado.texto and "conferir" in enviado.texto
+    recusado = m.comprovante_recusado("IPVA 2026")
+    assert recusado.tom == "toast" and "motivo" in recusado.texto and "IPVA 2026" in recusado.texto
