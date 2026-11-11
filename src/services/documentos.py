@@ -5,7 +5,9 @@ from datetime import date
 from src.domain.arquivos import validar_arquivo
 from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.documentos import sugerir_proximo_documento
-from src.repositories import documentos_moto
+from postgrest.exceptions import APIError
+
+from src.repositories import documento_comprovantes, documentos_moto
 
 _EXTENSOES_PERMITIDAS = (".pdf", ".png", ".jpg", ".jpeg")
 
@@ -59,3 +61,39 @@ def regularizar(documento_id: str, data_regularizacao: date) -> dict:
     )
     sugestao = sugerir_proximo_documento(documento["tipo"], documento.get("ano_referencia"))
     return {"documento": documento, "sugestao_proximo": sugestao}
+
+
+# ---------------------------------------------- comprovantes enviados pelo locatário --
+
+_CODIGO_REGRA_DE_NEGOCIO = "P0001"  # raise exception ... nas RPCs
+_JA_CONFERIDO = "Este comprovante já foi conferido. Atualize a página."
+
+
+def comprovantes_aguardando() -> list[dict]:
+    return documento_comprovantes.listar_aguardando()
+
+
+def comprovante_aguardando(documento_id: str) -> dict | None:
+    return documento_comprovantes.aguardando_do_documento(documento_id)
+
+
+def historico_de_comprovantes(documento_id: str) -> list[dict]:
+    return documento_comprovantes.historico_do_documento(documento_id)
+
+
+def aceitar_comprovante(envio_id: str, data_regularizacao: date) -> dict:
+    """Regulariza o documento com o arquivo do locatário (uma transação no banco). Devolve também a sugestão do ano seguinte."""
+    try:
+        resultado = documento_comprovantes.aceitar(envio_id, data_regularizacao)
+    except APIError as erro:
+        if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
+            raise ValueError(erro.message) from erro
+        raise
+    documento = documentos_moto.obter(resultado["documento_id"])
+    return {"documento": documento, "sugestao_proximo": sugerir_proximo_documento(documento["tipo"], documento.get("ano_referencia"))}
+
+
+def recusar_comprovante(envio_id: str, motivo: str) -> None:
+    if not documento_comprovantes.recusar(envio_id, motivo):
+        raise ValueError(_JA_CONFERIDO)
+
