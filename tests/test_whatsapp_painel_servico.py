@@ -77,7 +77,7 @@ def test_alertas_usam_as_mensagens_dos_ultimos_7_dias(monkeypatch):
     pedidos = []
     _instalar(monkeypatch, repo=SimpleNamespace(listar_recentes=lambda limite, **kw: pedidos.append(kw) or []))
     config = {"whatsapp_ativo": True, "whatsapp_modo_teste": True, "whatsapp_ultimo_estado": "open",
-              "whatsapp_ultima_rodada_em": AGORA.isoformat()}
+              "whatsapp_ultima_rodada_em": AGORA.isoformat(), "whatsapp_ultimo_enfileiramento_em": AGORA.isoformat()}
     itens = servico.alertas(config, AGORA)
     assert [i.titulo for i in itens] == ["WhatsApp em modo teste"]
     assert pedidos[0]["desde"] == datetime(2026, 10, 30, 15, 0, tzinfo=timezone.utc)
