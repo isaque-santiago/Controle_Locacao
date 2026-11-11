@@ -26,6 +26,9 @@ begin
   insert into clientes (nome, cpf, whatsapp) values ('Cliente Zap Um', '90000000001', '(11) 98888-7777') returning id into c1;
   insert into clientes (nome, cpf) values ('Cliente Zap Dois', '90000000002') returning id into c2;
   insert into servico_mensagens (user_id) values (robo);
+  -- Depois da migration 20261111120000 a reserva só entrega com o envio ligado e o portão da janela aberto:
+  -- este roteiro testa a fila em si, então liga o envio de verdade e abre o portão.
+  update configuracoes set whatsapp_ativo = true, whatsapp_modo_teste = false, whatsapp_envio_liberado_ate = now() + interval '1 hour' where id = 1;
 
   -- um usuário qualquer não chama nenhuma RPC
   perform set_config('request.jwt.claim.sub', estranho::text, true);
