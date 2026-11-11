@@ -1100,7 +1100,7 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 }
 .ocupacao-card .rosca {width: 260px; height: 260px; margin: 0 auto;}
 .ocupacao-card .rosca-centro strong {font-size: 40px;}
-.ocupacao-tiles {display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--e3); margin: 0; padding: 0; list-style: none;}
+.ocupacao-tiles {display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e3); margin: 0; padding: 0; list-style: none;}
 .ocupacao-tiles li {display: grid; grid-template-columns: 1fr auto; align-content: center; gap: var(--e2) var(--e2); min-height: 112px; padding: var(--e4); border: 1px solid var(--linha); border-radius: var(--raio-md); background: var(--superficie-elevada); transition: border-color 150ms, transform 150ms;}
 .ocupacao-tiles li[class]:hover, .ocupacao-tiles li[class]:focus-visible {border-color: var(--texto-3); transform: translateY(-2px); outline: none;}
 .ocupacao-tiles .tile-rotulo {grid-column: 1 / -1; display: flex; align-items: center; gap: var(--e2); color: var(--texto-2); font-size: 14px;}
