@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 import pytest
 
 from src.domain.janela_envio import (
-    FUSO, dentro_da_janela, dia_de_envio, dia_de_envio_anterior, proximo_dia_de_envio, proximo_horario_valido,
+    FUSO, dentro_da_janela, dia_de_envio, dia_de_envio_anterior, liberado_ate, proximo_dia_de_envio, proximo_horario_valido,
 )
 
 
@@ -85,3 +85,34 @@ def test_proximo_dia_de_envio_e_dia_anterior():
     assert dia_de_envio_anterior(date(2026, 11, 10)) == date(2026, 11, 9)
     # Antes de 16/11 (domingo 15 é feriado e domingo): sábado 14.
     assert dia_de_envio_anterior(date(2026, 11, 16)) == date(2026, 11, 14)
+
+
+def test_portao_libera_25_minutos_a_frente():
+    assert liberado_ate(_br(2026, 11, 5, 10, 0)) == _br(2026, 11, 5, 10, 25)
+
+
+def test_portao_nunca_passa_do_fechamento_da_janela():
+    assert liberado_ate(_br(2026, 11, 5, 18, 50)) == _br(2026, 11, 5, 19, 0)
+    assert liberado_ate(_br(2026, 11, 5, 18, 59)) == _br(2026, 11, 5, 19, 0)
+    assert liberado_ate(_br(2026, 11, 5, 18, 30)) == _br(2026, 11, 5, 18, 55)
+
+
+def test_portao_fechado_fora_da_janela():
+    assert liberado_ate(_br(2026, 11, 5, 7, 59)) is None     # antes da abertura
+    assert liberado_ate(_br(2026, 11, 5, 19, 0)) is None     # no fechamento
+    assert liberado_ate(_br(2026, 11, 8, 10, 0)) is None     # domingo
+    assert liberado_ate(_br(2026, 11, 20, 10, 0)) is None    # feriado nacional (Consciência Negra)
+
+
+def test_portao_abre_exatamente_as_8h_e_aceita_outra_folga():
+    from datetime import timedelta
+
+    assert liberado_ate(_br(2026, 11, 5, 8, 0)) == _br(2026, 11, 5, 8, 25)
+    assert liberado_ate(_br(2026, 11, 5, 10, 0), folga=timedelta(minutes=10)) == _br(2026, 11, 5, 10, 10)
+
+
+def test_portao_converte_de_utc_e_exige_fuso():
+    assert liberado_ate(datetime(2026, 11, 5, 13, 0, tzinfo=timezone.utc)) == _br(2026, 11, 5, 10, 25)
+    with pytest.raises(ValueError):
+        liberado_ate(datetime(2026, 11, 5, 10, 0))
+

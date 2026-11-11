@@ -55,3 +55,15 @@ def proximo_horario_valido(momento: datetime) -> datetime:
     if dia_de_envio(dia) and local.time() < ABERTURA:
         return datetime.combine(dia, ABERTURA, tzinfo=FUSO)
     return datetime.combine(proximo_dia_de_envio(dia + timedelta(days=1)), ABERTURA, tzinfo=FUSO)
+
+
+def liberado_ate(momento: datetime, folga: timedelta = timedelta(minutes=25)) -> datetime | None:
+    """Até quando o envio fica liberado a partir de `momento`: `folga` à frente, mas nunca depois do fechamento da janela.
+
+    É o "portão" que o preparo grava no banco; quem só envia (o script ou o n8n) não decide horário nenhum. Fora da janela
+    (noite, domingo, feriado) devolve None: portão fechado."""
+    local = _em_br(momento)
+    if not dentro_da_janela(local):
+        return None
+    return min(local + folga, datetime.combine(local.date(), FECHAMENTO, tzinfo=FUSO))
+
