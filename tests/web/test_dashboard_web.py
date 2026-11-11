@@ -262,13 +262,24 @@ def test_frota_mostra_ocupacao_manutencao_e_veiculos(cliente):
     assert "Resultado por veículo" in html and "POU-7015" in html and "R$ 7.300,00" in html and "R$ -120,00" in html
 
 
-def test_frota_tem_barra_segmentada_com_texto_alternativo_um_trecho_por_situacao_e_a_base_da_conta(cliente):
+def test_frota_tem_pizza_interativa_com_fatias_focaveis_texto_alternativo_e_a_base_da_conta(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
-    barra = re.search(r'<svg class="barra-seg" [^>]*aria-label="([^"]+)">(.*?)</svg>', html, re.S)
-    assert barra and "3 alugadas" in barra.group(1) and 'class="rosca"' not in html
-    assert re.findall(r'class="seg (\w+)"', barra.group(2)) == ["cheio", "oficina", "livre"] and "60%" in html and "style=" not in barra.group(0)
+    rosca = re.search(r'<div class="rosca rosca-interativa" role="group" aria-label="([^"]+)">(.*?)</div>', html, re.S)
+    assert rosca and "3 alugadas" in rosca.group(1) and 'class="barra-seg"' not in html and 'class="rosca"' not in html
+    arcos = re.findall(r'<circle class="arco (\w+)"[^>]*tabindex="0" role="img" aria-label="([^"]+)"><title>([^<]+)</title>', rosca.group(2))
+    assert [a[0] for a in arcos] == ["cheio", "oficina", "livre"] and "60% das 5 motos ativas" in arcos[0][1] and arcos[0][2] == "3 alugadas (60%)"
+    assert "style=" not in rosca.group(0) and "60%" in rosca.group(2)
+    # o centro tem o texto padrão e um bloco por fatia, que o CSS mostra ao passar o mouse ou focar (só com :has)
+    assert rosca.group(2).count('class="rosca-centro rosca-info rosca-info-') == 3 and "rosca-padrao" in rosca.group(2)
     assert "Ocupação = alugadas ÷ motos ativas (5). Motos inativas não entram na conta." in html
+
+
+def test_cartoes_da_ocupacao_acompanham_as_fatias_e_a_inativa_nao_tem_fatia(cliente):
+    entrar(cliente)
+    tiles = cliente.get("/?aba=frota").text.split('class="ocupacao-tiles"', 1)[1].split("</ul>", 1)[0]
+    assert re.findall(r'<li class="t-(\w+)" tabindex="0">', tiles) == ["cheio", "livre", "oficina"]  # alugadas, disponíveis, em manutenção
+    assert tiles.count("<li>") == 1  # inativas: sem fatia na pizza, sem destaque cruzado
 
 
 def test_frota_escapa_o_locatario_e_recolhe_o_que_passa_de_cinco(cliente, monkeypatch):
@@ -404,7 +415,8 @@ def test_ocultar_esconde_barras_bullet_e_sparkline_e_mascara_a_legenda_das_faixa
     hoje = cliente.get("/?ocultar=1").text
     assert 'class="barra-seg"' not in hoje and 'class="spark"' not in hoje and "R$ 2.100,00" not in hoje and "R$ 290,00" not in hoje
     assert "faixas-legenda" in hoje and "31 dias ou mais" in hoje
-    assert 'class="barra-seg"' not in cliente.get("/?aba=frota&ocultar=1").text
+    frota = cliente.get("/?aba=frota&ocultar=1").text
+    assert 'class="barra-seg"' not in frota and "rosca-interativa" not in frota and "ocupacao-tiles" in frota
 
 
 # ------------------------------------------------------------------------ Fase 3: o que faltava --
@@ -495,10 +507,8 @@ def test_frota_organiza_seis_indicadores_ocupacao_ao_lado_das_paradas_e_veiculos
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
     assert '<dl class="grade kpis kpis-6">' in html and html.count('<div class="kpi') == 6
-    linha = html.split('<div class="frota-linha', 1)[1].split("veiculos-lista", 1)[0]
-    assert 'class="cartao ocupacao-card"' in linha and "paradas-lista" in linha
-    assert 'class="ocupacao-tiles"' in html and html.count('class="tile-rotulo"') == 4
-    assert html.index("t-veiculos") > html.index("t-paradas")  # resultado por veículo vem depois, em largura total
+    assert 'class="cartao ocupacao-card mt-4"' in html and "frota-linha" not in html and html.count('class="tile-rotulo"') == 4
+    assert html.index("t-ocupacao") < html.index("t-paradas") < html.index("t-veiculos")  # cada cartão em largura total, um sob o outro
 
 
 def test_frota_sem_a_leitura_do_dinheiro_volta_a_quatro_indicadores(cliente, monkeypatch):
