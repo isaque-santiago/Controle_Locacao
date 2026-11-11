@@ -14,7 +14,7 @@
 {% endcall %}
 
 {# Três abas, cada uma com URL própria e sem JavaScript: Hoje (o que fazer agora), Dinheiro (o mês) e Frota (as motos). #}
-<nav class="abas" aria-label="Seções do Dashboard">
+<nav class="abas dash" aria-label="Seções do Dashboard">
   {% for a in d.abas %}<a href="{{ a.href }}"{% if a.ativa %} aria-current="page"{% endif %}>{{ a.rotulo }}</a>{% endfor %}
 </nav>
 

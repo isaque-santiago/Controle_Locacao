@@ -61,7 +61,7 @@ def test_aba_e_modos_da_url_chegam_ao_dashboard(cliente, monkeypatch):
 def test_tres_abas_com_a_atual_marcada_e_sem_javascript(cliente):
     entrar(cliente)
     html = cliente.get("/").text
-    nav = re.search(r'<nav class="abas" aria-label="Seções do Dashboard">(.*?)</nav>', html, re.S).group(1)
+    nav = re.search(r'<nav class="abas dash" aria-label="Seções do Dashboard">(.*?)</nav>', html, re.S).group(1)
     assert re.findall(r'<a href="([^"]+)"( aria-current="page")?>([^<]+)</a>', nav) == [
         ("/", ' aria-current="page"', "Hoje"), ("/?aba=dinheiro", "", "Dinheiro"), ("/?aba=frota", "", "Frota")]
 
@@ -258,7 +258,7 @@ def test_frota_mostra_ocupacao_manutencao_e_veiculos(cliente):
     html = cliente.get("/?aba=frota").text
     assert "5 motos" in html and "60%" in html and "3 alugadas de 5 ativas" in html and "1 livres" in html
     assert "1 moto" in html and "1 ordem concluída no mês" in html and 'href="/manutencao"' in html
-    assert "Gasto com manutenção no mês" in html and "R$ 85" in html and "mesmo valor da categoria Manutenção em Dinheiro" in html
+    assert "Gasto com manutenção no mês" in html and "R$ 85" in html and "igual à categoria Manutenção em Dinheiro" in html
     assert "Resultado por veículo" in html and "POU-7015" in html and "R$ 7.300,00" in html and "R$ -120,00" in html
 
 
@@ -474,3 +474,35 @@ def test_moto_em_manutencao_sem_ordem_aberta_diz_isso_em_vez_de_contrato_anterio
     entrar(cliente)
     paradas = cliente.get("/?aba=frota").text.split('id="t-paradas"', 1)[1].split("</section>", 1)[0]
     assert "sem ordem aberta" in paradas and "sem contrato anterior" not in paradas
+
+
+# ------------------------------------------------------------------------ ajustes de layout (11/11/2026) --
+
+
+def test_as_tres_abas_tem_a_mesma_largura_maxima_do_dashboard(cliente):
+    entrar(cliente)
+    for caminho in ("/", "/?aba=dinheiro", "/?aba=frota"):
+        assert 'class="abas dash"' in cliente.get(caminho).text, caminho  # `main:has(.dash)` libera os 1600 px nas três
+
+
+def test_dinheiro_destaca_a_receita_e_mostra_os_seis_meses_como_tabela(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=dinheiro").text
+    assert '<dl class="grade kpis kpis-receita">' in html and 'class="cartao moto-lista-cards evolucao-lista"' in html
+
+
+def test_frota_organiza_seis_indicadores_ocupacao_ao_lado_das_paradas_e_veiculos_embaixo(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=frota").text
+    assert '<dl class="grade kpis kpis-6">' in html and html.count('<div class="kpi') == 6
+    linha = html.split('<div class="frota-linha', 1)[1].split("veiculos-lista", 1)[0]
+    assert 'class="cartao ocupacao-card"' in linha and "paradas-lista" in linha
+    assert 'class="ocupacao-tiles"' in html and html.count('class="tile-rotulo"') == 4
+    assert html.index("t-veiculos") > html.index("t-paradas")  # resultado por veículo vem depois, em largura total
+
+
+def test_frota_sem_a_leitura_do_dinheiro_volta_a_quatro_indicadores(cliente, monkeypatch):
+    _com(monkeypatch, ajustes={"frota": {"indisponivel": True, "veiculos": []}})
+    entrar(cliente)
+    html = cliente.get("/?aba=frota").text
+    assert "kpis-6" not in html and "Receita por moto" not in html and "ocupacao-card" in html
