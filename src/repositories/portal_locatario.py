@@ -12,6 +12,7 @@ from src.db import get_client
 from src.repositories.consultas import invalida_cache, todos
 
 BUCKET = "trocas_oleo"
+BUCKET_DOCUMENTOS = "documentos"
 FUNCAO_ACESSO = "criar-locatario"
 
 
@@ -45,6 +46,24 @@ def enviar_arquivo(
         caminho, conteudo, {"content-type": content_type, "upsert": "false"}
     )
     return caminho
+
+
+def documentos() -> list:
+    """Documentos pendentes das motos dos contratos ativos do locatário, com a situação do último comprovante enviado."""
+    return get_client().rpc("rpc_portal_documentos").execute().data
+
+
+def enviar_comprovante_arquivo(cliente_id: str, nome_arquivo: str, conteudo: bytes, content_type: str) -> str:
+    """Envia o comprovante para a pasta `portal/<cliente_id>/` do bucket `documentos`; devolve o caminho.
+
+    Sem upsert: o locatário só tem permissão de inserir, nunca de sobrescrever."""
+    caminho = f"portal/{cliente_id}/{uuid4().hex}{PurePath(nome_arquivo).suffix.lower()}"
+    get_client().storage.from_(BUCKET_DOCUMENTOS).upload(caminho, conteudo, {"content-type": content_type, "upsert": "false"})
+    return caminho
+
+
+def registrar_comprovante(payload: dict) -> dict:
+    return get_client().rpc("rpc_portal_enviar_comprovante", {"payload": payload}).execute().data
 
 
 def alterar_senha(nova_senha: str) -> None:

@@ -42,7 +42,9 @@ def test_usuario_de_servico(monkeypatch):
 def test_textos_usam_o_nome_do_locador_quando_nao_ha_empresa(monkeypatch):
     _ambiente(monkeypatch, {"LOCADOR_NOME": "LA Motos Ltda", "WHATSAPP_CONTATO": "o Alisson, no (11) 99999-0000"})
     textos = config.get_textos_whatsapp()
-    assert textos == {"empresa": "LA Motos Ltda", "contato": "o Alisson, no (11) 99999-0000", "pix": None, "link_portal": None}
+    assert textos == {"empresa": "LA Motos Ltda", "contato": "o Alisson, no (11) 99999-0000", "pix": None, "link_portal": None,
+                      "comprovante_no_portal": False}
     _ambiente(monkeypatch, {"WHATSAPP_EMPRESA": "LA Motos", "LOCADOR_NOME": "Outro", "WHATSAPP_PIX": "chave", "PORTAL_URL": "https://p"})
     textos = config.get_textos_whatsapp()
     assert textos["empresa"] == "LA Motos" and textos["pix"] == "chave" and textos["link_portal"] == "https://p"
+    assert textos["comprovante_no_portal"] is True  # com o link do portal, o aviso de documento convida a enviar o comprovante por lá

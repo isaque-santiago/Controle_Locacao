@@ -7,6 +7,8 @@ from pathlib import PurePath
 from postgrest.exceptions import APIError
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.comprovante_documento import EXTENSOES as EXTENSOES_COMPROVANTE
+from src.domain.formulario_documento import TIPOS_CONTEUDO
 from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.troca_oleo import avaliar_troca_oleo, validar_km_informado
 from src.repositories import portal_locatario
@@ -78,6 +80,31 @@ def registrar_troca_senha() -> None:
         portal_locatario.registrar_troca_senha()
     except Exception:
         log.exception("Não foi possível registrar a troca de senha do portal.")
+
+
+def documentos_do_locatario() -> list:
+    """Documentos pendentes das motos dele (a RPC só devolve o que é do locatário logado)."""
+    return portal_locatario.documentos()
+
+
+def enviar_comprovante_documento(cliente_id: str, documento_id: str, nome_arquivo: str, conteudo: bytes, observacao: str | None) -> dict:
+    """Valida o arquivo, tira os dados pessoais da foto, envia ao Storage e registra o envio pela RPC.
+
+    O envio NÃO regulariza o documento: fica aguardando o dono. Confere tudo antes do upload para não deixar arquivo órfão
+    por erro que já dava para prever; a RPC confere de novo que o documento é dele e que o arquivo está na pasta dele."""
+    validar_arquivo(nome_arquivo, conteudo, EXTENSOES_COMPROVANTE)
+    conteudo = remover_dados_pessoais(nome_arquivo, conteudo)
+    caminho = portal_locatario.enviar_comprovante_arquivo(
+        cliente_id, nome_arquivo, conteudo, TIPOS_CONTEUDO[PurePath(nome_arquivo).suffix.lower()]
+    )
+    try:
+        return portal_locatario.registrar_comprovante(
+            {"documento_id": documento_id, "arquivo_path": caminho, "observacao": observacao}
+        )
+    except APIError as erro:
+        if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
+            raise _como_regra_de_negocio(erro) from erro
+        raise
 
 
 # ---- Somente o dono ----------------------------------------------------------

@@ -232,6 +232,22 @@ def test_documento_a_vencer_avisa_uma_vez():
     assert avisos_de_documentos(date(2026, 11, 11), [doc], {("documento_proximo", "doc-1"): [date(2026, 11, 10)]}, CFG) == []
 
 
+def test_documento_com_comprovante_aguardando_nao_e_avisado():
+    """O locatário já mandou o comprovante: insistir seria à toa até o dono conferir. Recusado, o aviso volta."""
+    for situacao, vencimento in (("vencido", date(2026, 11, 5)), ("a_vencer", date(2026, 11, 20))):
+        doc = _documento(situacao=situacao, vencimento=vencimento)
+        assert avisos_de_documentos(date(2026, 11, 10), [dict(doc, comprovante_enviado=True)], {}, CFG) == []
+        assert len(avisos_de_documentos(date(2026, 11, 10), [dict(doc, comprovante_enviado=False)], {}, CFG)) == 1
+        assert len(avisos_de_documentos(date(2026, 11, 10), [doc], {}, CFG)) == 1  # campo ausente (banco antigo): avisa
+
+
+def test_so_o_documento_com_comprovante_pausa_nao_os_outros_do_cliente():
+    pausado = dict(_documento(), id="doc-1", comprovante_enviado=True)
+    outro = dict(_documento(tipo="seguro"), id="doc-2")
+    avisos = avisos_de_documentos(date(2026, 11, 10), [pausado, outro], {}, CFG)
+    assert [a.referencia_id for a in avisos] == ["doc-2"]
+
+
 # --------------------------------------------------------------------- óleo --
 
 

@@ -166,10 +166,13 @@ def avisos_de_cnh(dia_envio: date, cnhs, historico, cfg: ConfigAvisos) -> list[A
 
 def avisos_de_documentos(dia_envio: date, documentos, historico, cfg: ConfigAvisos) -> list[Aviso]:
     """Documentos da moto, avisados ao locatário do contrato ativo. Cada item: `id, cliente_id, placa, tipo_documento,
-    descricao, vencimento, situacao` (`a_vencer` ou `vencido`). Some quando o dono marca como regularizado
-    (a view deixa de listá-lo)."""
+    descricao, vencimento, situacao` (`a_vencer` ou `vencido`) e, opcionalmente, `comprovante_enviado`. Some quando o dono
+    marca como regularizado (a view deixa de listá-lo). Enquanto há comprovante aguardando conferência do dono, o locatário já
+    fez a parte dele: não se avisa (recusado o comprovante, o aviso volta)."""
     avisos = []
     for d in documentos:
+        if d.get("comprovante_enviado"):
+            continue
         dados = dict(
             placa=d.get("placa"), tipo_documento=d["tipo_documento"], descricao=d.get("descricao"),
             vencimento=d["vencimento"], dias=(d["vencimento"] - dia_envio).days,

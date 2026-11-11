@@ -10,6 +10,14 @@ def registrar_troca_oleo(cliente_id, contrato, km_texto, foto, nota, multa):
     return portal_locatario.registrar_troca_oleo(cliente_id, contrato, km_texto, foto, nota, multa)
 
 
+def enviar_comprovante_documento(cliente_id, documento_id, arquivo, observacao):
+    """Valida de novo, envia o arquivo ao Storage e registra o envio (que fica aguardando o dono; não regulariza nada).
+
+    `arquivo`: (nome, conteúdo em bytes)."""
+    nome, conteudo = arquivo
+    return portal_locatario.enviar_comprovante_documento(cliente_id, documento_id, nome, conteudo, observacao)
+
+
 def alterar_senha(servico, access_token, nova):
     """Troca a senha do próprio usuário no Supabase Auth, com o token da sessão dele."""
     servico.alterar_senha(access_token, nova)
