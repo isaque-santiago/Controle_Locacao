@@ -17,7 +17,7 @@ def dados_painel_falsos():
     """Aqui o que se testa é o `carregar` de verdade: este teste desliga o `carregar` fictício do conftest."""
 
 
-def _instalar(monkeypatch, config=None, alertas_zap=None, hoje=None, dinheiro=None, frota=None, motos=None, ordens=None):
+def _instalar(monkeypatch, config=None, alertas_zap=None, hoje=None, dinheiro=None, frota=None, motos=None, ordens=None, comprovantes=None):
     chamadas = {"gerar": 0, "hoje": 0, "dinheiro": [], "frota": 0, "alertas_zap": []}
     config = config or {"alerta_manutencao_km": 300, "alerta_manutencao_dias": 15, "alerta_documento_dias": 30}
 
@@ -46,6 +46,7 @@ def _instalar(monkeypatch, config=None, alertas_zap=None, hoje=None, dinheiro=No
     monkeypatch.setattr(dados_painel, "manutencao", SimpleNamespace(listar_manutencoes=lambda: ordens or []))
     monkeypatch.setattr(dados_painel, "alertas", SimpleNamespace(listar_manutencao=lambda: [], listar_documentos=lambda: [], listar_cnh=lambda: []))
     monkeypatch.setattr(dados_painel, "configuracoes", SimpleNamespace(obter=lambda: config))
+    monkeypatch.setattr(dados_painel, "documentos", SimpleNamespace(alertas_de_comprovantes=lambda: comprovantes or []))
     monkeypatch.setattr(dados_painel, "whatsapp_painel", SimpleNamespace(
         alertas=lambda c: chamadas["alertas_zap"].append(c) or (alertas_zap or [])))
     return chamadas
@@ -117,3 +118,13 @@ def test_frota_monta_ocupacao_rosca_legenda_e_manutencao(monkeypatch):
     assert f["ordens_concluidas"] == 1 and f["manutencao_aberta"] == {"quantidade": 1, "total": Decimal("290")}
     assert f["rosca"] and f["legenda"] and "3 motos" in f["descricao_medidor"]
     assert f["manutencao_mes"] == Decimal("10.00") and f["veiculos"] == []
+
+
+def test_comprovante_a_conferir_entra_na_lista_de_atencao_da_aba_hoje(monkeypatch):
+    item = ItemAlerta(1, "Comprovante a conferir", "Maria · IPVA 2026 · ABC1D23", "atencao", "documentos")
+    _instalar(monkeypatch, comprovantes=[item])
+    titulos = [i.titulo for i in dados_painel.carregar(HOJE)["hoje"]["atencao"]]
+    assert "Comprovante a conferir" in titulos
+    _instalar(monkeypatch)
+    assert "Comprovante a conferir" not in [i.titulo for i in dados_painel.carregar(HOJE)["hoje"]["atencao"]]
+

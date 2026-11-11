@@ -154,3 +154,24 @@ def test_repositorio_do_dono_aceita_pela_rpc_e_recusa_so_o_que_aguarda():
     assert atualizacao["status"] == "recusado" and atualizacao["motivo_recusa"] == "Foto cortada" and atualizacao["conferido_em"]
     cliente.table.return_value.update.return_value.eq.assert_called_once_with("id", "e1")
     cliente.table.return_value.update.return_value.eq.return_value.eq.assert_called_once_with("status", "enviado")
+
+
+# ------------------------------------------------------------- alerta do Dashboard --
+
+
+def test_alerta_do_dashboard_nomeia_cliente_documento_e_moto():
+    envios = [{"clientes": {"nome": "Maria Souza"},
+               "documentos_moto": {"tipo": "ipva", "descricao": None, "ano_referencia": 2026, "motos": {"placa": "ABC1D23"}}},
+              {"clientes": {"nome": "João"}, "documentos_moto": {"tipo": "outro", "descricao": "Taxa do rastreador", "ano_referencia": None, "motos": None}}]
+    with patch(f"{REPO_DONO}.listar_aguardando", return_value=envios):
+        itens = documentos.alertas_de_comprovantes()
+    assert len(itens) == 1
+    assert (itens[0].quantidade, itens[0].titulo, itens[0].area) == (2, "Comprovante a conferir", "documentos")
+    assert itens[0].descricao == "Maria Souza · IPVA 2026 · ABC1D23 e mais 1"
+
+
+def test_alerta_do_dashboard_sem_envios_ou_com_falha_de_leitura():
+    with patch(f"{REPO_DONO}.listar_aguardando", return_value=[]):
+        assert documentos.alertas_de_comprovantes() == []
+    with patch(f"{REPO_DONO}.listar_aguardando", side_effect=RuntimeError("tabela inexistente")):
+        assert documentos.alertas_de_comprovantes() == []

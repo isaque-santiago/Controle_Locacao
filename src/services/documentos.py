@@ -1,8 +1,10 @@
 """Orquestra cadastro, comprovantes e regularização de documentos da moto."""
 
+import logging
 from datetime import date
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.comprovante_documento import alertas_de_comprovantes as _alertas_de_comprovantes, nome_do_documento
 from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.documentos import sugerir_proximo_documento
 from postgrest.exceptions import APIError
@@ -10,6 +12,8 @@ from postgrest.exceptions import APIError
 from src.repositories import documento_comprovantes, documentos_moto
 
 _EXTENSOES_PERMITIDAS = (".pdf", ".png", ".jpg", ".jpeg")
+
+log = logging.getLogger(__name__)
 
 
 def listar_por_moto(moto_id: str):
@@ -96,4 +100,20 @@ def aceitar_comprovante(envio_id: str, data_regularizacao: date) -> dict:
 def recusar_comprovante(envio_id: str, motivo: str) -> None:
     if not documento_comprovantes.recusar(envio_id, motivo):
         raise ValueError(_JA_CONFERIDO)
+
+
+def alertas_de_comprovantes() -> list:
+    """Item do Dashboard «Comprovante a conferir». Se a leitura falhar (migration ainda não aplicada), o Dashboard segue sem ele."""
+    try:
+        envios = documento_comprovantes.listar_aguardando()
+    except Exception:
+        log.exception("Não foi possível ler os comprovantes aguardando conferência para o Dashboard.")
+        return []
+    itens = []
+    for e in envios:
+        d = e.get("documentos_moto") or {}
+        placa = (d.get("motos") or {}).get("placa")
+        nome = nome_do_documento(d.get("tipo", "outro"), d.get("descricao"), d.get("ano_referencia"))
+        itens.append({"cliente": (e.get("clientes") or {}).get("nome"), "documento": f"{nome} · {placa}" if placa else nome})
+    return _alertas_de_comprovantes(itens)
 

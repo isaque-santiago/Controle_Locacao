@@ -15,6 +15,7 @@ from src.services import (
     clientes,
     cobrancas,
     configuracoes,
+    documentos,
     manutencao,
     motos,
     whatsapp_painel,
@@ -32,7 +33,7 @@ def _hoje(hoje: date) -> dict:
         atencao = dados["atencao_financeira"]
     itens = painel.agrupar_alertas(
         config, alertas.listar_manutencao(), alertas.listar_documentos(), alertas.listar_cnh()
-    ) + whatsapp_painel.alertas(config) + atencao
+    ) + documentos.alertas_de_comprovantes() + whatsapp_painel.alertas(config) + atencao
     return {"hoje": {**dados, "atencao": ordenar_atencao(itens)}, "mes": None, "mes_anterior": None, "mes_seguinte": None}
 
 
