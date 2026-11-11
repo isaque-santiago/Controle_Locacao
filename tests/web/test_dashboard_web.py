@@ -507,8 +507,8 @@ def test_frota_organiza_seis_indicadores_ocupacao_ao_lado_das_paradas_e_veiculos
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
     assert '<dl class="grade kpis kpis-6">' in html and html.count('<div class="kpi') == 6
-    assert 'class="cartao ocupacao-card mt-4"' in html and "frota-linha" not in html and html.count('class="tile-rotulo"') == 4
-    assert html.index("t-ocupacao") < html.index("t-paradas") < html.index("t-veiculos")  # cada cartão em largura total, um sob o outro
+    assert 'class="frota-linha mt-4"' in html and 'class="cartao ocupacao-card"' in html and html.count('class="tile-rotulo"') == 4
+    assert html.index("t-ocupacao") < html.index("t-paradas") < html.index("t-veiculos")  # Ocupação à esquerda, paradas à direita, veículos embaixo
 
 
 def test_frota_sem_a_leitura_do_dinheiro_volta_a_quatro_indicadores(cliente, monkeypatch):

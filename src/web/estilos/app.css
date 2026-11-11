@@ -1091,16 +1091,16 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .kpis.kpis-6 {grid-template-columns: repeat(2, minmax(0, 1fr));}
 @media (min-width: 900px) {.kpis.kpis-6 {grid-template-columns: repeat(3, minmax(0, 1fr));}}
 @media (min-width: 1500px) {.kpis.kpis-6 {grid-template-columns: repeat(6, minmax(0, 1fr));}}
-/* Ocupação da frota: pizza interativa (sem script) à esquerda e quatro cartões à direita, na largura toda, sem sobra de espaço. */
-.ocupacao-card {display: grid; gap: var(--e4) var(--e6); grid-template-columns: minmax(0, 1fr); align-items: center;}
+/* Ocupação da frota: pizza interativa (sem script) no lado esquerdo, ao lado das motos paradas; a pizza absorve a folga de altura (centralizada) e os cartões ficam numa linha embaixo. */
+.frota-linha {display: grid; gap: var(--e4); grid-template-columns: minmax(0, 1fr); align-items: stretch;}
+@media (min-width: 1100px) {.frota-linha {grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);}}
+.frota-linha > .cartao {margin: 0;}
+.ocupacao-card {display: flex; flex-direction: column; gap: var(--e4);}
 .ocupacao-card .cartao-cab {margin-bottom: 0;}
-@media (min-width: 900px) {
-  .ocupacao-card {grid-template-columns: auto minmax(0, 1fr);}
-  .ocupacao-card .cartao-cab, .ocupacao-card .legenda-nota {grid-column: 1 / -1;}
-}
-.ocupacao-card .rosca {width: 260px; height: 260px; margin: 0 auto;}
+.ocupacao-grafico {flex: 1; display: grid; place-items: center; min-height: 270px;}
+.ocupacao-card .rosca {width: 260px; height: 260px; margin: 0;}
 .ocupacao-card .rosca-centro strong {font-size: 40px;}
-.ocupacao-tiles {display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--e3); margin: 0; padding: 0; list-style: none;}
+.ocupacao-tiles {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin: 0; padding: 0; list-style: none;}
 .ocupacao-tiles li {display: grid; grid-template-columns: 1fr auto; align-content: center; gap: var(--e2) var(--e2); min-height: 112px; padding: var(--e4); border: 1px solid var(--linha); border-radius: var(--raio-md); background: var(--superficie-elevada); transition: border-color 150ms, transform 150ms;}
 .ocupacao-tiles li[class]:hover, .ocupacao-tiles li[class]:focus-visible {border-color: var(--texto-3); transform: translateY(-2px); outline: none;}
 .ocupacao-tiles .tile-rotulo {grid-column: 1 / -1; display: flex; align-items: center; gap: var(--e2); color: var(--texto-2); font-size: 14px;}
@@ -1109,6 +1109,12 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .ocupacao-tiles .tile-rotulo i.livre {background: var(--neutro);}
 .ocupacao-tiles strong {font-size: 36px; line-height: 1;}
 .ocupacao-tiles .legenda-pct {align-self: end; color: var(--texto-2);}
+@media (min-width: 1100px) {
+  .ocupacao-tiles {grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e2);}
+  .ocupacao-tiles li {min-height: 96px; padding: var(--e3);}
+  .ocupacao-tiles strong {font-size: 28px;}
+  .ocupacao-tiles .tile-rotulo {font-size: 12px; align-items: flex-start;}
+}
 .ocupacao-card .legenda-nota {margin: 0;}
 /* Interação: a fatia e o cartão da mesma situação se destacam juntos, as outras esmaecem e o centro mostra a situação escolhida. */
 .rosca-interativa .arco {cursor: pointer; outline: none; transition: stroke-width 150ms, opacity 150ms;}
