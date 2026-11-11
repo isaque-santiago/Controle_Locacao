@@ -88,15 +88,23 @@ def alertas_whatsapp(config: dict, mensagens: list[dict], agora: datetime) -> li
     itens: list[ItemAlerta] = []
 
     ultima = _data(config.get("whatsapp_ultima_rodada_em"))
-    if ultima is None or agora - ultima > timedelta(minutes=RODADA_PARADA_MINUTOS):
+    envio_parado = ultima is None or agora - ultima > timedelta(minutes=RODADA_PARADA_MINUTOS)
+    if envio_parado:
         quando = "ainda não rodou" if ultima is None else "não roda há mais de 1h30"
-        itens.append(ItemAlerta(1, "Envio automático parado", f"A tarefa agendada {quando}. Veja o log no Coolify.", TOM_PERIGO, "mensagens"))
+        itens.append(ItemAlerta(1, "Envio automático parado", f"O envio {quando}. Veja o log da tarefa no Coolify (ou do n8n).", TOM_PERIGO, "mensagens"))
     else:
         estado = config.get("whatsapp_ultimo_estado")
         if estado == "indisponivel":
             itens.append(ItemAlerta(1, "Evolution fora do ar", "As mensagens ficam na fila e voltam a sair quando ela responder.", TOM_PERIGO, "mensagens"))
         elif estado and estado != "open":
             itens.append(ItemAlerta(1, "WhatsApp desconectado", "Leia o QR code da instância na Evolution para voltar a enviar.", TOM_PERIGO, "mensagens"))
+
+    # O preparo (regras e fila) tem batimento próprio. Se o envio também parou, o alerta acima já cobre; este aparece quando
+    # só o preparo parou (o n8n continua rodando, mas sem mensagens novas e sem o portão da janela aberto).
+    enfileirou = _data(config.get("whatsapp_ultimo_enfileiramento_em"))
+    if not envio_parado and (enfileirou is None or agora - enfileirou > timedelta(minutes=RODADA_PARADA_MINUTOS)):
+        quando = "ainda não rodou" if enfileirou is None else "não roda há mais de 1h30"
+        itens.append(ItemAlerta(1, "Preparação dos avisos parada", f"A tarefa do app que prepara as mensagens {quando}. Sem ela nada novo é enfileirado e o envio não é liberado. Veja o log no Coolify.", TOM_PERIGO, "mensagens"))
 
     if config.get("whatsapp_modo_teste", True):
         itens.append(ItemAlerta(1, "WhatsApp em modo teste", "As mensagens vão só para o número de teste, não para os clientes.", TOM_ATENCAO, "configuracoes"))

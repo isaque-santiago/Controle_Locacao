@@ -16,7 +16,8 @@ def _msg(id, cliente="c1", status="enviada", horas_atras=1, erro=None, numero="5
 
 def _config(**extra):
     base = {"whatsapp_ativo": True, "whatsapp_modo_teste": False, "whatsapp_ultimo_estado": "open",
-            "whatsapp_ultima_rodada_em": (AGORA - timedelta(minutes=10)).isoformat()}
+            "whatsapp_ultima_rodada_em": (AGORA - timedelta(minutes=10)).isoformat(),
+            "whatsapp_ultimo_enfileiramento_em": (AGORA - timedelta(minutes=10)).isoformat()}
     return {**base, **extra}
 
 
@@ -127,3 +128,24 @@ def test_estado_da_instancia_em_portugues():
     assert estado_da_instancia(None) == "ainda sem rodada" and estado_da_instancia("open") == "conectada"
     assert "QR code" in estado_da_instancia("close") and estado_da_instancia("indisponivel") == "Evolution fora do ar"
     assert estado_da_instancia("outro") == "outro"
+
+
+def test_preparo_parado_com_o_envio_em_dia_tem_alerta_proprio():
+    """O n8n continua enviando, mas a tarefa do app que prepara as mensagens parou."""
+    parado = alertas_whatsapp(_config(whatsapp_ultimo_enfileiramento_em=(AGORA - timedelta(minutes=95)).isoformat()), [], AGORA)
+    assert [(i.titulo, i.tom, i.area) for i in parado] == [("Preparação dos avisos parada", "perigo", "mensagens")]
+    assert "mais de 1h30" in parado[0].descricao
+    nunca = alertas_whatsapp(_config(whatsapp_ultimo_enfileiramento_em=None), [], AGORA)
+    assert nunca[0].titulo == "Preparação dos avisos parada" and "ainda não rodou" in nunca[0].descricao
+    assert alertas_whatsapp(_config(whatsapp_ultimo_enfileiramento_em=(AGORA - timedelta(minutes=89)).isoformat()), [], AGORA) == []
+
+
+def test_envio_e_preparo_parados_geram_um_alerta_so():
+    itens = alertas_whatsapp(_config(whatsapp_ultima_rodada_em=None, whatsapp_ultimo_enfileiramento_em=None), [], AGORA)
+    assert [i.titulo for i in itens] == ["Envio automático parado"]
+
+
+def test_envio_parado_cita_a_tarefa_ou_o_n8n():
+    item = alertas_whatsapp(_config(whatsapp_ultima_rodada_em=None), [], AGORA)[0]
+    assert "n8n" in item.descricao and "Coolify" in item.descricao
+
