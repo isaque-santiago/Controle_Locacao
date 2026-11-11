@@ -4,14 +4,14 @@
 {% set comp = d.compacto %}
 {% set ab = fr.manutencao_aberta %}
 
-<dl class="grade kpis">
+<dl class="grade kpis{% if not fr.indisponivel %} kpis-6{% endif %}">
   {{ kpi("Frota", fr.total ~ (" moto" if fr.total == 1 else " motos"), fr.ativas ~ " ativas"~ ((" · " ~ fr.contagem.inativa ~ " inativas") if fr.contagem.inativa else "")) }}
   {{ kpi("Ocupação", fr.ocupacao ~ "%", fr.contagem.alugada ~ " alugadas de " ~ fr.ativas ~ " ativas", extra=(fr.contagem.disponivel ~ " livres")) }}
   {{ kpi("Em manutenção", fr.contagem.manutencao ~ (" moto" if fr.contagem.manutencao == 1 else " motos"), fr.ordens_concluidas ~ (" ordem concluída no mês" if fr.ordens_concluidas == 1 else " ordens concluídas no mês"), atencao=(fr.contagem.manutencao > 0), href="/manutencao") }}
   {% if fr.indisponivel %}
   {{ kpi("Gasto com manutenção no mês", "—", "indisponível agora") }}
   {% else %}
-  {{ kpi("Gasto com manutenção no mês", dinc(fr.manutencao_mes), "mesmo valor da categoria Manutenção em Dinheiro", extra=(("+ " ~ dinc(ab.total) ~ " lançados em " ~ ab.quantidade ~ (" ordem em andamento" if ab.quantidade == 1 else " ordens em andamento")) if ab.quantidade else None)) }}
+  {{ kpi("Gasto com manutenção no mês", dinc(fr.manutencao_mes), "igual à categoria Manutenção em Dinheiro", extra=(("+ " ~ dinc(ab.total) ~ " lançados em " ~ ab.quantidade ~ (" ordem em andamento" if ab.quantidade == 1 else " ordens em andamento")) if ab.quantidade else None)) }}
   {% endif %}
   {% if not fr.indisponivel %}
   {{ kpi("Receita por moto", din(fr.receita_por_moto) if fr.receita_por_moto is not none else "—", "receita do mês ÷ " ~ fr.ativas ~ " motos ativas") }}
@@ -20,50 +20,63 @@
 </dl>
 
 {% if not comp %}
-{% if not fr.indisponivel %}
-<section class="cartao moto-lista-cards mt-4" aria-labelledby="t-paradas">
-  <div class="cartao-cab"><h2 id="t-paradas">Motos paradas</h2><span class="text-texto-2 text-[13px]">{% if fr.paradas.total > fr.paradas.linhas|length %}mostrando {{ fr.paradas.linhas|length }} de {{ fr.paradas.total }}, as paradas há mais tempo primeiro{% else %}em manutenção ou disponíveis, há mais tempo primeiro{% endif %}</span></div>
-  {% if fr.paradas.linhas %}
-  {% call tabela([("Moto", ""), ("Situação", ""), ("Desde", ""), ("Parada há", "num")], "Motos em manutenção ou disponíveis, com há quantos dias") %}
-    {% for p in fr.paradas.linhas %}
-    <tr>
-      <td class="topo">{{ plac(p.placa) }}</td>
-      <td data-rotulo="Situação">{{ p.motivo }}</td>
-      <td class="mono" data-rotulo="Desde">{{ (p.desde|data_br) if p.desde else ("sem ordem aberta" if p.motivo == "Em manutenção" else "sem contrato anterior") }}</td>
-      <td class="num mono" data-rotulo="Parada há">{% if p.dias is not none %}{{ p.dias }} {{ "dia" if p.dias == 1 else "dias" }}{% else %}—{% endif %}</td>
-    </tr>
+{# Fatias da pizza ↔ situações da legenda. Cada fatia é focável (teclado) e responde ao mouse; o centro e os cartões acompanham, só com CSS. #}
+{% set classe_da = {"alugada": "cheio", "manutencao": "oficina", "disponivel": "livre"} %}
+{% set status_da = {"cheio": "alugada", "oficina": "manutencao", "livre": "disponivel"} %}
+{% set leg = {} %}{% for seg in fr.legenda %}{% set _ = leg.update({seg.status: seg}) %}{% endfor %}
+<div class="frota-linha mt-4">
+<section class="cartao ocupacao-card" aria-labelledby="t-ocupacao">
+  <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2><span class="text-texto-2 text-[13px]">passe o mouse ou use Tab nas fatias e nos cartões</span></div>
+  {% if fr.rosca and not d.ocultar %}
+  <div class="ocupacao-grafico">
+  <div class="rosca rosca-interativa" role="group" aria-label="{{ fr.descricao_medidor }}">
+    <svg viewBox="0 0 100 100">
+      <circle class="arco-fundo" cx="50" cy="50" r="40" pathLength="100"/>
+      {% for arco in fr.rosca %}{% set seg = leg[status_da[arco.classe]] %}
+      <circle class="arco {{ arco.classe }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ arco.tamanho }} {{ 100 - arco.tamanho }}" stroke-dashoffset="{{ -arco.inicio }}" tabindex="0" role="img" aria-label="{{ seg.rotulo }}: {{ arco.tamanho|round|int }}% das {{ fr.ativas }} motos ativas"><title>{{ seg.rotulo }} ({{ arco.tamanho|round|int }}%)</title></circle>
+      {% endfor %}
+    </svg>
+    <span class="rosca-centro rosca-padrao"><strong>{{ fr.ocupacao }}%</strong><small>ocupação</small>{% if fr.ativas %}<small>{{ fr.contagem.alugada }} de {{ fr.ativas }} ativas</small>{% endif %}</span>
+    {% for arco in fr.rosca %}{% set seg = leg[status_da[arco.classe]] %}
+    <span class="rosca-centro rosca-info rosca-info-{{ arco.classe }}" aria-hidden="true"><strong>{{ seg.quantidade }}</strong><small>{{ seg.rotulo.split(' ', 1)[1] }}</small><small>{{ arco.tamanho|round|int }}% das ativas</small></span>
     {% endfor %}
-  {% endcall %}
-  {% else %}
-  <p class="text-texto-2">Nenhuma moto parada: todas as ativas estão alugadas.</p>
+  </div>
+  </div>
   {% endif %}
+  <ul class="ocupacao-tiles" aria-label="Frota por situação">
+    {% for seg in fr.legenda %}
+    <li{% if classe_da[seg.status] is defined %} class="t-{{ classe_da[seg.status] }}" tabindex="0"{% endif %}>
+      <span class="tile-rotulo"><i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>{{ seg.rotulo.split(' ', 1)[1] }}</span>
+      <strong class="mono">{{ seg.quantidade }}</strong>
+      <span class="legenda-pct mono">{% if seg.percentual is number %}{{ seg.percentual }}%{% elif seg.percentual is defined %}—{% else %}{{ ((100 * seg.quantidade / fr.total)|round|int if fr.total else 0) }}%{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if fr.ativas %}<p class="legenda-nota">Ocupação = alugadas ÷ motos ativas ({{ fr.ativas }}). Motos inativas não entram na conta.</p>{% endif %}
 </section>
-{% endif %}
-<div class="grade duas-colunas igualar mt-4">
-  <section class="cartao" aria-labelledby="t-ocupacao">
-    <div class="cartao-cab"><h2 id="t-ocupacao">Ocupação da frota</h2></div>
-    <div class="ocupacao-corpo">
-      {% if fr.rosca %}
-      <div class="ocupacao-barra">
-        <p class="ocupacao-numero"><strong>{{ fr.ocupacao }}%</strong> <span>ocupação{% if fr.ativas %} · {{ fr.contagem.alugada }} de {{ fr.ativas }} ativas{% endif %}</span></p>
-        {{ barra_segmentos(fr.rosca, fr.descricao_medidor) }}
-      </div>
-      {% endif %}
-      <ul class="legenda legenda-detalhada" aria-label="Frota por situação">
-        {% for seg in fr.legenda %}
-        <li>
-          <i{% if seg.status == 'alugada' %}{% elif seg.status == 'manutencao' %} class="oficina"{% else %} class="livre"{% endif %}></i>
-          <span class="legenda-nome">{{ seg.rotulo.split(' ', 1)[1] }}</span>
-          <strong class="mono">{{ seg.quantidade }}</strong>
-          <span class="legenda-pct mono">{% if seg.percentual is number %}{{ seg.percentual }}%{% elif seg.percentual is defined %}—{% else %}{{ ((100 * seg.quantidade / fr.total)|round|int if fr.total else 0) }}%{% endif %}</span>
-        </li>
-        {% endfor %}
-      </ul>
-      {% if fr.ativas %}<p class="legenda-nota">Ocupação = alugadas ÷ motos ativas ({{ fr.ativas }}). Motos inativas não entram na conta.</p>{% endif %}
-    </div>
-  </section>
 
-  <section class="cartao moto-lista-cards" aria-labelledby="t-veiculos">
+  {% if not fr.indisponivel %}
+  <section class="cartao moto-lista-cards paradas-lista" aria-labelledby="t-paradas">
+    <div class="cartao-cab"><h2 id="t-paradas">Motos paradas</h2><span class="text-texto-2 text-[13px]">{% if fr.paradas.total > fr.paradas.linhas|length %}mostrando {{ fr.paradas.linhas|length }} de {{ fr.paradas.total }}, as paradas há mais tempo primeiro{% else %}em manutenção ou disponíveis, há mais tempo primeiro{% endif %}</span></div>
+    {% if fr.paradas.linhas %}
+    {% call tabela([("Moto", ""), ("Situação", ""), ("Desde", ""), ("Parada há", "num")], "Motos em manutenção ou disponíveis, com há quantos dias") %}
+      {% for p in fr.paradas.linhas %}
+      <tr>
+        <td class="topo">{{ plac(p.placa) }}</td>
+        <td data-rotulo="Situação">{{ p.motivo }}</td>
+        <td class="mono" data-rotulo="Desde">{{ (p.desde|data_br) if p.desde else ("sem ordem aberta" if p.motivo == "Em manutenção" else "sem contrato anterior") }}</td>
+        <td class="num mono" data-rotulo="Parada há">{% if p.dias is not none %}{{ p.dias }} {{ "dia" if p.dias == 1 else "dias" }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    {% endcall %}
+    {% else %}
+    <p class="text-texto-2">Nenhuma moto parada: todas as ativas estão alugadas.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+
+<section class="cartao moto-lista-cards veiculos-lista mt-4" aria-labelledby="t-veiculos">
     <div class="cartao-cab"><h2 id="t-veiculos">Resultado por veículo</h2><span class="text-texto-2 text-[13px]">do melhor ao pior · desde o início</span></div>
     {% if fr.indisponivel %}
     {{ indisponivel("Resultado por veículo") }}
@@ -93,6 +106,5 @@
     {% else %}
     <p class="text-texto-2">Nenhum veículo cadastrado.</p>
     {% endif %}
-  </section>
-</div>
+</section>
 {% endif %}

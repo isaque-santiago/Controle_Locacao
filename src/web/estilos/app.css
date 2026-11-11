@@ -1072,3 +1072,66 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .linhas-resumo > div:first-child {border-top: 0;}
 .linhas-resumo dt {color: var(--texto-2);}
 .linhas-resumo dd {margin: 0; text-align: right;}
+
+/* ---------- Dashboard, ajustes de layout (11/11/2026) ---------- */
+/* Hoje: os cartões da lateral ficam do tamanho do conteúdo (sem esticar até a altura de "Cobrar agora"); Pagar e WhatsApp lado a lado, sem engordar a linha. */
+.dash-lateral {align-content: start;}
+.hoje-lista td.acao .flex {flex-wrap: nowrap;}
+.hoje-lista td.acao .btn {min-height: 36px; padding: 0 var(--e3);}
+
+/* Dinheiro: a Receita (que traz previsto, bullet e semana) é maior que Despesas, Resultado e Caixa. */
+@media (min-width: 1100px) {.kpis.kpis-receita {grid-template-columns: minmax(0, 1.8fr) repeat(3, minmax(0, 1fr));}}
+/* Os seis meses como tabela de verdade (cinco colunas cabem), não como blocos empilhados; no celular continuam em cartões. */
+.grafico-colunas text {font-size: 13px;}
+@media (min-width: 700px) {
+  .evolucao-lista .tabela-caixa, .veiculos-lista .tabela-caixa, .paradas-lista .tabela-caixa {container-type: normal;}
+}
+
+/* Frota: seis indicadores preenchendo a linha inteira (6, 3 ou 2 por linha conforme a largura). */
+.kpis.kpis-6 {grid-template-columns: repeat(2, minmax(0, 1fr));}
+@media (min-width: 900px) {.kpis.kpis-6 {grid-template-columns: repeat(3, minmax(0, 1fr));}}
+@media (min-width: 1500px) {.kpis.kpis-6 {grid-template-columns: repeat(6, minmax(0, 1fr));}}
+/* Ocupação da frota: pizza interativa (sem script) no lado esquerdo, ao lado das motos paradas; a pizza absorve a folga de altura (centralizada) e os cartões ficam numa linha embaixo. */
+.frota-linha {display: grid; gap: var(--e4); grid-template-columns: minmax(0, 1fr); align-items: stretch;}
+@media (min-width: 1100px) {.frota-linha {grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);}}
+.frota-linha > .cartao {margin: 0;}
+.ocupacao-card {display: flex; flex-direction: column; gap: var(--e4);}
+.ocupacao-card .cartao-cab {margin-bottom: 0;}
+.ocupacao-grafico {flex: 1; display: grid; place-items: center; min-height: 270px;}
+.ocupacao-card .rosca {width: 260px; height: 260px; margin: 0;}
+.ocupacao-card .rosca-centro strong {font-size: 40px;}
+.ocupacao-tiles {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3); margin: 0; padding: 0; list-style: none;}
+.ocupacao-tiles li {display: grid; grid-template-columns: 1fr auto; align-content: center; gap: var(--e2) var(--e2); min-height: 112px; padding: var(--e4); border: 1px solid var(--linha); border-radius: var(--raio-md); background: var(--superficie-elevada); transition: border-color 150ms, transform 150ms;}
+.ocupacao-tiles li[class]:hover, .ocupacao-tiles li[class]:focus-visible {border-color: var(--texto-3); transform: translateY(-2px); outline: none;}
+.ocupacao-tiles .tile-rotulo {grid-column: 1 / -1; display: flex; align-items: center; gap: var(--e2); color: var(--texto-2); font-size: 14px;}
+.ocupacao-tiles .tile-rotulo i {display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 3px; background: var(--seg-cheio);}
+.ocupacao-tiles .tile-rotulo i.oficina {background: var(--alerta);}
+.ocupacao-tiles .tile-rotulo i.livre {background: var(--neutro);}
+.ocupacao-tiles strong {font-size: 36px; line-height: 1;}
+.ocupacao-tiles .legenda-pct {align-self: end; color: var(--texto-2);}
+@media (min-width: 1100px) {
+  .ocupacao-tiles {grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e2);}
+  .ocupacao-tiles li {min-height: 96px; padding: var(--e3);}
+  .ocupacao-tiles strong {font-size: 28px;}
+  .ocupacao-tiles .tile-rotulo {font-size: 12px; align-items: flex-start;}
+}
+.ocupacao-card .legenda-nota {margin: 0;}
+/* Interação: a fatia e o cartão da mesma situação se destacam juntos, as outras esmaecem e o centro mostra a situação escolhida. */
+.rosca-interativa .arco {cursor: pointer; outline: none; transition: stroke-width 150ms, opacity 150ms;}
+.rosca-interativa .arco:hover, .rosca-interativa .arco:focus-visible {stroke-width: 16;}
+.rosca-interativa .arco:focus-visible {filter: drop-shadow(0 0 3px var(--foco));}
+.rosca-info {display: none;}
+.rosca-info small:last-child {color: var(--texto-3);}
+.ocupacao-card:has(.arco.cheio:hover, .arco.cheio:focus-visible, .t-cheio:hover, .t-cheio:focus-visible) .arco:not(.cheio) {opacity: .28;}
+.ocupacao-card:has(.arco.cheio:hover, .arco.cheio:focus-visible, .t-cheio:hover, .t-cheio:focus-visible) .rosca-padrao {display: none;}
+.ocupacao-card:has(.arco.cheio:hover, .arco.cheio:focus-visible, .t-cheio:hover, .t-cheio:focus-visible) .rosca-info-cheio {display: grid;}
+.ocupacao-card:has(.t-cheio:hover, .t-cheio:focus-visible) .arco.cheio {stroke-width: 16;}
+.ocupacao-card:has(.arco.oficina:hover, .arco.oficina:focus-visible, .t-oficina:hover, .t-oficina:focus-visible) .arco:not(.oficina) {opacity: .28;}
+.ocupacao-card:has(.arco.oficina:hover, .arco.oficina:focus-visible, .t-oficina:hover, .t-oficina:focus-visible) .rosca-padrao {display: none;}
+.ocupacao-card:has(.arco.oficina:hover, .arco.oficina:focus-visible, .t-oficina:hover, .t-oficina:focus-visible) .rosca-info-oficina {display: grid;}
+.ocupacao-card:has(.t-oficina:hover, .t-oficina:focus-visible) .arco.oficina {stroke-width: 16;}
+.ocupacao-card:has(.arco.livre:hover, .arco.livre:focus-visible, .t-livre:hover, .t-livre:focus-visible) .arco:not(.livre) {opacity: .28;}
+.ocupacao-card:has(.arco.livre:hover, .arco.livre:focus-visible, .t-livre:hover, .t-livre:focus-visible) .rosca-padrao {display: none;}
+.ocupacao-card:has(.arco.livre:hover, .arco.livre:focus-visible, .t-livre:hover, .t-livre:focus-visible) .rosca-info-livre {display: grid;}
+.ocupacao-card:has(.t-livre:hover, .t-livre:focus-visible) .arco.livre {stroke-width: 16;}
+

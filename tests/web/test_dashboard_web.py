@@ -61,7 +61,7 @@ def test_aba_e_modos_da_url_chegam_ao_dashboard(cliente, monkeypatch):
 def test_tres_abas_com_a_atual_marcada_e_sem_javascript(cliente):
     entrar(cliente)
     html = cliente.get("/").text
-    nav = re.search(r'<nav class="abas" aria-label="Seções do Dashboard">(.*?)</nav>', html, re.S).group(1)
+    nav = re.search(r'<nav class="abas dash" aria-label="Seções do Dashboard">(.*?)</nav>', html, re.S).group(1)
     assert re.findall(r'<a href="([^"]+)"( aria-current="page")?>([^<]+)</a>', nav) == [
         ("/", ' aria-current="page"', "Hoje"), ("/?aba=dinheiro", "", "Dinheiro"), ("/?aba=frota", "", "Frota")]
 
@@ -258,17 +258,28 @@ def test_frota_mostra_ocupacao_manutencao_e_veiculos(cliente):
     html = cliente.get("/?aba=frota").text
     assert "5 motos" in html and "60%" in html and "3 alugadas de 5 ativas" in html and "1 livres" in html
     assert "1 moto" in html and "1 ordem concluída no mês" in html and 'href="/manutencao"' in html
-    assert "Gasto com manutenção no mês" in html and "R$ 85" in html and "mesmo valor da categoria Manutenção em Dinheiro" in html
+    assert "Gasto com manutenção no mês" in html and "R$ 85" in html and "igual à categoria Manutenção em Dinheiro" in html
     assert "Resultado por veículo" in html and "POU-7015" in html and "R$ 7.300,00" in html and "R$ -120,00" in html
 
 
-def test_frota_tem_barra_segmentada_com_texto_alternativo_um_trecho_por_situacao_e_a_base_da_conta(cliente):
+def test_frota_tem_pizza_interativa_com_fatias_focaveis_texto_alternativo_e_a_base_da_conta(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
-    barra = re.search(r'<svg class="barra-seg" [^>]*aria-label="([^"]+)">(.*?)</svg>', html, re.S)
-    assert barra and "3 alugadas" in barra.group(1) and 'class="rosca"' not in html
-    assert re.findall(r'class="seg (\w+)"', barra.group(2)) == ["cheio", "oficina", "livre"] and "60%" in html and "style=" not in barra.group(0)
+    rosca = re.search(r'<div class="rosca rosca-interativa" role="group" aria-label="([^"]+)">(.*?)</div>', html, re.S)
+    assert rosca and "3 alugadas" in rosca.group(1) and 'class="barra-seg"' not in html and 'class="rosca"' not in html
+    arcos = re.findall(r'<circle class="arco (\w+)"[^>]*tabindex="0" role="img" aria-label="([^"]+)"><title>([^<]+)</title>', rosca.group(2))
+    assert [a[0] for a in arcos] == ["cheio", "oficina", "livre"] and "60% das 5 motos ativas" in arcos[0][1] and arcos[0][2] == "3 alugadas (60%)"
+    assert "style=" not in rosca.group(0) and "60%" in rosca.group(2)
+    # o centro tem o texto padrão e um bloco por fatia, que o CSS mostra ao passar o mouse ou focar (só com :has)
+    assert rosca.group(2).count('class="rosca-centro rosca-info rosca-info-') == 3 and "rosca-padrao" in rosca.group(2)
     assert "Ocupação = alugadas ÷ motos ativas (5). Motos inativas não entram na conta." in html
+
+
+def test_cartoes_da_ocupacao_acompanham_as_fatias_e_a_inativa_nao_tem_fatia(cliente):
+    entrar(cliente)
+    tiles = cliente.get("/?aba=frota").text.split('class="ocupacao-tiles"', 1)[1].split("</ul>", 1)[0]
+    assert re.findall(r'<li class="t-(\w+)" tabindex="0">', tiles) == ["cheio", "livre", "oficina"]  # alugadas, disponíveis, em manutenção
+    assert tiles.count("<li>") == 1  # inativas: sem fatia na pizza, sem destaque cruzado
 
 
 def test_frota_escapa_o_locatario_e_recolhe_o_que_passa_de_cinco(cliente, monkeypatch):
@@ -404,7 +415,8 @@ def test_ocultar_esconde_barras_bullet_e_sparkline_e_mascara_a_legenda_das_faixa
     hoje = cliente.get("/?ocultar=1").text
     assert 'class="barra-seg"' not in hoje and 'class="spark"' not in hoje and "R$ 2.100,00" not in hoje and "R$ 290,00" not in hoje
     assert "faixas-legenda" in hoje and "31 dias ou mais" in hoje
-    assert 'class="barra-seg"' not in cliente.get("/?aba=frota&ocultar=1").text
+    frota = cliente.get("/?aba=frota&ocultar=1").text
+    assert 'class="barra-seg"' not in frota and "rosca-interativa" not in frota and "ocupacao-tiles" in frota
 
 
 # ------------------------------------------------------------------------ Fase 3: o que faltava --
@@ -474,3 +486,33 @@ def test_moto_em_manutencao_sem_ordem_aberta_diz_isso_em_vez_de_contrato_anterio
     entrar(cliente)
     paradas = cliente.get("/?aba=frota").text.split('id="t-paradas"', 1)[1].split("</section>", 1)[0]
     assert "sem ordem aberta" in paradas and "sem contrato anterior" not in paradas
+
+
+# ------------------------------------------------------------------------ ajustes de layout (11/11/2026) --
+
+
+def test_as_tres_abas_tem_a_mesma_largura_maxima_do_dashboard(cliente):
+    entrar(cliente)
+    for caminho in ("/", "/?aba=dinheiro", "/?aba=frota"):
+        assert 'class="abas dash"' in cliente.get(caminho).text, caminho  # `main:has(.dash)` libera os 1600 px nas três
+
+
+def test_dinheiro_destaca_a_receita_e_mostra_os_seis_meses_como_tabela(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=dinheiro").text
+    assert '<dl class="grade kpis kpis-receita">' in html and 'class="cartao moto-lista-cards evolucao-lista"' in html
+
+
+def test_frota_organiza_seis_indicadores_ocupacao_ao_lado_das_paradas_e_veiculos_embaixo(cliente):
+    entrar(cliente)
+    html = cliente.get("/?aba=frota").text
+    assert '<dl class="grade kpis kpis-6">' in html and html.count('<div class="kpi') == 6
+    assert 'class="frota-linha mt-4"' in html and 'class="cartao ocupacao-card"' in html and html.count('class="tile-rotulo"') == 4
+    assert html.index("t-ocupacao") < html.index("t-paradas") < html.index("t-veiculos")  # Ocupação à esquerda, paradas à direita, veículos embaixo
+
+
+def test_frota_sem_a_leitura_do_dinheiro_volta_a_quatro_indicadores(cliente, monkeypatch):
+    _com(monkeypatch, ajustes={"frota": {"indisponivel": True, "veiculos": []}})
+    entrar(cliente)
+    html = cliente.get("/?aba=frota").text
+    assert "kpis-6" not in html and "Receita por moto" not in html and "ocupacao-card" in html
