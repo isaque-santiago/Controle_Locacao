@@ -143,6 +143,12 @@ Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a da
 (`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
 mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
 texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
+**Cancelar cobrança (12/11/2026).** Em Cobranças, o botão **Cancelar** (abas Hoje, Atrasadas e Próximos 7 dias) abre um diálogo
+que pede o **motivo** (3 a 200 caracteres) e, sem JavaScript, o mesmo formulário abre como página (`rotas/cobrancas_cancelamento.py`).
+Regra confirmada com o dono: só cobrança em aberto **e sem nenhum pagamento registrado** pode ser cancelada (`src/domain/cancelamento_cobranca.py`);
+com pagamento, parcial que seja, o botão some e o estorno continua sendo feito no banco. Cancelada, a cobrança sai da dívida, das listas e dos avisos de WhatsApp
+e não é gerada de novo. A gravação é a RPC `rpc_cancelar_cobranca` (migration `20261112140000_cancelar_cobranca.sql`, que acrescenta
+`cobrancas.motivo_cancelamento` e `cancelada_em`; só o dono; roteiro `supabase/verificar_cancelar_cobranca.sql`, só em dev, termina em ROLLBACK).
 **Fase 3, andamento: Manutenção concluída (07/10/2026).** Abas Alertas, Histórico e Catálogo; filtros, busca e
 paginação; registro com itens do plano, peças adicionais, prévia de custos e idempotência; conclusão e cancelamento
 de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
@@ -522,9 +528,8 @@ uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo d
 km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
 padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
 Configurações > "Multa por troca de óleo fora do intervalo". O valor padrão é R$ 12,50;
-valor 0,00 desativa a cobrança da multa. O app ainda não tem tela para cancelar cobrança:
-se a foto não confirmar o km, a
-multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
+valor 0,00 desativa a cobrança da multa. Se a foto não confirmar o km, o dono cancela a
+multa em Cobranças (botão **Cancelar**, veja «Cancelar cobrança» abaixo).
 
 ## Publicação
 

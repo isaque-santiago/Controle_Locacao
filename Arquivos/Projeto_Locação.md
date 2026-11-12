@@ -784,9 +784,8 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
   "Remover acesso" funcionam; o dono vê troca,
   fotos e multa na ficha do cliente.
 
-**Fora do escopo desta fase** (pendências retomadas em 12/11/2026, seção 22):
-tela para cancelar cobrança (hoje só direto no
-banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
+**Fora do escopo desta fase** (cancelar cobrança e «esqueci minha senha» foram feitos em 12/11/2026, seção 22; a limpeza de fotos órfãs segue na mesma seção):
+~~tela para cancelar cobrança~~, ~~recuperação de senha~~ (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
 (enviadas ao Storage quando o registro da troca falha).
 
 ### Fase 8: Acabamento e publicação
@@ -1180,6 +1179,14 @@ no mês, então é uma medida real e não só a foto de hoje; as metas do setor 
 ## 22. Pendências da Fase 7 (12/11/2026)
 
 Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de fora. Uma branch e um PR por item.
+
+### 22.1 Cancelar cobrança (entregue em 12/11/2026)
+
+- **Regra:** só cobrança em aberto (`aberta` ou `atrasada`) e **sem nenhum pagamento registrado** pode ser cancelada; com pagamento, o dono precisa estornar antes
+  (continua direto no banco). O **motivo é obrigatório** (3 a 200 caracteres) e fica guardado com a data (`cobrancas.motivo_cancelamento`, `cancelada_em`).
+- **Onde:** botão «Cancelar» nas abas Hoje, Atrasadas e Próximos 7 dias de Cobranças; diálogo com a alternativa em página (sem JavaScript).
+- **Banco:** RPC `rpc_cancelar_cobranca(p_cobranca, p_motivo)` (só o dono; trava a linha antes de olhar os pagamentos), migration `20261112140000_cancelar_cobranca.sql`,
+  roteiro `supabase/verificar_cancelar_cobranca.sql`. Regra pura em `src/domain/cancelamento_cobranca.py`, com testes.
 
 ### 22.2 Esqueci minha senha (entregue em 12/11/2026)
 

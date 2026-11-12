@@ -1,0 +1,5 @@
+{% from "componentes/macros.html" import area_texto, placa %}
+{# Campos do cancelamento (diálogo e página). Contexto: c, motivo, erros, maximo. #}
+<div class="largo flex flex-wrap items-center gap-3">{{ placa(c.placa|placa_br) if c.placa }}<span><b>{{ c.cliente }}</b> · {{ c.tipo|tipo_cobranca }} · vencimento <span class="mono">{{ c.vencimento|data_br }}</span> · <span class="mono">{{ c.valor|moeda }}</span></span></div>
+<p class="largo text-texto-2">A cobrança sai da dívida e das listas, e o motivo fica registrado. Só é possível cancelar cobrança sem pagamento registrado.</p>
+{{ area_texto("f-motivo-canc", "Motivo do cancelamento", nome="motivo", valor=motivo, erro=erros.motivo, largo=True, linhas=3, maximo=maximo) }}

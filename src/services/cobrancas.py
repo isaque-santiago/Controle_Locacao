@@ -6,10 +6,13 @@ from threading import Lock
 from time import monotonic
 from typing import Optional
 
+from postgrest.exceptions import APIError
+
 from src.db import usuario_id_atual
 from src.domain.encargos import calcular_encargos
 from src.repositories import cobrancas, configuracoes, pagamentos
 
+_CODIGO_REGRA_DE_NEGOCIO = "P0001"  # raise exception ... nas RPCs
 _INTERVALO_GERACAO_SEGUNDOS = 3600
 # Última geração por usuário (vale para o Streamlit e para o app web).
 _ULTIMA_GERACAO: dict[str | None, float] = {}
@@ -70,6 +73,17 @@ def registrar_pagamento(
         "observacoes": observacoes,
     }
     return pagamentos.criar(dados, chave_operacao)
+
+
+def cancelar_cobranca(cobranca_id: str, motivo: str) -> dict:
+    """Cancela uma cobrança em aberto e sem pagamento, guardando o motivo. A regra é conferida de novo no banco;
+    quando ele recusa (já paga, cancelada ou com pagamento), a mensagem da RPC vira um erro para a tela."""
+    try:
+        return cobrancas.cancelar_via_rpc(cobranca_id, motivo)
+    except APIError as erro:
+        if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
+            raise ValueError(erro.message) from erro
+        raise
 
 
 def gerar_cobrancas_pendentes(horizonte_dias: int = 30) -> dict:
