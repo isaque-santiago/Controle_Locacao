@@ -203,3 +203,19 @@ def test_manutencao_em_andamento_soma_so_ordens_abertas():
     ]
     assert painel.manutencao_em_andamento(ordens) == {"quantidade": 2, "total": Decimal("120.50")}
     assert painel.manutencao_em_andamento([]) == {"quantidade": 0, "total": Decimal(0)}
+
+
+def test_alertas_levam_direto_ao_problema():
+    config = {"alerta_manutencao_km": 500, "alerta_manutencao_dias": 15, "alerta_documento_dias": 30}
+    manutencao = [{"situacao": "vencida", "item": "Óleo"}, {"situacao": "proxima", "item": "Pneu"}]
+    documentos = [
+        {"situacao": "vencido", "tipo": "crlv", "placa": "ABC1D23"},
+        {"situacao": "a_vencer", "tipo": "seguro", "placa": "ABC1D23"},
+    ]
+    cnh = [{"situacao": "vencida", "nome": "João & Cia", "cnh_validade": "2026-01-01"}]
+    destinos = {i.titulo: i.destino for i in painel.agrupar_alertas(config, manutencao, documentos, cnh)}
+    assert destinos["Manutenção vencida"] == "/manutencao?aba=alertas&situacao=vencida"
+    assert destinos["Manutenção próxima"] == "/manutencao?aba=alertas&situacao=proxima"
+    assert destinos["Documento vencido"] == "/documentos?situacao=vencido"
+    assert destinos["Documento a vencer"] == "/documentos?situacao=a_vencer"
+    assert destinos["CNH vencida"] == "/clientes?q=Jo%C3%A3o+%26+Cia"

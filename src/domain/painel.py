@@ -1,5 +1,6 @@
 """Regras do Dashboard: frota, cobranças do dia e alertas. Funções puras, sem Streamlit nem banco."""
 
+from urllib.parse import urlencode
 from dataclasses import dataclass
 from datetime import date
 from calendar import monthrange
@@ -261,6 +262,7 @@ class ItemAlerta:
     descricao: str
     tom: str  # TOM_PERIGO ou TOM_ATENCAO
     area: str | None  # onde resolver: "manutencao", "documentos", "clientes"...; None: sem tela própria (sem botão Abrir)
+    destino: str | None = None  # link direto para o problema (lista já filtrada); sem ele, o botão abre a página da `area`
 
 
 def _com_restante(texto: str, total: int, exibidos: int = 1) -> str:
@@ -281,7 +283,7 @@ def agrupar_alertas(
         # Nomes distintos (o mesmo item vence em várias motos); mostra dois e conta o resto.
         distintos = list(dict.fromkeys(a["item"] for a in vencidas))
         descricao = _com_restante(", ".join(distintos[:2]), len(distintos), 2)
-        itens.append(ItemAlerta(len(vencidas), "Manutenção vencida", descricao, TOM_PERIGO, "manutencao"))
+        itens.append(ItemAlerta(len(vencidas), "Manutenção vencida", descricao, TOM_PERIGO, "manutencao", "/manutencao?aba=alertas&situacao=vencida"))
 
     proximas = [a for a in manutencao if a["situacao"] == "proxima"]
     if proximas:
@@ -289,24 +291,26 @@ def agrupar_alertas(
             f"nos próximos {config['alerta_manutencao_km']} km ou "
             f"{config['alerta_manutencao_dias']} dias"
         )
-        itens.append(ItemAlerta(len(proximas), "Manutenção próxima", descricao, TOM_ATENCAO, "manutencao"))
+        itens.append(ItemAlerta(len(proximas), "Manutenção próxima", descricao, TOM_ATENCAO, "manutencao", "/manutencao?aba=alertas&situacao=proxima"))
 
     doc_vencidos = [a for a in documentos if a["situacao"] == "vencido"]
     if doc_vencidos:
         primeiro = doc_vencidos[0]
         descricao = _com_restante(f"{primeiro['tipo'].upper()} · moto {primeiro['placa']}", len(doc_vencidos))
-        itens.append(ItemAlerta(len(doc_vencidos), "Documento vencido", descricao, TOM_PERIGO, "documentos"))
+        itens.append(ItemAlerta(len(doc_vencidos), "Documento vencido", descricao, TOM_PERIGO, "documentos", "/documentos?situacao=vencido"))
 
     doc_a_vencer = [a for a in documentos if a["situacao"] == "a_vencer"]
     if doc_a_vencer:
         descricao = f"próximos {config['alerta_documento_dias']} dias"
-        itens.append(ItemAlerta(len(doc_a_vencer), "Documento a vencer", descricao, TOM_ATENCAO, "documentos"))
+        itens.append(ItemAlerta(len(doc_a_vencer), "Documento a vencer", descricao, TOM_ATENCAO, "documentos", "/documentos?situacao=a_vencer"))
 
     for situacao, titulo, tom in (("vencida", "CNH vencida", TOM_PERIGO), ("a_vencer", "CNH a vencer", TOM_ATENCAO)):
         lista = [a for a in cnh if a["situacao"] == situacao]
         if lista:
             primeiro = lista[0]
             descricao = _com_restante(f"{primeiro['nome']} · {_data_br(primeiro['cnh_validade'])}", len(lista))
-            itens.append(ItemAlerta(len(lista), titulo, descricao, tom, "clientes"))
+            # Um só cliente: a busca já o isola; vários: ordena pela validade da CNH (a mais antiga primeiro).
+            destino = "/clientes?" + (urlencode({"q": primeiro["nome"]}) if len(lista) == 1 else "ordem=cnh")
+            itens.append(ItemAlerta(len(lista), titulo, descricao, tom, "clientes", destino))
 
     return itens
