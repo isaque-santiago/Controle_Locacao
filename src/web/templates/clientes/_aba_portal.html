@@ -16,6 +16,12 @@
 <div class="portal-criar">{{ botao("Criar acesso", variante="primario", icone_nome="cadeado", extra='hx-post="' ~ base ~ '/portal/acesso" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
 </div>
 {% else %}
+{% if a.pedido_senha %}
+<div class="portal-pedido-senha">
+{{ aviso("atencao", "O locatário pediu uma senha nova em " ~ (a.pedido_senha.pedido_em|data_br) ~ ". Gere a nova senha abaixo e entregue pessoalmente; se não foi ele quem pediu, descarte o pedido.", "Pedido de senha nova.") }}
+<div class="acoes">{{ botao("Descartar pedido", extra='hx-post="' ~ base ~ '/portal/pedido-senha/dispensar" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
+</div>
+{% endif %}
 <div class="portal-acesso">
   <div class="portal-acesso-bloco portal-acesso-info">
     <span class="portal-acesso-icone">{{ icone("check") }}</span>

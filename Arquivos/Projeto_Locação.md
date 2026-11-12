@@ -784,9 +784,9 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
   "Remover acesso" funcionam; o dono vê troca,
   fotos e multa na ficha do cliente.
 
-**Fora do escopo desta fase** (pendências retomadas em 12/11/2026, seção 22):
-tela para cancelar cobrança (hoje só direto no
-banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
+**Fora do escopo desta fase** (as três pendências foram feitas em 12/11/2026, seção 22):
+~~tela para cancelar cobrança~~, ~~recuperação de senha~~ (esqueci minha senha; o dono redefine) e ~~exclusão de fotos órfãs~~
+
 (enviadas ao Storage quando o registro da troca falha).
 
 ### Fase 8: Acabamento e publicação
@@ -1181,9 +1181,28 @@ no mês, então é uma medida real e não só a foto de hoje; as metas do setor 
 
 Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de fora. Uma branch e um PR por item.
 
+### 22.1 Cancelar cobrança (entregue em 12/11/2026)
+
+- **Regra:** só cobrança em aberto (`aberta` ou `atrasada`) e **sem nenhum pagamento registrado** pode ser cancelada; com pagamento, o dono precisa estornar antes
+  (continua direto no banco). O **motivo é obrigatório** (3 a 200 caracteres) e fica guardado com a data (`cobrancas.motivo_cancelamento`, `cancelada_em`).
+- **Onde:** botão «Cancelar» nas abas Hoje, Atrasadas e Próximos 7 dias de Cobranças; diálogo com a alternativa em página (sem JavaScript).
+- **Banco:** RPC `rpc_cancelar_cobranca(p_cobranca, p_motivo)` (só o dono; trava a linha antes de olhar os pagamentos), migration `20261112140000_cancelar_cobranca.sql`,
+  roteiro `supabase/verificar_cancelar_cobranca.sql`. Regra pura em `src/domain/cancelamento_cobranca.py`, com testes.
+
+### 22.2 Esqueci minha senha (entregue em 12/11/2026)
+
+- **Como funciona:** o e-mail do portal é fictício, então não há link de redefinição. Na tela de login, «Peça uma senha nova» pede o CPF e registra um **pedido**
+  que aparece para o dono (alerta no Dashboard e aviso na aba Portal da ficha do cliente); o dono gera a senha nova e a entrega pessoalmente, como já fazia.
+  Gerar a senha ou remover o acesso fecha o pedido; o dono também pode descartá-lo.
+- **Segurança:** a RPC `rpc_portal_pedir_redefinicao` é a única chamada sem login (papel `anon`) e responde sempre igual, para não revelar quais CPFs são clientes;
+  no máximo um pedido aberto por cliente; cada pedido conta no limite por IP do login. Nenhuma mensagem é enviada ao locatário.
+- **Banco:** migration `20261112150000_pedidos_senha_portal.sql`, roteiro `supabase/verificar_pedidos_senha_portal.sql`. Regras puras em `src/domain/pedido_senha.py`.
+- **Fora do escopo:** link por WhatsApp (depende da Etapa 5 da seção 20); pode ser retomado quando a Evolution estiver em produção.
+
 ### 22.3 Arquivos órfãos do portal (entregue em 12/11/2026)
 
 - **Problema:** o locatário envia as fotos (troca de óleo) e o comprovante (documento) ao Storage antes de registrar a operação; se o registro falha, o arquivo fica sem ligação com nada.
 - **Decisão do dono:** a limpeza é um **botão em Configurações** (procurar, conferir a lista, apagar com confirmação). Não há tarefa agendada nem script.
 - **Regra:** só o bucket `trocas_oleo` e a pasta `portal/` do bucket `documentos`; só arquivos com mais de 24 horas e sem nenhuma referência; vistorias e arquivos do próprio dono ficam de fora.
 - **Banco e app:** RPC `rpc_listar_arquivos_orfaos` (migration `20261112160000_arquivos_orfaos_portal.sql`, roteiro `supabase/verificar_arquivos_orfaos_portal.sql`); a remoção usa a API do Storage e a lista é recalculada na hora de apagar. Regras puras em `src/domain/arquivos_orfaos.py`.
+

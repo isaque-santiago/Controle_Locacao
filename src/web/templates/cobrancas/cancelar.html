@@ -1,0 +1,17 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
+{% block conteudo %}
+{{ voltar("/cobrancas", "Voltar para cobranças") }}
+{{ cabecalho_pagina("Cancelar cobrança", "Informe o motivo e confirme o cancelamento.") }}
+<form class="cartao" id="form-cancelar" method="post" action="{{ acao }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}
+  <div class="formulario">
+    {% include "cobrancas/_campos_cancelar.html" %}
+  </div>
+  <div class="rodape-acoes">
+    <a class="btn" href="/cobrancas">Voltar</a>
+    <button class="btn btn-perigo" type="submit">Cancelar cobrança</button>
+  </div>
+</form>
+{% endblock %}

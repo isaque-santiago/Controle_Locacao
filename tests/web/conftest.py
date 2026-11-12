@@ -52,6 +52,8 @@ class ServicoFalso:
         self.saidas: list[str] = []
         self.senhas: list[tuple[str, str]] = []
         self.senha_recusada = None
+        self.pedidos_de_senha: list[str] = []
+        self.pedido_recusado = None
         self.renovacao_recusada = False
         self._emitidos = 0
         self._papel_do_token: dict[str, str | None] = {}
@@ -95,6 +97,11 @@ class ServicoFalso:
 
     def sair(self, access_token):
         self.saidas.append(access_token)
+
+    def pedir_senha_nova(self, cpf):
+        if self.pedido_recusado:
+            raise self.pedido_recusado
+        self.pedidos_de_senha.append(cpf)
 
 
 def _conteudo_hoje():
@@ -417,6 +424,7 @@ class BaseClientes:
                             "saldo": Decimal("100"), "situacao": "atrasada"},
                            {"id": "b2", "vencimento": "2026-10-08", "tipo": "locacao", "valor": Decimal("300"),
                             "saldo": Decimal("300"), "situacao": "aberta"}]
+        self.pedido_senha = None  # {"pedido_em": "..."} quando o locatário pediu senha nova e o dono ainda não atendeu
         self.troca_id = "00000000-0000-0000-0000-0000000000f1"
         self.trocas = [{"id": self.troca_id, "criado_em": "2026-09-20T10:00:00+00:00", "km": 12500, "km_excedente": 300,
                         "cobranca_id": "b9", "foto_painel_path": "c1/painel.jpg", "nota_fiscal_path": "c1/nota.jpg"}]
@@ -431,6 +439,7 @@ def base_clientes(monkeypatch):
     monkeypatch.setattr(dados_clientes, "motos", SimpleNamespace(listar=lambda: base.motos))
     monkeypatch.setattr(dados_clientes, "configuracoes", SimpleNamespace(obter=lambda: {"alerta_cnh_dias": 30}))
     monkeypatch.setattr(dados_clientes, "portal_locatario", SimpleNamespace(listar_trocas=lambda id_: base.trocas))
+    monkeypatch.setattr(dados_clientes, "pedidos_senha", SimpleNamespace(aberto_do_cliente=lambda id_: base.pedido_senha))
     monkeypatch.setattr(dados_clientes, "cobrancas", SimpleNamespace(
         listar_por_contrato=lambda id_: base.cobrancas,
         historicos_pagamentos=lambda ids: {id_: [] for id_ in ids},
@@ -458,6 +467,7 @@ def acoes_clientes_falsas(monkeypatch, base_clientes):
     monkeypatch.setattr(acoes_clientes, "criar_acesso_portal", acesso("criar_acesso"))
     monkeypatch.setattr(acoes_clientes, "redefinir_senha_portal", acesso("redefinir_senha"))
     monkeypatch.setattr(acoes_clientes, "remover_acesso_portal", remover)
+    monkeypatch.setattr(acoes_clientes, "dispensar_pedido_senha", lambda cliente_id: chamadas.append(("dispensar_pedido_senha", cliente_id)))
     monkeypatch.setattr(acoes_clientes, "url_arquivo_troca", lambda caminho: f"https://storage.exemplo/assinada/{caminho}?token=x")
     return chamadas
 
@@ -603,12 +613,12 @@ def base_cobrancas(monkeypatch):
     from src.services.cobrancas import calcular_encargos_cobranca
     from src.web import dados_cobrancas
 
-    from src.web.rotas import cobrancas_mensagem, cobrancas_pagamento
+    from src.web.rotas import cobrancas_cancelamento, cobrancas_mensagem, cobrancas_pagamento
 
     base = BaseCobrancas()
     # "Hoje" é 07/10/2026 em todo o fluxo de Cobranças (lista, mensagem e pagamento): as rotas importam o próprio
     # `hoje_br`, então o relógio congelado precisa valer em cada módulo, e não só na camada de dados.
-    for modulo in (dados_cobrancas, cobrancas_mensagem, cobrancas_pagamento):
+    for modulo in (dados_cobrancas, cobrancas_cancelamento, cobrancas_mensagem, cobrancas_pagamento):
         monkeypatch.setattr(modulo, "hoje_br", lambda: date(2026, 10, 7))
     monkeypatch.setattr(dados_cobrancas, "clientes", SimpleNamespace(
         listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None)))
@@ -723,6 +733,7 @@ class AcoesCobrancasFalsas:
 
     def __init__(self):
         self.pagamentos: list[tuple] = []
+        self.cancelamentos: list[tuple] = []
         self.falhar_com: Exception | None = None
 
     def registrar_pagamento(self, cobranca_id, data, principal, extras, forma, observacoes, chave_operacao):
@@ -731,6 +742,12 @@ class AcoesCobrancasFalsas:
         self.pagamentos.append((cobranca_id, data, principal, extras, forma, observacoes, chave_operacao))
         return {}
 
+    def cancelar_cobranca(self, cobranca_id, motivo):
+        if self.falhar_com is not None:
+            raise self.falhar_com
+        self.cancelamentos.append((cobranca_id, motivo))
+        return {"cobranca_id": cobranca_id, "status": "cancelada"}
+
 
 @pytest.fixture(autouse=True)
 def acoes_cobrancas_falsas(monkeypatch):
@@ -738,6 +755,7 @@ def acoes_cobrancas_falsas(monkeypatch):
 
     falsas = AcoesCobrancasFalsas()
     monkeypatch.setattr(acoes_cobrancas, "registrar_pagamento", falsas.registrar_pagamento)
+    monkeypatch.setattr(acoes_cobrancas, "cancelar_cobranca", falsas.cancelar_cobranca)
     return falsas
 
 

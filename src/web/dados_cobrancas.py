@@ -4,6 +4,7 @@ Fronteira de leitura entre a rota e a camada de dados; os testes das rotas troca
 por dados fictícios."""
 
 from src.domain import cobrancas_lista
+from src.domain.cancelamento_cobranca import pode_cancelar
 from src.domain.painel_cobrancas import resumo_atraso
 from src.domain.valores import hoje_br
 from src.services import clientes, cobrancas, motos
@@ -18,7 +19,7 @@ def _linhas(hoje):
     config = cobrancas.configuracao_encargos()
     linhas = []
     for c in cobrancas.listar():
-        linha = {**c, "placa": placas.get(c["moto_id"]), "cliente": nomes.get(c["cliente_id"])}
+        linha = {**c, "placa": placas.get(c["moto_id"]), "cliente": nomes.get(c["cliente_id"]), "pode_cancelar": pode_cancelar(c)}
         if c["situacao"] in _ABERTAS:
             linha["encargos"] = cobrancas.calcular_encargos_cobranca(c, hoje, config)
         linhas.append(linha)
@@ -59,6 +60,12 @@ def obter_para_pagamento(cobranca_id):
     cliente = clientes.obter(c["cliente_id"])
     moto = motos.obter(c["moto_id"])
     return {**c, "cliente": cliente["nome"] if cliente else None, "placa": moto["placa"] if moto else None}
+
+
+def obter_para_cancelamento(cobranca_id):
+    """Cobrança em aberto com cliente e placa (como no pagamento); None se não existir ou já estiver paga ou cancelada.
+    Se já tiver pagamento, ainda volta: a tela explica por que não dá para cancelar."""
+    return obter_para_pagamento(cobranca_id)
 
 
 def encargos_em(cobranca, data):

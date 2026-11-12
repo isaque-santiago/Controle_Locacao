@@ -143,6 +143,12 @@ Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a da
 (`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
 mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
 texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
+**Cancelar cobrança (12/11/2026).** Em Cobranças, o botão **Cancelar** (abas Hoje, Atrasadas e Próximos 7 dias) abre um diálogo
+que pede o **motivo** (3 a 200 caracteres) e, sem JavaScript, o mesmo formulário abre como página (`rotas/cobrancas_cancelamento.py`).
+Regra confirmada com o dono: só cobrança em aberto **e sem nenhum pagamento registrado** pode ser cancelada (`src/domain/cancelamento_cobranca.py`);
+com pagamento, parcial que seja, o botão some e o estorno continua sendo feito no banco. Cancelada, a cobrança sai da dívida, das listas e dos avisos de WhatsApp
+e não é gerada de novo. A gravação é a RPC `rpc_cancelar_cobranca` (migration `20261112140000_cancelar_cobranca.sql`, que acrescenta
+`cobrancas.motivo_cancelamento` e `cancelada_em`; só o dono; roteiro `supabase/verificar_cancelar_cobranca.sql`, só em dev, termina em ROLLBACK).
 **Fase 3, andamento: Manutenção concluída (07/10/2026).** Abas Alertas, Histórico e Catálogo; filtros, busca e
 paginação; registro com itens do plano, peças adicionais, prévia de custos e idempotência; conclusão e cancelamento
 de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
@@ -490,7 +496,14 @@ acesso"**. O app chama a Edge Function `criar-locatario`, que cria o usuário no
 ao cliente. O app mostra o CPF e a senha uma única vez (a senha não é gravada em lugar
 nenhum): entregue-os ao locatário. Ele pode trocar a senha no portal ("Alterar minha senha"),
 mas não é obrigado. "Gerar nova senha" redefine a senha e "Remover acesso" exclui o login.
-Não há "esqueci minha senha": quem redefine é o dono. O bloqueio de tentativas do Supabase
+**Esqueci minha senha (12/11/2026).** O e-mail do portal é fictício, então não há link de redefinição: na tela de login, «Peça uma senha nova»
+(`/login/esqueci-senha`, `rotas/esqueci_senha.py`) pede só o **CPF** e registra um **pedido** para o dono. A resposta ao locatário é sempre a mesma para
+qualquer CPF válido (ninguém descobre quem é cliente), cada pedido conta no limite por IP (20 em 15 min) e o CSRF usa o cookie do login. O dono vê o pedido
+em **duas** telas: o alerta «Nova senha do portal pedida» no Dashboard (aba Hoje, lista Atenção) e o aviso no topo da aba Portal da ficha do cliente, com **Descartar
+pedido** (para quando não foi o locatário que pediu). **Gerar nova senha** (ou remover o acesso) fecha o pedido; o dono continua entregando a senha pessoalmente.
+Migration `20261112150000_pedidos_senha_portal.sql` (tabela `pedidos_senha_portal`, no máximo um pedido aberto por cliente, só o dono lê; RPC
+`rpc_portal_pedir_redefinicao`, a única chamada **sem login**, papel `anon`); roteiro `supabase/verificar_pedidos_senha_portal.sql` (só em dev, termina em ROLLBACK).
+Sem a migration, a tela de pedido mostra um erro genérico e o Dashboard e a ficha seguem normais. O bloqueio de tentativas do Supabase
 Auth protege contra tentativas repetidas de senha.
 
 **Edge Function `criar-locatario`** (`supabase/functions/criar-locatario/index.ts`). Criar,
@@ -515,9 +528,8 @@ uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo d
 km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
 padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
 Configurações > "Multa por troca de óleo fora do intervalo". O valor padrão é R$ 12,50;
-valor 0,00 desativa a cobrança da multa. O app ainda não tem tela para cancelar cobrança:
-se a foto não confirmar o km, a
-multa precisa ser cancelada direto no banco (`cobrancas.status = 'cancelada'`).
+valor 0,00 desativa a cobrança da multa. Se a foto não confirmar o km, o dono cancela a
+multa em Cobranças (botão **Cancelar**, veja «Cancelar cobrança» abaixo).
 
 ### Arquivos órfãos do portal (12/11/2026)
 

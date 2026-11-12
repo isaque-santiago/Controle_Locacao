@@ -107,6 +107,11 @@ def pagamento_registrado(principal, extras, quitada):
     return _toast(texto)
 
 
+def cobranca_cancelada(tipo, cliente, valor):
+    """`Cobrança de Locação de Ana Souza (R$ 450,00) cancelada.` — sai da dívida e das listas; o motivo fica guardado."""
+    return _toast(f"Cobrança de {tipo} de {cliente} ({moeda(valor)}) cancelada. O motivo ficou registrado.")
+
+
 def parcela_divida_paga(valor, numero, quitada):
     """`Pagamento de R$ 1.000,00 registrado na parcela 7.` + situação da parcela."""
     parte = f" na parcela {numero}" if numero else ""

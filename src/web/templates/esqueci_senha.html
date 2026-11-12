@@ -1,0 +1,25 @@
+{% extends "layout_acesso.html" %}
+{% from "componentes/macros.html" import aviso, botao, campo %}
+
+{% block caixa %}
+<section class="cartao acesso-esqueci" aria-labelledby="titulo-esqueci">
+  <h1 id="titulo-esqueci">Esqueci minha senha</h1>
+  {% if pedido_feito %}
+  {{ aviso("sucesso", mensagem_pedido) }}
+  <div class="rodape-acoes">{{ botao("Voltar para o login", href="/login", variante="primario") }}</div>
+  {% else %}
+  <p class="text-texto-2">Informe o CPF do seu acesso. O proprietário recebe o pedido, gera uma senha nova e entrega a você pessoalmente.</p>
+  <form method="post" action="/login/esqueci-senha" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_login }}">
+    {% if erro %}{{ aviso("erro", erro) }}{% endif %}
+    <div class="formulario">
+      {{ campo("cpf", "CPF", nome="cpf", valor=cpf, obrigatorio=True, mono=True, inputmode="numeric", autocomplete="username", erro=erros.cpf, largo=True, extra="autofocus") }}
+    </div>
+    <div class="rodape-acoes">
+      <a class="btn" href="/login">Voltar</a>
+      <button class="btn btn-primario" type="submit">Pedir senha nova</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
