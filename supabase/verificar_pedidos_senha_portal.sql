@@ -54,7 +54,7 @@ begin
   assert n = 1, 'O dono deveria ler o pedido';
   update pedidos_senha_portal set status = 'atendido', fechado_em = now() where cliente_id = cli1 and status = 'aberto';
   begin
-    update pedidos_senha_portal set status = 'dispensado' where cliente_id = cli1;
+    update pedidos_senha_portal set status = 'dispensado', fechado_em = null where cliente_id = cli1;
     raise exception 'Fechar sem data deveria ser recusado';
   exception when check_violation then null;
   end;
