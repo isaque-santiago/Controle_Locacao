@@ -1,0 +1,4 @@
+{% from "componentes/macros.html" import form_dialogo %}
+{% call form_dialogo("Cancelar cobrança", acao, "Cancelar cobrança", csrf_token, erro_geral, perigo=True, rotulo_cancelar="Voltar") %}
+{% include "cobrancas/_campos_cancelar.html" %}
+{% endcall %}

@@ -603,12 +603,12 @@ def base_cobrancas(monkeypatch):
     from src.services.cobrancas import calcular_encargos_cobranca
     from src.web import dados_cobrancas
 
-    from src.web.rotas import cobrancas_mensagem, cobrancas_pagamento
+    from src.web.rotas import cobrancas_cancelamento, cobrancas_mensagem, cobrancas_pagamento
 
     base = BaseCobrancas()
     # "Hoje" é 07/10/2026 em todo o fluxo de Cobranças (lista, mensagem e pagamento): as rotas importam o próprio
     # `hoje_br`, então o relógio congelado precisa valer em cada módulo, e não só na camada de dados.
-    for modulo in (dados_cobrancas, cobrancas_mensagem, cobrancas_pagamento):
+    for modulo in (dados_cobrancas, cobrancas_cancelamento, cobrancas_mensagem, cobrancas_pagamento):
         monkeypatch.setattr(modulo, "hoje_br", lambda: date(2026, 10, 7))
     monkeypatch.setattr(dados_cobrancas, "clientes", SimpleNamespace(
         listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None)))
@@ -723,6 +723,7 @@ class AcoesCobrancasFalsas:
 
     def __init__(self):
         self.pagamentos: list[tuple] = []
+        self.cancelamentos: list[tuple] = []
         self.falhar_com: Exception | None = None
 
     def registrar_pagamento(self, cobranca_id, data, principal, extras, forma, observacoes, chave_operacao):
@@ -731,6 +732,12 @@ class AcoesCobrancasFalsas:
         self.pagamentos.append((cobranca_id, data, principal, extras, forma, observacoes, chave_operacao))
         return {}
 
+    def cancelar_cobranca(self, cobranca_id, motivo):
+        if self.falhar_com is not None:
+            raise self.falhar_com
+        self.cancelamentos.append((cobranca_id, motivo))
+        return {"cobranca_id": cobranca_id, "status": "cancelada"}
+
 
 @pytest.fixture(autouse=True)
 def acoes_cobrancas_falsas(monkeypatch):
@@ -738,6 +745,7 @@ def acoes_cobrancas_falsas(monkeypatch):
 
     falsas = AcoesCobrancasFalsas()
     monkeypatch.setattr(acoes_cobrancas, "registrar_pagamento", falsas.registrar_pagamento)
+    monkeypatch.setattr(acoes_cobrancas, "cancelar_cobranca", falsas.cancelar_cobranca)
     return falsas
 
 
