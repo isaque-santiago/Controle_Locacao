@@ -21,6 +21,15 @@
       "autoPort": true
     },
     {
+      "name": "locacao-web-linux",
+      "runtimeExecutable": ".venv/bin/python",
+      "runtimeArgs": [
+        "executar_web.py"
+      ],
+      "port": 8000,
+      "autoPort": true
+    },
+    {
       "name": "prototipo-layout",
       "runtimeExecutable": "python",
       "runtimeArgs": [
