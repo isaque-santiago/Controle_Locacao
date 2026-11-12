@@ -1,5 +1,6 @@
 {% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, botao, rc_titulo %}
-{% macro pagar(c) %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ botao("Mensagem", href="/cobrancas/" ~ c.id ~ "/mensagem", aria="Mensagem de cobrança para " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/mensagem" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Pagar", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}</div></td>{% endmacro %}
+{% macro cancelar(c) %}{% if c.pode_cancelar %}{{ botao("Cancelar", href="/cobrancas/" ~ c.id ~ "/cancelar", aria="Cancelar a cobrança de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/cancelar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endif %}{% endmacro %}
+{% macro pagar(c) %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ botao("Mensagem", href="/cobrancas/" ~ c.id ~ "/mensagem", aria="Mensagem de cobrança para " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/mensagem" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Pagar", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ cancelar(c) }}</div></td>{% endmacro %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
 {% if d.itens %}
 {% if aba == "atrasadas" %}
@@ -27,13 +28,13 @@
 </tr>{% endfor %}
 {% endcall %}
 {% else %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num")] + ([("Ações", "col-acoes")] if aba == "hoje" else []), "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias", recolhivel=True) %}
+{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Ações", "col-acoes")], "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
 {% call rc_titulo("modelo") %}{{ c.cliente or "—" }}{% if aba == "proximos" and c.numero == 1 %}<span class="sub">1ª parcela</span>{% endif %}{% endcall %}
 <td data-rotulo="Moto">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="num mono rc-cab" data-rotulo="Valor">{{ c.saldo|moeda }}</td>
-{% if aba == "hoje" %}{{ pagar(c) }}{% endif %}
+{% if aba == "hoje" %}{{ pagar(c) }}{% else %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ cancelar(c) }}</div></td>{% endif %}
 </tr>{% endfor %}
 {% endcall %}
 {% endif %}

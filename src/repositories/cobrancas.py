@@ -33,6 +33,17 @@ def atualizar(cobranca_id: str, dados: dict):
     return resposta.data[0]
 
 
+@invalida_cache
+def cancelar_via_rpc(cobranca_id: str, motivo: str) -> dict:
+    """Cancela a cobrança (só o dono; em aberto e sem pagamento) na RPC, que valida e grava motivo e data."""
+    resposta = (
+        get_client()
+        .rpc("rpc_cancelar_cobranca", {"p_cobranca": cobranca_id, "p_motivo": motivo})
+        .execute()
+    )
+    return resposta.data
+
+
 def gerar_pendentes_via_rpc(horizonte_dias: int = 30) -> dict:
     resposta = (
         get_client()

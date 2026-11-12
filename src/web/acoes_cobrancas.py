@@ -8,3 +8,8 @@ def registrar_pagamento(cobranca_id, data, principal, extras, forma, observacoes
     return cobrancas.registrar_pagamento(
         cobranca_id, data, principal, extras, forma, observacoes, chave_operacao=chave_operacao
     )
+
+
+def cancelar_cobranca(cobranca_id, motivo):
+    """Cancela a cobrança em aberto e sem pagamento; o motivo fica guardado com ela."""
+    return cobrancas.cancelar_cobranca(cobranca_id, motivo)

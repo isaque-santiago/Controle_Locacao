@@ -22,6 +22,11 @@ def test_pagamento_descreve_valor_encargos_e_situacao_da_cobranca():
     assert "continua em aberto" in parcial.texto
 
 
+def test_cancelamento_de_cobranca_cita_tipo_cliente_e_valor():
+    aviso = mensagens.cobranca_cancelada("Multa de trânsito", "Ana Souza", Decimal("200"))
+    assert aviso == ("Cobrança de Multa de trânsito de Ana Souza (R$ 200,00) cancelada. O motivo ficou registrado.", TOAST, False)
+
+
 def test_cadastro_e_edicao_tem_textos_distintos_e_citam_o_registro():
     assert mensagens.moto_salva("ABC-1D23", nova=True).texto == "Moto ABC-1D23 cadastrada."
     assert mensagens.moto_salva("ABC-1D23", nova=False).texto == "Dados da moto ABC-1D23 atualizados."
