@@ -531,6 +531,19 @@ Configurações > "Multa por troca de óleo fora do intervalo". O valor padrão 
 valor 0,00 desativa a cobrança da multa. Se a foto não confirmar o km, o dono cancela a
 multa em Cobranças (botão **Cancelar**, veja «Cancelar cobrança» abaixo).
 
+### Arquivos órfãos do portal (12/11/2026)
+
+O locatário envia as fotos da troca de óleo e o comprovante de documento ao Storage **antes** de registrar a operação. Se o registro falha (hodômetro
+menor que o anterior, troca repetida, documento já regularizado), o arquivo fica no Storage sem nenhuma linha que o referencie: um **arquivo órfão**.
+Em **Configurações > Arquivos órfãos do portal** o dono clica em **Procurar arquivos órfãos**, confere a lista (tipo, caminho, tamanho e data) e só então
+**Apaga**, com confirmação. Regras (`src/domain/arquivos_orfaos.py`, `src/services/arquivos_orfaos.py`):
+
+- só entram arquivos **do portal**: o bucket `trocas_oleo` e a pasta `portal/` do bucket `documentos`; vistorias e os arquivos que o próprio dono enviou nunca são tocados;
+- só entram arquivos com **mais de 24 horas** e que **nenhuma linha referencia** (foto do painel ou nota fiscal de troca; comprovante de envio, inclusive recusado; arquivo de documento da moto);
+- a lista vem da RPC `rpc_listar_arquivos_orfaos` (só o dono; migration `20261112160000_arquivos_orfaos_portal.sql`, roteiro `supabase/verificar_arquivos_orfaos_portal.sql`, só em dev, termina em ROLLBACK), com no máximo 1000 por vez;
+- quem apaga é o app, pela **API do Storage** (que remove o arquivo de verdade, não só a linha), em lotes de 100 e com a sessão do dono. A lista é **recalculada na hora de apagar**:
+  nada que vem do navegador define o que é removido. Uma falha em um lote não impede os outros: a mensagem diz quantos foram apagados e quantos não puderam ser.
+
 ## Publicação
 
 O deploy do app FastAPI (Fase 5) usa o `Dockerfile` do repositório no Coolify da VPS; o passo a passo está em

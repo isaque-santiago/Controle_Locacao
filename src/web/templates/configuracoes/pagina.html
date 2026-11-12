@@ -1,5 +1,5 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, campo, botao, aviso, caixa %}
+{% from "componentes/macros.html" import cabecalho_pagina, campo, botao, aviso, caixa, tabela %}
 {% block conteudo %}
 {% call cabecalho_pagina("Configurações", "Parâmetros do sistema") %}
 <span class="so-desktop">{{ botao("Salvar alterações", tipo="submit", variante="primario", extra='form="form-config"') }}</span>
@@ -64,6 +64,34 @@
   <form method="post" action="/configuracoes/backup">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button class="btn" type="submit">Gerar e baixar backup</button>
+  </form>
+</section>
+<section class="cartao" aria-labelledby="cfg-orfaos-titulo" id="cfg-orfaos">
+  <h2 id="cfg-orfaos-titulo">Arquivos órfãos do portal</h2>
+  <p class="text-texto-2 mb-4">Quando o locatário envia fotos de troca de óleo ou um comprovante e o registro falha (hodômetro menor que o anterior, troca repetida, documento já regularizado), o arquivo fica no Storage sem ligação com nada. Procure esses arquivos, confira a lista e apague. Só entram arquivos do portal com mais de 24 horas e sem nenhum registro; vistorias e os arquivos que você mesmo enviou nunca são tocados.</p>
+  {% if orfaos_erro %}{{ aviso("erro", orfaos_erro) }}{% endif %}
+  {% if orfaos is defined and orfaos is not none %}
+  {% if orfaos.quantidade %}
+  <p role="status"><strong>{{ orfaos.quantidade }} arquivo(s) órfão(s)</strong> · {{ orfaos.tamanho }}{% for rotulo, n in orfaos.por_bucket %} · {{ rotulo }}: {{ n }}{% endfor %}</p>
+  {% call tabela([("Tipo", ""), ("Arquivo", ""), ("Tamanho", "num"), ("Enviado em", "")], "Arquivos órfãos encontrados", recolhivel=True) %}
+  {% for a in orfaos.itens %}<tr data-recolhivel>
+    <td data-rotulo="Tipo">{{ a.rotulo }}</td>
+    <td class="mono" data-rotulo="Arquivo">{{ a.caminho }}</td>
+    <td class="num mono" data-rotulo="Tamanho">{{ a.tamanho_texto }}</td>
+    <td class="mono" data-rotulo="Enviado em">{{ a.criado_em|data_br }}</td>
+  </tr>{% endfor %}
+  {% endcall %}
+  <form method="post" action="/configuracoes/arquivos-orfaos/apagar" class="acoes mt-4" data-confirmar="Apagar {{ orfaos.quantidade }} arquivo(s) órfão(s) do Storage? Não há como desfazer." data-confirmar-titulo="Apagar arquivos órfãos" data-confirmar-rotulo="Apagar {{ orfaos.quantidade }} arquivo(s)">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-perigo" type="submit">Apagar {{ orfaos.quantidade }} arquivo(s) órfão(s)</button>
+  </form>
+  {% else %}
+  {{ aviso("sucesso", "Nenhum arquivo órfão encontrado.") }}
+  {% endif %}
+  {% endif %}
+  <form method="post" action="/configuracoes/arquivos-orfaos/procurar" class="acoes mt-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn" type="submit">Procurar arquivos órfãos</button>
   </form>
 </section>
 {% endblock %}

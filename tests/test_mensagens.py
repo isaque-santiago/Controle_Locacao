@@ -27,6 +27,14 @@ def test_cancelamento_de_cobranca_cita_tipo_cliente_e_valor():
     assert aviso == ("Cobrança de Multa de trânsito de Ana Souza (R$ 200,00) cancelada. O motivo ficou registrado.", TOAST, False)
 
 
+def test_arquivos_orfaos_apagados_avisa_quantos_e_se_algum_falhou():
+    ok = mensagens.arquivos_orfaos_apagados(3, "5,0 KB", 0)
+    assert ok == ("3 arquivo(s) órfão(s) apagado(s) (5,0 KB).", TOAST, False)
+    parcial = mensagens.arquivos_orfaos_apagados(2, "1,0 KB", 1)
+    assert parcial.tom == ALERTA and parcial.atencao and "2 arquivo(s)" in parcial.texto and "1 arquivo(s) não puderam" in parcial.texto
+
+
+
 def test_cadastro_e_edicao_tem_textos_distintos_e_citam_o_registro():
     assert mensagens.moto_salva("ABC-1D23", nova=True).texto == "Moto ABC-1D23 cadastrada."
     assert mensagens.moto_salva("ABC-1D23", nova=False).texto == "Dados da moto ABC-1D23 atualizados."
