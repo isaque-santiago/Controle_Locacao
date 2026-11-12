@@ -490,7 +490,14 @@ acesso"**. O app chama a Edge Function `criar-locatario`, que cria o usuário no
 ao cliente. O app mostra o CPF e a senha uma única vez (a senha não é gravada em lugar
 nenhum): entregue-os ao locatário. Ele pode trocar a senha no portal ("Alterar minha senha"),
 mas não é obrigado. "Gerar nova senha" redefine a senha e "Remover acesso" exclui o login.
-Não há "esqueci minha senha": quem redefine é o dono. O bloqueio de tentativas do Supabase
+**Esqueci minha senha (12/11/2026).** O e-mail do portal é fictício, então não há link de redefinição: na tela de login, «Peça uma senha nova»
+(`/login/esqueci-senha`, `rotas/esqueci_senha.py`) pede só o **CPF** e registra um **pedido** para o dono. A resposta ao locatário é sempre a mesma para
+qualquer CPF válido (ninguém descobre quem é cliente), cada pedido conta no limite por IP (20 em 15 min) e o CSRF usa o cookie do login. O dono vê o pedido
+em **duas** telas: o alerta «Nova senha do portal pedida» no Dashboard (aba Hoje, lista Atenção) e o aviso no topo da aba Portal da ficha do cliente, com **Descartar
+pedido** (para quando não foi o locatário que pediu). **Gerar nova senha** (ou remover o acesso) fecha o pedido; o dono continua entregando a senha pessoalmente.
+Migration `20261112150000_pedidos_senha_portal.sql` (tabela `pedidos_senha_portal`, no máximo um pedido aberto por cliente, só o dono lê; RPC
+`rpc_portal_pedir_redefinicao`, a única chamada **sem login**, papel `anon`); roteiro `supabase/verificar_pedidos_senha_portal.sql` (só em dev, termina em ROLLBACK).
+Sem a migration, a tela de pedido mostra um erro genérico e o Dashboard e a ficha seguem normais. O bloqueio de tentativas do Supabase
 Auth protege contra tentativas repetidas de senha.
 
 **Edge Function `criar-locatario`** (`supabase/functions/criar-locatario/index.ts`). Criar,
