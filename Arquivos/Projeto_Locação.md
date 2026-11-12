@@ -784,7 +784,8 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
   "Remover acesso" funcionam; o dono vê troca,
   fotos e multa na ficha do cliente.
 
-**Fora do escopo desta fase:** tela para cancelar cobrança (hoje só direto no
+**Fora do escopo desta fase** (pendências retomadas em 12/11/2026, seção 22):
+tela para cancelar cobrança (hoje só direto no
 banco), recuperação de senha (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
 (enviadas ao Storage quando o registro da troca falha).
 
@@ -1173,3 +1174,16 @@ as RPCs devolvem totais do mês e comparar mês parcial com mês inteiro seria i
 `proximos_dias` (entra e sai em 7 dias), `motos_paradas`, `tempo_parado_no_mes` e `receita_por_moto` (`domain/frota_parada.py`). O tempo parado usa as ordens de manutenção (aberta ou concluída) que caem
 no mês, então é uma medida real e não só a foto de hoje; as metas do setor (menos de 5%) vêm de fornecedores e servem só como alerta inicial. Sem migration nova. Com isso as três fases do estudo estão feitas.
 \n
+
+---
+
+## 22. Pendências da Fase 7 (12/11/2026)
+
+Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de fora. Uma branch e um PR por item.
+
+### 22.3 Arquivos órfãos do portal (entregue em 12/11/2026)
+
+- **Problema:** o locatário envia as fotos (troca de óleo) e o comprovante (documento) ao Storage antes de registrar a operação; se o registro falha, o arquivo fica sem ligação com nada.
+- **Decisão do dono:** a limpeza é um **botão em Configurações** (procurar, conferir a lista, apagar com confirmação). Não há tarefa agendada nem script.
+- **Regra:** só o bucket `trocas_oleo` e a pasta `portal/` do bucket `documentos`; só arquivos com mais de 24 horas e sem nenhuma referência; vistorias e arquivos do próprio dono ficam de fora.
+- **Banco e app:** RPC `rpc_listar_arquivos_orfaos` (migration `20261112160000_arquivos_orfaos_portal.sql`, roteiro `supabase/verificar_arquivos_orfaos_portal.sql`); a remoção usa a API do Storage e a lista é recalculada na hora de apagar. Regras puras em `src/domain/arquivos_orfaos.py`.
