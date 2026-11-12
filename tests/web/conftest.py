@@ -52,6 +52,8 @@ class ServicoFalso:
         self.saidas: list[str] = []
         self.senhas: list[tuple[str, str]] = []
         self.senha_recusada = None
+        self.pedidos_de_senha: list[str] = []
+        self.pedido_recusado = None
         self.renovacao_recusada = False
         self._emitidos = 0
         self._papel_do_token: dict[str, str | None] = {}
@@ -95,6 +97,11 @@ class ServicoFalso:
 
     def sair(self, access_token):
         self.saidas.append(access_token)
+
+    def pedir_senha_nova(self, cpf):
+        if self.pedido_recusado:
+            raise self.pedido_recusado
+        self.pedidos_de_senha.append(cpf)
 
 
 def _conteudo_hoje():
