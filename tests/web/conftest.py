@@ -973,6 +973,10 @@ class BaseConfiguracoes:
         self.gravados = []
         self.backups = 0
         self.falhar_com = None
+        self.orfaos = []  # arquivos órfãos que o banco apontaria: [{bucket, caminho, tamanho, criado_em}]
+        self.orfaos_apagados = 0
+        self.falhas_ao_apagar = 0
+        self.erro_orfaos = None
 
 
 @pytest.fixture(autouse=True)
@@ -992,8 +996,22 @@ def base_configuracoes(monkeypatch):
         base.backups += 1
         return b"PK\x03\x04conteudo-do-backup"
 
+    def procurar():
+        if base.erro_orfaos:
+            raise base.erro_orfaos
+        from src.domain.arquivos_orfaos import resumir
+        return resumir(base.orfaos)
+
+    def apagar():
+        if base.erro_orfaos:
+            raise base.erro_orfaos
+        base.orfaos_apagados += 1
+        return {"apagados": len(base.orfaos) - base.falhas_ao_apagar, "tamanho": "5,0 KB", "falhas": base.falhas_ao_apagar}
+
     monkeypatch.setattr(dados_configuracoes, "configuracoes", SimpleNamespace(obter=lambda: base.config, backup=backup))
+    monkeypatch.setattr(dados_configuracoes, "arquivos_orfaos", SimpleNamespace(procurar=procurar))
     monkeypatch.setattr(acoes_configuracoes, "configuracoes", SimpleNamespace(atualizar=atualizar))
+    monkeypatch.setattr(acoes_configuracoes, "arquivos_orfaos", SimpleNamespace(apagar=apagar))
     return base
 
 

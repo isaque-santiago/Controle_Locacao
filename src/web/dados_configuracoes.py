@@ -1,7 +1,7 @@
 """Fronteira de leitura da página web de Configurações. Os testes das rotas trocam estes serviços por dados fictícios."""
 
 from src.domain.configuracoes import exemplo_encargos
-from src.services import configuracoes
+from src.services import arquivos_orfaos, configuracoes
 
 
 def obter():
@@ -16,3 +16,8 @@ def exemplo(config):
 def gerar_backup():
     """ZIP com um CSV de cada tabela acessível, manifesto e LEIA-ME. Contém dados pessoais."""
     return configuracoes.backup()
+
+
+def procurar_arquivos_orfaos():
+    """Arquivos do portal sem nenhum registro (com mais de 24 h): quantidade, tamanho, por bucket e a lista."""
+    return arquivos_orfaos.procurar()

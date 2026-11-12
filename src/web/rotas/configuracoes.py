@@ -67,6 +67,54 @@ async def backup(_: Sessao = Depends(exigir_dono)):
                     headers={"Content-Disposition": f'attachment; filename="backup-{hoje_br().isoformat()}.zip"'})
 
 
+def _procurar_orfaos(request):
+    """Mesma página, com a lista dos arquivos órfãos para o dono conferir (formulário comum: funciona sem JavaScript)."""
+    config = dados_configuracoes.obter()
+    contexto = _contexto(config, formulario.valores_iniciais(config))
+    try:
+        contexto["orfaos"] = dados_configuracoes.procurar_arquivos_orfaos()
+        status = 200
+    except ValueError as erro:
+        contexto["orfaos_erro"], status = str(erro), 422
+    except HTTPException:
+        raise
+    except Exception as erro:
+        falha = classificacao.classificar_erro(erro)
+        if falha.categoria == classificacao.SESSAO_EXPIRADA:
+            raise
+        logger.exception("Falha ao procurar os arquivos órfãos")
+        contexto["orfaos_erro"], status = falha.mensagem, (503 if falha.recuperavel else 500)
+    return renderizar(request, _PAGINA, contexto, status=status)
+
+
+@router.post("/configuracoes/arquivos-orfaos/procurar", dependencies=[Depends(validar_csrf)])
+async def procurar_orfaos(request: Request, _: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_procurar_orfaos, request)
+
+
+def _apagar_orfaos(request, sessao):
+    try:
+        resultado = acoes_configuracoes.apagar_arquivos_orfaos()
+    except ValueError as erro:
+        return _concluir(request, sessao, "/configuracoes#cfg-orfaos", tipo="erro", texto=str(erro))
+    except HTTPException:
+        raise
+    except Exception as erro:
+        falha = classificacao.classificar_erro(erro)
+        if falha.categoria == classificacao.SESSAO_EXPIRADA:
+            raise
+        logger.exception("Falha ao apagar os arquivos órfãos")
+        return _concluir(request, sessao, "/configuracoes#cfg-orfaos", tipo="erro", texto=falha.mensagem)
+    aviso = mensagens.arquivos_orfaos_apagados(resultado["apagados"], resultado["tamanho"], resultado["falhas"])
+    return _concluir(request, sessao, "/configuracoes#cfg-orfaos", aviso)
+
+
+@router.post("/configuracoes/arquivos-orfaos/apagar", dependencies=[Depends(validar_csrf)])
+async def apagar_orfaos(request: Request, sessao: Sessao = Depends(exigir_dono)):
+    """Não recebe lista nenhuma: apaga o que o banco aponta como órfão no momento do clique."""
+    return await run_in_threadpool(_apagar_orfaos, request, sessao)
+
+
 def _salvar_whatsapp(request, sessao, entrada):
     """Controles do envio de WhatsApp: formulário próprio, com erros ao lado dos campos dele."""
     config = dados_configuracoes.obter()
