@@ -214,6 +214,14 @@ def _aviso_fotos(falhas):
 # ------------------------------------------------------------ configurações --
 
 
+def arquivos_orfaos_apagados(apagados, tamanho, falhas):
+    """`3 arquivo(s) órfão(s) apagado(s) (5,0 KB).` Com falha em algum lote, vira alerta: o resto continua no Storage e pode ser tentado de novo."""
+    texto = f"{apagados} arquivo(s) órfão(s) apagado(s) ({tamanho})."
+    if falhas:
+        return _alerta(f"{texto} {falhas} arquivo(s) não puderam ser apagados agora; procure de novo para tentar outra vez.", atencao=True)
+    return _toast(texto)
+
+
 def configuracoes_salvas(alterados):
     """`alterados`: nomes dos campos que mudaram (podem ser vazios)."""
     if not alterados:
