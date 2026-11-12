@@ -17,7 +17,7 @@ def dados_painel_falsos():
     """Aqui o que se testa é o `carregar` de verdade: este teste desliga o `carregar` fictício do conftest."""
 
 
-def _instalar(monkeypatch, config=None, alertas_zap=None, hoje=None, dinheiro=None, frota=None, motos=None, ordens=None, comprovantes=None):
+def _instalar(monkeypatch, config=None, alertas_zap=None, hoje=None, dinheiro=None, frota=None, motos=None, ordens=None, comprovantes=None, pedidos_senha=None):
     chamadas = {"gerar": 0, "hoje": 0, "dinheiro": [], "frota": 0, "alertas_zap": []}
     config = config or {"alerta_manutencao_km": 300, "alerta_manutencao_dias": 15, "alerta_documento_dias": 30}
 
@@ -47,6 +47,7 @@ def _instalar(monkeypatch, config=None, alertas_zap=None, hoje=None, dinheiro=No
     monkeypatch.setattr(dados_painel, "alertas", SimpleNamespace(listar_manutencao=lambda: [], listar_documentos=lambda: [], listar_cnh=lambda: []))
     monkeypatch.setattr(dados_painel, "configuracoes", SimpleNamespace(obter=lambda: config))
     monkeypatch.setattr(dados_painel, "documentos", SimpleNamespace(alertas_de_comprovantes=lambda: comprovantes or []))
+    monkeypatch.setattr(dados_painel, "pedidos_senha", SimpleNamespace(alertas=lambda: pedidos_senha or []))
     monkeypatch.setattr(dados_painel, "whatsapp_painel", SimpleNamespace(
         alertas=lambda c: chamadas["alertas_zap"].append(c) or (alertas_zap or [])))
     return chamadas
@@ -128,3 +129,11 @@ def test_comprovante_a_conferir_entra_na_lista_de_atencao_da_aba_hoje(monkeypatc
     _instalar(monkeypatch)
     assert "Comprovante a conferir" not in [i.titulo for i in dados_painel.carregar(HOJE)["hoje"]["atencao"]]
 
+
+def test_pedido_de_senha_nova_entra_na_lista_de_atencao_da_aba_hoje(monkeypatch):
+    item = ItemAlerta(1, "Nova senha do portal pedida", "Maria Souza", "atencao", "clientes")
+    _instalar(monkeypatch, pedidos_senha=[item])
+    titulos = [i.titulo for i in dados_painel.carregar(HOJE)["hoje"]["atencao"]]
+    assert "Nova senha do portal pedida" in titulos
+    _instalar(monkeypatch)
+    assert "Nova senha do portal pedida" not in [i.titulo for i in dados_painel.carregar(HOJE)["hoje"]["atencao"]]

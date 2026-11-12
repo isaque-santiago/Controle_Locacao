@@ -424,6 +424,7 @@ class BaseClientes:
                             "saldo": Decimal("100"), "situacao": "atrasada"},
                            {"id": "b2", "vencimento": "2026-10-08", "tipo": "locacao", "valor": Decimal("300"),
                             "saldo": Decimal("300"), "situacao": "aberta"}]
+        self.pedido_senha = None  # {"pedido_em": "..."} quando o locatário pediu senha nova e o dono ainda não atendeu
         self.troca_id = "00000000-0000-0000-0000-0000000000f1"
         self.trocas = [{"id": self.troca_id, "criado_em": "2026-09-20T10:00:00+00:00", "km": 12500, "km_excedente": 300,
                         "cobranca_id": "b9", "foto_painel_path": "c1/painel.jpg", "nota_fiscal_path": "c1/nota.jpg"}]
@@ -438,6 +439,7 @@ def base_clientes(monkeypatch):
     monkeypatch.setattr(dados_clientes, "motos", SimpleNamespace(listar=lambda: base.motos))
     monkeypatch.setattr(dados_clientes, "configuracoes", SimpleNamespace(obter=lambda: {"alerta_cnh_dias": 30}))
     monkeypatch.setattr(dados_clientes, "portal_locatario", SimpleNamespace(listar_trocas=lambda id_: base.trocas))
+    monkeypatch.setattr(dados_clientes, "pedidos_senha", SimpleNamespace(aberto_do_cliente=lambda id_: base.pedido_senha))
     monkeypatch.setattr(dados_clientes, "cobrancas", SimpleNamespace(
         listar_por_contrato=lambda id_: base.cobrancas,
         historicos_pagamentos=lambda ids: {id_: [] for id_ in ids},
@@ -465,6 +467,7 @@ def acoes_clientes_falsas(monkeypatch, base_clientes):
     monkeypatch.setattr(acoes_clientes, "criar_acesso_portal", acesso("criar_acesso"))
     monkeypatch.setattr(acoes_clientes, "redefinir_senha_portal", acesso("redefinir_senha"))
     monkeypatch.setattr(acoes_clientes, "remover_acesso_portal", remover)
+    monkeypatch.setattr(acoes_clientes, "dispensar_pedido_senha", lambda cliente_id: chamadas.append(("dispensar_pedido_senha", cliente_id)))
     monkeypatch.setattr(acoes_clientes, "url_arquivo_troca", lambda caminho: f"https://storage.exemplo/assinada/{caminho}?token=x")
     return chamadas
 
