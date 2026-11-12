@@ -1,4 +1,4 @@
-"""Aba Portal da ficha do cliente: criar, redefinir e remover o acesso do locatário e abrir as fotos das trocas.
+"""Aba Portal da ficha do cliente: criar, redefinir e remover o acesso do locatário, dispensar o pedido de senha nova e abrir as fotos das trocas.
 
 A senha gerada só existe na resposta do POST: vai direto ao painel, sem sessão, URL, log ou cache."""
 
@@ -59,6 +59,23 @@ async def criar_acesso(request: Request, cliente_id: str, _: Sessao = Depends(ex
 @router.post("/clientes/{cliente_id}/portal/senha", dependencies=[Depends(validar_csrf)])
 async def redefinir_senha(request: Request, cliente_id: str, _: Sessao = Depends(exigir_dono)):
     return await run_in_threadpool(_gerar, request, cliente_id, acoes_clientes.redefinir_senha_portal)
+
+
+def _dispensar(request, cliente_id):
+    cliente = _cliente_ou_404(cliente_id)
+    try:
+        acoes_clientes.dispensar_pedido_senha(cliente_id)
+    except HTTPException:
+        raise
+    except Exception as erro:
+        return _painel_portal(request, cliente, erro=_mensagem_da_falha(request, erro))
+    return _painel_portal(request, cliente)
+
+
+@router.post("/clientes/{cliente_id}/portal/pedido-senha/dispensar", dependencies=[Depends(validar_csrf)])
+async def dispensar_pedido_senha(request: Request, cliente_id: str, _: Sessao = Depends(exigir_dono)):
+    """O dono descarta o pedido de senha nova (por exemplo, quando não foi o locatário que pediu)."""
+    return await run_in_threadpool(_dispensar, request, cliente_id)
 
 
 def _remover(request, sessao, cliente_id):

@@ -18,6 +18,7 @@ from src.services.autenticacao import ServicoAutenticacao
 from src.web.erros import registrar_tratadores
 from src.web.limitador import LimitadorTentativas
 from src.web.rotas import autenticacao as rotas_autenticacao
+from src.web.rotas import esqueci_senha as rotas_esqueci_senha
 from src.web.rotas import componentes as rotas_componentes
 from src.web.rotas import clientes as rotas_clientes
 from src.web.rotas import cobrancas as rotas_cobrancas
@@ -137,6 +138,7 @@ def criar_app(
     app.include_router(rotas_motos_formularios.router)
     app.include_router(rotas_motos.router)
     app.include_router(rotas_autenticacao.router)
+    app.include_router(rotas_esqueci_senha.router)
     if desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento():
         app.include_router(rotas_componentes.router)
 

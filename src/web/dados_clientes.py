@@ -8,7 +8,7 @@ from src.domain.ordenacao import interpretar
 from src.domain.paginacao import OPCOES_POR_PAGINA, calcular_pagina
 from src.domain.cnh_regras import situacao_cnh
 from src.domain.valores import hoje_br
-from src.services import clientes, cobrancas, configuracoes, contratos, motos, portal_locatario
+from src.services import clientes, cobrancas, configuracoes, contratos, motos, pedidos_senha, portal_locatario
 from src.web import dados_whatsapp
 
 
@@ -65,9 +65,10 @@ def carregar_ficha(cliente, aba, pagina=1):
             (p["vencimento"] for p in cobrancas.listar_por_contrato(ativo["id"]) if p["situacao"] == "aberta" and p["tipo"] == "locacao"),
         )
         contrato_ativo = {**ativo, "proxima_cobranca": abertas[0] if abertas else None}
-    trocas = []
+    trocas, pedido_senha = [], None
     if aba == "portal":
         trocas = sorted(listar_trocas(cliente["id"]), key=lambda t: t["criado_em"], reverse=True)
+        pedido_senha = pedidos_senha.aberto_do_cliente(cliente["id"])
     mensagens, erro_mensagens = [], None
     if aba == "whatsapp":
         try:
@@ -78,5 +79,5 @@ def carregar_ficha(cliente, aba, pagina=1):
     todas = sorted(parcelas, key=lambda x: x["vencimento"], reverse=True)
     recorte = calcular_pagina(len(todas), pagina, OPCOES_POR_PAGINA[0])
     return {"pagina_pagamentos": recorte, "parcelas_da_pagina": todas[recorte.inicio:recorte.fim],
-            "contrato_ativo": contrato_ativo, "trocas": trocas, "mensagens": mensagens, "erro_mensagens": erro_mensagens, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
+            "contrato_ativo": contrato_ativo, "trocas": trocas, "pedido_senha": pedido_senha, "mensagens": mensagens, "erro_mensagens": erro_mensagens, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
             "historicos": historicos, "pago": pago, "em_aberto": em_aberto, "atrasado": atrasado}

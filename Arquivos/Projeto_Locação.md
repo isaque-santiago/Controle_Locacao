@@ -784,8 +784,8 @@ Cada fase termina com **app funcionando, testes verdes e commit**. O Code não d
   "Remover acesso" funcionam; o dono vê troca,
   fotos e multa na ficha do cliente.
 
-**Fora do escopo desta fase** (cancelar cobrança foi feito em 12/11/2026, seção 22; as demais seguem na mesma seção):
-~~tela para cancelar cobrança~~, recuperação de senha (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
+**Fora do escopo desta fase** (cancelar cobrança e «esqueci minha senha» foram feitos em 12/11/2026, seção 22; a limpeza de fotos órfãs segue na mesma seção):
+~~tela para cancelar cobrança~~, ~~recuperação de senha~~ (esqueci minha senha; o dono redefine) e exclusão de fotos órfãs
 (enviadas ao Storage quando o registro da troca falha).
 
 ### Fase 8: Acabamento e publicação
@@ -1187,3 +1187,13 @@ Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de
 - **Onde:** botão «Cancelar» nas abas Hoje, Atrasadas e Próximos 7 dias de Cobranças; diálogo com a alternativa em página (sem JavaScript).
 - **Banco:** RPC `rpc_cancelar_cobranca(p_cobranca, p_motivo)` (só o dono; trava a linha antes de olhar os pagamentos), migration `20261112140000_cancelar_cobranca.sql`,
   roteiro `supabase/verificar_cancelar_cobranca.sql`. Regra pura em `src/domain/cancelamento_cobranca.py`, com testes.
+
+### 22.2 Esqueci minha senha (entregue em 12/11/2026)
+
+- **Como funciona:** o e-mail do portal é fictício, então não há link de redefinição. Na tela de login, «Peça uma senha nova» pede o CPF e registra um **pedido**
+  que aparece para o dono (alerta no Dashboard e aviso na aba Portal da ficha do cliente); o dono gera a senha nova e a entrega pessoalmente, como já fazia.
+  Gerar a senha ou remover o acesso fecha o pedido; o dono também pode descartá-lo.
+- **Segurança:** a RPC `rpc_portal_pedir_redefinicao` é a única chamada sem login (papel `anon`) e responde sempre igual, para não revelar quais CPFs são clientes;
+  no máximo um pedido aberto por cliente; cada pedido conta no limite por IP do login. Nenhuma mensagem é enviada ao locatário.
+- **Banco:** migration `20261112150000_pedidos_senha_portal.sql`, roteiro `supabase/verificar_pedidos_senha_portal.sql`. Regras puras em `src/domain/pedido_senha.py`.
+- **Fora do escopo:** link por WhatsApp (depende da Etapa 5 da seção 20); pode ser retomado quando a Evolution estiver em produção.

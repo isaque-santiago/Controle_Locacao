@@ -125,6 +125,12 @@ class ServicoAutenticacao:
         if resposta.status_code >= 400:
             raise SenhaNaoAlterada("Não foi possível alterar a senha agora. Tente de novo em instantes.")
 
+    def pedir_senha_nova(self, cpf: str) -> None:
+        """Registra o pedido de senha nova do locatário (sem login: a RPC aceita o papel anon).
+
+        A RPC responde sempre igual, tenha o CPF acesso ao portal ou não; quem recebe o pedido é o dono."""
+        db.criar_cliente_anonimo().rpc("rpc_portal_pedir_redefinicao", {"p_cpf": cpf}).execute()
+
     def sair(self, access_token: str) -> None:
         """Revoga esta sessão no Supabase (escopo local, com o JWT do próprio usuário).
 
