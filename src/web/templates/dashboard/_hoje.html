@@ -70,7 +70,7 @@
       <li class="pendencia">
         <span class="adesivo {{ a.tom }}" aria-hidden="true">{{ a.quantidade if a.quantidade is not none else "!" }}</span>
         <div><strong>{{ a.titulo }}</strong><span class="det">{{ nome(a.descricao) }}</span></div>
-        {% if a.area %}<a class="btn" href="{{ areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>{% endif %}
+        {% if a.destino or a.area %}<a class="btn" href="{{ a.destino or areas[a.area] }}" aria-label="Abrir: {{ a.titulo }}">Abrir</a>{% endif %}
       </li>
       {% endfor %}
     </ul>
