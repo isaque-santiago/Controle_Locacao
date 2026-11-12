@@ -8,7 +8,7 @@
 {% for item in d.itens %}{% set c = item.contrato %}<tr data-recolhivel>
 {% call rc_titulo("modelo" ~ (" text-texto-3" if c.status != "ativo" else "")) %}{{ item.cliente_nome }}{% endcall %}
 <td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else ("perigo" if c.status == "cancelado" else "neutro")) }}</td>
-<td data-rotulo="Moto">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}{% if item.vinculadas %} {{ selo("+" ~ item.vinculadas ~ (" moto" if item.vinculadas == 1 else " motos"), "neutro") }}{% endif %}{% if c.tipo_contrato == "promessa_compra" %} {{ selo("Promessa de compra", "atencao") }}{% endif %}</td>
+<td data-rotulo="Moto"><span class="selos">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}{% if item.vinculadas %} {{ selo("+" ~ item.vinculadas ~ (" moto" if item.vinculadas == 1 else " motos"), "neutro") }}{% endif %}{% if c.tipo_contrato == "promessa_compra" %} {{ selo("Promessa de compra", "atencao") }}{% endif %}</span></td>
 <td class="mono" data-rotulo="Início">{{ c.data_inicio|data_br }}</td>
 <td data-rotulo="Periodicidade">{{ periodos_rotulo.get(c.periodicidade, c.periodicidade) }}</td>
 <td class="num mono" data-rotulo="Valor / período">{{ c.valor_periodo|moeda }}</td>
