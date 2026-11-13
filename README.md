@@ -599,9 +599,11 @@ manutenção preventiva concluída e corretiva em aberto, e documentos vencido/a
 vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 `seed.sql`. É idempotente pela placa `EXA1A11`; não rode em produção.
 
-## Importação dos dados reais (modelo pronto; carga parcial no dev)
+## Importação dos dados reais (modelo pronto; parcela 1 em produção; parcela 2 pendente)
 
-Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). Oito migrations
+Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). A parcela 1 da carga está aplicada em
+produção (conferida em 13/11/2026: 32 motos, 16 clientes, 12 contratos, 75 despesas, 72 multas, 5 dívidas); a parcela 2 depende de dados
+que ainda faltam (cadastros sem CPF ou com identidade a confirmar e dívidas com saldo conflitante). Oito migrations
 preparam o banco para a planilha "PAGAMENTO MOTOS":
 
 - `20261022120000_importacao_veiculos_contratos.sql`: tipo/dono/rastreador/seguro em `motos`; promessa de compra em `contratos`

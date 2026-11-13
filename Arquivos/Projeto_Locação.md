@@ -942,7 +942,7 @@ decisões e riscos: [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md)
 
 ---
 
-## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; migrations 1 a 5 e carga parcial aplicadas no dev em 22 e 23/10/2026; produção pendente)
+## 16. Importação dos dados reais (desenho aprovado em 21/10/2026; migrations 1 a 5 e carga parcial aplicadas no dev em 22 e 23/10/2026; parcela 1 aplicada em produção, conferida em 13/11/2026; parcela 2 pendente)
 
 Os dados reais da operação estão na planilha "PAGAMENTO MOTOS" (Google Sheets). O desenho completo, a lista de conflitos
 e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_Reais.md). Resumo do que muda no modelo:
@@ -964,6 +964,7 @@ e a ordem de execução estão em [Importacao_Dados_Reais.md](Importacao_Dados_R
   Ver `Arquivos/Importacao_Dados_Reais.md` (migrations 6 e 7).
 - **D3 (decidida em 22/10/2026):** os encargos de atraso (seção 5.3) também valem para as parcelas de promessa de compra. Como elas são cobranças `tipo = 'locacao'`, não houve mudança de código.
 - **CPF e telefone** não existem na planilha: a carga de `clientes` e `contratos` espera a planilha ser completada.
+- **Estado em produção (13/11/2026):** a parcela 1 está carregada (32 motos, 16 clientes, 12 contratos, 75 despesas, 72 multas, 5 dívidas); a parcela 2 depende das pendências de dados (ver `Importacao_Dados_Reais.md`, seção 8).
 - **Ensaio** sempre no banco de dev; produção só depois de backup e autorização do dono. A carga é um SQL colado no SQL Editor
   (sem `service_role`), idempotente e numa transação única.
 

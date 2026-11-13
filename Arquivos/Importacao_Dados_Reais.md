@@ -1,10 +1,11 @@
 # Importação dos dados reais (planilha "PAGAMENTO MOTOS")
 
 Proposta de modelo de dados e plano de carga. **Aprovada em 21/10/2026** (desenho e recomendações D1, D2, D4, D5, D6).
-**Status (23/10/2026):** as migrations 1 a 5 (`supabase/migrations/20261022*`) estão aplicadas no banco de **dev** e o roteiro
+**Status em produção (conferido em 13/11/2026):** a parcela 1 (seção 8) está aplicada. Contagens lidas direto no Supabase de produção: 32 motos, 16 clientes, 12 contratos, 75 despesas, 72 multas, 5 dívidas, 12 movimentos de sócio, 13 pagamentos de dívida, 243 registros em `importacoes_lote` (lotes `planilha-2026-11-03-prod-…`) e 44 migrations, nenhuma pendente. A parcela 2 ainda não foi carregada.
+**Status no dev (23/10/2026):** as migrations 1 a 5 (`supabase/migrations/20261022*`) estão aplicadas no banco de **dev** e o roteiro
 `supabase/verificar_importacao_modelo.sql` passou. Cinco cargas de dados já rodaram no dev (seção 7): veículos, contas, fornecedores, despesas, multas,
 sócio, dívidas sem conflito, capital do Etios e do Celta e, dos locatários, apenas os de identidade confirmada (8 clientes e 5 contratos).
-As cargas são geradas fora do repositório porque contêm dados reais (CPF, telefone). **Nada foi carregado em produção.** Faltam os demais
+As cargas são geradas fora do repositório porque contêm dados reais (CPF, telefone). Faltam os demais
 locatários e contratos, pagamentos de locação restantes e três dívidas com saldo conflitante (seção 7). D3 foi decidida (encargos valem na promessa).
 
 Desvio do desenho aprovado: `vw_resultado_moto` ganhou as colunas `custo_despesas` e `resultado_com_despesas` em vez de alterar `resultado`,
@@ -170,7 +171,7 @@ serviços e testes (**sem telas**; as telas ficam para uma fase seguinte).
    pendência (seção 7).
 5. Conferir totais contra a planilha (receita, débitos, saldos de dívida) e corrigir. **Feito** para o que foi carregado.
 6. Com a conferência dos cadastros do Drive respondida, carregar os demais `clientes` e `contratos`. **Pendente.**
-7. Backup de produção, autorização do dono e carga em produção. **Pendente.**
+7. Backup de produção, autorização do dono e carga em produção. **Feito para a parcela 1** (conferido em 13/11/2026, seção 8); a parcela 2 segue pendente.
 
 ## 7. Estado do banco de dev (23/10/2026)
 
@@ -198,7 +199,7 @@ cobrança única de "saldo anterior" (tipo `outros`); km inicial 0 com observaç
 - Pagamento de 22/10 de um locatário cujo contrato ainda não foi carregado.
 - Dívidas XRE, Bros/Pop e TIA1B71 (saldos conflitantes) e os dados do Celta e do Etios (placa, datas, credor).
 - Escopo do histórico dos 64 contratos do Drive (atuais, histórico inativo ou não carregar).
-- Produção: backup do Supabase, autorização do dono e carga.
+- Produção: parcela 1 já carregada (seção 8); falta a parcela 2.
 
 ### Atualização de 03/11/2026: foto de 23/10 apagada e recarga no modelo novo
 
@@ -218,7 +219,9 @@ Interpretações aplicadas (a confirmar com o Alisson):
 - Pedidos antigos da Lima (003571, 003594 e 003598) já estão dentro da dívida anterior de R$ 770: não têm fornecedor nas despesas.
 - Fabiano e Mateus entram como clientes inativos, sem contrato; Yangry entra com nome e CPF que constam na própria planilha de frota.
 
-## 8. Carga em produção, parcela 1 (preparada em 05/11/2026; **nada aplicado em produção**)
+## 8. Carga em produção, parcela 1 (preparada em 05/11/2026; **aplicada em produção, conferida em 13/11/2026**)
+
+**Conferência em 13/11/2026 (leitura direta no app e no Supabase de produção):** 32 motos, 16 clientes, 12 contratos (11 ativos e 1 encerrado), 75 despesas, 72 multas, 5 dívidas (Empréstimo do Etios, Lima Auto Peças, Ícaro/rastreador, Ricão e Celta), 12 movimentos de sócio, 13 pagamentos de dívida, 44 migrations aplicadas. Os totais batem com o previsto no ensaio. Não há dados de exemplo. A data exata da aplicação não consta em `importacoes_lote`. As dívidas XRE, Bros/Pop, TIA1B71 e Uno Way não estão em produção: continuam na parcela 2.
 
 O dono pediu para começar a carregar produção com o que já está completo, em parcelas: o resto vem depois, quando a planilha de pendências voltar.
 
