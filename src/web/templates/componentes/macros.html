@@ -89,9 +89,9 @@
 </div>
 {%- endmacro %}
 
-{# Selo de situação. tipo: "ok", "atencao", "perigo", "info", "neutro". #}
+{# Selo de situação. tipo: "ok", "atencao", "perigo", "info", "neutro". Sempre numa linha só: se o texto não couber, termina em reticências (o `title` traz o texto completo). Vários selos (ou placa + selos) na mesma célula vão dentro de <span class="selos">…</span>, que quebra de linha por selo inteiro. #}
 {% macro selo(texto, tipo="neutro") -%}
-<span class="selo {{ tipo }}">{{ texto }}</span>
+<span title="{{ texto }}" class="selo {{ tipo }}">{{ texto }}</span>
 {%- endmacro %}
 
 {% macro placa(texto) -%}

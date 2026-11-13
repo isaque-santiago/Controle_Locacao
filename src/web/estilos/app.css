@@ -318,8 +318,18 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .quilometragem-mais[open] > summary::after {content: "▴";}
 .quilometragem-mais[open] > summary {margin-bottom: var(--e1, 4px);}
 .quilometragem-mais .quilometragem-item:first-child {padding-top: var(--e2); border-top: 1px solid var(--linha-sutil);}
-.selo {display: inline-flex; align-items: center; gap: 7px; padding: 2px 10px 2px 8px; min-height: 26px; border-radius: 99px; font-size: 12.5px; font-weight: 500; white-space: nowrap;}
-.selo::before {content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor;}
+/* Selo: sempre uma linha só e nunca estoura o contêiner. Se o texto não couber, termina em reticências (o title do selo traz o texto completo). */
+.selo {display: inline-block; max-width: 100%; box-sizing: border-box; padding: 2px 10px 2px 8px; min-height: 26px; border-radius: 99px; font-size: 12.5px; font-weight: 500; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;}
+.selo::before {content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: currentColor; vertical-align: middle; position: relative; top: -1px;}
+/* Grupo de selos (ou placa + selos) na mesma célula. Cabe em uma linha até o teto de 24rem: a tabela dimensiona a coluna para o conteúdo (width: max-content) e, como o teto é fixo, mais selos nunca espremem as outras colunas. O que passa da primeira linha é escondido pelo app.js (.selos-oculto) atrás de um botão "+N" (.selos-mais) que abre e fecha o grupo (.aberto), e nesse caso os selos quebram de linha. Sem JS, os selos que não cabem descem inteiros. */
+.selos {display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: max-content; max-width: 24rem; min-width: 0;}
+.selos > .placa {flex: none;}
+.selos > .selos-oculto {display: none;}
+.selos-mais {border: 0; font-family: inherit; cursor: pointer; flex: none;}
+.selos-mais::before {display: none;}
+.selos-mais:hover {filter: brightness(1.25);}
+.selos-mais:focus-visible {outline: 2px solid var(--marca); outline-offset: 2px;}
+.selos-linha {display: inline-flex; vertical-align: middle; margin-left: 4px;}
 .selo.ok {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
 .selo.atencao {background: var(--alerta-fundo); color: var(--alerta-texto);}
 .selo.perigo {background: var(--perigo-fundo); color: var(--perigo-texto);}
@@ -602,6 +612,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   /* Dados alinhados à esquerda em duas colunas fixas (rótulo em cima, valor embaixo); só o selo de situação vai à direita */
   .lista-cartoes .dados td.k-d {justify-self: stretch; text-align: left;}
   .lista-cartoes .dados td.k-selo {justify-self: end; align-self: center;}
+  .lista-cartoes .dados .selos {max-width: 100%;}  /* no cartão a célula é o limite, não os 24rem da tabela */
   .lista-cartoes .dados td:first-child {align-self: center;}
   .lista-cartoes .dados td[data-rotulo] {font-size: 14.5px; line-height: 1.35;}
   .lista-cartoes .dados td.k-larga {grid-column: 1 / -1;}

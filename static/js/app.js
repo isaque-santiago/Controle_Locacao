@@ -270,6 +270,77 @@
   document.addEventListener('htmx:afterSettle', sincronizarRecolhiveis);
   if (larga.addEventListener) larga.addEventListener('change', sincronizarRecolhiveis);
 
+  // ---- Grupos de selos (.selos): uma linha só. O que não cabe fica atrás de um botão "+N" que abre e fecha ----
+  // O primeiro item (a placa, no caso da coluna Moto) nunca é escondido. Reavalia quando a largura muda (redimensionar, cartão aberto).
+  function ajustarSelos(grupo) {
+    var itens = Array.prototype.filter.call(grupo.children, function (el) { return !el.classList.contains('selos-mais'); });
+    var antigo = grupo.querySelector('.selos-mais');
+    if (antigo) grupo.removeChild(antigo);
+    itens.forEach(function (el) { el.classList.remove('selos-oculto'); });
+    grupo.style.width = '';
+    if (itens.length < 2 || !grupo.offsetWidth) return;
+    var topo = itens[0].offsetTop;
+    var transborda = itens.some(function (el) { return el.offsetTop > topo + 2; });
+    if (!transborda) return;
+    // Trava a largura natural (com tudo à mostra): esconder selos não pode encolher a coluna e disparar nova medição
+    grupo.style.width = grupo.getBoundingClientRect().width + 'px';
+    var aberto = grupo.classList.contains('aberto');
+    var botao = document.createElement('button');
+    botao.type = 'button';
+    botao.className = 'selo neutro selos-mais';
+    botao.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+    grupo.appendChild(botao);
+    if (aberto) {
+      botao.textContent = 'Mostrar menos';
+      botao.title = 'Recolher os selos';
+      return;
+    }
+    var ocultos = 0;
+    function rotular() {
+      botao.textContent = '+' + ocultos;
+      botao.title = 'Mostrar mais ' + ocultos + (ocultos === 1 ? ' selo' : ' selos');
+      botao.setAttribute('aria-label', botao.title);
+    }
+    rotular();
+    for (var i = itens.length - 1; i > 0; i--) {
+      // O topo é relido a cada volta: a célula centraliza o conteúdo na vertical e ele se move quando a altura do grupo muda
+      var base = itens[0].offsetTop + 2;
+      if (itens[i].offsetTop <= base && botao.offsetTop <= base) break;
+      itens[i].classList.add('selos-oculto');
+      ocultos++;
+      rotular();
+    }
+  }
+  var observadorSelos = window.ResizeObserver ? new ResizeObserver(function (registros) {
+    registros.forEach(function (r) {
+      var grupo = r.target, largura = Math.round(r.contentRect.width);
+      if (grupo._larguraSelos === largura) return;
+      grupo._larguraSelos = largura;
+      ajustarSelos(grupo);
+    });
+  }) : null;
+  function prepararSelos(raiz) {
+    (raiz || document).querySelectorAll('.selos').forEach(function (g) {
+      if (observadorSelos && !g._observadoSelos) { g._observadoSelos = true; observadorSelos.observe(g); }
+      else ajustarSelos(g);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('.selos-mais');
+    if (!botao) return;
+    var grupo = botao.parentNode;
+    grupo.classList.toggle('aberto');
+    ajustarSelos(grupo);
+  });
+  document.addEventListener('DOMContentLoaded', function () { prepararSelos(); });
+  document.addEventListener('htmx:afterSettle', function () { prepararSelos(); });
+  window.addEventListener('load', function () { prepararSelos(); });
+  var tempoSelos;
+  window.addEventListener('resize', function () {
+    clearTimeout(tempoSelos);
+    tempoSelos = setTimeout(function () { document.querySelectorAll('.selos').forEach(ajustarSelos); }, 150);
+  });
+
   // ---- Tema: automático -> escuro -> claro. O servidor lê o cookie e já envia data-tema ----
   var ORDEM = ['', 'escuro', 'claro'];
   document.addEventListener('click', function (e) {
