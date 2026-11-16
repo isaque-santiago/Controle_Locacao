@@ -40,3 +40,21 @@ def test_paginas_trazem_as_metas_do_iphone_para_a_tela_inicial(cliente):
     assert 'name="mobile-web-app-capable" content="yes"' in html
     assert 'name="apple-mobile-web-app-title" content="LA Locadora"' in html
     assert 'name="apple-mobile-web-app-status-bar-style" content="default"' in html
+
+
+def test_nome_do_app_e_la_locadora_no_manifesto_e_nas_metas(cliente):
+    manifesto = json.loads((RAIZ / "static" / "manifest.webmanifest").read_text(encoding="utf-8"))
+    assert manifesto["name"] == "LA Locadora" and manifesto["short_name"] == "LA Locadora"
+    html = cliente.get("/login").text
+    assert 'name="apple-mobile-web-app-title" content="LA Locadora"' in html
+    assert "<title>Entrar · LA Locadora</title>" in html or "LA Locadora</title>" in html
+
+
+def test_marca_das_telas_usa_la_locadora_e_nao_o_nome_antigo(cliente):
+    from tests.web.conftest import entrar
+
+    login = cliente.get("/login").text
+    assert "LA Locadora" in login and "Controle de Locação" not in login
+    entrar(cliente)
+    painel = cliente.get("/").text
+    assert "LA Locadora" in painel and "Controle de Locação" not in painel and ">CL<" not in painel
