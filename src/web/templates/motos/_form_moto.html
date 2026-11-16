@@ -8,7 +8,9 @@
   {{ campo("f-modelo", "Modelo", nome="modelo", valor=v.modelo, obrigatorio=True, erro=e.modelo, autocomplete="off") }}
   {{ campo("f-renavam", "Renavam", nome="renavam", valor=v.renavam, mono=True, inputmode="numeric", erro=e.renavam, autocomplete="off") }}
   {{ campo("f-chassi", "Chassi", nome="chassi", valor=v.chassi, mono=True, erro=e.chassi, autocomplete="off") }}
-  {{ campo("f-cor", "Cor", nome="cor", valor=v.cor, erro=e.cor, autocomplete="off", largo=True) }}
+  {{ campo("f-motor", "Número do motor", nome="motor", valor=v.motor, mono=True, erro=e.motor, autocomplete="off") }}
+  {{ campo("f-cor", "Cor", nome="cor", valor=v.cor, erro=e.cor, autocomplete="off") }}
+  {{ campo("f-combustivel", "Combustível", nome="combustivel", valor=v.combustivel, erro=e.combustivel, autocomplete="off", extra='placeholder="Álcool / Gasolina"', largo=True) }}
   {{ campo("f-ano-fab", "Ano de fabricação", nome="ano_fabricacao", valor=v.ano_fabricacao, obrigatorio=True, mono=True, inputmode="numeric", erro=e.ano_fabricacao, autocomplete="off") }}
   {{ campo("f-ano-mod", "Ano do modelo", nome="ano_modelo", valor=v.ano_modelo, obrigatorio=True, mono=True, inputmode="numeric", erro=e.ano_modelo, autocomplete="off") }}
   {% if nova %}
