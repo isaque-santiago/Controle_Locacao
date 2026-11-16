@@ -235,7 +235,7 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     primeira, ultima, restantes = _datas_das_parcelas(contrato, inicio)
     foro = _limpa(locador.get("foro")) or t["foro_padrao"]
     cidade = _limpa(locador.get("cidade")) or foro
-    b: list[Bloco] = [Bloco("titulo", "", "CONTRATO DE LOCAÇÃO DE VEÍCULO COM PROMESSA DE COMPRA E VENDA")]
+    b: list[Bloco] = [Bloco("titulo", "", "CONTRATO DE LOCAÇÃO DE VEÍCULO COM\nPROMESSA DE COMPRA E VENDA")]
     b += _partes(locador, cliente)
 
     def clausula(numero: int, titulo: str):

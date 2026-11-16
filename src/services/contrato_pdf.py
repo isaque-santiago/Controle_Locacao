@@ -3,7 +3,9 @@
 from fpdf import FPDF
 
 from src.config import get_locador
+from src.domain import contrato_promessa
 from src.domain.contrato_modelo import Bloco, montar
+from src.services import contrato_promessa_pdf
 
 _MARGEM = 22
 _TAMANHO = 10.5
@@ -96,5 +98,11 @@ def renderizar(blocos: list[Bloco]) -> bytes:
 
 def gerar(contrato: dict, cliente: dict, moto: dict | list) -> bytes:
     """PDF do contrato a partir dos dados já carregados na ficha. `moto`: uma moto ou a lista das
-    motos do contrato (a principal primeiro)."""
-    return renderizar(montar(contrato, cliente, moto, get_locador()))
+    motos do contrato (a principal primeiro). Promessa de compra usa o modelo com promessa de compra e venda."""
+    locador = get_locador()
+    if contrato.get("tipo_contrato") == "promessa_compra":
+        blocos = contrato_promessa.montar(contrato, cliente, moto, locador)
+        contato = " · ".join(x for x in (locador.get("cidade"), locador.get("telefones")) if x)
+        rodape = f"Contrato de Locação com Promessa de Compra e Venda - {str(cliente.get('nome') or '').strip()}".rstrip(" -")
+        return contrato_promessa_pdf.renderizar(blocos, {"contato": contato}, rodape)
+    return renderizar(montar(contrato, cliente, moto, locador))

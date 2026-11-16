@@ -51,7 +51,7 @@ def _preco(blocos):
 class TestEstrutura:
     def test_titulo_e_treze_clausulas_em_ordem(self):
         blocos = _blocos()
-        assert blocos[0].tipo == "titulo" and "PROMESSA DE COMPRA E VENDA" in blocos[0].texto
+        assert blocos[0].tipo == "titulo" and "PROMESSA DE COMPRA E VENDA" in blocos[0].texto and blocos[0].texto.startswith("CONTRATO DE LOCAÇÃO")
         clausulas = [b.texto for b in blocos if b.tipo == "clausula"]
         assert len(clausulas) == 13
         assert [int(re.match(r"CLÁUSULA (\d+)ª", c).group(1)) for c in clausulas] == list(range(1, 14))
