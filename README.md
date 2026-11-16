@@ -91,8 +91,8 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   Ctrl/Alt/Cmd, fora de campos de texto e com nenhum diálogo aberto.
 - **App instalável (PWA básico)**: `static/manifest.webmanifest` (modo `standalone`, `start_url` `/`), ícones em `static/icones/`
   (gerados por `python scripts/gerar_icones_pwa.py`, com Pillow; versionados) e, no `<head>` de `base.html`, `manifest`,
-  `apple-touch-icon` e `theme-color` claro/escuro. **Sem service worker**: a sessão fica na memória do servidor, então o app não
-  funciona offline e não há cache de páginas autenticadas. No Android/Chrome aparece "Instalar app"; no iOS, "Adicionar à Tela de Início".
+  `apple-touch-icon`, `theme-color` claro/escuro e as metas do iPhone (`apple-mobile-web-app-capable`, `-title` "LA Locadora" e `-status-bar-style`; 16/11/2026). **Sem service worker**: a sessão fica na memória do servidor, então o app não
+  funciona offline e não há cache de páginas autenticadas. No Android/Chrome aparece "Instalar app"; no iOS, "Adicionar à Tela de Início" (Safari > Compartilhar). No iPhone o app instalado guarda os cookies separados do Safari: entre uma vez de novo dentro dele.
 - **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes do fim do prazo (só para prazos de até 1 dia; com a sessão de 90 dias o aviso fica desligado) abre o diálogo de
   confirmação com "Continuar conectado" (`POST /sessao/renovar`, 204, exige CSRF); passado o prazo, avisa que expirou e leva ao login.
   Requisições do HTMX bem-sucedidas reiniciam a contagem.
