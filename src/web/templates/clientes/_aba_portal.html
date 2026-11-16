@@ -3,16 +3,15 @@
 {% if erro_portal %}{{ aviso("erro", erro_portal) }}{% endif %}
 {% call cartao("Acesso ao portal do locatário") %}
 {% if credenciais %}
-{{ aviso("atencao", "Anote a senha agora: ela não é gravada no sistema e some quando você fechar este aviso ou sair da página. Entregue ao locatário o CPF e a senha; ele pode trocá-la no portal se quiser.") }}
+{{ aviso("atencao", "Anote a senha agora: ela não é gravada no sistema e some quando você fechar este aviso ou sair da página. Entregue ao locatário o e-mail e a senha; ele pode trocá-la no portal se quiser.") }}
 <dl class="grade-dados">
-  <div><dt>Login (CPF)</dt><dd class="mono">{{ cliente.cpf|cpf_mascarado }}</dd></div>
   <div><dt>E-mail de acesso</dt><dd class="mono" data-credencial>{{ credenciais.email }}</dd></div>
   <div><dt>Senha</dt><dd class="mono" data-credencial>{{ credenciais.senha }}</dd></div>
 </dl>
 <div class="acoes">{{ botao("Fechar", extra='hx-get="' ~ base ~ '/abas/portal" hx-target="#painel-aba" hx-swap="outerHTML"') }}</div>
 {% elif not cliente.auth_user_id %}
 <div class="portal-criar-linha">
-<p>Este cliente ainda não tem acesso ao portal. O login dele será o CPF, com uma senha individual gerada aqui.</p>
+<p>Este cliente ainda não tem acesso ao portal. O login dele será o e-mail nome.sobrenome@locadora.com, com a senha padrão (primeiro nome + 6 últimos dígitos do CPF).</p>
 <div class="portal-criar">{{ botao("Criar acesso", variante="primario", icone_nome="cadeado", extra='hx-post="' ~ base ~ '/portal/acesso" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this"') }}</div>
 </div>
 {% else %}
@@ -27,15 +26,15 @@
     <span class="portal-acesso-icone">{{ icone("check") }}</span>
     <div>
       <p class="portal-acesso-titulo">Acesso ativo</p>
-      <p class="portal-acesso-desc">O locatário entra no portal com o CPF <span class="mono">{{ cliente.cpf|cpf_mascarado }}</span> e a senha individual.</p>
+      <p class="portal-acesso-desc">O locatário entra no portal com o e-mail nome.sobrenome@locadora.com (ele aparece ao gerar a nova senha) e a senha dele.</p>
     </div>
   </div>
   <div class="portal-acesso-bloco">
     <div>
       <p class="portal-acesso-titulo">Senha</p>
-      <p class="portal-acesso-desc">Gera uma nova senha. A atual deixa de funcionar.</p>
+      <p class="portal-acesso-desc">Volta a senha para a padrão (primeiro nome + 6 últimos dígitos do CPF). A atual deixa de funcionar.</p>
     </div>
-    {{ botao("Gerar nova senha", icone_nome="cadeado", bloco=True, extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Gerar uma nova senha? A senha atual deixa de funcionar." data-confirmar-titulo="Gerar nova senha" data-confirmar-rotulo="Gerar nova senha"') }}
+    {{ botao("Gerar nova senha", icone_nome="cadeado", bloco=True, extra='hx-post="' ~ base ~ '/portal/senha" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Voltar a senha para a padrão? A senha atual deixa de funcionar." data-confirmar-titulo="Gerar nova senha" data-confirmar-rotulo="Gerar nova senha"') }}
   </div>
   <div class="portal-acesso-bloco">
     <div>

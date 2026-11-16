@@ -31,7 +31,7 @@ class SenhaNaoAlterada(ValueError):
 
 
 class CredenciaisInvalidas(Exception):
-    """E-mail, CPF ou senha recusados (a mensagem não diz qual deles)."""
+    """E-mail ou senha recusados (a mensagem não diz qual deles)."""
 
 
 class SessaoSupabaseInvalida(Exception):
@@ -65,7 +65,7 @@ class ServicoAutenticacao:
     """Fachada do Supabase Auth para o app web; trocável nos testes."""
 
     def entrar(self, identificador: str, senha: str) -> TokensUsuario:
-        """Autentica por e-mail (dono) ou CPF (locatário) e senha."""
+        """Autentica por e-mail (dono ou locatário; o locatário pode digitar só nome.sobrenome) e senha."""
         try:
             resposta = db.criar_cliente_anonimo().auth.sign_in_with_password(
                 {"email": identificador_para_email(identificador), "password": senha}

@@ -94,4 +94,12 @@
     <button class="btn" type="submit">Procurar arquivos órfãos</button>
   </form>
 </section>
+<section class="cartao mt-4" aria-labelledby="cfg-acessos-titulo" id="cfg-acessos">
+  <h2 id="cfg-acessos-titulo">Acessos dos locatários</h2>
+  <p class="text-texto-2 mb-4">Padroniza o login de todos os locatários que já têm acesso ao portal: e-mail <span class="mono">nome.sobrenome@locadora.com</span> (homônimos ganham 2, 3...) e senha igual ao primeiro nome mais os 6 últimos dígitos do CPF, sem espaço (por exemplo, <span class="mono">joao224725</span>). As senhas que os locatários tinham deixam de valer, mas cada um pode trocar a sua no portal. Os acessos novos já nascem nesse padrão.</p>
+  <form method="post" action="/configuracoes/acessos-locatarios/padronizar" class="acoes" data-confirmar="Redefinir e-mail e senha de todos os locatários com acesso ao portal? As senhas atuais deixam de valer." data-confirmar-titulo="Padronizar acessos" data-confirmar-rotulo="Padronizar todos">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn btn-perigo" type="submit">Padronizar acessos de todos os locatários</button>
+  </form>
+</section>
 {% endblock %}

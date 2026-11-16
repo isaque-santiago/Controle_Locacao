@@ -119,7 +119,7 @@ def _acesso(acao: str, cliente_id: str) -> dict:
 
 
 def criar_acesso(cliente_id: str) -> dict:
-    """Cria o login do locatário (CPF + senha aleatória) e o vincula ao cliente.
+    """Cria o login do locatário (nome.sobrenome@locadora.com + senha padrão) e o vincula ao cliente.
 
     Devolve {"email", "senha"}: a senha só existe nesta resposta (não fica gravada)."""
     resposta = _acesso("criar", cliente_id)
@@ -127,11 +127,23 @@ def criar_acesso(cliente_id: str) -> dict:
 
 
 def redefinir_senha(cliente_id: str) -> dict:
-    """Gera outra senha aleatória para o locatário. Devolve {"email", "senha"}.
+    """Volta a senha do locatário para a padrão (primeiro nome + 6 últimos dígitos do CPF). Devolve {"email", "senha"}.
 
     Não gera aviso por WhatsApp: quem redefine é o dono, que entrega a senha pessoalmente."""
     resposta = _acesso("redefinir", cliente_id)
     return {"email": resposta["email"], "senha": resposta["senha"]}
+
+
+def padronizar_todos_acessos() -> dict:
+    """Redefine e-mail e senha de TODOS os acessos existentes para o padrão (feito dentro do Supabase pela Edge Function).
+
+    Devolve {"total": int, "itens": [{cliente_id, nome, email}], "falhas": [{cliente_id, nome, motivo}]}. Não traz senhas:
+    cada uma é o primeiro nome + os 6 últimos dígitos do CPF. Não gera aviso por WhatsApp (o dono combina com os locatários)."""
+    resposta = portal_locatario.gerenciar_acesso("padronizar_todos")
+    if not isinstance(resposta, dict) or not resposta.get("ok"):
+        mensagem = resposta.get("erro") if isinstance(resposta, dict) else None
+        raise ValueError(mensagem or "Não foi possível concluir. Tente novamente.")
+    return {"total": resposta.get("total", 0), "itens": resposta.get("itens", []), "falhas": resposta.get("falhas", [])}
 
 
 def remover_acesso(cliente_id: str) -> None:

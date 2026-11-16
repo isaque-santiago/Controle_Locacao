@@ -91,8 +91,8 @@ def _jwt_do_dono(cliente) -> str:
 
 
 @invalida_cache
-def gerenciar_acesso(acao: str, cliente_id: str) -> dict:
-    """Chama a Edge Function criar-locatario (criar, redefinir ou remover o acesso).
+def gerenciar_acesso(acao: str, cliente_id: str | None = None) -> dict:
+    """Chama a Edge Function criar-locatario (criar, redefinir ou remover o acesso de um cliente; "padronizar_todos" não leva cliente).
 
     Só ela usa a service_role, dentro do Supabase; o app manda apenas o JWT do dono.
     A função responde sempre JSON: {"ok": true, ...} ou {"ok": false, "erro": "..."}."""
@@ -101,7 +101,7 @@ def gerenciar_acesso(acao: str, cliente_id: str) -> dict:
         FUNCAO_ACESSO,
         invoke_options={
             "headers": {"Authorization": f"Bearer {_jwt_do_dono(cliente)}"},
-            "body": {"acao": acao, "cliente_id": cliente_id},
+            "body": {"acao": acao, **({"cliente_id": cliente_id} if cliente_id else {})},
             "responseType": "json",
         },
     )

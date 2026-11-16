@@ -115,6 +115,29 @@ async def apagar_orfaos(request: Request, sessao: Sessao = Depends(exigir_dono))
     return await run_in_threadpool(_apagar_orfaos, request, sessao)
 
 
+def _padronizar_acessos(request, sessao):
+    try:
+        resultado = acoes_configuracoes.padronizar_acessos_locatarios()
+    except ValueError as erro:
+        return _concluir(request, sessao, "/configuracoes#cfg-acessos", tipo="erro", texto=str(erro))
+    except HTTPException:
+        raise
+    except Exception as erro:
+        falha = classificacao.classificar_erro(erro)
+        if falha.categoria == classificacao.SESSAO_EXPIRADA:
+            raise
+        logger.exception("Falha ao padronizar os acessos dos locatários")
+        return _concluir(request, sessao, "/configuracoes#cfg-acessos", tipo="erro", texto=falha.mensagem)
+    aviso = mensagens.acessos_padronizados(resultado["total"], len(resultado["falhas"]))
+    return _concluir(request, sessao, "/configuracoes#cfg-acessos", aviso)
+
+
+@router.post("/configuracoes/acessos-locatarios/padronizar", dependencies=[Depends(validar_csrf)])
+async def padronizar_acessos(request: Request, sessao: Sessao = Depends(exigir_dono)):
+    """Não recebe lista nenhuma: a Edge Function lê os acessos no banco e os padroniza."""
+    return await run_in_threadpool(_padronizar_acessos, request, sessao)
+
+
 def _salvar_whatsapp(request, sessao, entrada):
     """Controles do envio de WhatsApp: formulário próprio, com erros ao lado dos campos dele."""
     config = dados_configuracoes.obter()

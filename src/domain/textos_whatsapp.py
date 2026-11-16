@@ -192,7 +192,7 @@ def _bloco_portal(a: Aviso, op: OpcoesTexto):
         onde = f"Entre em {op.link_portal}" if op.link_portal else "Entre no portal"
         return "Acesso ao portal", [
             "Seu acesso ao portal do locatário foi criado.",
-            f"{onde} com seu CPF e a senha informada pela empresa.",
+            f"{onde} com seu e-mail de acesso e a senha informada pela empresa.",
         ]
     return "Senha do portal alterada", [
         "A senha do seu acesso ao portal foi alterada.",

@@ -20,7 +20,7 @@ TOM_STATUS_MOTO = {
 
 
 def nome_de_exibicao(email: str) -> str:
-    """Nome mostrado no menu. O e-mail interno do locatário é o CPF e não aparece na tela."""
+    """Nome mostrado no menu. O e-mail de acesso do locatário (@locadora.com) não aparece na tela."""
     if eh_email_de_locatario(email):
         return "Locatário"
     nome = email.split("@")[0].replace(".", " ").replace("_", " ").title()

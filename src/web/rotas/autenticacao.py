@@ -28,8 +28,8 @@ from src.web.templates import renderizar
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-MENSAGEM_CREDENCIAIS = "E-mail, CPF ou senha inválidos."
-MENSAGEM_CAMPOS = "Informe o e-mail ou CPF e a senha."
+MENSAGEM_CREDENCIAIS = "E-mail ou senha inválidos."
+MENSAGEM_CAMPOS = "Informe o e-mail e a senha."
 MENSAGEM_SEM_PERMISSAO = (
     "Esta conta não tem acesso ao sistema. Fale com o proprietário."
 )

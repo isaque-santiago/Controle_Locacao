@@ -30,7 +30,7 @@
       <header class="entrada-cab">
         <p class="entrada-selo">{{ icone("escudo") }} Acesso restrito</p>
         <h1>Bem-vindo de volta</h1>
-        <p class="entrada-sub">Entre com seu e-mail ou CPF para continuar.</p>
+        <p class="entrada-sub">Entre com seu e-mail para continuar.</p>
       </header>
       <form class="entrada-form" method="post" action="/login">
         {% if mensagem_aviso %}{{ aviso("atencao", mensagem_aviso) }}{% endif %}
@@ -38,10 +38,10 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_login }}">
         <input type="hidden" name="proximo" value="{{ proximo }}">
         <div class="campo">
-          <label for="identificador">E-mail ou CPF <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
+          <label for="identificador">E-mail <span aria-hidden="true">*</span><span class="so-leitor">(obrigatório)</span></label>
           <div class="entrada-icone">
             {{ icone("cliente") }}
-            <input class="entrada" id="identificador" name="identificador" type="text" value="{{ identificador }}" autocomplete="username" required autofocus autocapitalize="none" spellcheck="false" placeholder="E-mail ou CPF">
+            <input class="entrada" id="identificador" name="identificador" type="text" value="{{ identificador }}" autocomplete="username" required autofocus autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome@locadora.com">
           </div>
         </div>
         <div class="campo">
