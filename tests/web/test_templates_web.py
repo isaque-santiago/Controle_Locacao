@@ -41,7 +41,7 @@ def test_toda_pagina_tem_lang_titulo_h1_e_link_de_pular(cliente, catalogo):
     paginas = _paginas(cliente, catalogo)
     for nome, html in paginas.items():
         assert '<html lang="pt-BR"' in html, nome
-        assert re.search(r"<title>[^<]+· Controle de Locação</title>", html), nome
+        assert re.search(r"<title>[^<]+· LA Locadora</title>", html), nome
         assert len(re.findall(r"<h1[\s>]", html)) == 1, f"{nome}: precisa de exatamente um h1"
     for nome in ("inicio", "migracao", "motos", "portal", "catalogo"):
         assert 'href="#conteudo"' in paginas[nome], nome
