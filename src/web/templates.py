@@ -18,6 +18,7 @@ from src.web.apresentacao import (
     tema_do_cookie,
 )
 from src.domain.acesso_locatario import eh_email_de_locatario
+from src.domain.grupo_whatsapp import opcoes_de_grupos
 from src.domain.sessao_longa import limite_do_aviso
 from src.domain.entradas import formatar_telefone
 from src.domain.formatadores import formatar_data_hora, mascarar_cpf
@@ -57,6 +58,7 @@ templates.env.filters["cpf_mascarado"] = mascarar_cpf
 templates.env.filters["telefone_br"] = formatar_telefone
 templates.env.filters["data_hora_br"] = formatar_data_hora
 templates.env.filters["numero_br"] = formatar_numero
+templates.env.filters["opcoes_de_grupos"] = opcoes_de_grupos
 templates.env.filters["rotulo_assunto"] = lambda tipo: TIPO_ROTULO.get(tipo, tipo)
 templates.env.filters["rotulo_status_zap"] = lambda status: STATUS_ROTULO.get(status, status)
 templates.env.filters["tom_status_zap"] = lambda status: STATUS_TOM.get(status, "neutro")

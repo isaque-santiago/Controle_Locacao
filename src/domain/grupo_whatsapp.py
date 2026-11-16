@@ -27,3 +27,15 @@ def eh_grupo(destino) -> bool:
 def somente_assuntos_do_grupo(avisos) -> list:
     """Filtra os avisos devidos: fica só o que vai ao grupo (cobranças e recibos)."""
     return [a for a in avisos if a.tipo in TIPOS_NO_GRUPO]
+
+
+def opcoes_de_grupos(grupos, atual: str | None = None) -> list[tuple[str, str]]:
+    """Opções da lista suspensa do cadastro: `(id, "Nome (N participantes)")`. Se o grupo atual do cliente não está na lista
+    (ainda não atualizada), ele entra mesmo assim, para salvar o formulário sem querer não o remover."""
+    opcoes = []
+    for g in grupos:
+        tamanho = g.get("participantes")
+        opcoes.append((g["id"], f"{g['nome']} ({tamanho} participantes)" if tamanho else g["nome"]))
+    if atual and atual not in {id_ for id_, _ in opcoes}:
+        opcoes.append((atual, "Grupo atual (fora da lista)"))
+    return sorted(opcoes, key=lambda o: o[1].lower())

@@ -9,7 +9,7 @@ from starlette.concurrency import run_in_threadpool
 
 from src.domain import erros, mensagens
 from src.domain.formulario_moto import ErroDeCampos
-from src.domain.formulario_whatsapp import ler_bloqueio
+from src.domain.formulario_whatsapp import ler_bloqueio, ler_grupo
 from src.web import acoes_whatsapp
 from src.web.dependencias import exigir_dono, validar_csrf
 from src.web.rotas.clientes import _cliente_ou_404, _contexto_aba
@@ -21,8 +21,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def _painel(request, cliente, erros_whatsapp=None, motivo="", status=200):
-    contexto = _contexto_aba(cliente, "whatsapp") | {"erros_whatsapp": erros_whatsapp, "motivo_digitado": motivo}
+def _painel(request, cliente, erros_whatsapp=None, motivo="", status=200, grupo_digitado=""):
+    contexto = _contexto_aba(cliente, "whatsapp") | {
+        "erros_whatsapp": erros_whatsapp, "motivo_digitado": motivo, "grupo_digitado": grupo_digitado}
     resposta = renderizar(request, "clientes/_resposta_aba.html", contexto, status=status)
     resposta.headers["Cache-Control"] = "no-store"
     return resposta
@@ -62,6 +63,30 @@ def _liberar(request, sessao, cliente_id):
     except Exception as erro:
         return _concluir(request, sessao, destino, tipo="erro", texto=_falha(request, erro))
     return _concluir(request, sessao, destino, mensagens.whatsapp_cliente_liberado(cliente["nome"]))
+
+
+def _salvar_grupo(request, sessao, cliente_id, entrada):
+    cliente = _cliente_ou_404(cliente_id)
+    destino = f"/clientes/{cliente_id}?aba=whatsapp"
+    try:
+        grupo = ler_grupo(entrada)
+    except ErroDeCampos as erro:
+        return _painel(request, cliente, erro.erros, status=422, grupo_digitado=entrada.get("grupo_id", ""))
+    try:
+        acoes_whatsapp.definir_grupo(cliente_id, grupo)
+    except ValueError as erro:
+        return _painel(request, cliente, {"grupo_id": str(erro)}, status=422, grupo_digitado=entrada.get("grupo_id", ""))
+    except HTTPException:
+        raise
+    except Exception as erro:
+        return _concluir(request, sessao, destino, tipo="erro", texto=_falha(request, erro))
+    aviso = mensagens.whatsapp_grupo_salvo(cliente["nome"]) if grupo else mensagens.whatsapp_grupo_removido(cliente["nome"])
+    return _concluir(request, sessao, destino, aviso)
+
+
+@router.post("/clientes/{cliente_id}/whatsapp/grupo", dependencies=[Depends(validar_csrf)])
+async def salvar_grupo(request: Request, cliente_id: str, sessao: Sessao = Depends(exigir_dono)):
+    return await run_in_threadpool(_salvar_grupo, request, sessao, cliente_id, await _entrada(request))
 
 
 @router.post("/clientes/{cliente_id}/whatsapp/bloquear", dependencies=[Depends(validar_csrf)])

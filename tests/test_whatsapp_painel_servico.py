@@ -81,3 +81,42 @@ def test_alertas_usam_as_mensagens_dos_ultimos_7_dias(monkeypatch):
     itens = servico.alertas(config, AGORA)
     assert [i.titulo for i in itens] == ["WhatsApp em modo teste"]
     assert pedidos[0]["desde"] == datetime(2026, 10, 30, 15, 0, tzinfo=timezone.utc)
+
+
+# ---------------------------------------------------------------- grupo do cliente --
+
+
+def test_definir_grupo_grava_no_cliente_e_aceita_remover(monkeypatch):
+    gravados = []
+    _instalar(monkeypatch, repo_clientes=SimpleNamespace(atualizar=lambda cid, dados: gravados.append((cid, dados)) or {}))
+    servico.definir_grupo("c1", "120363025246125486@g.us")
+    servico.definir_grupo("c1", None)
+    assert gravados == [("c1", {"whatsapp_grupo_id": "120363025246125486@g.us"}), ("c1", {"whatsapp_grupo_id": None})]
+
+
+@pytest.mark.parametrize("codigo, trecho", [("23505", "já está ligado a outro cliente"), ("23514", "ID de grupo inválido")])
+def test_definir_grupo_traduz_as_violacoes_do_banco(monkeypatch, codigo, trecho):
+    from postgrest.exceptions import APIError
+
+    def recusar(cid, dados):
+        raise APIError({"message": "x", "code": codigo})
+
+    _instalar(monkeypatch, repo_clientes=SimpleNamespace(atualizar=recusar))
+    with pytest.raises(ValueError, match=trecho):
+        servico.definir_grupo("c1", "120363025246125486@g.us")
+
+
+def test_outro_erro_do_banco_sobe(monkeypatch):
+    from postgrest.exceptions import APIError
+
+    def recusar(cid, dados):
+        raise APIError({"message": "x", "code": "42501"})
+
+    _instalar(monkeypatch, repo_clientes=SimpleNamespace(atualizar=recusar))
+    with pytest.raises(APIError):
+        servico.definir_grupo("c1", None)
+
+
+def test_listar_grupos_vem_do_repositorio(monkeypatch):
+    _instalar(monkeypatch, repo=SimpleNamespace(listar_grupos=lambda: [{"id": "g"}]))
+    assert servico.listar_grupos() == [{"id": "g"}]

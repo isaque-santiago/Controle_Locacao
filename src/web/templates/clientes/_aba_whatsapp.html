@@ -1,14 +1,31 @@
-{% from "componentes/macros.html" import cartao, tabela, selo, aviso, botao, estado_vazio, area_texto, rc_titulo %}
+{% from "componentes/macros.html" import cartao, tabela, selo, aviso, botao, estado_vazio, area_texto, rc_titulo, campo, campo_lista %}
 {% set base = "/clientes/" ~ cliente.id %}
+{% call cartao("Grupo de WhatsApp do locatário") %}
+{% set grupo_atual = cliente.whatsapp_grupo_id %}
+{% set nome_do_grupo = (a.grupos|selectattr("id", "equalto", grupo_atual)|map(attribute="nome")|first) if grupo_atual else None %}
+{% if grupo_atual %}
+<p class="mb-4">As cobranças e os recibos vão para o grupo <strong>{{ nome_do_grupo or "fora da lista" }}</strong> <small class="mono text-texto-2">({{ grupo_atual }})</small>.</p>
+{% else %}
+{{ aviso("atencao", "Este cliente não tem grupo de WhatsApp cadastrado, então as mensagens automáticas dele ficam ignoradas (você vê o motivo no histórico abaixo). Escolha o grupo dele para o envio começar.") }}
+{% endif %}
+<form class="mt-4" hx-post="{{ base }}/whatsapp/grupo" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="find button" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <div class="formulario">
+    {{ campo_lista("wa-grupo-escolhido", "Grupo (da lista da instância)", [("", "— sem grupo —")] + (a.grupos|opcoes_de_grupos(grupo_atual)), nome="grupo_escolhido", selecionado=grupo_atual or "", largo=True) }}
+    {{ campo("wa-grupo-id", "Ou cole o ID do grupo", nome="grupo_id", valor=grupo_digitado or "", mono=True, erro=(erros_whatsapp or {}).get("grupo_id"), ajuda="Use só se o grupo não aparecer na lista (ela é atualizada a cada rodada do envio, a cada 15 a 30 minutos). O ID termina em @g.us.", autocomplete="off", largo=True, extra='spellcheck="false" autocapitalize="none"') }}
+  </div>
+  <p class="text-texto-2 mt-2">O grupo precisa ter o locatário, você e o financeiro, e o número do envio automático. Cada grupo serve a um cliente só. Escolher "— sem grupo —" e salvar remove o grupo.</p>
+  <div class="acoes mt-2">{{ botao("Salvar grupo", tipo="submit", variante="primario") }}</div>
+</form>
+{% endcall %}
 {% call cartao("Mensagens automáticas de WhatsApp") %}
 {% if cliente.nao_enviar_whatsapp %}
 {{ aviso("atencao", "Este cliente não recebe as mensagens automáticas" ~ (" desde " ~ (cliente.bloqueio_whatsapp_em|data_hora_br) if cliente.bloqueio_whatsapp_em else "") ~ ". Motivo: " ~ (cliente.motivo_bloqueio_whatsapp or "não informado") ~ ". Os avisos de cobrança, CNH, documentos e troca de óleo dele dependem de você.") }}
 <div class="acoes mt-4">{{ botao("Voltar a enviar mensagens", variante="primario", extra='hx-post="' ~ base ~ '/whatsapp/liberar" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="this" hx-confirm="Este cliente volta a receber as mensagens automáticas de WhatsApp." data-confirmar-titulo="Voltar a enviar mensagens" data-confirmar-rotulo="Voltar a enviar"') }}</div>
 {% else %}
-<p class="mb-4">{% if cliente.whatsapp %}As mensagens vão para <span class="mono">{{ cliente.whatsapp|telefone_br }}</span> (campo WhatsApp do cadastro).{% else %}{{ aviso("atencao", "Este cliente não tem WhatsApp cadastrado, então nenhuma mensagem pode ser enviada a ele. Preencha o campo WhatsApp em Editar.") }}{% endif %}</p>
 <form hx-post="{{ base }}/whatsapp/bloquear" hx-target="#painel-aba" hx-swap="outerHTML" hx-disabled-elt="find button" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <p class="text-texto-2 mb-2">Só você pode parar as mensagens de um cliente (ele não consegue pedir isso pelo WhatsApp). Enquanto estiver parado, nenhum aviso automático (cobrança, CNH, documentos, troca de óleo) sai para ele.</p>
+  <p class="text-texto-2 mb-2">Só você pode parar as mensagens de um cliente (ele não consegue pedir isso pelo WhatsApp). Enquanto estiver parado, nenhuma cobrança nem recibo automático sai para o grupo dele.</p>
   {{ area_texto("wa-motivo", "Motivo para parar as mensagens", nome="motivo", valor=motivo_digitado or "", erro=(erros_whatsapp or {}).get("motivo"), largo=True, linhas=2, maximo=200) }}
   <div class="acoes mt-2">{{ botao("Parar mensagens deste cliente", tipo="submit", variante="perigo") }}</div>
 </form>

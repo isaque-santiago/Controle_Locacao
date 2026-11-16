@@ -32,3 +32,16 @@ def test_so_cobrancas_e_recibos_vao_ao_grupo():
     avisos = [Aviso(t, "c1", "r", date(2026, 11, 17), {}) for t in TIPOS]
     assert {a.tipo for a in somente_assuntos_do_grupo(avisos)} == TIPOS_NO_GRUPO
     assert somente_assuntos_do_grupo([]) == []
+
+
+def test_opcoes_de_grupos_ordenadas_com_o_tamanho():
+    from src.domain.grupo_whatsapp import opcoes_de_grupos
+    grupos = [{"id": "120363000000000002@g.us", "nome": "Zé - XYZ9A99", "participantes": 4},
+              {"id": "120363000000000001@g.us", "nome": "ana - ABC1D23", "participantes": None}]
+    assert opcoes_de_grupos(grupos) == [("120363000000000001@g.us", "ana - ABC1D23"), ("120363000000000002@g.us", "Zé - XYZ9A99 (4 participantes)")]
+
+
+def test_grupo_atual_fora_da_lista_entra_nas_opcoes():
+    from src.domain.grupo_whatsapp import opcoes_de_grupos
+    assert opcoes_de_grupos([], "120363000000000009@g.us") == [("120363000000000009@g.us", "Grupo atual (fora da lista)")]
+    assert opcoes_de_grupos([], None) == []

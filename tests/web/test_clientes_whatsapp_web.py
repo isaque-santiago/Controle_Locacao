@@ -13,10 +13,10 @@ def test_ha_a_aba_whatsapp_na_ficha(cliente, base_clientes):
     assert 'id="aba-whatsapp"' in html and ">WhatsApp<" in html
 
 
-def test_aba_mostra_o_numero_o_historico_e_oferece_parar(cliente, base_clientes, base_whatsapp):
+def test_aba_mostra_o_historico_e_oferece_parar(cliente, base_clientes, base_whatsapp):
     entrar(cliente)
     html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
-    assert "Mensagens automáticas de WhatsApp" in html and "(11) 98765-4321" in html
+    assert "Mensagens automáticas de WhatsApp" in html and "nenhuma cobrança nem recibo automático" in html
     assert "Histórico de mensagens" in html and html.count("<tr data-recolhivel>") == 3
     assert "A Evolution recusou o pedido (400)." in html and "Aguardando envio" in html and "Enviada" in html
     assert f'hx-post="/clientes/{base_clientes.id}/whatsapp/bloquear"' in html and "Parar mensagens deste cliente" in html
@@ -25,10 +25,81 @@ def test_aba_mostra_o_numero_o_historico_e_oferece_parar(cliente, base_clientes,
     assert "Histórico de mensagens" in parcial and 'hx-swap-oob="true"' in parcial
 
 
-def test_cliente_sem_whatsapp_cadastrado_avisa(cliente, base_clientes):
-    base_clientes.clientes[0]["whatsapp"] = None
+GRUPO_MARIA = "120363025246125486@g.us"
+
+
+def test_cliente_sem_grupo_avisa_e_oferece_a_lista(cliente, base_clientes):
     entrar(cliente)
-    assert "não tem WhatsApp cadastrado" in cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+    html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+    assert "não tem grupo de WhatsApp cadastrado" in html and "ficam ignoradas" in html
+    assert f'hx-post="/clientes/{base_clientes.id}/whatsapp/grupo"' in html
+    assert "— sem grupo —" in html and "Maria Souza - ABC1D23 (4 participantes)" in html and "Carlos Lima - XYZ9A99 (3 participantes)" in html
+    assert 'name="grupo_id"' in html and "termina em @g.us" in html
+
+
+def test_cliente_com_grupo_mostra_o_nome_e_deixa_o_grupo_selecionado(cliente, base_clientes):
+    base_clientes.clientes[0]["whatsapp_grupo_id"] = GRUPO_MARIA
+    entrar(cliente)
+    html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+    assert "vão para o grupo <strong>Maria Souza - ABC1D23</strong>" in html and "não tem grupo de WhatsApp" not in html
+    assert f'<option value="{GRUPO_MARIA}" selected>' in html
+
+
+def test_grupo_atual_fora_da_lista_nao_some_do_formulario(cliente, base_clientes, base_whatsapp):
+    base_clientes.clientes[0]["whatsapp_grupo_id"] = "120363999999999999@g.us"
+    entrar(cliente)
+    html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+    assert "fora da lista" in html and '<option value="120363999999999999@g.us" selected>' in html
+
+
+def test_lista_de_grupos_que_falha_nao_derruba_a_ficha(cliente, base_clientes, monkeypatch):
+    from src.web import dados_whatsapp
+    monkeypatch.setattr(dados_whatsapp, "grupos", lambda: (_ for _ in ()).throw(RuntimeError("tabela inexistente")))
+    entrar(cliente)
+    resposta = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp")
+    assert resposta.status_code == 200 and "Histórico de mensagens" in resposta.text and "tabela inexistente" not in resposta.text
+
+
+def test_salvar_grupo_escolhido_na_lista(cliente, base_clientes, base_whatsapp):
+    entrar(cliente)
+    r = cliente.post(f"/clientes/{base_clientes.id}/whatsapp/grupo", data={"grupo_escolhido": GRUPO_MARIA, "grupo_id": ""}, headers=_cabecalhos(cliente))
+    assert r.status_code == 200 and r.headers["HX-Redirect"] == f"/clientes/{base_clientes.id}?aba=whatsapp"
+    assert base_whatsapp.grupos_definidos == [(base_clientes.id, GRUPO_MARIA)]
+    assert "Grupo de WhatsApp de" in cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+
+
+def test_id_colado_tem_prioridade_e_e_normalizado(cliente, base_clientes, base_whatsapp):
+    entrar(cliente)
+    cliente.post(f"/clientes/{base_clientes.id}/whatsapp/grupo",
+                 data={"grupo_escolhido": GRUPO_MARIA, "grupo_id": " 120363111111111111@G.US "}, headers=_cabecalhos(cliente))
+    assert base_whatsapp.grupos_definidos == [(base_clientes.id, "120363111111111111@g.us")]
+
+
+def test_sem_grupo_remove_e_avisa(cliente, base_clientes, base_whatsapp):
+    entrar(cliente)
+    cliente.post(f"/clientes/{base_clientes.id}/whatsapp/grupo", data={"grupo_escolhido": "", "grupo_id": ""}, headers=_cabecalhos(cliente))
+    assert base_whatsapp.grupos_definidos == [(base_clientes.id, None)]
+    assert "removido" in cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+
+
+def test_id_invalido_mostra_o_erro_no_campo_e_nao_grava(cliente, base_clientes, base_whatsapp):
+    entrar(cliente)
+    r = cliente.post(f"/clientes/{base_clientes.id}/whatsapp/grupo", data={"grupo_id": "5511988887777"}, headers=_cabecalhos(cliente))
+    assert r.status_code == 422 and "ID de grupo inválido" in r.text and "5511988887777" in r.text
+    assert base_whatsapp.grupos_definidos == [] and r.headers["Cache-Control"] == "no-store"
+
+
+def test_grupo_ja_usado_por_outro_cliente_mostra_o_erro(cliente, base_clientes, base_whatsapp):
+    base_whatsapp.falhar_com = ValueError("Este grupo já está ligado a outro cliente.")
+    entrar(cliente)
+    r = cliente.post(f"/clientes/{base_clientes.id}/whatsapp/grupo", data={"grupo_escolhido": GRUPO_MARIA}, headers=_cabecalhos(cliente))
+    assert r.status_code == 422 and "já está ligado a outro cliente" in r.text
+
+
+def test_salvar_grupo_exige_csrf(cliente, base_clientes, base_whatsapp):
+    entrar(cliente)
+    r = cliente.post(f"/clientes/{base_clientes.id}/whatsapp/grupo", data={"grupo_escolhido": GRUPO_MARIA}, headers={"HX-Request": "true"})
+    assert r.status_code == 403 and base_whatsapp.grupos_definidos == []
 
 
 def test_historico_vazio(cliente, base_clientes, base_whatsapp):
