@@ -1,6 +1,6 @@
 """Fronteira de escrita da página Configurações."""
 
-from src.services import arquivos_orfaos, configuracoes
+from src.services import arquivos_orfaos, configuracoes, portal_locatario
 
 
 def atualizar(dados):
@@ -11,3 +11,8 @@ def atualizar(dados):
 def apagar_arquivos_orfaos():
     """Apaga os arquivos órfãos do portal (a lista é recalculada no banco, não vem da tela). Devolve {apagados, tamanho, falhas}."""
     return arquivos_orfaos.apagar()
+
+
+def padronizar_acessos_locatarios():
+    """Redefine e-mail e senha de todos os acessos de locatário para o padrão. Devolve {total, itens, falhas}."""
+    return portal_locatario.padronizar_todos_acessos()

@@ -118,7 +118,7 @@ def test_destino_seguro(destino, esperado):
 
 
 def test_nome_de_exibicao_nao_mostra_o_cpf_do_locatario():
-    assert nome_de_exibicao("12345678909@portal.example.com") == "Locatário"
+    assert nome_de_exibicao("joao.silva@locadora.com") == "Locatário"
     assert nome_de_exibicao("ricardo.menezes@exemplo.com") == "Ricardo Menezes"
 
 
@@ -147,13 +147,13 @@ def _resposta_supabase(expires_at=5000):
     return MagicMock(session=sessao, user=usuario)
 
 
-def test_servico_entra_com_cpf_convertido_em_email():
+def test_servico_entra_com_nome_sobrenome_convertido_em_email():
     cliente = MagicMock()
     cliente.auth.sign_in_with_password.return_value = _resposta_supabase()
     with patch.object(db, "criar_cliente_anonimo", return_value=cliente):
-        tokens = ServicoAutenticacao().entrar("123.456.789-09", "senha")
+        tokens = ServicoAutenticacao().entrar("Joao.Silva", "senha")
     enviado = cliente.auth.sign_in_with_password.call_args.args[0]
-    assert enviado["email"] == "12345678909@portal.example.com"
+    assert enviado["email"] == "joao.silva@locadora.com"
     assert (tokens.access_token, tokens.refresh_token, tokens.expira_em) == ("at", "rt", 5000.0)
 
 

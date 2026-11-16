@@ -104,13 +104,25 @@ class TestRegistrarTrocaOleo:
 
 class TestAcessoDoLocatario:
     def test_criar_devolve_email_e_senha_da_funcao(self):
-        resposta = {"ok": True, "email": "52998224725@portal.example.com", "senha": "Abc23def45"}
+        resposta = {"ok": True, "email": "joao.silva@locadora.com", "senha": "Abc23def45"}
         with patch(f"{REPO}.gerenciar_acesso", return_value=resposta) as funcao:
             assert portal_locatario.criar_acesso("cli1") == {
-                "email": "52998224725@portal.example.com",
+                "email": "joao.silva@locadora.com",
                 "senha": "Abc23def45",
             }
         funcao.assert_called_once_with("criar", "cli1")
+
+    def test_padronizar_todos_devolve_o_resumo_sem_senhas(self):
+        resposta = {"ok": True, "total": 2, "itens": [{"cliente_id": "c1", "nome": "A", "email": "a@locadora.com"}], "falhas": []}
+        with patch(f"{REPO}.gerenciar_acesso", return_value=resposta) as funcao:
+            resumo = portal_locatario.padronizar_todos_acessos()
+        funcao.assert_called_once_with("padronizar_todos")
+        assert resumo["total"] == 2 and resumo["falhas"] == [] and "senha" not in str(resumo)
+
+    def test_padronizar_todos_recusado_vira_erro_de_regra(self):
+        with patch(f"{REPO}.gerenciar_acesso", return_value={"ok": False, "erro": "Somente o proprietário pode gerenciar acessos."}):
+            with pytest.raises(ValueError, match="Somente o proprietário"):
+                portal_locatario.padronizar_todos_acessos()
 
     def test_redefinir_e_remover_chamam_a_acao_certa(self):
         with patch(f"{REPO}.gerenciar_acesso", return_value={"ok": True, "email": "e", "senha": "s"}) as funcao:

@@ -9,7 +9,8 @@ Supabase (continua sendo a proteção final dos dados) nem do servidor/Coolify (
 
 | Item | Situação |
 |---|---|
-| Login: limite de tentativas | OK. 10 falhas por e-mail/CPF (subiu de 5 em 13/10/2026, decisão do proprietário) e 20 por IP em 15 min, resposta 429 com `Retry-After`; a mensagem de erro é a mesma para usuário inexistente e senha errada. |
+| Login: limite de tentativas | OK. 10 falhas por e-mail (subiu de 5 em 13/10/2026, decisão do proprietário) e 20 por IP em 15 min, resposta 429 com `Retry-After`; a mensagem de erro é a mesma para usuário inexistente e senha errada. |
+| Senha padrão do locatário | RISCO ACEITO pelo dono em 16/11/2026. A senha inicial (primeiro nome + 6 últimos dígitos do CPF) é previsível por quem conhece o nome, o CPF e o e-mail `nome.sobrenome@locadora.com`; foi aceita porque o locatário esquece senhas. Mitigações: o limite de tentativas do login, a troca de senha no portal (`Alterar minha senha`) e o acesso do locatário só ler o próprio contrato por RPC. |
 | Cookies | OK. Sessão `httponly`, `samesite=lax`, `secure` em HTTPS, id novo a cada login (sem fixação de sessão). |
 | CSRF | OK e agora **garantido por teste**: toda rota POST/PUT/PATCH/DELETE exige o token (formulário ou `X-CSRF-Token`); o login usa double submit com cookie. |
 | Autorização | OK e **garantida por teste**: todas as rotas, exceto `/login` e `/saude`, exigem sessão; rotas do dono e do locatário não se misturam. |

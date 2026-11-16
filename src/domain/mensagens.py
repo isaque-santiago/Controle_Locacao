@@ -227,6 +227,14 @@ def arquivos_orfaos_apagados(apagados, tamanho, falhas):
     return _toast(texto)
 
 
+def acessos_padronizados(total, falhas):
+    """`3 acesso(s) de locatário padronizado(s).` Com falha, vira alerta com a quantidade que ficou como estava."""
+    texto = f"{total} acesso(s) de locatário padronizado(s)."
+    if falhas:
+        return _alerta(f"{texto} {falhas} não puderam ser padronizados; confira o cadastro (nome e CPF) e tente de novo.", atencao=True)
+    return _toast(texto)
+
+
 def configuracoes_salvas(alterados):
     """`alterados`: nomes dos campos que mudaram (podem ser vazios)."""
     if not alterados:

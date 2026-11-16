@@ -13,7 +13,7 @@ from tests.web.conftest import (
     entrar,
 )
 
-MENSAGEM_CREDENCIAIS = "E-mail, CPF ou senha inválidos."
+MENSAGEM_CREDENCIAIS = "E-mail ou senha inválidos."
 TRINTA_MINUTOS = 1800
 
 
@@ -71,7 +71,7 @@ def test_credenciais_invalidas_mostram_mensagem_unica(cliente):
 def test_campos_vazios_pedem_preenchimento(cliente):
     resposta = entrar(cliente, identificador="", senha="")
     assert resposta.status_code == 400
-    assert "Informe o e-mail ou CPF e a senha." in resposta.text
+    assert "Informe o e-mail e a senha." in resposta.text
 
 
 def test_login_sem_csrf_e_recusado(cliente, servico):
