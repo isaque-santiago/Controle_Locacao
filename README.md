@@ -476,8 +476,8 @@ Referência: [migrations do Supabase](https://supabase.com/docs/guides/deploymen
 
 ## Portal do locatário (Fase 7)
 
-O locatário entra com **login completo** por **CPF + senha** (o app converte o CPF no e-mail
-interno `<cpf>@portal.example.com` do Supabase Auth; o dono continua entrando com e-mail) e vê só a tela
+O locatário entra com **e-mail + senha** no padrão `nome.sobrenome@locadora.com` (homônimos: `nome.sobrenome2@...`; ele pode
+digitar só `nome.sobrenome`; o domínio é só um rótulo, nenhum e-mail é enviado; o dono continua entrando com o e-mail dele) e vê só a tela
 "Troca de óleo": moto e contrato ativos dele, situação do óleo e o formulário para
 reportar a troca com **foto do painel (hodômetro)** e **foto da nota fiscal** (cláusula 4.13
 do contrato). O dono continua com o app completo; o menu depende do papel (`rpc_meu_papel`).
@@ -492,10 +492,14 @@ O cadastro público continua desativado e a `service_role` nunca é usada pelo a
 
 **Como liberar um locatário.** Na ficha do cliente, aba "Portal", o dono clica em **"Criar
 acesso"**. O app chama a Edge Function `criar-locatario`, que cria o usuário no Supabase Auth
-(e-mail interno do CPF, senha **aleatória e individual**, nunca uma senha padrão) e o vincula
-ao cliente. O app mostra o CPF e a senha uma única vez (a senha não é gravada em lugar
-nenhum): entregue-os ao locatário. Ele pode trocar a senha no portal ("Alterar minha senha"),
-mas não é obrigado. "Gerar nova senha" redefine a senha e "Remover acesso" exclui o login.
+(e-mail `nome.sobrenome@locadora.com` e **senha padrão** = primeiro nome minúsculo e sem acento + **6 últimos dígitos do
+CPF**, por exemplo `joao224725`; decisão do dono em 16/11/2026, pois o sistema não guarda a data de nascimento e o locatário
+esquece senhas) e o vincula ao cliente. O app mostra o e-mail e a senha ao criar: entregue-os ao locatário. Ele pode trocar a
+senha no portal ("Alterar minha senha"), mas não é obrigado. "Gerar nova senha" volta a senha para a padrão e "Remover acesso" exclui o login.
+**Padronizar os acessos existentes.** Configurações > «Acessos dos locatários» > «Padronizar acessos de todos os locatários»
+(só o dono, com confirmação): a Edge Function troca o e-mail e a senha de todos os acessos que já existem para o padrão (a ordem do cadastro
+decide quem fica sem sufixo). Não devolve senhas e não avisa ninguém por WhatsApp. Depois de publicar a função e aplicar a migration
+`20261116120000_vincular_locatario_por_email.sql` (a função e a migration andam juntas: aplique as duas antes de criar acessos novos).
 **Esqueci minha senha (12/11/2026).** O e-mail do portal é fictício, então não há link de redefinição: na tela de login, «Peça uma senha nova»
 (`/login/esqueci-senha`, `rotas/esqueci_senha.py`) pede só o **CPF** e registra um **pedido** para o dono. A resposta ao locatário é sempre a mesma para
 qualquer CPF válido (ninguém descobre quem é cliente), cada pedido conta no limite por IP (20 em 15 min) e o CSRF usa o cookie do login. O dono vê o pedido
