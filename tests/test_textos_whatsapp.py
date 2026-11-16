@@ -170,23 +170,23 @@ def test_mensagem_sem_avisos_e_erro():
 MOMENTO = datetime(2026, 11, 13, 9, 0, tzinfo=FUSO)
 
 
-def test_payload_uma_mensagem_por_cliente_com_numero_normalizado():
-    clientes = {"cli-1": {"nome": "Maria Souza", "whatsapp": "(11) 98888-7777"},
-                "cli-2": {"nome": "João Lima", "whatsapp": None}}
+def test_payload_uma_mensagem_por_cliente_com_o_grupo_como_destino():
+    clientes = {"cli-1": {"nome": "Maria Souza", "whatsapp": "(11) 98888-7777", "grupo": "120363025246125486@g.us"},
+                "cli-2": {"nome": "João Lima", "whatsapp": "(11) 98888-7777", "grupo": None}}
     avisos = [_atraso(), _aviso("cnh_proxima", ref="c", validade=date(2026, 11, 30), dias=17),
               _aviso("portal_acesso", ref="e1", cliente="cli-2")]
     payload = montar_payload(clientes, avisos, MOMENTO, OP)
     assert len(payload) == 2
     um, dois = payload
-    assert um["cliente_id"] == "cli-1" and um["numero"] == "5511988887777"
+    assert um["cliente_id"] == "cli-1" and um["numero"] == "120363025246125486@g.us"
     assert um["enviar_apos"] == "2026-11-13T09:00:00-03:00"
     assert [(i["tipo"], i["referencia_id"], i["data_referencia"]) for i in um["itens"]] == [
         ("atraso", "cob-1", "2026-11-13"), ("cnh_proxima", "c", "2026-11-13")]
-    assert dois["numero"] is None  # sem WhatsApp: a RPC grava como ignorada
+    assert dois["numero"] is None  # sem grupo (mesmo com número individual): a RPC grava como ignorada
 
 
 def test_payload_so_leva_os_itens_que_entraram_na_mensagem():
-    clientes = {"cli-1": {"nome": "Maria", "whatsapp": "11988887777"}}
+    clientes = {"cli-1": {"nome": "Maria", "grupo": "120363025246125486@g.us"}}
     avisos = [_aviso("cnh_proxima", ref=f"c{i}", validade=date(2026, 11, 30), dias=17) for i in range(7)]
     payload = montar_payload(clientes, avisos, MOMENTO, OpcoesTexto(maximo_assuntos=5))
     assert len(payload[0]["itens"]) == 5

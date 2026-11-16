@@ -6,8 +6,10 @@ Uma execução (`executar`) faz, nesta ordem:
    qualquer hora: o que cair fora de um disparo (7:30, 11:30 e 15:00, segunda a sábado, sem feriado) fica marcado para o
    próximo disparo;
 3. confere a instância do WhatsApp e grava o estado da rodada (o Dashboard avisa o dono se ela cair ou a rodada parar);
-4. dentro da janela, envia as pendentes pela Evolution, com pausa aleatória entre elas, conferindo antes se o
-   número tem WhatsApp.
+4. dentro de um disparo, envia as pendentes pela Evolution, com pausa aleatória entre elas. O destino é o **grupo**
+   do locatário (só cobranças e recibos; cliente sem grupo fica `ignorada`); em modo teste, o número de teste, que
+   é conferido antes (o grupo não precisa de conferência);
+5. com a instância conectada, atualiza a lista de grupos que o dono escolhe no cadastro do cliente.
 
 No modo teste nada vai ao cliente: tudo sai para o número de teste, com um aviso no início, e o envio é gravado com
 o id `teste:...` (para o histórico de teste poder ser desfeito ao ligar o envio de verdade).
@@ -21,6 +23,7 @@ from datetime import datetime
 
 from src.domain.avisos_whatsapp import avisos_devidos
 from src.domain.dados_whatsapp import clientes_da_leitura, config_do_envio, entradas_das_regras
+from src.domain.grupo_whatsapp import eh_grupo, somente_assuntos_do_grupo
 from src.domain.janela_envio import FUSO, dentro_da_janela, proximo_horario_valido
 from src.domain.textos_whatsapp import OpcoesTexto, montar_payload
 from src.repositories import mensagens_whatsapp as repo
@@ -47,7 +50,7 @@ def enfileirar_devidos(agora: datetime, opcoes: OpcoesTexto, dados: dict | None 
     momento = proximo_horario_valido(agora)
     bruto = dados if dados is not None else repo.dados(momento.date())
     config = config_do_envio(bruto)
-    avisos = avisos_devidos(momento.date(), cfg=config["avisos"], **entradas_das_regras(bruto))
+    avisos = somente_assuntos_do_grupo(avisos_devidos(momento.date(), cfg=config["avisos"], **entradas_das_regras(bruto)))
     mensagens = montar_payload(clientes_da_leitura(bruto), avisos, momento, opcoes)
     if not mensagens:
         return {"enfileiradas": 0, "sem_numero": 0, "duplicadas": 0, "bloqueadas": 0}
@@ -58,7 +61,8 @@ def _numero_e_texto(msg: dict, config: dict):
     """No modo teste, o número de teste e o texto com o aviso; fora dele, o do cliente."""
     if not config["modo_teste"]:
         return msg["numero"], msg["texto"], msg["id"]
-    aviso = f"[TESTE] Esta mensagem iria para {mascarar_numero(msg['numero'])}.\n\n"
+    destino = "o grupo do cliente" if eh_grupo(msg["numero"]) else mascarar_numero(msg["numero"])
+    aviso = f"[TESTE] Esta mensagem iria para {destino}.\n\n"
     return config["numero_teste"], aviso + msg["texto"], f"teste:{msg['id']}"
 
 
@@ -68,6 +72,19 @@ def estado_da_instancia(evolution) -> str:
         return evolution.estado()
     except EvolutionIndisponivel:
         return "indisponivel"
+
+
+def atualizar_grupos(evolution) -> int | None:
+    """Guarda no banco a lista de grupos da instância (o dono escolhe o do cliente no cadastro). Quantos grupos ou None se falhou.
+
+    Uma falha aqui não derruba a rodada: o envio já foi feito e a lista só fica desatualizada até a próxima."""
+    try:
+        grupos = evolution.listar_grupos()
+        repo.gravar_grupos(grupos)
+        return len(grupos)
+    except Exception:
+        log.warning("Não foi possível atualizar a lista de grupos do WhatsApp.", exc_info=True)
+        return None
 
 
 def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, sorteio=random.uniform,
@@ -94,7 +111,7 @@ def enviar_pendentes(evolution, config: dict, estado: str, dormir=time.sleep, so
             break
         numero, texto, id_registro = _numero_e_texto(msg, config)
         try:
-            if not evolution.numero_tem_whatsapp(numero):
+            if not eh_grupo(numero) and not evolution.numero_tem_whatsapp(numero):
                 repo.registrar_resultado(msg["id"], "ignorada", "O número não tem WhatsApp.")
                 resumo["ignoradas"] += 1
                 continue
@@ -134,6 +151,8 @@ def executar(evolution, opcoes: OpcoesTexto, agora: datetime | None = None, dorm
         resumo["envio"] = enviar_pendentes(evolution, config, estado, dormir, sorteio)
     else:
         resumo["envio"] = {"parou_por": "fora_da_janela"}
+    if estado == "open":
+        resumo["grupos"] = atualizar_grupos(evolution)
     try:
         repo.registrar_rodada(estado, resumo)
     except Exception:  # o aviso ao dono não pode derrubar uma rodada que já enviou mensagens

@@ -4,6 +4,7 @@ em `src/services/whatsapp.py`.
 Endpoints usados (conferir contra a versão da instância, no Swagger dela, em `/docs`):
 - `GET  /instance/connectionState/{instancia}`: a instância está conectada (`open`)?
 - `POST /chat/whatsappNumbers/{instancia}`: o número tem WhatsApp?
+- `GET  /group/fetchAllGroups/{instancia}?getParticipants=false`: os grupos da instância (id `...@g.us`, nome e tamanho).
 - `POST /message/sendText/{instancia}`: envia o texto. Evolution v2 recebe `number` e `text`; a v1 recebe
   `number` e `textMessage.text`. A escolha é `EVOLUTION_VERSAO`.
 
@@ -86,8 +87,21 @@ class ClienteEvolution:
             return False
         return bool(dados[0].get("exists"))
 
+    def listar_grupos(self) -> list[dict]:
+        """Grupos da instância: `[{"id": "...@g.us", "nome": str, "participantes": int | None}]`, sem os participantes."""
+        dados = self._chamar("GET", f"/group/fetchAllGroups/{self._instancia}", params={"getParticipants": "false"})
+        if not isinstance(dados, list):
+            raise EvolutionIndisponivel("Resposta da Evolution fora do formato esperado.")
+        grupos = []
+        for g in dados:
+            if isinstance(g, dict) and str(g.get("id") or "").endswith("@g.us"):
+                tamanho = g.get("size")
+                grupos.append({"id": str(g["id"]), "nome": str(g.get("subject") or "").strip() or "(sem nome)",
+                               "participantes": tamanho if isinstance(tamanho, int) else None})
+        return grupos
+
     def enviar_texto(self, numero: str, texto: str) -> str:
-        """Envia e devolve o id da mensagem na Evolution (vazio se ela não informar)."""
+        """Envia e devolve o id da mensagem na Evolution (vazio se ela não informar). `numero` também pode ser o ID de um grupo."""
         if self._versao == 1:
             corpo = {"number": numero, "options": {"delay": _ATRASO_DIGITACAO_MS, "presence": "composing"},
                      "textMessage": {"text": texto}}
