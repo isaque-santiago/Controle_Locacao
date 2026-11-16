@@ -8,24 +8,23 @@
 // Segurança:
 //   - só o DONO pode chamar: a função repassa o JWT de quem chamou ao banco e confere
 //     rpc_meu_papel() = 'dono' (mesma regra da RLS, sem duplicar o UUID aqui);
-//   - o e-mail interno vem do CPF gravado no cadastro do cliente (não do corpo da
-//     requisição) e a senha é gerada aqui, com gerador criptográfico;
-//   - a senha é devolvida uma única vez e nunca é registrada em log.
+//   - o e-mail (nome.sobrenome@locadora.com) e a senha (primeiro nome + 6 últimos dígitos do
+//     CPF) saem do cadastro do cliente, não do corpo da requisição; nada disso é registrado em log.
 //
 // Corpo (POST, JSON): { "acao": "criar" | "redefinir" | "remover", "cliente_id": "<uuid>" }
-// Resposta: sempre JSON. { ok: true, email?, senha? } ou { ok: false, erro: "mensagem" }.
+//                  ou { "acao": "padronizar_todos" } (redefine e-mail e senha de todos os acessos).
+// Resposta: sempre JSON. { ok: true, email?, senha? } ou { ok: false, erro: "mensagem" };
+// padronizar_todos devolve { ok: true, total, itens: [{ cliente_id, nome, email }], falhas: [...] } (sem senhas).
 //
 // Publicar (uma vez por projeto Supabase, dev e produção):
 //   supabase functions deploy criar-locatario --project-ref <ref-do-projeto>
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// Deve ser igual a DOMINIO_ACESSO em src/domain/acesso_locatario.py.
-const DOMINIO_ACESSO = "portal.example.com";
-// Sem 0/O, 1/l/I e afins (a senha é lida pelo dono e digitada pelo locatário).
-const ALFABETO = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const TAMANHO_SENHA = 10;
-const ACOES = ["criar", "redefinir", "remover"];
+// As regras de e-mail e senha abaixo devem ser iguais às de src/domain/acesso_locatario.py.
+const DOMINIO_ACESSO = "locadora.com";
+const DIGITOS_CPF_NA_SENHA = 6;
+const ACOES = ["criar", "redefinir", "remover", "padronizar_todos"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const CABECALHOS = {
@@ -38,20 +37,46 @@ function responder(corpo: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(corpo), { status, headers: CABECALHOS });
 }
 
-export function gerarSenha(tamanho = TAMANHO_SENHA): string {
-  // Amostragem por rejeição: sem viés de módulo na escolha dos caracteres.
-  const limite = 256 - (256 % ALFABETO.length);
-  let senha = "";
-  while (senha.length < tamanho) {
-    for (const byte of crypto.getRandomValues(new Uint8Array(tamanho * 2))) {
-      if (byte < limite && senha.length < tamanho) senha += ALFABETO[byte % ALFABETO.length];
-    }
-  }
-  return senha;
+function simplificar(texto: string): string {
+  // Minúsculas, sem acento, só letras e números ("João" -> "joao").
+  return texto.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-export function emailDeAcesso(cpf: string): string {
-  return `${cpf}@${DOMINIO_ACESSO}`;
+function primeiroEUltimo(nome: string): [string, string] {
+  const partes = (nome ?? "").split(/\s+/).map(simplificar).filter((p) => p.length > 0);
+  if (partes.length === 0) throw new Error("nome vazio");
+  return [partes[0], partes.length > 1 ? partes[partes.length - 1] : ""];
+}
+
+export function usuarioBase(nome: string): string {
+  const [primeiro, ultimo] = primeiroEUltimo(nome);
+  return ultimo ? `${primeiro}.${ultimo}` : primeiro;
+}
+
+// `ocupados`: e-mails (minúsculos) de OUTROS usuários. Homônimos ganham 2, 3, ...
+export function emailPadrao(nome: string, ocupados: Set<string>): string {
+  const base = usuarioBase(nome);
+  for (let n = 1; ; n++) {
+    const candidato = `${base}${n === 1 ? "" : n}@${DOMINIO_ACESSO}`;
+    if (!ocupados.has(candidato)) return candidato;
+  }
+}
+
+export function senhaPadrao(nome: string, cpf: string): string {
+  return primeiroEUltimo(nome)[0] + cpf.slice(-DIGITOS_CPF_NA_SENHA);
+}
+
+type Usuario = { id: string; email?: string };
+
+async function listarUsuarios(admin: { listUsers: (p: { page: number; perPage: number }) => Promise<any> }): Promise<Usuario[]> {
+  const todos: Usuario[] = [];
+  for (let pagina = 1; pagina <= 50; pagina++) {
+    const { data } = await admin.listUsers({ page: pagina, perPage: 1000 });
+    const usuarios: Usuario[] = data?.users ?? [];
+    todos.push(...usuarios);
+    if (usuarios.length < 1000) break;
+  }
+  return todos;
 }
 
 Deno.serve(async (req) => {
@@ -70,7 +95,8 @@ Deno.serve(async (req) => {
     return responder({ ok: false, erro: "Requisição inválida." }, 400);
   }
   const { acao, cliente_id: clienteId } = corpo;
-  if (!acao || !ACOES.includes(acao) || !clienteId || !UUID.test(clienteId)) {
+  const todos = acao === "padronizar_todos";
+  if (!acao || !ACOES.includes(acao) || (!todos && (!clienteId || !UUID.test(clienteId)))) {
     return responder({ ok: false, erro: "Requisição inválida." }, 400);
   }
 
@@ -89,20 +115,27 @@ Deno.serve(async (req) => {
     return responder({ ok: false, erro: "Somente o proprietário pode gerenciar acessos." }, 403);
   }
 
+  // A partir daqui usa a service_role (só existe dentro do Supabase).
+  const admin = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  }).auth.admin;
+
+  if (todos) return await padronizarTodos(chamador, admin);
+
   const { data: cliente, error: erroCliente } = await chamador
     .from("clientes")
-    .select("id, cpf, auth_user_id")
+    .select("id, nome, cpf, auth_user_id")
     .eq("id", clienteId)
     .maybeSingle();
   if (erroCliente || !cliente) return responder({ ok: false, erro: "Cliente não encontrado." });
   if (!/^\d{11}$/.test(cliente.cpf ?? "")) {
     return responder({ ok: false, erro: "O CPF do cliente precisa ter 11 dígitos." });
   }
-
-  // A partir daqui usa a service_role (só existe dentro do Supabase).
-  const admin = createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  }).auth.admin;
+  try {
+    usuarioBase(cliente.nome);
+  } catch {
+    return responder({ ok: false, erro: "O cliente precisa ter nome para gerar o acesso." });
+  }
 
   if (acao === "remover") {
     if (!cliente.auth_user_id) return responder({ ok: false, erro: "Este cliente não tem acesso." });
@@ -112,45 +145,89 @@ Deno.serve(async (req) => {
     return responder({ ok: true });
   }
 
-  const senha = gerarSenha();
+  const senha = senhaPadrao(cliente.nome, cliente.cpf);
 
   if (acao === "redefinir") {
     if (!cliente.auth_user_id) return responder({ ok: false, erro: "Este cliente não tem acesso." });
-    const { error } = await admin.updateUserById(cliente.auth_user_id, { password: senha });
-    if (error) return responder({ ok: false, erro: "Não foi possível gerar a nova senha." });
-    return responder({ ok: true, email: emailDeAcesso(cliente.cpf), senha });
+    const usuarios = await listarUsuarios(admin);
+    const resultado = await padronizarUsuario(admin, usuarios, cliente);
+    if (!resultado) return responder({ ok: false, erro: "Não foi possível gerar a nova senha." });
+    return responder({ ok: true, email: resultado, senha });
   }
 
   // acao === "criar"
   if (cliente.auth_user_id) return responder({ ok: false, erro: "Este cliente já tem acesso." });
-  const email = emailDeAcesso(cliente.cpf);
+  const usuarios = await listarUsuarios(admin);
+  const email = emailPadrao(cliente.nome, emailsDe(usuarios));
 
-  let usuarioId: string | null = null;
-  let criadoAgora = false;
   const criado = await admin.createUser({ email, password: senha, email_confirm: true });
-  if (criado.data?.user) {
-    usuarioId = criado.data.user.id;
-    criadoAgora = true;
-  } else {
-    // Usuário já existe no Auth (sobra de tentativa anterior): reaproveita e redefine a senha.
-    for (let pagina = 1; pagina <= 20 && !usuarioId; pagina++) {
-      const { data } = await admin.listUsers({ page: pagina, perPage: 1000 });
-      const usuarios = data?.users ?? [];
-      usuarioId = usuarios.find((u) => u.email?.toLowerCase() === email)?.id ?? null;
-      if (usuarios.length < 1000) break;
-    }
-    if (!usuarioId) return responder({ ok: false, erro: "Não foi possível criar o usuário." });
-    const { error } = await admin.updateUserById(usuarioId, { password: senha, email_confirm: true });
-    if (error) return responder({ ok: false, erro: "Não foi possível criar o usuário." });
-  }
+  const usuarioId = criado.data?.user?.id;
+  if (!usuarioId) return responder({ ok: false, erro: "Não foi possível criar o usuário." });
 
   const { error: erroVinculo } = await chamador.rpc("rpc_vincular_locatario", {
-    payload: { cliente_id: clienteId },
+    payload: { cliente_id: clienteId, email },
   });
   if (erroVinculo) {
-    if (criadoAgora) await admin.deleteUser(usuarioId!); // não deixa usuário sem vínculo
+    await admin.deleteUser(usuarioId); // não deixa usuário sem vínculo
     return responder({ ok: false, erro: erroVinculo.message || "Não foi possível vincular o acesso." });
   }
 
   return responder({ ok: true, email, senha });
 });
+
+function emailsDe(usuarios: Usuario[], exceto?: string): Set<string> {
+  return new Set(usuarios.filter((u) => u.id !== exceto && u.email).map((u) => u.email!.toLowerCase()));
+}
+
+// Põe o usuário do cliente no padrão: mantém o e-mail se já é @locadora.com; senão troca pelo nome.sobrenome.
+// Devolve o e-mail final (e atualiza `usuarios`) ou null se o Auth recusou.
+async function padronizarUsuario(
+  admin: any,
+  usuarios: Usuario[],
+  cliente: { nome: string; cpf: string; auth_user_id: string },
+): Promise<string | null> {
+  const atual = usuarios.find((u) => u.id === cliente.auth_user_id);
+  let email = (atual?.email ?? "").toLowerCase();
+  if (!email.endsWith("@" + DOMINIO_ACESSO)) {
+    email = emailPadrao(cliente.nome, emailsDe(usuarios, cliente.auth_user_id));
+  }
+  const { error } = await admin.updateUserById(cliente.auth_user_id, {
+    email,
+    password: senhaPadrao(cliente.nome, cliente.cpf),
+    email_confirm: true,
+  });
+  if (error) return null;
+  if (atual) atual.email = email;
+  return email;
+}
+
+// Redefine e-mail e senha de todos os acessos existentes, na ordem do cadastro (homônimos: o mais antigo fica sem sufixo).
+async function padronizarTodos(chamador: any, admin: any): Promise<Response> {
+  const { data: clientes, error } = await chamador
+    .from("clientes")
+    .select("id, nome, cpf, auth_user_id")
+    .not("auth_user_id", "is", null)
+    .order("criado_em", { ascending: true })
+    .order("id", { ascending: true });
+  if (error) return responder({ ok: false, erro: "Não foi possível ler os clientes." });
+
+  const usuarios = await listarUsuarios(admin);
+  const itens: { cliente_id: string; nome: string; email: string }[] = [];
+  const falhas: { cliente_id: string; nome: string; motivo: string }[] = [];
+  for (const c of clientes ?? []) {
+    if (!/^\d{11}$/.test(c.cpf ?? "")) {
+      falhas.push({ cliente_id: c.id, nome: c.nome, motivo: "CPF sem 11 dígitos" });
+      continue;
+    }
+    try {
+      usuarioBase(c.nome);
+    } catch {
+      falhas.push({ cliente_id: c.id, nome: c.nome ?? "", motivo: "cliente sem nome" });
+      continue;
+    }
+    const email = await padronizarUsuario(admin, usuarios, c);
+    if (email) itens.push({ cliente_id: c.id, nome: c.nome, email });
+    else falhas.push({ cliente_id: c.id, nome: c.nome, motivo: "o Auth recusou a alteração" });
+  }
+  return responder({ ok: true, total: itens.length, itens, falhas });
+}
