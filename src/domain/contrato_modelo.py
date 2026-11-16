@@ -56,6 +56,7 @@ class Bloco(NamedTuple):
     tipo: str
     numero: str
     texto: str
+    linhas: tuple = ()  # só nos quadros do modelo da promessa de compra (contrato_promessa.py)
 
 
 def _limpa(valor) -> str:
