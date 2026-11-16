@@ -16,7 +16,7 @@ Supabase (continua sendo a proteção final dos dados) nem do servidor/Coolify (
 | Autorização | OK e **garantida por teste**: todas as rotas, exceto `/login` e `/saude`, exigem sessão; rotas do dono e do locatário não se misturam. |
 | Cabeçalhos | OK. CSP sem script/estilo inline, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS em HTTPS, `Cache-Control: no-store` nas páginas. |
 | Uploads | OK na validação (tamanho, extensão e assinatura do arquivo). **Corrigido:** o corpo da requisição era lido inteiro antes de validar; agora há limite de 1 MB para formulários e 105 MB para envio de arquivos (10 fotos de 10 MB), com resposta 413. |
-| Sessão | **Corrigido:** só havia o prazo de inatividade (30 min); agora existe também a vida máxima de 12 h, mesmo com uso contínuo. |
+| Sessão | **Revisto em 16/11/2026 (decisão do dono):** 90 dias de inatividade e 1 ano de vida máxima (antes 30 min e 12 h), para o locatário não entrar toda hora. O cookie `lembrar` leva o token de renovação cifrado (Fernet, `SESSAO_CHAVE`) para sobreviver a deploys. **Risco aceito:** celular perdido com sessão aberta. Mitigações: "Sair de todos os dispositivos" (revoga os tokens no Supabase), cookies `HttpOnly`/`Secure`/`SameSite=Lax`, chave só no servidor. Quem roubar o cookie `lembrar` e a chave precisa dos dois; sem a chave o cookie não abre. |
 | Erros | OK. Páginas de erro com mensagem genérica, sem detalhe técnico; falhas do Supabase são classificadas. |
 | Segredos | OK. Nenhum JWT, `sb_secret` ou chave no histórico; `service_role` só em comentários; `.streamlit/secrets.toml`, `.env` e `.sessoes_dev.json` ignorados; em produção as sessões não vão a disco. |
 
@@ -26,7 +26,7 @@ Supabase (continua sendo a proteção final dos dados) nem do servidor/Coolify (
    `--forwarded-allow-ips` com o endereço (ou a rede) do proxy. Sem isso o app não percebe o HTTPS (cookie sem `Secure`, sem
    HSTS) e vê todos os acessos como vindos do IP do proxy, e as 20 falhas por IP passam a valer para **todos juntos**.
    Só use `--forwarded-allow-ips='*'` se o contêiner não puder ser alcançado sem passar pelo proxy.
-2. **1 worker** (as sessões e os limitadores ficam na memória do processo).
+2. **1 worker** (as sessões e os limitadores ficam na memória do processo). `SESSAO_CHAVE` definida no Coolify (sem ela, deploy derruba o login).
 3. Segredos como variáveis de ambiente do Coolify; `LOCACAO_AMBIENTE` **não** pode ser `dev` em produção (liga a rota
    `/componentes` e o espelho de sessões em arquivo).
 4. Conferir no primeiro deploy: `curl -I` mostrando HSTS e CSP, e um login de teste com o cookie marcado `Secure`.

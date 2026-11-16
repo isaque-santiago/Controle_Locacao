@@ -50,6 +50,8 @@ class ServicoFalso:
         self.entradas = 0
         self.renovacoes = 0
         self.saidas: list[str] = []
+        self.saidas_globais: list[str] = []
+        self.saida_global_recusada = False
         self.senhas: list[tuple[str, str]] = []
         self.senha_recusada = None
         self.pedidos_de_senha: list[str] = []
@@ -97,6 +99,12 @@ class ServicoFalso:
 
     def sair(self, access_token):
         self.saidas.append(access_token)
+
+    def sair_de_todos(self, access_token):
+        if self.saida_global_recusada:
+            raise RuntimeError("Supabase fora do ar")
+        self.saidas_globais.append(access_token)
+        self.renovacao_recusada = True  # o Supabase revogou os tokens de renovação de todos os aparelhos
 
     def pedir_senha_nova(self, cpf):
         if self.pedido_recusado:

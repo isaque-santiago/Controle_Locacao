@@ -1,10 +1,11 @@
-"""Login, logout, sessão de 30 minutos, papéis, CSRF e limite de tentativas (Fase 1)."""
+"""Login, logout, sessão de 90 dias, papéis, CSRF e limite de tentativas (Fase 1)."""
 
 import re
 import threading
 
 from starlette.testclient import TestClient
 
+from src.web.app import criar_app
 from src.web.dependencias import COOKIE_SESSAO, _garantir_tokens_validos
 from tests.web.conftest import (
     CPF_LOCATARIO,
@@ -112,7 +113,24 @@ def test_f5_mantem_a_sessao(cliente):
         assert cliente.get("/").status_code == 200
 
 
-def test_sessao_expira_apos_30_minutos_de_inatividade(cliente, relogio):
+def _cliente_com_sessao_curta(servico, relogio):
+    from src.web.sessao import ArmazemSessoes
+
+    app = criar_app(servico=servico, relogio=relogio, armazem=ArmazemSessoes(TRINTA_MINUTOS, relogio), desenvolvimento=False)
+    return TestClient(app, follow_redirects=False)
+
+
+def test_sessao_expira_apos_90_dias_de_inatividade(cliente, relogio):
+    entrar(cliente)
+    relogio.avancar(89 * 86400)
+    assert cliente.get("/").status_code == 200
+    relogio.avancar(91 * 86400)
+    resposta = cliente.get("/")
+    assert resposta.status_code == 303 and resposta.headers["location"] == "/login?expirou=1"
+
+
+def test_sessao_expira_apos_o_limite_de_inatividade_configurado(servico, relogio):
+    cliente = _cliente_com_sessao_curta(servico, relogio)
     entrar(cliente)
     relogio.avancar(TRINTA_MINUTOS + 1)
     resposta = cliente.get("/")
@@ -348,10 +366,16 @@ def test_catalogo_de_componentes_so_existe_em_desenvolvimento(servico, relogio):
 
 # ---------- aviso de sessão prestes a expirar ----------
 
-def test_paginas_declaram_o_limite_de_inatividade_e_o_login_nao(cliente):
+def test_paginas_declaram_o_limite_de_inatividade_e_o_login_nao(servico, relogio):
+    cliente = _cliente_com_sessao_curta(servico, relogio)
     assert "data-sessao-limite" not in cliente.get("/login").text
     entrar(cliente)
     assert f'data-sessao-limite="{TRINTA_MINUTOS}"' in cliente.get("/").text
+
+
+def test_com_sessao_de_90_dias_o_aviso_de_expiracao_fica_desligado(cliente):
+    entrar(cliente)
+    assert "data-sessao-limite" not in cliente.get("/").text
 
 
 def test_renovar_sessao_exige_login_e_csrf(cliente):

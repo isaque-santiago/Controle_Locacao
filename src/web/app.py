@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.services.autenticacao import ServicoAutenticacao
 from src.web.erros import registrar_tratadores
+from src.web.lacre import CookiesDaSessao, lacre_do_ambiente
 from src.web.limitador import LimitadorTentativas
 from src.web.rotas import autenticacao as rotas_autenticacao
 from src.web.rotas import esqueci_senha as rotas_esqueci_senha
@@ -78,6 +79,7 @@ def criar_app(
     armazem: ArmazemSessoes | None = None,
     relogio=time,
     desenvolvimento: bool | None = None,
+    lacre=None,
 ) -> FastAPI:
     """Monta o app. Os parâmetros existem para os testes injetarem fakes e um relógio."""
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
@@ -86,6 +88,7 @@ def criar_app(
     app.state.servico = servico or ServicoAutenticacao()
     em_desenvolvimento = desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento()
     app.state.armazem = armazem or ArmazemSessoes(relogio=relogio, arquivo=arquivo_de_sessoes(em_desenvolvimento))
+    app.state.lacre = lacre or lacre_do_ambiente(relogio)
     app.state.limitador_ip = LimitadorTentativas(
         FALHAS_POR_IP, JANELA_LIMITE_SEGUNDOS, relogio
     )
@@ -93,6 +96,7 @@ def criar_app(
         FALHAS_POR_IDENTIFICADOR, JANELA_LIMITE_SEGUNDOS, relogio
     )
 
+    app.add_middleware(CookiesDaSessao)
     app.add_middleware(LimiteDeCorpo)
     app.add_middleware(CabecalhosSeguranca)
     app.mount("/static", StaticFiles(directory=str(PASTA_ESTATICOS)), name="static")

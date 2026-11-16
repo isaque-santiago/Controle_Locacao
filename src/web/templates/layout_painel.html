@@ -35,6 +35,10 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit">{{ icone('sair') }}Sair</button>
           </form>
+          <form method="post" action="/sessao/sair-de-todos" data-confirmar="Sair da sua conta em todos os dispositivos (celular, computador)? Você precisará entrar de novo." data-confirmar-titulo="Sair de todos os dispositivos" data-confirmar-rotulo="Sair de todos">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">{{ icone('sair') }}Sair de todos os dispositivos</button>
+          </form>
         </div>
       </details>
     </div>
@@ -55,6 +59,10 @@
           <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit">{{ icone('sair') }}Sair</button>
+          </form>
+          <form method="post" action="/sessao/sair-de-todos" data-confirmar="Sair da sua conta em todos os dispositivos (celular, computador)? Você precisará entrar de novo." data-confirmar-titulo="Sair de todos os dispositivos" data-confirmar-rotulo="Sair de todos">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">{{ icone('sair') }}Sair de todos os dispositivos</button>
           </form>
         </div>
       </details>

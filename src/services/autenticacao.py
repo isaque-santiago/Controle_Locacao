@@ -131,6 +131,12 @@ class ServicoAutenticacao:
         A RPC responde sempre igual, tenha o CPF acesso ao portal ou não; quem recebe o pedido é o dono."""
         db.criar_cliente_anonimo().rpc("rpc_portal_pedir_redefinicao", {"p_cpf": cpf}).execute()
 
+    def sair_de_todos(self, access_token: str) -> None:
+        """Revoga TODAS as sessões do usuário no Supabase (escopo global): nenhum cookie `lembrar` volta a funcionar.
+
+        Ao contrário de `sair`, a falha sobe: o usuário precisa saber que os outros aparelhos continuam conectados."""
+        db.criar_cliente_anonimo().auth.admin.sign_out(access_token, "global")
+
     def sair(self, access_token: str) -> None:
         """Revoga esta sessão no Supabase (escopo local, com o JWT do próprio usuário).
 

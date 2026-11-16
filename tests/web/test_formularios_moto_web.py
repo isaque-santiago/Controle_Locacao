@@ -282,8 +282,8 @@ def test_documento_de_outra_moto_ou_id_invalido_da_404(cliente):
 def test_inativar_pede_confirmacao_e_reativar_nao(cliente):
     _logado(cliente)
     disponivel = cliente.get(f"/motos/{DISPONIVEL}").text
-    assert 'data-confirmar="' in disponivel and 'id="dlg-confirmar"' in disponivel
-    assert 'data-confirmar="' not in cliente.get(f"/motos/{INATIVA}").text
+    assert 'data-confirmar="A moto sai das disponíveis' in disponivel and 'id="dlg-confirmar"' in disponivel
+    assert 'data-confirmar="A moto sai das disponíveis' not in cliente.get(f"/motos/{INATIVA}").text
 
 
 def test_formulario_em_dialogo_bloqueia_envio_duplo(cliente):
