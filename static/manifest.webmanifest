@@ -1,7 +1,7 @@
 {
-  "name": "Controle de Locação",
-  "short_name": "Locação",
-  "description": "Gestão da frota de motos: contratos, cobranças, manutenção e vistorias.",
+  "name": "LA Locadora",
+  "short_name": "LA Locadora",
+  "description": "Gestão da frota: contratos, cobranças, manutenção e vistorias.",
   "lang": "pt-BR",
   "start_url": "/",
   "scope": "/",

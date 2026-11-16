@@ -1,4 +1,4 @@
-"""Gera os ícones PNG do app instalável (PWA) em static/icones/, no desenho do static/favicon.svg ("CL" em amarelo).
+"""Gera os ícones PNG do app instalável (PWA) em static/icones/, no desenho do static/favicon.svg ("LA" em amarelo).
 
     python scripts/gerar_icones_pwa.py
 
@@ -30,7 +30,7 @@ def _fonte(tamanho: int) -> ImageFont.FreeTypeFont:
 
 
 def _icone(lado: int, raio: float, texto_proporcao: float) -> Image.Image:
-    """Quadrado amarelo com "CL" centralizado. raio: fração do lado (0 = quadrado inteiro, para o ícone "maskable");
+    """Quadrado amarelo com "LA" centralizado. raio: fração do lado (0 = quadrado inteiro, para o ícone "maskable");
     texto_proporcao: altura do texto em relação ao lado."""
     ampliacao = 4  # desenha maior e reduz, para bordas suaves
     grande = lado * ampliacao
@@ -38,9 +38,9 @@ def _icone(lado: int, raio: float, texto_proporcao: float) -> Image.Image:
     desenho = ImageDraw.Draw(imagem)
     desenho.rounded_rectangle((0, 0, grande - 1, grande - 1), radius=int(grande * raio), fill=AMARELO)
     fonte = _fonte(int(grande * texto_proporcao))
-    esquerda, topo, direita, base = desenho.textbbox((0, 0), "CL", font=fonte)
+    esquerda, topo, direita, base = desenho.textbbox((0, 0), "LA", font=fonte)
     posicao = ((grande - (direita - esquerda)) / 2 - esquerda, (grande - (base - topo)) / 2 - topo)
-    desenho.text(posicao, "CL", font=fonte, fill=GRAFITE)
+    desenho.text(posicao, "LA", font=fonte, fill=GRAFITE)
     return imagem.resize((lado, lado), Image.LANCZOS)
 
 
