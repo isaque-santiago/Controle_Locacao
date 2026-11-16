@@ -76,10 +76,11 @@ Marque **todas** como *Runtime only* (não entram no build) e não marque *Is Bu
 |---|---|---|
 | `SUPABASE_URL` | URL do projeto Supabase **de produção** | Sim |
 | `SUPABASE_ANON_KEY` | chave anon (`sb_publishable_…` ou JWT anon) de produção | Sim |
+| `SESSAO_CHAVE` | chave Fernet que cifra o cookie `lembrar` (sessão de 90 dias sobrevive a deploys). Gere com `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Sem ela, deploy derruba o login de todos | Sim (recomendada) |
 | `FORWARDED_ALLOW_IPS` | IP do Traefik (ver "Restringir o proxy confiável"). Sem ela, a imagem usa `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16` (provisório) | Sim, após o 1º deploy |
 
 Regras: **nunca** `service_role`; **nunca** definir `LOCACAO_AMBIENTE=dev` nem `LOCACAO_SESSOES_ARQUIVO`; nada de `.env` na
-VPS. O app não exige outras variáveis.
+VPS. O app não exige outras variáveis. **Nunca** troque `SESSAO_CHAVE` sem necessidade: todos precisariam entrar de novo.
 
 ### Restringir o proxy confiável ao IP do Traefik (obrigatório após o primeiro deploy)
 
@@ -171,7 +172,7 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
    do escritório) e percorra o portal.
 6. **Rotas de desenvolvimento desligadas:** `https://SEU-SUBDOMINIO.duckdns.org/componentes` deve dar **404**; no contêiner
    (`docker exec <contêiner> ls -a /app`) não deve existir `.sessoes_dev.json`.
-7. **Reinício derruba a sessão (esperado):** reinicie o aplicativo no Coolify; a página seguinte deve pedir login de novo.
+7. **Reinício NÃO derruba a sessão (com `SESSAO_CHAVE`):** reinicie o aplicativo no Coolify; a página seguinte deve abrir já logada (o cookie `lembrar` refaz a sessão). Sem a chave, a página pede login de novo. Em DevTools, os cookies `sessao` e `lembrar` devem ter validade de 90 dias, `Secure` e `HttpOnly`. Teste também "Sair de todos os dispositivos" (menu da conta): depois dele, nem o `lembrar` guardado em outro aparelho deve entrar.
 8. **IP real no limitador:** nos logs (`Logs` do aplicativo) as requisições devem mostrar o IP do cliente, não o do
    Traefik. Se aparecer sempre o mesmo IP privado, ajuste `FORWARDED_ALLOW_IPS` (seção 4).
 9. **Memória:** repita `free -h` e `docker stats --no-stream` e anote.

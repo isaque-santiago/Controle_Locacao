@@ -93,7 +93,7 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   (gerados por `python scripts/gerar_icones_pwa.py`, com Pillow; versionados) e, no `<head>` de `base.html`, `manifest`,
   `apple-touch-icon` e `theme-color` claro/escuro. **Sem service worker**: a sessão fica na memória do servidor, então o app não
   funciona offline e não há cache de páginas autenticadas. No Android/Chrome aparece "Instalar app"; no iOS, "Adicionar à Tela de Início".
-- **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes dos 30 min de inatividade abre o diálogo de
+- **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes do fim do prazo (só para prazos de até 1 dia; com a sessão de 90 dias o aviso fica desligado) abre o diálogo de
   confirmação com "Continuar conectado" (`POST /sessao/renovar`, 204, exige CSRF); passado o prazo, avisa que expirou e leva ao login.
   Requisições do HTMX bem-sucedidas reiniciam a contagem.
 - **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
@@ -207,9 +207,19 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
 
 **Sessão e segurança.**
 - A sessão vive na **memória do processo**: o cookie leva só um identificador aleatório (`httpOnly`,
-  `SameSite=Lax`, `Secure` em HTTPS) e os tokens do Supabase ficam no servidor. Expira após 30 min sem
-  atividade; o F5 mantém a sessão; sem "lembrar de mim". Reiniciar o app ou fazer deploy encerra
-  todas as sessões.
+  `SameSite=Lax`, `Secure` em HTTPS) e os tokens do Supabase ficam no servidor.
+- **Sessão longa (16/11/2026).** O locatário não quer entrar toda hora: a sessão expira após **90 dias sem uso** (cada uso renova)
+  e, no máximo, **1 ano** depois do login (`src/domain/sessao_longa.py`). Os cookies têm validade de 90 dias (não somem ao fechar o
+  navegador ou o app do celular). Como a memória do servidor some a cada deploy, o login também grava o cookie `lembrar`: o token de
+  renovação do Supabase **criptografado** (Fernet) com a chave `SESSAO_CHAVE`, que só existe no servidor (`src/web/lacre.py`). Sem a
+  sessão em memória, o app abre o cookie, renova os tokens e refaz a sessão sem pedir login. Nada vai a disco. **Sem `SESSAO_CHAVE`
+  o recurso fica desligado** e reiniciar ou fazer deploy derruba o login de todos. Gere a chave com
+  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` e guarde-a no Coolify (nunca no repositório;
+  trocar a chave desconecta todos).
+- **Sair de todos os dispositivos** (`POST /sessao/sair-de-todos`, no menu do dono e no portal do locatário): revoga todos os tokens
+  do usuário no Supabase (escopo global) e encerra as sessões do servidor, então nenhum cookie `lembrar` volta a funcionar. Se o
+  Supabase falhar, nada muda e a tela avisa. No Supabase, mantenha **sem** limite de sessão (Authentication > Sessions: time-box e
+  inactivity timeout desligados ou de 90 dias ou mais), senão ele derruba a sessão antes.
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.
@@ -410,7 +420,7 @@ Streamlit descarta a cada refresh completo do navegador — o usuário logado ca
 tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
 navegador (`streamlit-cookies-controller`) e a sessão é restaurada automaticamente a
 partir dele; um segundo cookie, renovado a cada requisição e com validade de 30
-minutos, mantém a regra de expiração por inatividade mesmo entre refreshes.
+minutos, mantém a regra de expiração por inatividade (agora de 90 dias) mesmo entre refreshes.
 
 Correção em 24/09/2026: o F5 ainda derrubava a sessão por dois motivos. (1) O login
 chamava `st.rerun()` logo após pedir a gravação do cookie, e o Streamlit descartava o
@@ -587,7 +597,7 @@ Use um projeto de homologação; os passos criam dados.
     O ZIP não inclui os binários de fotos/comprovantes nem usuários do Auth. Evite
     alterações durante a geração, pois as leituras não formam um snapshot transacional.
 11. Confira os formulários e tabelas em celular. Saia da conta e verifique que os dados
-    deixam de aparecer. Após 30 minutos sem interação, a próxima ação exige novo login.
+    deixam de aparecer. A sessão dura 90 dias sem uso: para testar a expiração, use os testes automatizados (`tests/web/test_autenticacao_web.py`).
 
 ## Demonstração
 

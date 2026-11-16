@@ -1214,7 +1214,7 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 
 ### 23.1 Prioridade agora
 
-1. **Sessão longa (celular e desktop).** O locatário não quer entrar toda hora.
+1. **Sessão longa (celular e desktop)** (implementada em 16/11/2026 na branch `feat/sessao-longa`; falta definir `SESSAO_CHAVE` no Coolify). O locatário não quer entrar toda hora.
    - **Decisão (16/11/2026):** 90 dias para **todos** os usuários, inclusive o dono/administrador.
    - **Hoje:** `src/web/sessao.py` expira com 30 min de inatividade (`LIMITE_INATIVIDADE_SEGUNDOS`) e 12 h de vida máxima (`LIMITE_VIDA_SEGUNDOS`); o cookie e o refresh token do Supabase também precisam durar. O aviso de expiração da tela (`data-sessao-limite`) deve ser revisto.
    - **Risco aceito:** celular perdido com sessão aberta. Mitigar com "Sair de todos os dispositivos" e revisar `Arquivos/Revisao_Seguranca.md`.
