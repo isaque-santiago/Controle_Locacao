@@ -181,3 +181,51 @@ class TestLacre:
     def test_sem_chave_ou_chave_invalida_fica_desligado(self, relogio):
         assert not Lacre(None, relogio).ativo and not Lacre("curta-demais", relogio).ativo
         assert Lacre(None, relogio).abrir("qualquer") is None
+
+
+# ---------- Sair de todos os dispositivos ----------
+
+def _com_lembrar(servico, relogio):
+    cliente = _cliente(_app(servico, relogio))
+    entrar(cliente)
+    return cliente
+
+
+def test_sair_de_todos_revoga_no_supabase_encerra_as_sessoes_e_apaga_os_cookies(servico, relogio):
+    cliente = _com_lembrar(servico, relogio)
+    outro_aparelho = _cliente(cliente.app)
+    entrar(outro_aparelho)  # segunda sessão do mesmo usuário
+    app = cliente.app
+    assert app.state.armazem.quantidade() == 2
+    resposta = cliente.post("/sessao/sair-de-todos", data={"csrf_token": csrf_da_sessao(cliente)})
+    assert resposta.status_code == 303 and resposta.headers["location"] == "/login?saiu=1"
+    assert len(servico.saidas_globais) == 1
+    emitidos = _cookies_emitidos(resposta)
+    assert "Max-Age=0" in emitidos[COOKIE_SESSAO] and "Max-Age=0" in emitidos[COOKIE_LEMBRAR]
+    assert app.state.armazem.quantidade() == 0
+    assert outro_aparelho.get("/").status_code == 303  # o outro aparelho também caiu
+    assert "saiu de todos os dispositivos" in cliente.get("/login?saiu=1").text
+
+
+def test_sair_de_todos_com_falha_mantem_a_sessao_e_avisa(servico, relogio):
+    cliente = _com_lembrar(servico, relogio)
+    servico.saida_global_recusada = True
+    resposta = cliente.post("/sessao/sair-de-todos", data={"csrf_token": csrf_da_sessao(cliente)})
+    assert resposta.status_code == 303 and resposta.headers["location"] != "/login?saiu=1"
+    assert cliente.app.state.armazem.quantidade() == 1
+    pagina = cliente.get(resposta.headers["location"])
+    assert pagina.status_code == 200 and "Você continua conectado" in pagina.text
+
+
+def test_sair_de_todos_exige_login_e_csrf(servico, relogio):
+    cliente = _cliente(_app(servico, relogio))
+    assert cliente.post("/sessao/sair-de-todos").status_code == 303  # sem login: vai para a tela de entrada
+    entrar(cliente)
+    assert cliente.post("/sessao/sair-de-todos").status_code == 403  # sem token CSRF
+    assert servico.saidas_globais == []
+
+
+def test_botao_aparece_no_menu_do_dono(servico, relogio):
+    cliente = _com_lembrar(servico, relogio)
+    html = cliente.get("/").text
+    assert 'action="/sessao/sair-de-todos"' in html and "Sair de todos os dispositivos" in html

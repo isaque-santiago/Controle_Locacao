@@ -127,5 +127,14 @@
       <div class="rodape-acoes"><button class="btn w-full" type="submit">Salvar nova senha</button></div>
     </form>
   </details>
+
+  <section class="cartao" aria-labelledby="portal-seguranca">
+    <h2 id="portal-seguranca" class="font-semibold">Segurança da conta</h2>
+    <p class="text-texto-2 mb-3">Você fica conectado neste aparelho por até 90 dias. Perdeu o celular ou emprestou a alguém? Saia de todos os aparelhos de uma vez.</p>
+    <form method="post" action="/sessao/sair-de-todos" data-confirmar="Sair da sua conta em todos os dispositivos (celular, computador)? Você precisará entrar de novo." data-confirmar-titulo="Sair de todos os dispositivos" data-confirmar-rotulo="Sair de todos">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn w-full" type="submit">Sair de todos os dispositivos</button>
+    </form>
+  </section>
 </main>
 {% endblock %}

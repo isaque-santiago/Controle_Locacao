@@ -17,6 +17,7 @@ from src.web.apresentacao import destino_seguro
 from src.web.dependencias import (
     COOKIE_CSRF_LOGIN,
     COOKIE_SESSAO,
+    exigir_sessao,
     sessao_opcional,
     validar_csrf,
     validar_csrf_login,
@@ -38,6 +39,8 @@ MENSAGEM_NAO_CONFIGURADO = (
     "O aplicativo não está configurado. Confira as credenciais do Supabase."
 )
 MENSAGEM_EXPIRADA = "A sessão expirou por inatividade. Entre novamente."
+MENSAGEM_SAIU_DE_TODOS = "Você saiu de todos os dispositivos. Entre novamente quando quiser."
+MENSAGEM_FALHA_SAIR_DE_TODOS = "Não foi possível sair de todos os dispositivos agora. Você continua conectado; tente de novo em instantes."
 
 
 def _inicio_do_papel(papel: str) -> str:
@@ -90,6 +93,7 @@ def pagina_login(
     request: Request,
     proximo: str = "/",
     expirou: str = "",
+    saiu: str = "",
     sessao: Sessao | None = Depends(sessao_opcional),
 ):
     if sessao is not None:
@@ -99,7 +103,7 @@ def pagina_login(
         request,
         csrf_login=csrf_login,
         proximo=destino_seguro(proximo),
-        aviso=MENSAGEM_EXPIRADA if expirou else "",
+        aviso=MENSAGEM_SAIU_DE_TODOS if saiu else (MENSAGEM_EXPIRADA if expirou else ""),
     )
 
 
@@ -172,6 +176,23 @@ def entrar(
 async def renovar_sessao():
     """Só passar pela dependência já renova o prazo de inatividade; o aviso de sessão chama isto em "Continuar conectado"."""
     return Response(status_code=204)
+
+
+@router.post("/sessao/sair-de-todos", dependencies=[Depends(validar_csrf)])
+def sair_de_todos(request: Request, sessao: Sessao = Depends(exigir_sessao)):
+    """Encerra a conta em todos os aparelhos (celular perdido ou emprestado). Só depois de o Supabase revogar os tokens é
+    que as sessões em memória somem; se ele falhar, nada muda e o usuário é avisado."""
+    estado = request.app.state
+    try:
+        estado.servico.sair_de_todos(sessao.access_token)
+    except Exception:
+        logger.exception("Falha ao sair de todos os dispositivos")
+        sessao.avisos.append({"tipo": "erro", "texto": MENSAGEM_FALHA_SAIR_DE_TODOS})
+        return RedirectResponse(_inicio_do_papel(sessao.papel), status_code=303)
+    estado.armazem.encerrar_do_usuario(sessao.usuario_id)
+    resposta = RedirectResponse("/login?saiu=1", status_code=303)
+    apagar_cookies(resposta)
+    return resposta
 
 
 @router.post("/logout", dependencies=[Depends(validar_csrf)])
