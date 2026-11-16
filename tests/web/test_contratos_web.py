@@ -103,6 +103,17 @@ def test_contrato_em_pdf_baixa_o_arquivo_com_as_motos_do_contrato(cliente, base_
     assert [m["placa"] for m in motos] == ["BRA2E19", "QRS4T21"]
 
 
+def test_promessa_de_compra_baixa_o_pdf_com_nome_do_cliente_e_placa(base_contratos, monkeypatch):
+    from src.web import dados_contratos
+
+    monkeypatch.setattr(dados_contratos.contrato_pdf, "gerar", lambda c, cl, motos: b"%PDF-1.4 falso")
+    conteudo, arquivo = dados_contratos.gerar_pdf({
+        "contrato": {"id": "k", "data_inicio": "2026-11-16", "tipo_contrato": "promessa_compra"},
+        "moto": {"placa": "OSA-4G16"}, "cliente": {"nome": "Alberto Filho da Silva Côsta"},
+    })
+    assert arquivo == "Contrato_Alberto_Filho_da_Silva_Costa_OSA4G16.pdf" and conteudo.startswith(b"%PDF")
+
+
 def test_ficha_oferece_o_pdf_e_a_geracao_exige_dono(cliente, base_contratos):
     entrar(cliente)
     assert f'href="/contratos/{base_contratos.id}/pdf"' in cliente.get(f"/contratos/{base_contratos.id}").text

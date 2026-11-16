@@ -85,6 +85,8 @@ def _valores_da_moto(moto: dict | None) -> dict:
         "renavam": moto.get("renavam") or "",
         "chassi": moto.get("chassi") or "",
         "cor": moto.get("cor") or "",
+        "motor": moto.get("motor") or "",
+        "combustivel": moto.get("combustivel") or "",
         "ano_fabricacao": str(moto.get("ano_fabricacao") or ano),
         "ano_modelo": str(moto.get("ano_modelo") or ano),
         "km_atual": "0",

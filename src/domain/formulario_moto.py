@@ -103,6 +103,8 @@ def ler_moto(entrada: dict, nova: bool) -> dict:
         "renavam": _opcional(entrada, "renavam"),
         "chassi": _opcional(entrada, "chassi"),
         "cor": _opcional(entrada, "cor"),
+        "motor": _opcional(entrada, "motor"),
+        "combustivel": _opcional(entrada, "combustivel"),
         "ano_fabricacao": ano_fabricacao,
         "ano_modelo": ano_modelo,
         "valor_aquisicao": str(aquisicao),

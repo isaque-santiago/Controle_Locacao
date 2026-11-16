@@ -29,21 +29,32 @@ Abre em `http://localhost:8000` (detalhes na seção abaixo).
 
 ## Contrato em PDF
 
-A ficha do contrato tem o botão **Contrato em PDF** (rota `/contratos/{id}/pdf`, só para o dono), que gera o contrato de locação no
-modelo usado pela empresa (10 cláusulas), com os dados do cliente, da moto e do contrato
-(valor e caução por extenso, datas, km inicial). O PDF só é montado no clique.
+A ficha do contrato tem o botão **Contrato em PDF** (rota `/contratos/{id}/pdf`, só para o dono), que gera o contrato com os dados do
+cliente, da moto e do contrato (valor e caução por extenso, datas, km inicial). O PDF só é montado no clique. Há dois modelos,
+escolhidos pelo `tipo_contrato`:
 
-- **Texto do modelo:** `src/domain/contrato_modelo.py`. As multas, prazos e valores fixos
+- **Promessa de compra (16/11/2026):** `src/domain/contrato_promessa.py` (texto) e `src/services/contrato_promessa_pdf.py` (visual). É o
+  modelo do contrato de exemplo do Alberto: 13 cláusulas, quadros de partes, veículo e preço, resumo de multas, assinaturas e duas
+  testemunhas, com faixa preta e logo no cabeçalho (`static/contrato/`), marca d'água e rubricas no rodapé. As multas e prazos ficam em
+  `TERMOS` desse módulo e o **resumo de multas sai de `TERMOS`**, então nunca destoa das cláusulas. O preço vem do contrato (entrada,
+  parcelas, total, caução) e as datas da agenda (1ª e última parcela, dia da semana). O arquivo baixado se chama
+  `Contrato_<Cliente>_<PLACA>.pdf`. Com várias motos, cada uma ganha o seu quadro. Locador pessoa física (sem `LOCADOR_CNPJ`) ou
+  jurídica (com CNPJ). A fonte é a padrão do PDF (Helvetica), não a Poppins do exemplo.
+- **Locação simples:** o modelo antigo de 10 cláusulas (`src/domain/contrato_modelo.py`), sem mudança.
+
+- **Texto do modelo antigo (locação simples):** `src/domain/contrato_modelo.py`. As multas, prazos e valores fixos
   do modelo ficam no dicionário `TERMOS` (um lugar só, para revisão com o advogado); o
   restante do texto é a redação do contrato original.
 - **Dados da empresa (LOCADOR):** variáveis `LOCADOR_NOME`, `LOCADOR_CNPJ` etc. (lista completa em `.env.example`; em produção, no Coolify), fora do git. Sem elas o contrato sai com linhas em branco no lugar do locador.
-- **Contrato com várias motos:** a cláusula 1.1 lista todas (a quilometragem inicial é a da principal; as outras saem em branco). As demais cláusulas continuam no singular ("o veículo"); revise o texto para esse caso.
-- **Campos que o cadastro não tem** (nacionalidade, estado civil, profissão, RG do
-  cliente e motor da moto) saem como linha em branco para preencher à mão.
-- **Fora do contrato gerado:** a cláusula 6.2 (multa e juros por atraso) usa os valores
-  fixos do modelo (`atraso_multa` e `atraso_juros_por_dia`), não os percentuais da tela
-  Configurações; se a operação mudar de regra, ajuste `TERMOS` ou passe a usar a
-  configuração.
+- **Contrato com várias motos (modelo antigo):** a cláusula 1.1 lista todas (a quilometragem inicial é a da principal; as outras saem em branco). As demais cláusulas continuam no singular ("o veículo"); revise o texto para esse caso.
+- **Dados do contrato no cadastro (migration `20261117120000_dados_do_contrato.sql`):** cliente com data de nascimento, nacionalidade,
+  naturalidade, estado civil, profissão, RG e órgão, CEP e referências; moto com motor e combustível. Todos opcionais: o que faltar sai
+  como linha em branco para preencher à mão. **Aplique a migration no Supabase antes do deploy** (o cadastro grava essas colunas).
+- **Locador no contrato novo:** cidade e foro vêm de `LOCADOR_CIDADE` e `LOCADOR_FORO` (ex.: `Crato/CE`; sem eles, o foro padrão é Crato/CE),
+  e a linha de contato do cabeçalho de `LOCADOR_CIDADE` e `LOCADOR_TELEFONES`. Confira essas variáveis no Coolify.
+- **Fora do contrato gerado:** a multa e os juros por atraso (cláusula 8.2 do modelo novo, 6.2 do antigo) e a multa de R$ 10,00 por erro
+  na troca de óleo (5.13.1) usam os valores fixos de `TERMOS`, não os da tela Configurações; se a operação mudar de regra, ajuste `TERMOS`
+  ou passe a usar a configuração.
 - Modelo padrão de contrato: revise o texto final com um advogado antes de usar.
 
 ## Testes

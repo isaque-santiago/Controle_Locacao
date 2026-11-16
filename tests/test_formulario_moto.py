@@ -34,6 +34,13 @@ def test_cadastro_valido_normaliza_os_dados():
     assert dados["data_aquisicao"] == "2026-03-01"
 
 
+def test_motor_e_combustivel_sao_opcionais_e_normalizados():
+    dados = ler_moto({**VALIDA, "motor": " KC16E8E484355 ", "combustivel": "Álcool / Gasolina"}, nova=True)
+    assert dados["motor"] == "KC16E8E484355" and dados["combustivel"] == "Álcool / Gasolina"
+    sem = ler_moto(VALIDA, nova=True)
+    assert sem["motor"] is None and sem["combustivel"] is None
+
+
 def test_edicao_nao_leva_km_atual():
     assert "km_atual" not in ler_moto(VALIDA, nova=False)
 

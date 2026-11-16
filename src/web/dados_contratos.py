@@ -3,6 +3,7 @@
 Fronteira de leitura entre a rota e a camada de dados; os testes das rotas trocam estes serviços
 por dados fictícios."""
 
+import unicodedata
 from datetime import date
 from decimal import Decimal
 
@@ -47,7 +48,18 @@ def gerar_pdf(registro):
     contrato, moto = registro["contrato"], registro["moto"]
     frota = contratos.motos_do_contrato(contrato["id"]) or [moto]
     placa = "".join(c for c in str(moto.get("placa", "")) if c.isalnum()).upper() or "moto"
-    return contrato_pdf.gerar(contrato, registro["cliente"], frota), f"contrato_{placa}_{contrato['data_inicio']}.pdf"
+    if contrato.get("tipo_contrato") == "promessa_compra":
+        nome = _so_ascii(registro["cliente"].get("nome")) or "Cliente"
+        arquivo = f"Contrato_{nome}_{placa}.pdf"
+    else:
+        arquivo = f"contrato_{placa}_{contrato['data_inicio']}.pdf"
+    return contrato_pdf.gerar(contrato, registro["cliente"], frota), arquivo
+
+
+def _so_ascii(texto):
+    """'Alberto Filho da Silva' -> 'Alberto_Filho_da_Silva' (sem acento nem símbolo: vai no cabeçalho do download)."""
+    sem_acento = unicodedata.normalize("NFKD", str(texto or "")).encode("ascii", "ignore").decode()
+    return "_".join("".join(c if c.isalnum() else " " for c in sem_acento).split())
 
 
 def _avarias(checklist):

@@ -17,8 +17,9 @@ router = APIRouter()
 
 def _valores(cliente=None):
     c = cliente or {}
-    return {chave: str(c.get(chave) or "")[:10] if chave == "cnh_validade" else c.get(chave) or "" for chave in (
-        "nome", "cpf", "telefone", "whatsapp", "email", "endereco", "cnh_numero", "cnh_categoria", "cnh_validade", "observacoes"
+    return {chave: str(c.get(chave) or "")[:10] if chave in ("cnh_validade", "data_nascimento") else c.get(chave) or "" for chave in (
+        "nome", "cpf", "telefone", "whatsapp", "email", "endereco", "cnh_numero", "cnh_categoria", "cnh_validade", "observacoes",
+        "nacionalidade", "naturalidade", "estado_civil", "profissao", "data_nascimento", "rg", "rg_orgao", "cep", "referencias",
     )} | {"status": c.get("status") or "ativo"}
 
 
