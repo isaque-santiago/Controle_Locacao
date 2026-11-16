@@ -1222,7 +1222,7 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 3. **Nome do app: "LA Locadora"** (decisão de 16/11/2026), um só nome para tudo: `name`/`short_name` do manifest, `apple-mobile-web-app-title`, `<title>` das páginas e textos do sistema (inclui o item 9, que passa a ser "LA Motos" → "LA Locadora").
 4. **Acesso padronizado dos locatários.**
    - **E-mail:** `nome.sobrenome@locadora.com` (minúsculas, sem acento nem espaço). **Homônimos:** sufixo numérico (`joao.silva2@locadora.com`).
-   - **Senha:** o sistema **não tem data de nascimento** (`clientes` guarda nome, CPF, telefone, WhatsApp, e-mail e CNH). Usa-se então o **CPF**, que é obrigatório e único: primeiro nome + **últimos 6 dígitos do CPF**, sem separador (ex.: `joao123456`). Alterável: só mudar a regra pura em `src/domain`.
+   - **Senha:** o sistema **não tem data de nascimento** (`clientes` guarda nome, CPF, telefone, WhatsApp, e-mail e CNH). Usa-se então o **CPF**, que é obrigatório e único (**confirmado em 16/11/2026**): primeiro nome + **últimos 6 dígitos do CPF**, sem separador (ex.: `joao123456`). Alterável: só mudar a regra pura em `src/domain`.
    - **Segurança:** o dono aceitou a senha previsível, pois o locatário esquece senhas. A **troca de senha pelo próprio locatário continua existindo** (conferir/manter a tela do portal) e o "Esqueci minha senha" (22.2) segue valendo.
    - **Locatários já existentes:** a decidir (manter a senha atual até o dono redefinir, ou redefinir todos).
 5. **Contratos no formato e valores dos "Contratos Locadora"** (conversa do Claude). Depende de ler os contratos de lá e comparar com `src/domain/contrato_modelo.py`.
@@ -1240,5 +1240,5 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 
 ### 23.3 Pendências de esclarecimento
 
-- Item 4: confirmar que a senha é primeiro nome + últimos 6 dígitos do CPF e o que fazer com os locatários atuais.
+- Item 4: o que fazer com os locatários atuais (manter a senha ou redefinir todos).
 - Item 6: novos horários de envio, e confirmar `clientes.whatsapp_grupo_id`.
