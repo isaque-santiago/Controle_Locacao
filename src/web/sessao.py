@@ -48,6 +48,11 @@ class Sessao:
     ultima_atividade: float
     csrf_token: str = field(default_factory=lambda: secrets.token_urlsafe(32))
     criada_em: float = 0.0  # 0 = desconhecida (arquivo de desenvolvimento antigo): só vale a inatividade
+    # Cookies no navegador: quando foram emitidos e se precisam ser reemitidos já (token de renovação novo, sessão refeita).
+    cookie_emitido_em: float = 0.0
+    cookie_pendente: bool = False
+    # Token de renovação do cookie `lembrar` que refez esta sessão (outra requisição com o mesmo cookie reaproveita a sessão).
+    refresh_de_origem: str = ""
     # Serializa a renovação dos tokens: o refresh token é de uso único e várias
     # requisições HTMX da mesma sessão podem chegar ao mesmo tempo.
     trava: Lock = field(default_factory=Lock, repr=False)
@@ -91,8 +96,13 @@ class ArmazemSessoes:
         access_token: str,
         refresh_token: str,
         expira_em: float,
+        criada_em: float | None = None,
+        csrf_token: str | None = None,
     ) -> Sessao:
-        """Abre uma sessão nova, com identificador novo (evita fixação de sessão)."""
+        """Abre uma sessão nova, com identificador novo (evita fixação de sessão).
+
+        `criada_em` e `csrf_token` só vêm preenchidos quando a sessão é refeita a partir do cookie `lembrar`
+        (a vida máxima conta desde o login original e as páginas já abertas continuam com o token CSRF delas)."""
         sessao = Sessao(
             id=secrets.token_urlsafe(32),
             usuario_id=usuario_id,
@@ -102,7 +112,8 @@ class ArmazemSessoes:
             refresh_token=refresh_token,
             expira_em=expira_em,
             ultima_atividade=self._relogio(),
-            criada_em=self._relogio(),
+            criada_em=criada_em or self._relogio(),
+            **({"csrf_token": csrf_token} if csrf_token else {}),
         )
         with self._trava:
             self._limpar_expiradas_sem_trava()
@@ -135,6 +146,25 @@ class ArmazemSessoes:
             sessao = self._sessoes.pop(sessao_id, None)
             self._salvar_sem_trava()
             return sessao
+
+    def contem(self, sessao_id: str | None) -> bool:
+        """A sessão ainda existe (sem renovar o prazo de inatividade)."""
+        with self._trava:
+            return sessao_id in self._sessoes
+
+    def buscar_por_refresh_token(self, refresh_token: str) -> Sessao | None:
+        """Sessão que já foi refeita com este token de renovação (requisições simultâneas depois de um reinício)."""
+        with self._trava:
+            return next((s for s in self._sessoes.values() if refresh_token in (s.refresh_token, s.refresh_de_origem)), None)
+
+    def encerrar_do_usuario(self, usuario_id: str) -> int:
+        """Remove todas as sessões do usuário ("Sair de todos os dispositivos"). Devolve quantas eram."""
+        with self._trava:
+            ids = [i for i, s in self._sessoes.items() if s.usuario_id == usuario_id]
+            for i in ids:
+                del self._sessoes[i]
+            self._salvar_sem_trava()
+            return len(ids)
 
     def salvar(self) -> None:
         """Grava as sessões no arquivo (sem efeito sem arquivo). Chamado quando os tokens são renovados: o refresh

@@ -21,6 +21,7 @@ from src.web.dependencias import (
     validar_csrf,
     validar_csrf_login,
 )
+from src.web.lacre import apagar_cookies, gravar_cookies
 from src.web.seguranca import eh_https
 from src.web.sessao import Sessao
 from src.web.templates import renderizar
@@ -162,14 +163,7 @@ def entrar(
 
     destino = proximo if papel == PAPEL_DONO else "/portal"
     resposta = RedirectResponse(destino, status_code=303)
-    resposta.set_cookie(
-        COOKIE_SESSAO,
-        sessao.id,
-        httponly=True,
-        secure=eh_https(request),
-        samesite="lax",
-        path="/",
-    )
+    gravar_cookies(resposta, eh_https(request), sessao, estado.lacre, estado.relogio())
     resposta.delete_cookie(COOKIE_CSRF_LOGIN, path="/login")
     return resposta
 
@@ -187,5 +181,5 @@ def sair(request: Request):
     if sessao is not None:
         estado.servico.sair(sessao.access_token)
     resposta = RedirectResponse("/login", status_code=303)
-    resposta.delete_cookie(COOKIE_SESSAO, path="/")
+    apagar_cookies(resposta)
     return resposta

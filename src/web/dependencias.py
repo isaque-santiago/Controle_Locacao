@@ -5,6 +5,9 @@ Supabase da requisição é definido no contexto, e as rotas síncronas (que rod
 thread, com cópia do contexto) o enxergam por `src.db.get_client()`.
 """
 
+import logging
+import threading
+
 from fastapi import Depends, Form, Header, Request
 from starlette.concurrency import run_in_threadpool
 
@@ -14,10 +17,13 @@ from src.services.autenticacao import (
     PAPEL_LOCATARIO,
     SessaoSupabaseInvalida,
 )
+from src.web.lacre import COOKIE_LEMBRAR, COOKIE_SESSAO
 from src.web.seguranca import tokens_iguais
 from src.web.sessao import Sessao
 
-COOKIE_SESSAO = "sessao"
+log = logging.getLogger(__name__)
+# Refazer sessões a partir do cookie `lembrar` uma de cada vez: o token de renovação é de uso único.
+_TRAVA_RESTAURACAO = threading.Lock()
 COOKIE_CSRF_LOGIN = "csrf_login"
 
 
@@ -53,15 +59,51 @@ def _garantir_tokens_validos(app_state, sessao: Sessao) -> None:
             sessao.refresh_token = novos.refresh_token
             sessao.expira_em = novos.expira_em
             sessao.cliente = None
+            sessao.cookie_pendente = True  # o cookie `lembrar` leva o token de renovação: precisa do novo
             app_state.armazem.salvar()
         if sessao.cliente is None:
             sessao.cliente = app_state.servico.cliente(sessao.access_token)
 
 
+def _restaurar_sessao(request: Request) -> Sessao | None:
+    """Refaz a sessão em memória a partir do cookie `lembrar` (depois de um deploy ou reinício). None se não der."""
+    estado = request.app.state
+    dados = estado.lacre.abrir(request.cookies.get(COOKIE_LEMBRAR))
+    if dados is None:
+        return None
+    with _TRAVA_RESTAURACAO:
+        existente = estado.armazem.buscar_por_refresh_token(dados["r"])
+        if existente is not None:  # outra requisição simultânea já refez esta sessão
+            existente.cookie_pendente = True
+            return existente
+        try:
+            tokens = estado.servico.renovar(dados["r"])
+            cliente = estado.servico.cliente(tokens.access_token)
+            papel = estado.servico.papel(cliente)
+        except SessaoSupabaseInvalida:
+            return None  # revogado ("Sair de todos os dispositivos"), senha trocada ou vencido no Supabase
+        except Exception:
+            log.warning("Não foi possível refazer a sessão a partir do cookie lembrar.", exc_info=True)
+            return None
+        if tokens.usuario_id != dados["u"] or papel not in (PAPEL_DONO, PAPEL_LOCATARIO):
+            return None
+        sessao = estado.armazem.criar(
+            usuario_id=tokens.usuario_id, email=tokens.email, papel=papel,
+            access_token=tokens.access_token, refresh_token=tokens.refresh_token, expira_em=tokens.expira_em,
+            criada_em=dados["c"], csrf_token=dados["t"],
+        )
+        sessao.cliente = cliente
+        sessao.cookie_pendente = True
+        sessao.refresh_de_origem = dados["r"]
+        return sessao
+
+
 async def sessao_opcional(request: Request) -> Sessao | None:
-    """Sessão do cookie (renovando o prazo de inatividade), ou None."""
+    """Sessão do cookie (renovando o prazo de inatividade), ou None. Sem sessão em memória, tenta o cookie `lembrar`."""
     estado = request.app.state
     sessao = estado.armazem.obter(request.cookies.get(COOKIE_SESSAO))
+    if sessao is None and estado.lacre.ativo and request.cookies.get(COOKIE_LEMBRAR):
+        sessao = await run_in_threadpool(_restaurar_sessao, request)
     if sessao is None:
         return None
     await run_in_threadpool(_garantir_tokens_validos, estado, sessao)
