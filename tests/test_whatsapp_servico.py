@@ -10,7 +10,7 @@ from src.services import whatsapp
 from src.services.evolution import ErroEnvio, EvolutionConfiguracaoInvalida, EvolutionIndisponivel
 
 OP = OpcoesTexto(empresa="LA Motos", contato="o Alisson")
-QUINTA_10H = datetime(2026, 11, 12, 10, 0, tzinfo=FUSO)
+QUINTA_11H40 = datetime(2026, 11, 12, 11, 40, tzinfo=FUSO)  # dentro do disparo das 11:30
 QUINTA_20H = datetime(2026, 11, 12, 20, 0, tzinfo=FUSO)
 DOMINGO_10H = datetime(2026, 11, 15, 10, 0, tzinfo=FUSO)
 
@@ -86,7 +86,7 @@ def instalar(monkeypatch):
     return _instalar
 
 
-def _executar(evolution, agora=QUINTA_10H, pausas=None):
+def _executar(evolution, agora=QUINTA_11H40, pausas=None):
     pausas = pausas if pausas is not None else []
     return whatsapp.executar(evolution, OP, agora, dormir=pausas.append, sorteio=lambda a, b: 30)
 
@@ -128,12 +128,12 @@ def test_cliente_sem_whatsapp_vai_sem_numero(instalar):
     assert repo.enfileirado[0][0]["numero"] is None
 
 
-def test_domingo_enfileira_para_segunda_as_8h_e_nao_envia(instalar):
+def test_domingo_enfileira_para_segunda_as_7h30_e_nao_envia(instalar):
     repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
     evolution = EvolutionFalsa()
     resumo = _executar(evolution, agora=DOMINGO_10H)
     assert repo.dias_lidos == [date(2026, 11, 16)]
-    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-16T08:00:00-03:00"
+    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-16T07:30:00-03:00"
     assert resumo["envio"] == {"parou_por": "fora_da_janela"} and evolution.enviados == []
 
 
@@ -141,7 +141,7 @@ def test_fora_do_horario_enfileira_mas_nao_envia(instalar):
     repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
     evolution = EvolutionFalsa()
     resumo = _executar(evolution, agora=QUINTA_20H)
-    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-13T08:00:00-03:00"
+    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-13T07:30:00-03:00"
     assert resumo["envio"]["parou_por"] == "fora_da_janela" and evolution.enviados == []
 
 

@@ -3,8 +3,8 @@
 Uma execução (`executar`) faz, nesta ordem:
 1. lê tudo numa chamada (`rpc_whatsapp_dados`); com o envio desligado em Configurações, para aqui;
 2. aplica as regras de `src/domain` e enfileira as mensagens devidas, já agrupadas por cliente. Isso acontece a
-   qualquer hora: o que cair fora da janela (8h às 19h, segunda a sábado, sem feriado) fica marcado para o próximo
-   horário válido;
+   qualquer hora: o que cair fora de um disparo (7:30, 11:30 e 15:00, segunda a sábado, sem feriado) fica marcado para o
+   próximo disparo;
 3. confere a instância do WhatsApp e grava o estado da rodada (o Dashboard avisa o dono se ela cair ou a rodada parar);
 4. dentro da janela, envia as pendentes pela Evolution, com pausa aleatória entre elas, conferindo antes se o
    número tem WhatsApp.

@@ -1,4 +1,4 @@
-"""Testes de src/domain/janela_envio.py: 8h às 19h, segunda a sábado, sem feriado nacional."""
+"""Testes de src/domain/janela_envio.py: disparos às 7:30, 11:30 e 15:00, segunda a sábado, sem feriado nacional."""
 
 from datetime import date, datetime, timezone
 
@@ -21,55 +21,58 @@ def test_dias_de_envio():
     assert not dia_de_envio(date(2026, 11, 20))   # sexta, Consciência Negra
 
 
-@pytest.mark.parametrize("hora, minuto, esperado", [(7, 59, False), (8, 0, True), (18, 59, True), (19, 0, False), (23, 0, False)])
-def test_limites_do_horario(hora, minuto, esperado):
+@pytest.mark.parametrize("hora, minuto, esperado", [
+    (7, 29, False), (7, 30, True), (8, 29, True), (8, 30, False),      # disparo das 7:30 (aberto por 1 hora)
+    (11, 29, False), (11, 30, True), (12, 29, True), (12, 30, False),  # disparo das 11:30
+    (14, 59, False), (15, 0, True), (15, 59, True), (16, 0, False),    # disparo das 15:00
+    (10, 0, False), (23, 0, False),
+])
+def test_limites_dos_disparos(hora, minuto, esperado):
     assert dentro_da_janela(_br(2026, 11, 5, hora, minuto)) is esperado
 
 
 def test_domingo_e_feriado_fora_da_janela():
-    assert not dentro_da_janela(_br(2026, 11, 8, 10))
-    assert not dentro_da_janela(_br(2026, 11, 20, 10))
+    assert not dentro_da_janela(_br(2026, 11, 8, 11, 30))
+    assert not dentro_da_janela(_br(2026, 11, 20, 11, 30))
 
 
-def test_horario_dentro_da_janela_nao_muda():
-    assert proximo_horario_valido(_br(2026, 11, 5, 10, 30)) == _br(2026, 11, 5, 10, 30)
+def test_horario_dentro_de_um_disparo_nao_muda():
+    assert proximo_horario_valido(_br(2026, 11, 5, 11, 50)) == _br(2026, 11, 5, 11, 50)
 
 
-def test_antes_da_abertura_vai_para_as_8h_do_mesmo_dia():
-    assert proximo_horario_valido(_br(2026, 11, 5, 6, 0)) == _br(2026, 11, 5, 8, 0)
+def test_fora_de_disparo_vai_para_o_proximo_do_mesmo_dia():
+    assert proximo_horario_valido(_br(2026, 11, 5, 6, 0)) == _br(2026, 11, 5, 7, 30)
+    assert proximo_horario_valido(_br(2026, 11, 5, 9, 0)) == _br(2026, 11, 5, 11, 30)
+    assert proximo_horario_valido(_br(2026, 11, 5, 13, 0)) == _br(2026, 11, 5, 15, 0)
 
 
-def test_depois_do_fechamento_vai_para_as_8h_do_dia_seguinte():
-    assert proximo_horario_valido(_br(2026, 11, 5, 19, 0)) == _br(2026, 11, 6, 8, 0)
+def test_depois_do_ultimo_disparo_vai_para_as_7h30_do_dia_seguinte():
+    assert proximo_horario_valido(_br(2026, 11, 5, 16, 0)) == _br(2026, 11, 6, 7, 30)
+    assert proximo_horario_valido(_br(2026, 11, 5, 23, 0)) == _br(2026, 11, 6, 7, 30)
 
 
-def test_sabado_a_noite_vai_para_segunda():
-    assert proximo_horario_valido(_br(2026, 11, 7, 20, 0)) == _br(2026, 11, 9, 8, 0)
+def test_sabado_a_noite_e_domingo_vao_para_segunda():
+    assert proximo_horario_valido(_br(2026, 11, 7, 20, 0)) == _br(2026, 11, 9, 7, 30)
+    assert proximo_horario_valido(_br(2026, 11, 8, 9, 0)) == _br(2026, 11, 9, 7, 30)
 
 
-def test_domingo_vai_para_segunda():
-    assert proximo_horario_valido(_br(2026, 11, 8, 9, 0)) == _br(2026, 11, 9, 8, 0)
-
-
-def test_feriado_vai_para_o_proximo_dia_util():
+def test_feriado_vai_para_o_proximo_dia_de_envio():
     # 15/11/2026 é domingo e feriado; 16/11 é segunda.
-    assert proximo_horario_valido(_br(2026, 11, 15, 10, 0)) == _br(2026, 11, 16, 8, 0)
+    assert proximo_horario_valido(_br(2026, 11, 15, 10, 0)) == _br(2026, 11, 16, 7, 30)
     # Sexta-feira Santa (3/4/2026): sábado 4/4 tem envio.
-    assert proximo_horario_valido(_br(2026, 4, 3, 10, 0)) == _br(2026, 4, 4, 8, 0)
-
-
-def test_feriado_seguido_de_domingo():
+    assert proximo_horario_valido(_br(2026, 4, 3, 10, 0)) == _br(2026, 4, 4, 7, 30)
     # 20/11/2026 (sexta, feriado): sábado 21 tem envio.
-    assert proximo_horario_valido(_br(2026, 11, 20, 9, 0)) == _br(2026, 11, 21, 8, 0)
+    assert proximo_horario_valido(_br(2026, 11, 20, 9, 0)) == _br(2026, 11, 21, 7, 30)
     # 1/1/2027 é sexta (feriado); sábado 2 tem envio.
-    assert proximo_horario_valido(_br(2027, 1, 1, 9, 0)) == _br(2027, 1, 2, 8, 0)
+    assert proximo_horario_valido(_br(2027, 1, 1, 9, 0)) == _br(2027, 1, 2, 7, 30)
 
 
 def test_converte_utc_para_o_horario_de_brasilia():
-    # 10h UTC = 7h em Brasília (sem horário de verão desde 2019): ainda fechado.
+    # 10h UTC = 7h em Brasília (sem horário de verão desde 2019): ainda fechado; o disparo abre às 7:30.
     momento = datetime(2026, 11, 5, 10, 0, tzinfo=timezone.utc)
     assert not dentro_da_janela(momento)
-    assert proximo_horario_valido(momento) == _br(2026, 11, 5, 8, 0)
+    assert proximo_horario_valido(momento) == _br(2026, 11, 5, 7, 30)
+    assert dentro_da_janela(datetime(2026, 11, 5, 10, 45, tzinfo=timezone.utc))  # 7:45 em Brasília
 
 
 def test_exige_fuso_horario():
