@@ -18,6 +18,7 @@ from src.web.apresentacao import (
     tema_do_cookie,
 )
 from src.domain.acesso_locatario import eh_email_de_locatario
+from src.domain.sessao_longa import limite_do_aviso
 from src.domain.entradas import formatar_telefone
 from src.domain.formatadores import formatar_data_hora, mascarar_cpf
 from src.domain.numero_whatsapp import formatar_numero
@@ -86,7 +87,7 @@ def renderizar(
         "csrf_token": sessao.csrf_token if sessao else "",
         "tema": tema_do_cookie(request.cookies.get("tema")),
         "caminho_atual": request.url.path,
-        "sessao_limite_segundos": request.app.state.armazem.limite_inatividade if sessao else 0,
+        "sessao_limite_segundos": limite_do_aviso(request.app.state.armazem.limite_inatividade) if sessao else 0,
     }
     comum["avisos"] = _consumir_avisos(sessao, nome)
     comum.update(contexto or {})

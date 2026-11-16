@@ -48,10 +48,11 @@ def test_sessao_ativa_expira_pela_vida_maxima():
     relogio = Relogio()
     armazem = ArmazemSessoes(relogio=relogio)
     sessao = _abrir(armazem)
-    for _ in range(int(LIMITE_VIDA_SEGUNDOS // 600) - 1):  # uso contínuo: atividade a cada 10 min
-        relogio.avancar(600)
+    passo = 30 * 86400  # uso contínuo: atividade a cada 30 dias (dentro do limite de inatividade)
+    for _ in range(int(LIMITE_VIDA_SEGUNDOS // passo)):
+        relogio.avancar(passo)
         assert armazem.obter(sessao.id) is not None
-    relogio.avancar(1200)
+    relogio.avancar(passo)
     assert armazem.obter(sessao.id) is None
 
 

@@ -21,9 +21,11 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
-LIMITE_INATIVIDADE_SEGUNDOS = 1800
-# Vida máxima de uma sessão, mesmo com uso contínuo: obriga a entrar de novo e limita o estrago de um cookie roubado.
-LIMITE_VIDA_SEGUNDOS = 12 * 3600
+from src.domain.sessao_longa import INATIVIDADE_MAXIMA_SEGUNDOS, VIDA_MAXIMA_SEGUNDOS, sessao_vencida
+
+# Prazos da sessão (política em src/domain/sessao_longa.py): 90 dias sem uso, ou 1 ano de vida mesmo com uso contínuo.
+LIMITE_INATIVIDADE_SEGUNDOS = INATIVIDADE_MAXIMA_SEGUNDOS
+LIMITE_VIDA_SEGUNDOS = VIDA_MAXIMA_SEGUNDOS
 # A atividade (prazo de inatividade) só é regravada no arquivo de tempos em tempos; o resto é gravado na hora.
 INTERVALO_SALVAR_ATIVIDADE_SEGUNDOS = 30
 # O que vai para o arquivo: o suficiente para a sessão continuar valendo. O cliente Supabase é refeito a partir do token.
@@ -146,9 +148,7 @@ class ArmazemSessoes:
 
     def _vencida(self, sessao: Sessao, agora: float) -> bool:
         """Inativa por tempo demais ou mais velha que o limite de vida."""
-        if agora - sessao.ultima_atividade > self._limite:
-            return True
-        return bool(sessao.criada_em) and agora - sessao.criada_em > LIMITE_VIDA_SEGUNDOS
+        return sessao_vencida(sessao.criada_em, sessao.ultima_atividade, agora, self._limite, LIMITE_VIDA_SEGUNDOS)
 
     def _limpar_expiradas_sem_trava(self) -> None:
         agora = self._relogio()
