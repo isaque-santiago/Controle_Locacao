@@ -72,3 +72,24 @@ def test_motivo_do_bloqueio():
         with pytest.raises(ErroDeCampos) as erro:
             ler_bloqueio({"motivo": ruim})
         assert "Motivo:" in erro.value.erros["motivo"]
+
+
+# ---------------------------------------------------------------- grupo do cliente --
+
+
+def test_ler_grupo_prefere_o_id_colado_e_normaliza():
+    from src.domain.formulario_whatsapp import ler_grupo
+    assert ler_grupo({"grupo_escolhido": "120363000000000001@g.us", "grupo_id": " 120363000000000002@G.US "}) == "120363000000000002@g.us"
+    assert ler_grupo({"grupo_escolhido": "120363000000000001@g.us", "grupo_id": ""}) == "120363000000000001@g.us"
+
+
+def test_ler_grupo_vazio_remove():
+    from src.domain.formulario_whatsapp import ler_grupo
+    assert ler_grupo({"grupo_escolhido": "", "grupo_id": ""}) is None and ler_grupo({}) is None
+
+
+def test_ler_grupo_invalido_levanta_erro_no_campo():
+    from src.domain.formulario_whatsapp import ler_grupo
+    with pytest.raises(ErroDeCampos) as erro:
+        ler_grupo({"grupo_id": "5511988887777"})
+    assert "grupo_id" in erro.value.erros

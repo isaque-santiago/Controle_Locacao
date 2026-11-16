@@ -46,7 +46,9 @@ def test_entradas_convertidas_e_historico_agrupado():
 
 
 def test_clientes():
-    assert clientes_da_leitura(BRUTO) == {"cli-1": {"nome": "Maria Souza", "whatsapp": "(11) 98888-7777"}}
+    assert clientes_da_leitura(BRUTO) == {"cli-1": {"nome": "Maria Souza", "whatsapp": "(11) 98888-7777", "grupo": None}}
+    com_grupo = {"clientes": [dict(BRUTO["clientes"][0], whatsapp_grupo_id="120363025246125486@g.us")]}
+    assert clientes_da_leitura(com_grupo)["cli-1"]["grupo"] == "120363025246125486@g.us"
 
 
 def test_a_leitura_alimenta_as_regras_de_ponta_a_ponta():

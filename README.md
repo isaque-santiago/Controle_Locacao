@@ -759,7 +759,7 @@ Para criar o usuário de serviço: crie o usuário em Authentication > Users (co
 
 Só regras em `src/domain` (sem banco, sem rede); **nenhuma mensagem é enviada ainda**. O que cada módulo faz, com testes em `tests/`:
 - `feriados.py`: feriados nacionais por ano (fixos, Carnaval, Sexta-feira Santa, Corpus Christi).
-- `janela_envio.py`: 8h às 19h (America/Sao_Paulo), segunda a sábado, sem feriado nacional; leva o que cair fora para o próximo horário válido.
+- `janela_envio.py`: três disparos por dia, às 7:30, 11:30 e 15:00 (America/Sao_Paulo; cada um aberto por 1 hora), segunda a sábado, sem feriado nacional; leva o que cair fora para o próximo disparo (era 8h às 19h até 17/11/2026).
 - `numero_whatsapp.py`: transforma o que está em `clientes.whatsapp` em `55` + DDD + número; fixo ou número estranho vira `None` (aviso `ignorada`).
 - `avisos_whatsapp.py`: quais avisos são devidos no dia de envio (lembrete de véspera e de vencimento, atraso, inadimplência, recibo, CNH, documentos, óleo, portal). Atraso, CNH vencida, documento vencido e óleo vencida seguem a escala 1º, 3º e 7º dia e depois a cada 3 dias, com teto de 10 avisos por assunto (`ConfigAvisos.max_repeticoes`). Contrato diário só recebe o lembrete do dia.
 - `textos_whatsapp.py`: os textos (fixos no código) e o agrupamento: uma mensagem por cliente por dia, um bloco por assunto, mais urgente primeiro, até 5 assuntos (o resto sai no dia seguinte). `montar_payload` já devolve o formato de `rpc_whatsapp_enfileirar`.
@@ -782,6 +782,18 @@ Migration `20261106140000_whatsapp_painel.sql` (compatível com a versão anteri
 - **Ficha do cliente, aba WhatsApp**: para onde as mensagens vão, histórico do cliente e o bloqueio. Só o dono para o envio de um cliente (com motivo; fica a data); o cliente não consegue pedir isso pelo WhatsApp.
 - **Dashboard, Precisa de atenção**: envio automático parado (sem rodada há mais de 1h30), WhatsApp desconectado, Evolution fora do ar, modo teste ligado e clientes cuja mensagem mais recente não foi entregue. Sem o envio ligado, nenhum desses alertas aparece.
 - As tabelas `mensagens_whatsapp*` não entram no backup manual (é histórico derivado, com dados pessoais).
+
+### Envio ao grupo do locatário (item 6 da seção 23, 17/11/2026)
+
+Migration `20261117130000_whatsapp_grupo.sql` (roteiro `supabase/verificar_whatsapp_grupo.sql`, só em dev, termina em ROLLBACK). Cada locatário tem um
+grupo de WhatsApp (ele, o dono, o financeiro e o número do envio automático). As mensagens automáticas vão **para o grupo**, não para `clientes.whatsapp`:
+- `clientes.whatsapp_grupo_id` (formato `...@g.us`, único por cliente). `mensagens_whatsapp.numero` continua sendo o destino e passa a aceitar o ID do grupo.
+- Só **cobranças e recibos** (lembretes de véspera e de vencimento, atraso, inadimplência, recibo) vão ao grupo (`TIPOS_NO_GRUPO` em `src/domain/grupo_whatsapp.py`);
+  CNH, óleo, documentos e portal ficam fora por enquanto (não são enfileirados).
+- Cliente sem grupo: a mensagem fica `ignorada`, com o motivo «Cliente sem grupo de WhatsApp cadastrado.». O envio ao grupo não confere se o número tem WhatsApp.
+- Cada rodada, com a instância conectada, grava a lista de grupos da Evolution (`whatsapp_grupos`, `GET /group/fetchAllGroups`). Na ficha do cliente (aba WhatsApp)
+  o dono escolhe o grupo na lista ou cola o ID. O site não fala com a Evolution (a chave dela fica só na tarefa agendada).
+- Em modo teste tudo continua indo só para o número de teste, com o aviso «iria para o grupo do cliente».
 
 ### Aviso de senha do portal alterada (WhatsApp)
 

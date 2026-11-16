@@ -13,7 +13,7 @@ from datetime import datetime
 
 from src.domain.avisos_whatsapp import Aviso
 from src.domain.formatadores import formatar_data, formatar_moeda, formatar_placa
-from src.domain.numero_whatsapp import normalizar_numero
+from src.domain.grupo_whatsapp import normalizar_grupo
 
 # Mais urgente primeiro: cobranças, depois documentos, manutenção, CNH e portal.
 ORDEM = (
@@ -250,8 +250,9 @@ def montar_mensagem(nome: str, avisos, opcoes: OpcoesTexto | None = None) -> tup
 def montar_payload(clientes: dict, avisos, momento: datetime, opcoes: OpcoesTexto | None = None) -> list[dict]:
     """Mensagens no formato de `rpc_whatsapp_enfileirar`, uma por cliente.
 
-    `clientes`: `{cliente_id: {"nome", "whatsapp"}}`. `momento`: quando a mensagem pode sair (com fuso; já dentro da
-    janela). Cliente sem número válido vai com `numero: None` e a RPC grava como `ignorada`.
+    `clientes`: `{cliente_id: {"nome", "grupo"}}`. `momento`: quando a mensagem pode sair (com fuso; já dentro de um
+    disparo). O destino é o grupo de WhatsApp do cliente (vai no campo `numero`, que guarda número ou grupo). Cliente
+    sem grupo válido vai com `numero: None` e a RPC grava como `ignorada`.
     """
     por_cliente: dict[str, list[Aviso]] = {}
     for aviso in avisos:
@@ -264,7 +265,7 @@ def montar_payload(clientes: dict, avisos, momento: datetime, opcoes: OpcoesText
         texto, entram, _ = montar_mensagem(cliente["nome"], lista, opcoes)
         mensagens.append({
             "cliente_id": cliente_id,
-            "numero": normalizar_numero(cliente.get("whatsapp")),
+            "numero": normalizar_grupo(cliente.get("grupo")),
             "texto": texto,
             "enviar_apos": momento.isoformat(),
             "itens": [

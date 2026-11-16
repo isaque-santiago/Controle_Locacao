@@ -30,6 +30,8 @@ def normalizar_numero(texto) -> str | None:
 def formatar_numero(numero) -> str:
     """5511988887777 -> (11) 98888-7777, para a tela; o que não for um número normalizado volta como veio."""
     texto = str(numero or "")
+    if texto.endswith("@g.us"):
+        return "grupo de WhatsApp"  # o ID do grupo não diz nada ao dono
     if not re.fullmatch(r"55\d{10,11}", texto):
         return texto
     ddd, assinante = texto[2:4], texto[4:]

@@ -51,5 +51,7 @@ def entradas_das_regras(bruto: dict) -> dict:
 
 
 def clientes_da_leitura(bruto: dict) -> dict:
-    """`{cliente_id: {"nome", "whatsapp"}}` para montar as mensagens."""
-    return {c["id"]: {"nome": c["nome"], "whatsapp": c.get("whatsapp")} for c in bruto["clientes"]}
+    """`{cliente_id: {"nome", "whatsapp", "grupo"}}` para montar as mensagens. `grupo` é o ID do grupo de WhatsApp do
+    cliente (`clientes.whatsapp_grupo_id`), que `repositories.mensagens_whatsapp.dados` junta à leitura."""
+    return {c["id"]: {"nome": c["nome"], "whatsapp": c.get("whatsapp"), "grupo": c.get("whatsapp_grupo_id")}
+            for c in bruto["clientes"]}

@@ -113,3 +113,31 @@ def test_resposta_que_nao_e_json_e_indisponibilidade():
 
 def test_mascara_do_numero():
     assert mascarar_numero("falhou para 5511988887777 agora") == "falhou para 55119****7777 agora"
+
+
+def test_listar_grupos_devolve_id_nome_e_tamanho_sem_os_participantes():
+    def tratar(req):
+        assert req.method == "GET" and req.url.path == "/group/fetchAllGroups/locacao"
+        assert req.url.params["getParticipants"] == "false" and req.headers["apikey"] == "chave-secreta"
+        return httpx.Response(200, json=[
+            {"id": "120363025246125486@g.us", "subject": " Maria Souza - ABC1D23 ", "size": 4, "owner": "x"},
+            {"id": "120363111111111111@g.us", "subject": "", "size": "n/d"},
+            {"id": "5511988887777@s.whatsapp.net", "subject": "não é grupo"},
+            "lixo",
+        ])
+    assert _cliente(tratar).listar_grupos() == [
+        {"id": "120363025246125486@g.us", "nome": "Maria Souza - ABC1D23", "participantes": 4},
+        {"id": "120363111111111111@g.us", "nome": "(sem nome)", "participantes": None},
+    ]
+
+
+def test_listar_grupos_com_resposta_fora_do_formato_e_indisponibilidade():
+    with pytest.raises(EvolutionIndisponivel):
+        _cliente(lambda req: httpx.Response(200, json={"erro": "x"})).listar_grupos()
+
+
+def test_envio_para_grupo_usa_o_id_no_campo_number():
+    def tratar(req):
+        assert json.loads(req.content)["number"] == "120363025246125486@g.us"
+        return httpx.Response(201, json={"key": {"id": "ABC"}})
+    assert _cliente(tratar).enviar_texto("120363025246125486@g.us", "oi") == "ABC"

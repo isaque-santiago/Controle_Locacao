@@ -19,5 +19,9 @@ def desbloquear(cliente_id: str) -> None:
     whatsapp_painel.desbloquear(cliente_id)
 
 
+def definir_grupo(cliente_id: str, grupo_id: str | None) -> dict:
+    return whatsapp_painel.definir_grupo(cliente_id, grupo_id)
+
+
 def atualizar_controles(dados: dict) -> dict:
     return whatsapp_painel.atualizar_controles(dados)

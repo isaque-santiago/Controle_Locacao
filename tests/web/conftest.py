@@ -1300,6 +1300,9 @@ class BaseWhatsapp:
             msg(MENSAGEM_ENVIADA, "enviada", tentativas=1, criado_em="2026-11-05T11:00:00+00:00"),
         ]
         self.cancelados, self.reenviados, self.bloqueios, self.desbloqueios, self.controles = [], [], [], [], []
+        self.grupos = [{"id": "120363025246125486@g.us", "nome": "Maria Souza - ABC1D23", "participantes": 4, "atualizado_em": "2026-11-17T10:00:00+00:00"},
+                       {"id": "120363111111111111@g.us", "nome": "Carlos Lima - XYZ9A99", "participantes": 3, "atualizado_em": "2026-11-17T10:00:00+00:00"}]
+        self.grupos_definidos = []
         self.falhar_com = None
 
 
@@ -1334,10 +1337,16 @@ def base_whatsapp(monkeypatch):
         base.controles.append(dados)
         return dados
 
+    def definir_grupo(cliente_id, grupo_id):
+        checar()
+        base.grupos_definidos.append((cliente_id, grupo_id))
+        return {}
+
     servico = SimpleNamespace(
         listar_recentes=lambda *a, **k: list(base.mensagens),
         listar_do_cliente=lambda cliente_id, *a, **k: [m for m in base.mensagens if m["cliente_id"] == cliente_id],
         cancelar=cancelar, reenviar=reenviar, bloquear=bloquear, desbloquear=desbloquear, atualizar_controles=controles,
+        listar_grupos=lambda: list(base.grupos), definir_grupo=definir_grupo,
     )
     monkeypatch.setattr(dados_whatsapp, "whatsapp_painel", servico)
     monkeypatch.setattr(acoes_whatsapp, "whatsapp_painel", servico)

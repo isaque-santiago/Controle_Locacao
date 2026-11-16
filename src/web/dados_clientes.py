@@ -69,15 +69,19 @@ def carregar_ficha(cliente, aba, pagina=1):
     if aba == "portal":
         trocas = sorted(listar_trocas(cliente["id"]), key=lambda t: t["criado_em"], reverse=True)
         pedido_senha = pedidos_senha.aberto_do_cliente(cliente["id"])
-    mensagens, erro_mensagens = [], None
+    mensagens, erro_mensagens, grupos = [], None, []
     if aba == "whatsapp":
         try:
             mensagens = dados_whatsapp.do_cliente(cliente["id"])
         except Exception:
             logger.exception("Não foi possível ler as mensagens de WhatsApp do cliente.")
             erro_mensagens = "Não foi possível carregar o histórico de mensagens agora. Tente de novo em instantes."
+        try:
+            grupos = dados_whatsapp.grupos()
+        except Exception:  # migration do grupo ainda não aplicada: a ficha abre, só sem a lista
+            logger.exception("Não foi possível ler a lista de grupos de WhatsApp.")
     todas = sorted(parcelas, key=lambda x: x["vencimento"], reverse=True)
     recorte = calcular_pagina(len(todas), pagina, OPCOES_POR_PAGINA[0])
     return {"pagina_pagamentos": recorte, "parcelas_da_pagina": todas[recorte.inicio:recorte.fim],
-            "contrato_ativo": contrato_ativo, "trocas": trocas, "pedido_senha": pedido_senha, "mensagens": mensagens, "erro_mensagens": erro_mensagens, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
+            "contrato_ativo": contrato_ativo, "trocas": trocas, "pedido_senha": pedido_senha, "mensagens": mensagens, "erro_mensagens": erro_mensagens, "grupos": grupos, "contratos": contratos_com_moto, "parcelas": sorted(parcelas, key=lambda x: x["vencimento"], reverse=True),
             "historicos": historicos, "pago": pago, "em_aberto": em_aberto, "atrasado": atrasado}

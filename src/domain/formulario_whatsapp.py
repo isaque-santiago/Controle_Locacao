@@ -6,6 +6,7 @@ mensagens vão aos clientes."""
 
 from src.domain.entradas import inteiro_campo
 from src.domain.formulario_moto import ErroDeCampos, _coletar, _texto
+from src.domain.grupo_whatsapp import normalizar_grupo
 from src.domain.numero_whatsapp import formatar_numero, normalizar_numero
 
 MAX_REPETICOES_MINIMO, MAX_REPETICOES_MAXIMO = 1, 100
@@ -78,3 +79,15 @@ def ler_bloqueio(entrada: dict) -> str:
     if len(motivo) > MOTIVO_MAXIMO:
         raise ErroDeCampos({"motivo": f"Motivo: use no máximo {MOTIVO_MAXIMO} caracteres."})
     return motivo
+
+
+def ler_grupo(entrada: dict) -> str | None:
+    """O grupo de WhatsApp do cliente: o ID colado (tem prioridade) ou o escolhido na lista. Vazio = sem grupo (devolve None)."""
+    digitado, escolhido = _texto(entrada, "grupo_id"), _texto(entrada, "grupo_escolhido")
+    bruto = digitado or escolhido
+    if not bruto:
+        return None
+    grupo = normalizar_grupo(bruto)
+    if grupo is None:
+        raise ErroDeCampos({"grupo_id": "ID de grupo inválido. Ele termina em @g.us (por exemplo, 120363025246125486@g.us). Prefira escolher o grupo na lista."})
+    return grupo

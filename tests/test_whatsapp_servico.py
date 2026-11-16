@@ -10,19 +10,22 @@ from src.services import whatsapp
 from src.services.evolution import ErroEnvio, EvolutionConfiguracaoInvalida, EvolutionIndisponivel
 
 OP = OpcoesTexto(empresa="LA Motos", contato="o Alisson")
-QUINTA_10H = datetime(2026, 11, 12, 10, 0, tzinfo=FUSO)
+QUINTA_11H40 = datetime(2026, 11, 12, 11, 40, tzinfo=FUSO)  # dentro do disparo das 11:30
 QUINTA_20H = datetime(2026, 11, 12, 20, 0, tzinfo=FUSO)
 DOMINGO_10H = datetime(2026, 11, 15, 10, 0, tzinfo=FUSO)
 
 
-def _bruto(ativo=True, modo_teste=False, numero_teste=None, whatsapp="(11) 98888-7777"):
+GRUPO = "120363025246125486@g.us"
+
+
+def _bruto(ativo=True, modo_teste=False, numero_teste=None, grupo=GRUPO):
     return {
         "config": {"ativo": ativo, "modo_teste": modo_teste, "numero_teste": numero_teste, "max_repeticoes": 10,
                    "dias_inadimplencia": 15, "multa_atraso": "15.00", "encargo_diario": "7.00"},
         "cobrancas": [{"id": "cob-1", "cliente_id": "cli-1", "tipo": "locacao", "vencimento": "2026-11-10", "saldo": "450.00",
                        "periodicidade": "semanal", "situacao": "atrasada", "placa": "ABC1D23"}],
         "pagamentos": [], "cnhs": [], "documentos": [], "oleo": [], "portal": [],
-        "clientes": [{"id": "cli-1", "nome": "Maria Souza", "whatsapp": whatsapp}],
+        "clientes": [{"id": "cli-1", "nome": "Maria Souza", "whatsapp": "(11) 98888-7777", "whatsapp_grupo_id": grupo}],
         "historico": [],
     }
 
@@ -32,6 +35,11 @@ class RepoFalso:
         self.bruto, self.pendentes = bruto, list(pendentes)
         self.dias_lidos, self.enfileirado, self.resultados, self.rodadas = [], [], [], []
         self.falha_ao_registrar_rodada = False
+        self.grupos_gravados = []
+
+    def gravar_grupos(self, grupos):
+        self.grupos_gravados.append(grupos)
+        return len(grupos)
 
     def dados(self, dia):
         self.dias_lidos.append(dia)
@@ -58,6 +66,14 @@ class EvolutionFalsa:
     def __init__(self, estado="open", tem_whatsapp=True, falhas=None):
         self._estado, self._tem, self._falhas = estado, tem_whatsapp, falhas or {}
         self.enviados = []
+        self.verificados = []
+        self.grupos = [{"id": GRUPO, "nome": "Maria Souza - ABC1D23", "participantes": 5}]
+        self.erro_nos_grupos = None
+
+    def listar_grupos(self):
+        if self.erro_nos_grupos:
+            raise self.erro_nos_grupos
+        return self.grupos
 
     def estado(self):
         if isinstance(self._estado, Exception):
@@ -65,6 +81,7 @@ class EvolutionFalsa:
         return self._estado
 
     def numero_tem_whatsapp(self, numero):
+        self.verificados.append(numero)
         return self._tem
 
     def enviar_texto(self, numero, texto):
@@ -86,9 +103,59 @@ def instalar(monkeypatch):
     return _instalar
 
 
-def _executar(evolution, agora=QUINTA_10H, pausas=None):
+def _executar(evolution, agora=QUINTA_11H40, pausas=None):
     pausas = pausas if pausas is not None else []
     return whatsapp.executar(evolution, OP, agora, dormir=pausas.append, sorteio=lambda a, b: 30)
+
+
+# ------------------------------------------------------------------- grupo --
+
+
+def test_so_cobrancas_e_recibos_sao_enfileirados(instalar):
+    bruto = _bruto()
+    bruto["cnhs"] = [{"cliente_id": "cli-1", "cnh_validade": "2026-11-20", "situacao": "proxima"}]
+    bruto["portal"] = [{"tipo": "portal_acesso", "cliente_id": "cli-1", "referencia_id": "u1", "ocorrido_em": "2026-11-12"}]
+    repo = instalar(RepoFalso(bruto))
+    _executar(EvolutionFalsa())
+    tipos = {i["tipo"] for m in repo.enfileirado[0] for i in m["itens"]}
+    assert tipos == {"atraso"}  # CNH e portal ficam fora (decisão do dono, 17/11/2026)
+
+
+def test_envio_ao_grupo_nao_confere_se_o_numero_tem_whatsapp(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1", numero=GRUPO)]))
+    evolution = EvolutionFalsa(tem_whatsapp=False)  # se conferisse, a mensagem ficaria ignorada
+    resumo = _executar(evolution)
+    assert evolution.enviados[0][0] == GRUPO and evolution.verificados == []
+    assert repo.resultados == [("m1", "enviada", None, "EVO-1")] and resumo["envio"]["enviadas"] == 1
+
+
+def test_modo_teste_com_pendente_de_grupo_avisa_sem_mostrar_o_id(instalar):
+    repo = instalar(RepoFalso(_bruto(modo_teste=True, numero_teste="5511977776666"), [_pendente("m1", numero=GRUPO)]))
+    evolution = EvolutionFalsa()
+    _executar(evolution)
+    numero, texto = evolution.enviados[0]
+    assert numero == "5511977776666" and texto.startswith("[TESTE] Esta mensagem iria para o grupo do cliente.")
+    assert GRUPO not in texto and evolution.verificados == ["5511977776666"]  # o número de teste é individual: confere
+
+
+def test_a_rodada_atualiza_a_lista_de_grupos_com_a_instancia_conectada(instalar):
+    repo = instalar(RepoFalso(_bruto()))
+    resumo = _executar(EvolutionFalsa())
+    assert resumo["grupos"] == 1 and repo.grupos_gravados == [[{"id": GRUPO, "nome": "Maria Souza - ABC1D23", "participantes": 5}]]
+
+
+def test_instancia_desconectada_nao_atualiza_os_grupos(instalar):
+    repo = instalar(RepoFalso(_bruto()))
+    resumo = _executar(EvolutionFalsa(estado="close"))
+    assert "grupos" not in resumo and repo.grupos_gravados == []
+
+
+def test_falha_ao_listar_grupos_nao_derruba_a_rodada(instalar):
+    repo = instalar(RepoFalso(_bruto(), [_pendente("m1", numero=GRUPO)]))
+    evolution = EvolutionFalsa()
+    evolution.erro_nos_grupos = RuntimeError("fora do ar")
+    resumo = _executar(evolution)
+    assert resumo["grupos"] is None and resumo["envio"]["enviadas"] == 1 and repo.rodadas
 
 
 # ---------------------------------------------------------------- desligado --
@@ -104,12 +171,12 @@ def test_envio_desligado_nao_enfileira_nem_envia(instalar):
 # ---------------------------------------------------------------- enfileirar --
 
 
-def test_enfileira_a_mensagem_devida_com_o_numero_normalizado(instalar):
+def test_enfileira_a_mensagem_devida_para_o_grupo_do_cliente(instalar):
     repo = instalar(RepoFalso(_bruto()))
     resumo = _executar(EvolutionFalsa())
     assert resumo["fila"]["enfileiradas"] == 1
     mensagem = repo.enfileirado[0][0]
-    assert mensagem["cliente_id"] == "cli-1" and mensagem["numero"] == "5511988887777"
+    assert mensagem["cliente_id"] == "cli-1" and mensagem["numero"] == GRUPO
     assert mensagem["itens"][0]["tipo"] == "atraso" and mensagem["itens"][0]["data_referencia"] == "2026-11-12"
     assert "Olá, Maria!" in mensagem["texto"] and "R$" in mensagem["texto"]
 
@@ -122,18 +189,18 @@ def test_sem_nada_devido_nao_chama_a_fila(instalar):
     assert repo.enfileirado == []
 
 
-def test_cliente_sem_whatsapp_vai_sem_numero(instalar):
-    repo = instalar(RepoFalso(_bruto(whatsapp=None)))
+def test_cliente_sem_grupo_vai_sem_destino_mesmo_com_numero_individual(instalar):
+    repo = instalar(RepoFalso(_bruto(grupo=None)))
     _executar(EvolutionFalsa())
     assert repo.enfileirado[0][0]["numero"] is None
 
 
-def test_domingo_enfileira_para_segunda_as_8h_e_nao_envia(instalar):
+def test_domingo_enfileira_para_segunda_as_7h30_e_nao_envia(instalar):
     repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
     evolution = EvolutionFalsa()
     resumo = _executar(evolution, agora=DOMINGO_10H)
     assert repo.dias_lidos == [date(2026, 11, 16)]
-    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-16T08:00:00-03:00"
+    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-16T07:30:00-03:00"
     assert resumo["envio"] == {"parou_por": "fora_da_janela"} and evolution.enviados == []
 
 
@@ -141,7 +208,7 @@ def test_fora_do_horario_enfileira_mas_nao_envia(instalar):
     repo = instalar(RepoFalso(_bruto(), [_pendente("m1")]))
     evolution = EvolutionFalsa()
     resumo = _executar(evolution, agora=QUINTA_20H)
-    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-13T08:00:00-03:00"
+    assert repo.enfileirado[0][0]["enviar_apos"] == "2026-11-13T07:30:00-03:00"
     assert resumo["envio"]["parou_por"] == "fora_da_janela" and evolution.enviados == []
 
 

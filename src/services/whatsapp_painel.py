@@ -3,6 +3,8 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
+from postgrest.exceptions import APIError
+
 from src.domain.whatsapp_painel import DIAS_DE_PROBLEMA, achatar, alertas_whatsapp
 from src.repositories import clientes as repo_clientes
 from src.repositories import configuracoes as repo_configuracoes
@@ -43,6 +45,23 @@ def desbloquear(cliente_id: str) -> dict:
     return repo_clientes.atualizar(cliente_id, {
         "nao_enviar_whatsapp": False, "motivo_bloqueio_whatsapp": None, "bloqueio_whatsapp_em": None,
     })
+
+
+def listar_grupos() -> list[dict]:
+    """Grupos da instância guardados pelo script de envio (o dono escolhe o do cliente nesta lista)."""
+    return repo.listar_grupos()
+
+
+def definir_grupo(cliente_id: str, grupo_id: str | None) -> dict:
+    """Liga o cliente a um grupo de WhatsApp (ou desliga, com None). Um grupo serve a um cliente só."""
+    try:
+        return repo_clientes.atualizar(cliente_id, {"whatsapp_grupo_id": grupo_id})
+    except APIError as erro:
+        if erro.code == "23505":  # índice único ux_clientes_whatsapp_grupo
+            raise ValueError("Este grupo já está ligado a outro cliente.") from erro
+        if erro.code == "23514":  # formato do ID
+            raise ValueError("ID de grupo inválido.") from erro
+        raise
 
 
 def atualizar_controles(dados: dict) -> dict:

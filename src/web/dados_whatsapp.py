@@ -12,3 +12,8 @@ def mensagens(filtro: str) -> dict:
 
 def do_cliente(cliente_id: str) -> list[dict]:
     return whatsapp_painel.listar_do_cliente(cliente_id)
+
+
+def grupos() -> list[dict]:
+    """Grupos da instância, por nome, para escolher no cadastro do cliente."""
+    return whatsapp_painel.listar_grupos()

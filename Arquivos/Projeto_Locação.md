@@ -1041,7 +1041,7 @@ ficavam defasados.
 - Fotos: só na moto principal na criação do contrato; as das outras motos entram depois, por "Adicionar fotos" na vistoria.
 
 
-## 20. Envio automático de mensagens por WhatsApp (desenho aprovado em 06/11/2026; nada implementado)
+## 20. Envio automático de mensagens por WhatsApp (desenho aprovado em 06/11/2026; destino e horários alterados em 17/11/2026, ver 23.2 item 6)
 
 Tira do backlog (seção 12, item 1) o envio automático por WhatsApp pela **Evolution API**. Hoje o dono só copia um texto de cobrança e cola no
 WhatsApp (`/cobrancas/{id}/mensagem`). A automação passa a ser o canal oficial dos avisos ao locatário: por isso ela não pode falhar em silêncio.
@@ -1229,10 +1229,11 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 
 ### 23.2 Depois da prioridade
 
-6. **Cobranças pelo WhatsApp em grupo por locatário (Evolution API).** Hoje a locadora cria **um grupo por locatário**, com: o locatário, o dono e as duas pessoas do financeiro; sem vazar dados pessoais entre locatários. O chip dedicado da Evolution entra em todos os grupos.
+6. **Cobranças pelo WhatsApp em grupo por locatário (Evolution API)** (implementado em 17/11/2026 na branch `feat/whatsapp-grupo`; falta aplicar a migration `20261117130000`, criar os grupos, cadastrá-los nos clientes e testar em modo teste). Hoje a locadora cria **um grupo por locatário**, com: o locatário, o dono e as duas pessoas do financeiro; sem vazar dados pessoais entre locatários. O chip dedicado da Evolution entra em todos os grupos.
    - **Muda a seção 20:** o destino deixa de ser só o número individual (`clientes.whatsapp`, 20.1 itens 1 e 2) e passa a ser o **grupo** do cliente. Mensagens agrupadas por cliente/dia (20.1 item 5) continuam valendo, mas como uma mensagem no grupo.
    - **Onde guardar o ID do grupo (proposta):** coluna `clientes.whatsapp_grupo_id text` (formato `1203...@g.us`), anulável e única, preenchida no cadastro do cliente. Cliente sem grupo: mensagem `ignorada`, com o motivo (como hoje sem número). Possível melhoria: listar os grupos da instância pela Evolution para o dono escolher, em vez de colar o ID.
-   - **Horários de envio:** o dono vai ajustar a janela (20.1 item 3); aguardar antes de implementar a seção 20.
+   - **Horários de envio (definidos em 17/11/2026):** três disparos por dia, às **7:30, 11:30 e 15:00**, de segunda a sábado e sem feriados nacionais (substitui a janela de 8h às 19h do 20.1 item 3).
+   - **Decisões de 17/11/2026:** o destino é só o grupo (nunca o número individual); só cobranças e recibos vão ao grupo; cliente sem grupo fica `ignorada`, com o motivo; o dono escolhe o grupo numa lista que a rodada grava a partir da Evolution, ou cola o ID.
 7. **Automação com os chats "Acompanhamento Financeiro" e "Contratos Locadora":** leitura e comparação de dados. Complexo; não é prioridade agora.
 8. **Checar dados** vindos desses dois chats contra o sistema.
 9. **Renomear "LA Motos" para "LA Locações"** em todo o sistema (o foco não são só motos, mas veículos). Diferente do nome do app no celular (item 3).
@@ -1240,4 +1241,4 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 
 ### 23.3 Pendências de esclarecimento
 
-- Item 6: novos horários de envio (o dono ainda vai definir) e confirmar `clientes.whatsapp_grupo_id`.
+- Item 6: os textos das mensagens ainda tratam o locatário no singular («Olá, Maria»); revisar com o dono se o tom serve para um grupo com o financeiro. Os avisos de CNH, óleo, documentos e portal estão fora do envio até o dono decidir como entregá-los.

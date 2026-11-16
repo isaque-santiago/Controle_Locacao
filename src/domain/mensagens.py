@@ -269,6 +269,14 @@ def whatsapp_reenviada():
     return _toast("Mensagem devolvida à fila: ela sai na próxima rodada, dentro do horário de envio.")
 
 
+def whatsapp_grupo_salvo(nome):
+    return _toast(f"Grupo de WhatsApp de {nome} salvo. As cobranças e os recibos dele passam a ir para esse grupo.")
+
+
+def whatsapp_grupo_removido(nome):
+    return _alerta(f"Grupo de WhatsApp de {nome} removido. Sem grupo, as mensagens dele ficam ignoradas até você cadastrar outro.", atencao=True)
+
+
 def whatsapp_cliente_bloqueado(nome):
     return _alerta(f"{nome} não receberá mais mensagens automáticas de WhatsApp. Os avisos dele passam a depender de você.", atencao=True)
 

@@ -6,8 +6,25 @@ from src.db import get_client
 
 
 def dados(dia: date) -> dict:
-    """Tudo o que as regras precisam para decidir o que enviar no `dia` (`rpc_whatsapp_dados`)."""
-    return get_client().rpc("rpc_whatsapp_dados", {"p_dia": dia.isoformat()}).execute().data
+    """Tudo o que as regras precisam para decidir o que enviar no `dia` (`rpc_whatsapp_dados`), com o grupo de cada cliente.
+
+    O grupo vem de outra RPC (`rpc_whatsapp_grupos_clientes`) e entra em `clientes[].whatsapp_grupo_id`."""
+    cliente = get_client()
+    bruto = cliente.rpc("rpc_whatsapp_dados", {"p_dia": dia.isoformat()}).execute().data
+    grupos = cliente.rpc("rpc_whatsapp_grupos_clientes").execute().data or {}
+    for c in bruto["clientes"]:
+        c["whatsapp_grupo_id"] = grupos.get(c["id"])
+    return bruto
+
+
+def gravar_grupos(grupos: list[dict]) -> int:
+    """Substitui a lista de grupos da instância guardada no banco (`rpc_whatsapp_gravar_grupos`). Devolve quantos ficaram."""
+    return get_client().rpc("rpc_whatsapp_gravar_grupos", {"payload": {"grupos": grupos}}).execute().data
+
+
+def listar_grupos() -> list[dict]:
+    """Grupos guardados (sessão do dono, pela RLS), por nome."""
+    return get_client().table("whatsapp_grupos").select("*").order("nome").execute().data
 
 
 def enfileirar(mensagens: list[dict]) -> dict:

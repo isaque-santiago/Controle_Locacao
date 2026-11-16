@@ -252,7 +252,7 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
 | `PORTAL_URL` (opcional) | link do portal nos avisos de troca de óleo e de acesso |
 
 5. **Tarefa agendada** (Coolify > aplicativo > *Scheduled Tasks*): comando `python -m src.enviar_mensagens_whatsapp`, frequência
-   `*/20 * * * *` (a cada 20 minutos; é seguro repetir). Saída: uma linha JSON com o resumo; código 0 = rodada feita, 2 = configuração faltando
+   `*/15 * * * *` (a cada 15 minutos; é seguro repetir). Como as mensagens só saem nos três disparos do dia (7:30, 11:30 e 15:00, cada um aberto por 1 hora), cada rodada envia um lote de 5: a cada 15 minutos cabem cerca de 20 mensagens por disparo. Saída: uma linha JSON com o resumo; código 0 = rodada feita, 2 = configuração faltando
    ou recusada (variável, usuário de serviço, chave da Evolution), 1 = erro inesperado.
 6. **Primeiro uso:** aplique também `20261106140000_whatsapp_painel.sql` (e rode `verificar_whatsapp_painel.sql` em dev). Em Configurações > *Envio automático por WhatsApp* ligue o envio **mantendo o modo teste** e informe o número de teste (o seu). Tudo sai só para ele, com
    «[TESTE]» no início, e é gravado com o id `teste:...`. Fique uma semana assim. Para sair do modo teste sem que o histórico de teste conte como
@@ -262,7 +262,17 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
    *WhatsApp desconectado* = ler o QR code de novo na Evolution; *Evolution fora do ar*; *Mensagens sem entrega* = abrir Mensagens (filtro «Com problema»)
    e ligar para o cliente; *modo teste* = lembrete de que os clientes ainda não recebem.
 8. **Se parar de enviar:** veja o log da tarefa. `instancia_desconectada` = ler o QR code de novo; `evolution_indisponivel` = a Evolution está fora do
-   ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal à noite, domingo e feriado. `tempo_esgotado` = a Evolution está lenta e a rodada parou antes de estourar o tempo da reserva (o que sobrou sai na próxima).
+   ar (as mensagens voltam para a fila com espera crescente, até 3 tentativas); `fora_da_janela` é normal fora dos disparos (7:30, 11:30 e 15:00), à noite, no domingo e no feriado. `tempo_esgotado` = a Evolution está lenta e a rodada parou antes de estourar o tempo da reserva (o que sobrou sai na próxima).
+
+10. **Grupo de WhatsApp por locatário (item 6 da seção 23; 17/11/2026):** aplique `20261117130000_whatsapp_grupo.sql` **antes** de publicar o app
+   (rode `supabase/verificar_whatsapp_grupo.sql` em dev, que termina em ROLLBACK). A partir daí as mensagens vão **ao grupo** do locatário, nunca ao número
+   individual, e só as de cobrança e recibo (lembrete de véspera e de vencimento, atraso, inadimplência, recibo). Para cada cliente:
+   1. crie o grupo no WhatsApp (locatário, dono, as duas pessoas do financeiro e o **número do envio automático**);
+   2. espere a próxima rodada (até 15 minutos): ela grava a lista de grupos da instância;
+   3. na ficha do cliente > aba WhatsApp > «Grupo de WhatsApp do locatário», escolha o grupo na lista (ou cole o ID, que termina em `@g.us`) e salve.
+   Cliente sem grupo: a mensagem fica `ignorada`, com o motivo, e aparece no Dashboard. Um grupo serve a um cliente só. A Evolution precisa do
+   endpoint `GET /group/fetchAllGroups/{instância}` (v1 e v2 têm); se a lista não aparecer, veja o log da tarefa. Antes de ligar para valer,
+   confira no modo teste que a mensagem de teste diz «iria para o grupo do cliente».
 
 9. **Comprovantes de documento pelo portal (Etapa 6):** aplique as migrations `20261112120000_comprovantes_documentos.sql` e
    `20261112130000_whatsapp_comprovante_enviado.sql` **antes** de publicar o app (sem elas o portal, a lista de Documentos e o Dashboard seguem
