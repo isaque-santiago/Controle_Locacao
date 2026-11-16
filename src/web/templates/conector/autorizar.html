@@ -1,0 +1,27 @@
+{% extends "layout_acesso.html" %}
+{% from "componentes/macros.html" import aviso %}
+
+{% block caixa %}
+<section class="cartao" aria-labelledby="titulo-autorizar">
+  <h1 id="titulo-autorizar">Autorizar o Claude</h1>
+  {% if erro %}
+  {{ aviso("erro", erro) }}
+  <div class="rodape-acoes"><a class="btn" href="/">Voltar ao sistema</a></div>
+  {% else %}
+  <p class="text-texto-2">O <strong>{{ nome_cliente }}</strong>, em <span class="mono">{{ destino }}</span>, quer se conectar ao sistema da LA Locadora para <strong>propor lançamentos</strong> (pagamentos e despesas) a partir dos seus chats.</p>
+  <ul class="text-texto-2">
+    <li>Ele <strong>só propõe</strong>: nada entra no financeiro sem a sua aprovação no app.</li>
+    <li>Ele não aprova, não edita e não apaga nada.</li>
+    <li>Você pode desligar o conector a qualquer momento no Claude.</li>
+  </ul>
+  <form method="post" action="/oauth/authorize">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% for nome, valor in campos.items() %}<input type="hidden" name="{{ nome }}" value="{{ valor }}">{% endfor %}
+    <div class="rodape-acoes">
+      <button class="btn" type="submit" name="decisao" value="negar">Negar</button>
+      <button class="btn btn-primario" type="submit" name="decisao" value="autorizar">Autorizar</button>
+    </div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

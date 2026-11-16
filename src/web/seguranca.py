@@ -29,8 +29,8 @@ CONTENT_SECURITY_POLICY = "; ".join(
 _UM_ANO = 31536000
 
 
-@lru_cache(maxsize=1)
-def politica_de_conteudo() -> str:
+@lru_cache(maxsize=8)
+def politica_de_conteudo(form_action_extra: str | None = None) -> str:
     """CSP da aplicação. As fotos das vistorias vêm por URL assinada do Storage do Supabase (outra origem),
     então só essa origem é liberada em `img-src`; sem a URL configurada, vale a política fixa."""
     try:
@@ -40,9 +40,12 @@ def politica_de_conteudo() -> str:
         origem = f"{partes.scheme}://{partes.netloc}" if partes.scheme in ("http", "https") and partes.netloc else None
     except Exception:
         origem = None
-    if not origem:
-        return CONTENT_SECURITY_POLICY
-    return CONTENT_SECURITY_POLICY.replace("img-src 'self' data:", f"img-src 'self' data: {origem}")
+    politica = CONTENT_SECURITY_POLICY
+    if origem:
+        politica = politica.replace("img-src 'self' data:", f"img-src 'self' data: {origem}")
+    if form_action_extra:  # só a página de consentimento do conector, que envia o formulário e redireciona ao Claude
+        politica = politica.replace("form-action 'self'", f"form-action 'self' {form_action_extra}")
+    return politica
 
 
 def eh_https(request: Request) -> bool:
@@ -116,7 +119,7 @@ class CabecalhosSeguranca(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         resposta = await call_next(request)
         cabecalhos = resposta.headers
-        cabecalhos["Content-Security-Policy"] = politica_de_conteudo()
+        cabecalhos["Content-Security-Policy"] = politica_de_conteudo(getattr(request.state, "form_action_extra", None))
         cabecalhos["X-Content-Type-Options"] = "nosniff"
         cabecalhos["X-Frame-Options"] = "DENY"
         cabecalhos["Referrer-Policy"] = "same-origin"
