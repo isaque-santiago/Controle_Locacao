@@ -1,8 +1,8 @@
-"""PDF do contrato de locação com promessa de compra e venda (fpdf2, fonte padrão Helvetica/Latin-1).
+"""PDF dos contratos da L.A Aluguel de Motos, com e sem promessa de compra (fpdf2, fonte padrão Helvetica/Latin-1).
 
 Visual do contrato de 16/11/2026: faixa preta com a logo e o nome da empresa, linha vermelha, marca d'água, quadros de
 dados, resumo de multas, rubricas no rodapé e página final de assinaturas com duas testemunhas. O texto vem de
-src/domain/contrato_promessa.py; aqui só se desenha. Logo e marca d'água ficam em static/contrato/ (sem elas, o
+src/domain/contrato_la.py; aqui só se desenha. Logo e marca d'água ficam em static/contrato/ (sem elas, o
 documento sai igual, só sem as imagens)."""
 
 from pathlib import Path
@@ -10,11 +10,12 @@ from pathlib import Path
 from fpdf import FPDF
 from fpdf.fonts import FontFace
 
-from src.domain.contrato_modelo import Bloco
+from src.domain.contrato_la import Bloco
 
 PASTA_IMAGENS = Path(__file__).resolve().parents[2] / "static" / "contrato"
 EMPRESA = "L.A ALUGUEL DE MOTOS"
-SUBTITULO = "Locação de motocicletas com promessa de compra e venda"
+SUBTITULO_PROMESSA = "Locação de motocicletas com promessa de compra e venda"
+SUBTITULO_LOCACAO = "Locação de motocicletas"
 
 _MARGEM = 20
 _TOPO_CORPO = 38
@@ -64,7 +65,7 @@ class _Documento(FPDF):
         self.set_font("Helvetica", size=7.5)
         self.set_text_color(200, 204, 208)
         self.set_xy(self.w - _MARGEM - 110, 14)
-        self.cell(110, 4, _latin1(SUBTITULO), align="R")
+        self.cell(110, 4, _latin1(self._cabecalho.get("subtitulo") or SUBTITULO_PROMESSA), align="R")
         contato = _latin1(self._cabecalho.get("contato", ""))
         if contato:
             self.set_xy(self.w - _MARGEM - 110, 18)
@@ -155,11 +156,11 @@ def _assinaturas(pdf: _Documento, assinaturas: list[Bloco]) -> None:
 
 
 def renderizar(blocos: list[Bloco], cabecalho: dict | None = None, rodape: str = "") -> bytes:
-    """`cabecalho`: {"contato": "Crato/CE · (88) 9 9806-4387"} (linha sob o subtítulo, opcional)."""
+    """`cabecalho`: {"subtitulo": ..., "contato": "Crato/CE · (88) 9 9806-4387"} (a linha de contato é opcional)."""
     pdf = _Documento(cabecalho or {}, rodape)
     pdf.set_margins(_MARGEM, _TOPO_CORPO, _MARGEM)
     pdf.set_auto_page_break(True, margin=22)
-    pdf.set_title("Contrato de locação de veículo com promessa de compra e venda")
+    pdf.set_title(_latin1(blocos[0].texto.replace("\n", " ").capitalize()) if blocos and blocos[0].tipo == "titulo" else "Contrato de locação")
     pdf.add_page()
 
     assinaturas = [b for b in blocos if b.tipo == "assinatura"]

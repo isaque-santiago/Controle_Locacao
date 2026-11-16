@@ -30,31 +30,27 @@ Abre em `http://localhost:8000` (detalhes na seção abaixo).
 ## Contrato em PDF
 
 A ficha do contrato tem o botão **Contrato em PDF** (rota `/contratos/{id}/pdf`, só para o dono), que gera o contrato com os dados do
-cliente, da moto e do contrato (valor e caução por extenso, datas, km inicial). O PDF só é montado no clique. Há dois modelos,
-escolhidos pelo `tipo_contrato`:
+cliente, da moto e do contrato (valor e caução por extenso, datas, km inicial). O PDF só é montado no clique.
 
-- **Promessa de compra (16/11/2026):** `src/domain/contrato_promessa.py` (texto) e `src/services/contrato_promessa_pdf.py` (visual). É o
-  modelo do contrato de exemplo do Alberto: 13 cláusulas, quadros de partes, veículo e preço, resumo de multas, assinaturas e duas
-  testemunhas, com faixa preta e logo no cabeçalho (`static/contrato/`), marca d'água e rubricas no rodapé. As multas e prazos ficam em
-  `TERMOS` desse módulo e o **resumo de multas sai de `TERMOS`**, então nunca destoa das cláusulas. O preço vem do contrato (entrada,
-  parcelas, total, caução) e as datas da agenda (1ª e última parcela, dia da semana). O arquivo baixado se chama
-  `Contrato_<Cliente>_<PLACA>.pdf`. Com várias motos, cada uma ganha o seu quadro. Locador pessoa física (sem `LOCADOR_CNPJ`) ou
-  jurídica (com CNPJ). A fonte é a padrão do PDF (Helvetica), não a Poppins do exemplo.
-- **Locação simples:** o modelo antigo de 10 cláusulas (`src/domain/contrato_modelo.py`), sem mudança.
-
-- **Texto do modelo antigo (locação simples):** `src/domain/contrato_modelo.py`. As multas, prazos e valores fixos
-  do modelo ficam no dicionário `TERMOS` (um lugar só, para revisão com o advogado); o
-  restante do texto é a redação do contrato original.
-- **Dados da empresa (LOCADOR):** variáveis `LOCADOR_NOME`, `LOCADOR_CNPJ` etc. (lista completa em `.env.example`; em produção, no Coolify), fora do git. Sem elas o contrato sai com linhas em branco no lugar do locador.
-- **Contrato com várias motos (modelo antigo):** a cláusula 1.1 lista todas (a quilometragem inicial é a da principal; as outras saem em branco). As demais cláusulas continuam no singular ("o veículo"); revise o texto para esse caso.
+- **Um template, duas variantes** (`src/domain/contrato_la.py` para o texto e `src/services/contrato_la_pdf.py` para o visual), escolhidas
+  pelo `tipo_contrato`. O visual é o do contrato de exemplo de 16/11/2026: faixa preta com a logo (`static/contrato/`), linha vermelha,
+  marca d'água, quadros de partes, veículo e preço, resumo de multas, rubricas no rodapé, assinaturas e duas testemunhas.
+  - **Promessa de compra:** 13 cláusulas, com propriedade futura, quitação e transferência (cláusula 12) e quadro de preço com entrada,
+    parcelas, total e datas da agenda (1ª e última parcela, dia da semana).
+  - **Locação simples:** o mesmo documento sem o que é da promessa (12 cláusulas, partes só "LOCADOR" e "LOCATÁRIO", sem direito à
+    aquisição) e quadro de preço por período (periodicidade, valor, vencimento, primeiro pagamento, vigência, caução). O texto antigo de
+    10 cláusulas deixou de existir (está no histórico do git).
+- **Valores fixos:** as multas e prazos ficam em `TERMOS` (um lugar só, para revisão com o advogado) e o **resumo de multas sai de
+  `TERMOS`**, então nunca destoa das cláusulas. A fonte é a padrão do PDF (Helvetica), não a Poppins do exemplo.
+- **Arquivo baixado:** `Contrato_<Cliente>_<PLACA>.pdf` nos contratos de promessa; `contrato_<PLACA>_<data>.pdf` nos de locação.
+- **Dados da empresa (LOCADOR):** variáveis `LOCADOR_NOME`, `LOCADOR_CNPJ` etc. (lista completa em `.env.example`; em produção, no Coolify), fora do git. Sem elas o contrato sai com linhas em branco no lugar do locador. Locador pessoa física (sem `LOCADOR_CNPJ`, usa o representante) ou jurídica (com CNPJ). Cidade e foro vêm de `LOCADOR_CIDADE` e `LOCADOR_FORO` (sem eles, o foro padrão é Crato/CE) e a linha de contato do cabeçalho, de `LOCADOR_CIDADE` e `LOCADOR_TELEFONES`.
+- **Contrato com várias motos:** cada moto ganha o seu quadro (a quilometragem inicial é a da principal; as outras saem em branco).
 - **Dados do contrato no cadastro (migration `20261117120000_dados_do_contrato.sql`):** cliente com data de nascimento, nacionalidade,
   naturalidade, estado civil, profissão, RG e órgão, CEP e referências; moto com motor e combustível. Todos opcionais: o que faltar sai
-  como linha em branco para preencher à mão. **Aplique a migration no Supabase antes do deploy** (o cadastro grava essas colunas).
-- **Locador no contrato novo:** cidade e foro vêm de `LOCADOR_CIDADE` e `LOCADOR_FORO` (ex.: `Crato/CE`; sem eles, o foro padrão é Crato/CE),
-  e a linha de contato do cabeçalho de `LOCADOR_CIDADE` e `LOCADOR_TELEFONES`. Confira essas variáveis no Coolify.
-- **Fora do contrato gerado:** a multa e os juros por atraso (cláusula 8.2 do modelo novo, 6.2 do antigo) e a multa de R$ 10,00 por erro
-  na troca de óleo (5.13.1) usam os valores fixos de `TERMOS`, não os da tela Configurações; se a operação mudar de regra, ajuste `TERMOS`
-  ou passe a usar a configuração.
+  como linha em branco para preencher à mão.
+- **Fora do contrato gerado:** a multa e os juros por atraso (cláusula 8.2) e a multa de R$ 10,00 por erro na troca de óleo (5.13.1)
+  usam os valores fixos de `TERMOS`, não os da tela Configurações; se a operação mudar de regra, ajuste `TERMOS` ou passe a usar a
+  configuração.
 - Modelo padrão de contrato: revise o texto final com um advogado antes de usar.
 
 ## Testes
