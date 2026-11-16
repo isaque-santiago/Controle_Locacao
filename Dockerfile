@@ -1,6 +1,6 @@
 # Imagem de produção do Controle_Locacao (FastAPI + Jinja2 + HTMX), para o Coolify.
 # O CSS compilado (static/css/app.css) já vai versionado: a imagem não precisa do Tailwind.
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
