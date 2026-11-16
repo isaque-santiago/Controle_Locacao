@@ -1283,7 +1283,7 @@ Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acess
 
 ### 24.7 Etapas (um PR por etapa; não avançar sem os critérios de aceite)
 
-1. **Viabilidade:** conector MCP mínimo com OAuth, adicionado ao claude.ai e chamado pelo chat (sem banco). *Aceite:* o dono vê o conector ativo e o chat recebe a resposta de uma ferramenta de teste.
+1. **Viabilidade** (código implementado em 17/11/2026 na branch `feat/conector-viabilidade`; falta publicar, definir `CONECTOR_CHAVE` e `CONECTOR_URL_BASE` no Coolify e testar no claude.ai): conector MCP mínimo com OAuth, adicionado ao claude.ai e chamado pelo chat (sem banco). *Aceite:* o dono vê o conector ativo e o chat recebe a resposta de uma ferramenta de teste.
 2. **Banco e regras:** migration, RPCs, `src/domain/pendencias.py`, roteiro SQL. *Aceite:* roteiro passa no dev; testes verdes.
 3. **Tela Pendências:** listar, aprovar e recusar (com cadastro de teste no dev). *Aceite:* aprovar um pagamento cria o mesmo registro que o fluxo atual e é idempotente.
 4. **Ferramentas de pagamento e despesa no conector.** *Aceite:* "Fulano pagou R$ X" no chat vira uma pendência, sem gravar no financeiro.
