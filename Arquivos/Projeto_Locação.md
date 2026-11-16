@@ -1234,7 +1234,7 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
    - **Onde guardar o ID do grupo (proposta):** coluna `clientes.whatsapp_grupo_id text` (formato `1203...@g.us`), anulável e única, preenchida no cadastro do cliente. Cliente sem grupo: mensagem `ignorada`, com o motivo (como hoje sem número). Possível melhoria: listar os grupos da instância pela Evolution para o dono escolher, em vez de colar o ID.
    - **Horários de envio (definidos em 17/11/2026):** três disparos por dia, às **7:30, 11:30 e 15:00**, de segunda a sábado e sem feriados nacionais (substitui a janela de 8h às 19h do 20.1 item 3).
    - **Decisões de 17/11/2026:** o destino é só o grupo (nunca o número individual); só cobranças e recibos vão ao grupo; cliente sem grupo fica `ignorada`, com o motivo; o dono escolhe o grupo numa lista que a rodada grava a partir da Evolution, ou cola o ID.
-7. **Automação com os chats "Acompanhamento Financeiro" e "Contratos Locadora"** (desenho de 17/11/2026, ver [Sincronizacao_Chats.md](Sincronizacao_Chats.md); nada implementado no app). Decisão do dono: os chats **continuam em uso**; uma **sessão dedicada do Claude Code** lê as pastas dos dois chats (compartilhadas com ela, fora do repositório) e, **quando o dono pedir**, compara com o sistema e o atualiza. É um protocolo, não uma funcionalidade: relatório de comparação primeiro, decisão do dono item a item, SQL só do aprovado (dev antes de produção, idempotente, em `importacoes_lote`) e nunca gravação direta em produção. Falta o dono compartilhar as pastas e a primeira leitura confirmar o formato.
+7. **Automação com os chats "Acompanhamento Financeiro" e "Contratos Locadora"** (desenho de 17/11/2026, ver [Sincronizacao_Chats.md](Sincronizacao_Chats.md); nada implementado no app). Decisão do dono: os chats **continuam em uso**; uma **sessão dedicada do Claude Code** lê as pastas dos dois chats (compartilhadas com ela, fora do repositório) e, **quando o dono pedir**, compara com o sistema e o atualiza. É um protocolo, não uma funcionalidade: relatório de comparação primeiro, decisão do dono item a item, SQL só do aprovado (dev antes de produção, idempotente, em `importacoes_lote`) e nunca gravação direta em produção. Falta o dono compartilhar as pastas e a primeira leitura confirmar o formato. **Automação daqui para frente: seção 24** (conector do claude.ai com caixa de pendências).
 8. **Checar dados** vindos desses dois chats contra o sistema: é a **primeira sincronização** do protocolo do item 7 (conciliação de todo o histórico).
 9. **Renomear "LA Motos" para "LA Locações"** em todo o sistema (o foco não são só motos, mas veículos). Diferente do nome do app no celular (item 3).
 10. **Definir dados a excluir ou não implementar mais.** Sugestão do Alisson: veículos vendidos e ex-locatários. Envolve LGPD (seção 8) e histórico financeiro: decidir entre arquivar e apagar.
@@ -1242,3 +1242,57 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 ### 23.3 Pendências de esclarecimento
 
 - Item 6: os textos das mensagens ainda tratam o locatário no singular («Olá, Maria»); revisar com o dono se o tom serve para um grupo com o financeiro. Os avisos de CNH, óleo, documentos e portal estão fora do envio até o dono decidir como entregá-los.
+
+## 24. Conector do claude.ai e caixa de pendências (desenho de 17/11/2026; nada implementado)
+
+Continuação do item 7 da seção 23. O protocolo de [Sincronizacao_Chats.md](Sincronizacao_Chats.md) serve para **conciliar o histórico**; este desenho cobre o que vem **daqui para frente**: quando o dono registra algo nos chats do Claude (um pagamento, uma despesa, um contrato), o sistema recebe o lançamento sem copiar e colar.
+
+### 24.1 Decisões do dono (17/11/2026)
+
+1. Os chats **continuam em uso**; o sistema deve acompanhá-los automaticamente.
+2. Caminho escolhido: **conector próprio no claude.ai** (servidor MCP do app) com uma **caixa de pendências**. O plano do dono é Pro ou Max, que aceita conectores próprios.
+3. **Comprovantes Pix dos grupos de WhatsApp** (leitura de imagem por IA) ficam para depois, alimentando a **mesma caixa**. Isso exigiria conta e chave da API da Anthropic (cobrança à parte; estimativa de centavos por comprovante) e o envio de dados pessoais a ela.
+4. Custo extra do conector: nenhum conhecido (rota no app que já roda na VPS; cada chamada consome um pouco do limite do plano do claude.ai). A confirmar na conta do dono.
+
+### 24.2 Princípio: o chat só propõe, o dono confirma
+
+O chat **nunca grava no financeiro**. Ele cria uma **pendência**; o dono a aprova numa tela do app. Isso limita o estrago de um erro do modelo ou de um texto com instruções escondidas, porque nada vale sem a confirmação. O conector não tem ação de aprovar, editar nem apagar.
+
+### 24.3 Banco (migration futura)
+
+- `servico_conector (user_id)` e `is_servico_conector()`, no padrão de `servico_mensagens` (WhatsApp, seção 20): um usuário do Supabase criado só para o conector, que **não enxerga tabela nenhuma** e só executa as RPCs abaixo. A `service_role` nunca é usada.
+- `pendencias_lancamento`: `tipo` (`pagamento`, `despesa`; `contrato` na etapa 5), `origem` (`chat_financeiro`, `chat_contratos`, `comprovante_grupo`), `chave_operacao` única (idempotência: repetir a mesma proposta não duplica), `dados` (jsonb com os campos propostos), referências já resolvidas (`cliente_id`, `cobranca_id`, `contrato_id`, anuláveis), `resumo`, `trecho_origem` (texto curto citado do chat), `avisos` (divergências detectadas), `status` (`pendente`, `aprovada`, `recusada`), `motivo_recusa`, `registro_id` (o que foi criado), `criado_em`, `decidido_em`. RLS só do dono.
+- RPCs: `rpc_pendencia_criar` (usuário de serviço ou dono; valida o tipo, limita tamanhos e valores, resolve o cliente, deduplica), `rpc_pendencia_aprovar` e `rpc_pendencia_recusar` (só o dono; a aprovação roda numa **transação única** e reaproveita as regras existentes: pagamento com `chave_operacao` como em `registrar_pagamento`, contrato por `rpc_criar_contrato`), e leituras mínimas para o chat casar o lançamento (`rpc_conector_cobrancas_abertas`: nome, vencimento e saldo, sem CPF).
+- Regras puras em `src/domain/pendencias.py` (normalização, validação e detecção de divergências: valor diferente da cobrança, cobrança já paga, cliente não encontrado ou ambíguo), com testes.
+
+### 24.4 Conector (servidor MCP)
+
+- **Onde:** rota `/mcp` no próprio app (FastAPI, 1 worker), em módulo separado. Fica pública na internet, então tem limite de uso, registro de cada chamada e tamanho máximo de campos.
+- **Ferramentas (só criar e consultar):** `consultar_cobrancas_abertas(busca)`, `propor_pagamento(...)`, `propor_despesa(...)`, `listar_pendencias()` (para o chat dizer ao dono o que ficou aguardando). Contratos entram na etapa 5.
+- **Login:** o claude.ai exige OAuth. O app faz o papel de servidor de autorização: o dono entra com o login normal e **autoriza o Claude a propor lançamentos**; o token emitido é do app, com escopo único e revogável em Configurações (guardado só como hash). O app fala com o Supabase como o usuário de serviço do conector (credencial no Coolify, como o robô do WhatsApp), de modo que o **próprio banco** impede qualquer outra ação.
+- **Risco principal e primeira prova:** o OAuth de conectores é a parte mais frágil (há relatos de falhas com vários provedores). Por isso a etapa 1 é um **teste de viabilidade**: um conector mínimo que o claude.ai consiga adicionar e chamar, antes de qualquer tabela.
+- Ainda não confirmado: se o conector pode ser ligado nos dois chats que já existem ou só em conversas novas.
+
+### 24.5 Tela "Pendências" no app
+
+Lista com origem, resumo, trecho citado e avisos de divergência; botões **Aprovar**, **Editar e aprovar** e **Recusar**; antes de aprovar, mostra o que será criado. O Dashboard ganha o alerta «N lançamentos aguardando sua confirmação».
+
+### 24.6 Segurança
+
+Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acesso a tabelas; idempotência por `chave_operacao`; texto das pendências sempre escapado na tela; limites de taxa, tamanho e valor; token revogável; HTTPS; testes automatizados do que o conector **não** pode fazer (aprovar, apagar, ler tabelas). O que o chat vê (nomes e saldos de cobranças em aberto) já está nos chats hoje; manter só o mínimo necessário e registrar a decisão em `Arquivos/Revisao_Seguranca.md`.
+
+### 24.7 Etapas (um PR por etapa; não avançar sem os critérios de aceite)
+
+1. **Viabilidade:** conector MCP mínimo com OAuth, adicionado ao claude.ai e chamado pelo chat (sem banco). *Aceite:* o dono vê o conector ativo e o chat recebe a resposta de uma ferramenta de teste.
+2. **Banco e regras:** migration, RPCs, `src/domain/pendencias.py`, roteiro SQL. *Aceite:* roteiro passa no dev; testes verdes.
+3. **Tela Pendências:** listar, aprovar e recusar (com cadastro de teste no dev). *Aceite:* aprovar um pagamento cria o mesmo registro que o fluxo atual e é idempotente.
+4. **Ferramentas de pagamento e despesa no conector.** *Aceite:* "Fulano pagou R$ X" no chat vira uma pendência, sem gravar no financeiro.
+5. **Contratos pelo chat.**
+6. **Depois:** comprovantes dos grupos de WhatsApp na mesma caixa (com a decisão sobre a API da Anthropic).
+
+### 24.8 Pendências de esclarecimento
+
+- Quais tipos entram primeiro (pagamento e despesa são a proposta) e como o chat identifica o cliente (nome, CPF parcial, placa).
+- Só o dono aprova, ou as duas pessoas do financeiro também?
+- Termo de dados: aceitar que nomes e saldos passem pelo chat (já ocorre hoje).
+- Confirmar no plano do dono que o conector não tem cobrança adicional.
