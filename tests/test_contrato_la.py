@@ -1,11 +1,11 @@
-"""Modelo do contrato de locação com promessa de compra e venda (src/domain/contrato_promessa.py)."""
+"""Modelo dos contratos da L.A (src/domain/contrato_la.py): locação com promessa de compra e venda e locação simples."""
 
 import re
 from decimal import Decimal
 
 import pytest
 
-from src.domain.contrato_promessa import TERMOS, montar
+from src.domain.contrato_la import TERMOS, montar
 
 CONTRATO = {
     "data_inicio": "2026-11-16", "periodicidade": "semanal", "valor_periodo": Decimal("300.00"), "numero_parcelas": 130,
@@ -190,3 +190,74 @@ class TestValoresFixos:
     def test_foro_e_cidade_do_locador_prevalecem(self):
         blocos = _blocos(locador={"foro": "Fortaleza/CE", "cidade": "Fortaleza/CE"})
         assert "Comarca de Fortaleza/CE" in _texto(blocos) and blocos[-3].texto.startswith("Fortaleza/CE,")
+
+
+LOCACAO = {"tipo_contrato": "locacao", "numero_parcelas": None, "valor_total": None, "valor_entrada": 0, "data_fim_prevista": None}
+
+
+class TestLocacaoSimples:
+    def test_mesmo_template_sem_o_que_e_da_promessa(self):
+        blocos = _blocos(contrato=LOCACAO)
+        assert blocos[0].texto == "CONTRATO DE LOCAÇÃO DE VEÍCULO"
+        texto = _texto(blocos)
+        for termo in ("PROMESSA", "PROMITENTE", "promessa de compra", "QUITAÇÃO", "ATPV-e", "desistir da compra", "aquisição do bem, a "):
+            assert termo not in texto, termo
+        clausulas = [b.texto for b in blocos if b.tipo == "clausula"]
+        assert len(clausulas) == 12 and clausulas[-1] == "CLÁUSULA 12ª - DAS DISPOSIÇÕES GERAIS"
+        assert [int(re.match(r"CLÁUSULA (\d+)ª", c).group(1)) for c in clausulas] == list(range(1, 13))
+
+    def test_numeracao_dos_itens_acompanha_as_clausulas(self):
+        atual = 0
+        numeros = []
+        for b in _blocos(contrato=LOCACAO):
+            if b.tipo == "clausula":
+                atual = int(re.match(r"CLÁUSULA (\d+)", b.texto).group(1))
+            elif b.tipo in ("item", "subitem"):
+                assert b.numero.startswith(f"{atual}."), (atual, b.numero)
+                numeros.append(b.numero)
+        assert len(numeros) == len(set(numeros)) and "12.7." in numeros and "13.1." not in numeros
+
+    def test_partes_e_assinaturas_sem_promitente(self):
+        blocos = _blocos(contrato=LOCACAO)
+        texto = _texto(blocos)
+        assert "**LOCADOR: ALISSON ERLLEN DOS SANTOS SILVA**" in texto and "**LOCATÁRIO:**" in texto
+        assert blocos[-2].numero.startswith("LOCADOR - CPF") and blocos[-1].numero.startswith("LOCATÁRIO - CPF")
+
+    def test_quadro_de_preco_por_periodo(self):
+        q = _preco_locacao(_blocos(contrato=LOCACAO))
+        assert q["Periodicidade"] == "Semanal" and q["Valor de cada parcela"] == "R$ 300,00 (trezentos reais)"
+        assert q["Vencimento das parcelas"] == "Toda segunda-feira, sempre de forma antecipada ao período"
+        assert q["Primeiro pagamento"] == "16/11/2026 (na assinatura)" and q["Vigência"] == "A partir de 16/11/2026, por prazo indeterminado"
+        assert q["Caução"].startswith("R$ 500,00 (quinhentos reais)")
+        assert "Valor total do contrato" not in q and "Entrada" not in q
+
+    def test_vigencia_com_data_de_fim_e_sem_caucao(self):
+        blocos = _blocos(contrato={**LOCACAO, "data_fim_prevista": "2027-02-16", "caucao_valor": 0})
+        q = _preco_locacao(blocos)
+        assert q["Vigência"] == "De 16/11/2026 até 16/02/2027" and q["Caução"] == "Sem caução"
+        assert "vigora até 16/02/2027, salvo rescisão" in _texto(blocos)
+
+    def test_prazo_indeterminado_no_item_10_1(self):
+        assert "vigora por prazo indeterminado" in _texto(_blocos(contrato=LOCACAO))
+
+    def test_valores_fixos_e_resumo_iguais_aos_da_promessa(self):
+        blocos = _blocos(contrato=LOCACAO)
+        resumo = next(b for b in blocos if b.tipo == "resumo")
+        assert len(resumo.linhas) == 12
+        itens = {b.numero.rstrip(".") for b in blocos if b.tipo in ("item", "subitem")}
+        assert all(c in itens for _, _, c in resumo.linhas)
+        assert "R$ 15,00 (quinze reais) a título de multa" in _texto(blocos)
+
+    def test_latin1_e_negritos_fecham(self):
+        for b in _blocos(contrato=LOCACAO):
+            for texto in [b.texto, b.numero] + [c for linha in b.linhas for c in linha]:
+                texto.encode("latin-1")
+                assert texto.count("**") % 2 == 0, texto
+
+    def test_varias_motos_na_locacao_simples(self):
+        blocos = _blocos(contrato=LOCACAO, moto=[MOTO, {**MOTO, "placa": "BRA2E19"}])
+        assert [q["Placa"] for q in _quadros(blocos)[1:3]] == ["OSA4G16", "BRA2E19"]
+
+
+def _preco_locacao(blocos):
+    return next(q for q in _quadros(blocos) if "Periodicidade" in q)

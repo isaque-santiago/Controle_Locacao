@@ -1,6 +1,8 @@
-"""Modelo do contrato de locação de veículo COM PROMESSA DE COMPRA E VENDA (L.A Aluguel de Motos; funções puras).
+"""Modelo dos contratos da L.A Aluguel de Motos (funções puras): locação COM promessa de compra e venda e locação simples.
 
-Reproduz o contrato preenchido de 16/11/2026 (13 cláusulas, quadros de dados e resumo de multas). O que muda de um
+O contrato com promessa reproduz o contrato preenchido de 16/11/2026 (13 cláusulas, quadros de dados e resumo de multas). A
+locação simples é o mesmo documento sem o que é da promessa (propriedade futura, quitação e transferência, desistência da
+compra): 12 cláusulas e quadro de preço por período. A variante vem de `contrato["tipo_contrato"]`. O que muda de um
 contrato para outro (partes, veículo, preço, parcelas, datas) vem dos dados; as multas e os prazos fixos ficam em
 TERMOS, num só lugar, para facilitar a revisão. O resumo de multas é montado a partir de TERMOS, então nunca destoa
 das cláusulas. Tudo em Latin-1 (fonte padrão do PDF): sem travessão, aspas curvas ou marcadores tipográficos.
@@ -11,10 +13,69 @@ resumo (linhas = (situação, valor, cláusula), ...) | fecho | assinatura (nume
 
 from datetime import date
 from decimal import Decimal
+from typing import NamedTuple
 
 from src.domain.agenda_cobrancas import gerar_agenda
-from src.domain.contrato_modelo import Bloco, _como_data, _cpf, _data, _limpa, _milhar, _moeda, _r, _v
-from src.domain.extenso import data_por_extenso, inteiro_por_extenso
+from src.domain.extenso import data_por_extenso, inteiro_por_extenso, moeda_por_extenso
+
+class Bloco(NamedTuple):
+    """tipo: ver o docstring do módulo. `linhas`: só nos quadros e no resumo."""
+
+    tipo: str
+    numero: str
+    texto: str
+    linhas: tuple = ()
+
+
+_EM_BRANCO = "..............................."
+
+
+def _limpa(valor) -> str:
+    """Remove marcações de formatação do PDF (**, __, --) de textos vindos do cadastro."""
+    texto = " ".join(str(valor or "").split())
+    return texto.replace("**", "*").replace("__", "_").replace("--", "-")
+
+
+def _v(valor, em_branco: str = _EM_BRANCO) -> str:
+    texto = _limpa(valor)
+    return texto if texto else em_branco
+
+
+def _moeda(valor) -> str:
+    texto = f"{Decimal(str(valor or 0)):,.2f}"
+    return "R$ " + texto.replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _r(valor) -> str:
+    """'R$ 500,00 (quinhentos reais)'."""
+    return f"{_moeda(valor)} ({moeda_por_extenso(valor)})"
+
+
+def _milhar(numero) -> str:
+    return f"{int(numero or 0):,}".replace(",", ".")
+
+
+def _cpf(valor) -> str:
+    digitos = "".join(c for c in str(valor or "") if c.isdigit())
+    if len(digitos) == 11:
+        return f"{digitos[:3]}.{digitos[3:6]}.{digitos[6:9]}-{digitos[9:]}"
+    return _v(valor)
+
+
+def _data(valor) -> str:
+    if isinstance(valor, date):
+        return valor.strftime("%d/%m/%Y")
+    texto = str(valor or "")
+    if len(texto) >= 10 and texto[4] == "-":
+        return f"{texto[8:10]}/{texto[5:7]}/{texto[:4]}"
+    return texto
+
+
+def _como_data(valor) -> date:
+    if isinstance(valor, date):
+        return valor
+    return date.fromisoformat(str(valor)[:10])
+
 
 TERMOS = {
     "multa_terceiro_conduzir": Decimal("500.00"),
@@ -43,7 +104,10 @@ TERMOS = {
     "foro_padrao": "Crato/CE",
 }
 
+TITULO_PROMESSA = "CONTRATO DE LOCAÇÃO DE VEÍCULO COM\nPROMESSA DE COMPRA E VENDA"
+TITULO_LOCACAO = "CONTRATO DE LOCAÇÃO DE VEÍCULO"
 _TRACO = "________________"
+_ADJETIVO = {"diario": "Diária", "semanal": "Semanal", "quinzenal": "Quinzenal", "mensal": "Mensal"}
 _LOCADOR = "LOCADOR"
 _LOCATARIO = "LOCATÁRIO"
 _DIAS_DA_SEMANA = ("segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo")
@@ -96,12 +160,13 @@ def _datas_das_parcelas(contrato: dict, inicio: date) -> tuple[date, date, int]:
     return agenda[0]["vencimento"], agenda[-1]["vencimento"], len(agenda)
 
 
-def _partes(locador: dict, cliente: dict) -> list[Bloco]:
+def _partes(locador: dict, cliente: dict, promessa: bool) -> list[Bloco]:
     nome = _limpa(locador.get("nome"))
     representante = _limpa(locador.get("representante_nome"))
+    papel_locador = "LOCADOR / PROMITENTE VENDEDOR" if promessa else "LOCADOR"
     if locador.get("cnpj"):
         titular = (
-            f"**LOCADOR / PROMITENTE VENDEDOR: {_v(nome).upper()}**, pessoa jurídica inscrita no CNPJ nº "
+            f"**{papel_locador}: {_v(nome).upper()}**, pessoa jurídica inscrita no CNPJ nº "
             f"{_v(locador.get('cnpj'))}"
             + (f", inscrição estadual nº {_limpa(locador.get('inscricao_estadual'))}" if locador.get("inscricao_estadual") else "")
             + f", com sede em {_v(locador.get('endereco'))}, representada por **{_v(representante).upper()}**, "
@@ -110,7 +175,7 @@ def _partes(locador: dict, cliente: dict) -> list[Bloco]:
         )
     else:
         titular = (
-            f"**LOCADOR / PROMITENTE VENDEDOR: {_v(representante or nome).upper()}**, "
+            f"**{papel_locador}: {_v(representante or nome).upper()}**, "
             + (f"{_limpa(locador.get('representante_qualificacao'))}, " if locador.get("representante_qualificacao") else "")
             + f"portador da cédula de identidade RG nº {_v(locador.get('representante_rg'))}, inscrito no CPF nº "
             f"{_cpf(locador.get('representante_cpf'))}, residente e domiciliado em {_v(locador.get('endereco'))}"
@@ -150,7 +215,7 @@ def _partes(locador: dict, cliente: dict) -> list[Bloco]:
     return [
         Bloco("texto", "", "Pelo presente instrumento particular, de um lado:"),
         Bloco("texto", "", titular),
-        Bloco("texto", "", "**LOCATÁRIO / PROMITENTE COMPRADOR:**"),
+        Bloco("texto", "", "**LOCATÁRIO / PROMITENTE COMPRADOR:**" if promessa else "**LOCATÁRIO:**"),
         Bloco("quadro", "", "", quadro),
         Bloco("texto", "", "doravante denominado **LOCATÁRIO**, têm entre si como justo e contratado o que segue:"),
     ]
@@ -207,6 +272,26 @@ def _quadro_preco(contrato: dict, inicio: date, primeira: date, ultima: date, re
     ))
 
 
+def _quadro_preco_locacao(contrato: dict, inicio: date) -> Bloco:
+    """Preço da locação simples: valor por período, vencimento e vigência (sem entrada, total nem número de parcelas)."""
+    periodicidade = contrato.get("periodicidade")
+    valor = Decimal(str(contrato["valor_periodo"]))
+    caucao = Decimal(str(contrato.get("caucao_valor") or 0))
+    primeira = _como_data(contrato["primeira_cobranca"]) if contrato.get("primeira_cobranca") else inicio
+    fim = contrato.get("data_fim_prevista")
+    primeiro = f"{_data(primeira)} (na assinatura)" if primeira == inicio else _data(primeira)
+    return Bloco("quadro", "", "", (
+        ("Periodicidade", _ADJETIVO.get(periodicidade, _TRACO)),
+        ("Valor de cada parcela", _r(valor)),
+        ("Vencimento das parcelas", _vencimento_texto(periodicidade, primeira) + ", sempre de forma antecipada ao período"),
+        ("Primeiro pagamento", primeiro),
+        ("Vigência", f"De {_data(inicio)} até {_data(fim)}" if fim else f"A partir de {_data(inicio)}, por prazo indeterminado"),
+        ("Caução", f"{_r(caucao)}, paga na retirada do veículo; não abate parcelas e garante multas, danos e débitos"
+                   if caucao > 0 else "Sem caução"),
+        ("Forma de pagamento", "PIX ou outro meio combinado com o LOCADOR, sempre com envio do comprovante"),
+    ))
+
+
 def _resumo_de_multas() -> Bloco:
     t = TERMOS
     return Bloco("resumo", "", "", (
@@ -231,12 +316,13 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     `moto` é uma moto ou a lista das motos do contrato (a principal primeiro): cada uma ganha o seu quadro."""
     motos = list(moto) if isinstance(moto, (list, tuple)) else [moto]
     t = TERMOS
+    promessa = contrato.get("tipo_contrato") == "promessa_compra"
     inicio = _como_data(contrato["data_inicio"])
     primeira, ultima, restantes = _datas_das_parcelas(contrato, inicio)
     foro = _limpa(locador.get("foro")) or t["foro_padrao"]
     cidade = _limpa(locador.get("cidade")) or foro
-    b: list[Bloco] = [Bloco("titulo", "", "CONTRATO DE LOCAÇÃO DE VEÍCULO COM\nPROMESSA DE COMPRA E VENDA")]
-    b += _partes(locador, cliente)
+    b: list[Bloco] = [Bloco("titulo", "", TITULO_PROMESSA if promessa else TITULO_LOCACAO)]
+    b += _partes(locador, cliente, promessa)
 
     def clausula(numero: int, titulo: str):
         b.append(Bloco("clausula", "", f"CLÁUSULA {numero}ª - {titulo}"))
@@ -249,7 +335,7 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
 
     clausula(1, "DO OBJETO DO CONTRATO")
     plural = len(motos) > 1
-    item("1.1.", "Por meio deste contrato regula-se a locação, com promessa de compra e venda ao final, "
+    item("1.1.", "Por meio deste contrato regula-se a locação, " + ("com promessa de compra e venda ao final, " if promessa else "")
          + ("dos veículos abaixo descritos" if plural else "do veículo abaixo descrito")
          + ", de propriedade do LOCADOR:")
     km_inicial = contrato.get("km_inicial") or 0
@@ -266,12 +352,19 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     item("1.3.", "O LOCATÁRIO declara ter vistoriado o veículo no ato da entrega, recebendo-o em perfeitas condições de uso e funcionamento.")
 
     clausula(2, "DA NATUREZA DO CONTRATO E DA PROPRIEDADE")
-    item("2.1.", "A posse direta do veículo é transferida ao LOCATÁRIO na data da assinatura deste contrato, permanecendo a "
-         "propriedade com o LOCADOR até a quitação integral da entrada, de todas as parcelas e demais obrigações deste instrumento.")
-    item("2.2.", "As partes reconhecem que os valores pagos durante a vigência deste contrato correspondem à remuneração pela "
-         "locação e pelo uso do veículo. A transferência da propriedade é condição futura, que somente ocorrerá com o pagamento "
-         "integral, não se operando de forma antecipada ou proporcional.")
-    item("2.3.", "Enquanto não houver quitação integral, é proibido ao LOCATÁRIO vender, prometer vender, trocar, emprestar, "
+    if promessa:
+        item("2.1.", "A posse direta do veículo é transferida ao LOCATÁRIO na data da assinatura deste contrato, permanecendo a "
+             "propriedade com o LOCADOR até a quitação integral da entrada, de todas as parcelas e demais obrigações deste instrumento.")
+        item("2.2.", "As partes reconhecem que os valores pagos durante a vigência deste contrato correspondem à remuneração pela "
+             "locação e pelo uso do veículo. A transferência da propriedade é condição futura, que somente ocorrerá com o pagamento "
+             "integral, não se operando de forma antecipada ou proporcional.")
+    else:
+        item("2.1.", "A posse direta do veículo é transferida ao LOCATÁRIO na data da assinatura deste contrato, permanecendo a "
+             "propriedade com o LOCADOR durante toda a vigência do contrato e após o seu término.")
+        item("2.2.", "As partes reconhecem que os valores pagos durante a vigência deste contrato correspondem à remuneração pela "
+             "locação e pelo uso do veículo, não gerando ao LOCATÁRIO qualquer direito à aquisição do bem.")
+    item("2.3.", ("Enquanto não houver quitação integral, é" if promessa else "Durante a vigência deste contrato, é")
+         + " proibido ao LOCATÁRIO vender, prometer vender, trocar, emprestar, "
          "ceder, sublocar, dar em garantia ou de qualquer forma negociar o veículo.")
 
     clausula(3, "DA VISTORIA DO VEÍCULO")
@@ -392,14 +485,14 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     item("7.4.", "Decorrido o prazo do item 7.2 sem que o LOCATÁRIO tenha liberado o veículo, o presente contrato estará "
          "**rescindido de pleno direito**, independentemente de notificação, ficando o LOCADOR autorizado a quitar os valores "
          "pendentes, retirar o veículo do pátio e retomá-lo em definitivo, voltando o veículo à sua livre disposição, sem que o "
-         "LOCATÁRIO tenha direito à aquisição do bem, a qualquer indenização ou à restituição dos valores já pagos, que "
+         "LOCATÁRIO tenha direito " + ("à aquisição do bem, a " if promessa else "a ") + "qualquer indenização ou à restituição dos valores já pagos, que "
          "permanecerão com o LOCADOR como remuneração pelo uso do veículo (item 2.2).")
     item("7.5.", "Na hipótese do item 7.4, o LOCATÁRIO continuará devedor do LOCADOR de todos os valores por este desembolsados "
          "para a liberação do veículo, das parcelas vencidas até a data da rescisão, das multas contratuais e dos eventuais "
          "danos ao veículo, podendo o LOCADOR cobrá-los inclusive judicialmente.")
 
     clausula(8, "DO PREÇO E DA FORMA DE PAGAMENTO")
-    b.append(_quadro_preco(contrato, inicio, primeira, ultima, restantes))
+    b.append(_quadro_preco(contrato, inicio, primeira, ultima, restantes) if promessa else _quadro_preco_locacao(contrato, inicio))
     item("8.1.", "O LOCATÁRIO pagará ao LOCADOR os valores indicados no quadro acima, até o dia do vencimento de cada parcela.")
     item("8.2.", "Caso o pagamento seja feito após a data acordada, o valor sofrerá um acréscimo de "
          f"{_r(t['atraso_multa'])} a título de multa, bem como um acréscimo de {_r(t['atraso_juros_por_dia'])} por dia de atraso "
@@ -414,7 +507,7 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     item("9.1.", "Os gastos com o combustível do veículo deverão ser arcados integralmente pelo LOCATÁRIO. Em caso de devolução, "
          "o veículo deverá ser entregue com a mesma quantidade de combustível contida quando da entrega pelo LOCADOR, sob "
          "pena de cobrança do valor necessário para atingir tal quantidade.")
-    item("9.2.", "Qualquer valor inerente à cobrança por passagem, estacionamento ou pedágio do veículo durante a posse do "
+    item("9.2.", "Qualquer valor inerente a cobrança por passagem, estacionamento ou pedágio do veículo durante a posse do "
          "LOCATÁRIO deverá por este ser arcado. Caso o LOCADOR seja cobrado por qualquer valor desta natureza, o LOCATÁRIO "
          "deverá reembolsá-lo imediatamente.")
     item("9.3.", "Caso o veículo seja devolvido sujo, será cobrada a lavagem simples "
@@ -422,8 +515,15 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     item("9.4.", "Quando o documento do veículo não for devolvido, será cobrado o reembolso das despesas para obtenção da 2ª via.")
 
     clausula(10, "DA VIGÊNCIA E DA RESCISÃO")
-    item("10.1.", "O presente contrato se inicia na data de sua assinatura e vigora até a quitação integral do preço previsto "
-         "na Cláusula 8ª.")
+    if promessa:
+        item("10.1.", "O presente contrato se inicia na data de sua assinatura e vigora até a quitação integral do preço previsto "
+             "na Cláusula 8ª.")
+    elif contrato.get("data_fim_prevista"):
+        item("10.1.", f"O presente contrato se inicia na data de sua assinatura e vigora até {_data(contrato['data_fim_prevista'])}, "
+             "salvo rescisão nos termos desta cláusula.")
+    else:
+        item("10.1.", "O presente contrato se inicia na data de sua assinatura e vigora por prazo indeterminado, podendo ser "
+             "encerrado nos termos desta cláusula.")
     item("10.2.", "O contrato poderá ser considerado rescindido de pleno direito pelo LOCADOR, independentemente de qualquer "
          "notificação, e este, sem mais formalidades, providenciará a retomada do veículo, sem que isso enseje ao LOCATÁRIO "
          "qualquer direito de retenção, indenização ou devolução dos valores pagos, quando:")
@@ -435,11 +535,11 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
             "reembolsos) e não a quitar imediatamente, caso em que o veículo deverá ser entregue em local determinado pelo "
             f"LOCADOR, imediatamente, sob pena de multa de {_r(t['multa_retomada_por_dia'])} por dia, salvo acordo contrário entre as partes.")
     item("10.3.", f"Em qualquer hipótese de rescisão, o LOCATÁRIO deverá devolver o veículo em até {_n(t['devolucao_horas'])} horas, no "
-         "local indicado pelo LOCADOR. Os valores pagos (entrada e parcelas) permanecerão com o LOCADOR como remuneração pelo uso "
+         "local indicado pelo LOCADOR. Os valores pagos " + ("(entrada e parcelas) " if promessa else "") + "permanecerão com o LOCADOR como remuneração pelo uso "
          "do veículo, nos termos do item 2.2, e continuarão devidos as parcelas vencidas até a devolução, as multas, as despesas "
          "e os danos.")
-    item("10.4.", "O LOCATÁRIO poderá desistir da compra a qualquer momento, devolvendo o veículo ao LOCADOR, aplicando-se o "
-         "disposto no item 10.3.")
+    item("10.4.", ("O LOCATÁRIO poderá desistir da compra" if promessa else "O LOCATÁRIO poderá encerrar a locação")
+         + " a qualquer momento, devolvendo o veículo ao LOCADOR, aplicando-se o disposto no item 10.3.")
     item("10.5.", "Fica desde já pactuada a total inexistência de vínculo trabalhista entre as partes do presente contrato, sendo "
          "indevida toda e qualquer incidência das obrigações previdenciárias e dos encargos sociais, não havendo entre as partes "
          "qualquer tipo de subordinação e controle típicos de relações de emprego.")
@@ -455,33 +555,35 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
          "**APROPRIAÇÃO INDÉBITA**, conforme artigo 168 do Código Penal Brasileiro, com pena de reclusão de 1 (um) a 4 (quatro) "
          "anos e multa.")
 
-    clausula(12, "DA QUITAÇÃO E DA TRANSFERÊNCIA DO VEÍCULO")
-    item("12.1.", "Quitadas a entrada, todas as parcelas e todos os demais débitos deste contrato, a promessa de compra e venda "
-         "tornar-se-á efetiva e o LOCADOR assinará a Autorização para Transferência de Propriedade do Veículo (ATPV-e) em favor "
-         f"do LOCATÁRIO, em até {_n(t['transferencia_prazo_dias_uteis'])} dias úteis, mediante termo de quitação.")
-    item("12.2.", "Todas as despesas da transferência, como taxas do DETRAN, vistoria, reconhecimento de firma, emplacamento e "
-         "quaisquer outros custos, são de **responsabilidade exclusiva do LOCATÁRIO**.")
-    item("12.3.", f"O LOCATÁRIO deverá efetuar a transferência do veículo para o seu nome no prazo de {_n(t['transferencia_prazo_dias'])} "
-         "dias da assinatura da ATPV-e (artigo 123 do Código de Trânsito Brasileiro), respondendo por qualquer multa ou "
-         "penalidade decorrente do atraso.")
+    if promessa:
+        clausula(12, "DA QUITAÇÃO E DA TRANSFERÊNCIA DO VEÍCULO")
+        item("12.1.", "Quitados a entrada, todas as parcelas e todos os demais débitos deste contrato, a promessa de compra e venda "
+             "tornar-se-á efetiva e o LOCADOR assinará a Autorização para Transferência de Propriedade do Veículo (ATPV-e) em favor "
+             f"do LOCATÁRIO, em até {_n(t['transferencia_prazo_dias_uteis'])} dias úteis, mediante termo de quitação.")
+        item("12.2.", "Todas as despesas da transferência, como taxas do DETRAN, vistoria, reconhecimento de firma, emplacamento e "
+             "quaisquer outros custos, são de **responsabilidade exclusiva do LOCATÁRIO**.")
+        item("12.3.", f"O LOCATÁRIO deverá efetuar a transferência do veículo para o seu nome no prazo de {_n(t['transferencia_prazo_dias'])} "
+             "dias da assinatura da ATPV-e (artigo 123 do Código de Trânsito Brasileiro), respondendo por qualquer multa ou "
+             "penalidade decorrente do atraso.")
 
-    clausula(13, "DAS DISPOSIÇÕES GERAIS")
-    item("13.1.", "Quaisquer notificações e comunicações enviadas sob este contrato podem ser realizadas de forma eletrônica "
+    gerais = 13 if promessa else 12
+    clausula(gerais, "DAS DISPOSIÇÕES GERAIS")
+    item(f"{gerais}.1.", "Quaisquer notificações e comunicações enviadas sob este contrato podem ser realizadas de forma eletrônica "
          "(e-mail ou WhatsApp), escrita ou por correspondência com aviso de recebimento aos endereços constantes do preâmbulo. "
          "Havendo alteração de endereço, ficam as partes obrigadas a fornecer tal informação.")
-    item("13.2.", "Todos os valores, despesas e encargos deste contrato constituem dívidas líquidas e certas, passíveis de cobrança "
+    item(f"{gerais}.2.", "Todos os valores, despesas e encargos deste contrato constituem dívidas líquidas e certas, passíveis de cobrança "
          "executiva. Assinado pelas partes e por duas testemunhas, este contrato é título executivo extrajudicial (artigo 784, "
          "III, do Código de Processo Civil).")
-    item("13.3.", "Eventuais tolerâncias do LOCADOR para com o LOCATÁRIO no cumprimento das obrigações ajustadas neste contrato "
+    item(f"{gerais}.3.", "Eventuais tolerâncias do LOCADOR para com o LOCATÁRIO no cumprimento das obrigações ajustadas neste contrato "
          "constituem mera liberalidade, não importando, em hipótese alguma, em novação ou renúncia, permanecendo íntegras as "
          "cláusulas e condições aqui contratadas.")
-    item("13.4.", "O LOCATÁRIO autoriza o LOCADOR a coletar, usar e divulgar a sua imagem para fins de cadastro, defesa e/ou "
+    item(f"{gerais}.4.", "O LOCATÁRIO autoriza o LOCADOR a coletar, usar e divulgar a sua imagem para fins de cadastro, defesa e/ou "
          "promoção.")
-    item("13.5.", "O LOCATÁRIO concorda que a sua assinatura no contrato implica ciência e adesão, por si, seus herdeiros e "
+    item(f"{gerais}.5.", "O LOCATÁRIO concorda que a sua assinatura no contrato implica ciência e adesão, por si, seus herdeiros e "
          "sucessores, a estas cláusulas, e declara ter lido e compreendido todo o seu conteúdo, especialmente as Cláusulas 6ª e 7ª.")
-    item("13.6.", f"Fica eleito o foro da Comarca de {foro} como competente para dirimir quaisquer questões que possam advir da "
+    item(f"{gerais}.6.", f"Fica eleito o foro da Comarca de {foro} como competente para dirimir quaisquer questões que possam advir da "
          "aplicação do presente contrato, com renúncia a qualquer outro, por mais privilegiado que seja ou venha a ser.")
-    item("13.7.", "E, por estarem assim justas e contratadas, as partes firmam o presente instrumento em 02 (duas) vias de igual "
+    item(f"{gerais}.7.", "E, por estarem assim justas e contratadas, as partes firmam o presente instrumento em 02 (duas) vias de igual "
          "teor e forma, para que produza seus efeitos legais, após terem lido o seu conteúdo, o qual foi claramente entendido e aceito.")
 
     b.append(Bloco("legenda", "", "RESUMO DAS MULTAS E VALORES DESTE CONTRATO"))
@@ -490,6 +592,6 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     b.append(Bloco("fecho", "", f"{cidade}, {data_por_extenso(inicio)}."))
 
     nome_locador = _limpa(locador.get("representante_nome")) or _limpa(locador.get("nome"))
-    b.append(Bloco("assinatura", f"LOCADOR / PROMITENTE VENDEDOR - CPF {_cpf(locador.get('representante_cpf'))}", _v(nome_locador, "LOCADOR").upper()))
-    b.append(Bloco("assinatura", f"LOCATÁRIO / PROMITENTE COMPRADOR - CPF {_cpf(cliente.get('cpf'))}", _v(cliente.get("nome"), "LOCATÁRIO").upper()))
+    b.append(Bloco("assinatura", f"{'LOCADOR / PROMITENTE VENDEDOR' if promessa else 'LOCADOR'} - CPF {_cpf(locador.get('representante_cpf'))}", _v(nome_locador, "LOCADOR").upper()))
+    b.append(Bloco("assinatura", f"{'LOCATÁRIO / PROMITENTE COMPRADOR' if promessa else 'LOCATÁRIO'} - CPF {_cpf(cliente.get('cpf'))}", _v(cliente.get("nome"), "LOCATÁRIO").upper()))
     return b

@@ -1225,7 +1225,7 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
    - **Senha:** o sistema **não tem data de nascimento** (`clientes` guarda nome, CPF, telefone, WhatsApp, e-mail e CNH). Usa-se então o **CPF**, que é obrigatório e único (**confirmado em 16/11/2026**): primeiro nome + **últimos 6 dígitos do CPF**, sem separador (ex.: `joao123456`). Alterável: só mudar a regra pura em `src/domain`.
    - **Segurança:** o dono aceitou a senha previsível, pois o locatário esquece senhas. A **troca de senha pelo próprio locatário continua existindo** (conferir/manter a tela do portal) e o "Esqueci minha senha" (22.2) segue valendo.
    - **Locatários já existentes:** **redefinir todos** para o padrão (e-mail e senha acima), decisão de 16/11/2026. Fazer por script/RPC com conferência, e avisar os locatários.
-5. **Contratos no formato e valores dos "Contratos Locadora"** (implementado em 16/11/2026 na branch `feat/contrato-modelo-la`: modelo novo só para promessa de compra; falta aplicar a migration `20261117120000` e conferir `LOCADOR_*` no Coolify). Depende de ler os contratos de lá e comparar com `src/domain/contrato_modelo.py`.
+5. **Contratos no formato e valores dos "Contratos Locadora"** (implementado em 16/11/2026 na branch `feat/contrato-modelo-la`: mergeada; migration aplicada e `LOCADOR_*` no Coolify). **Ajuste em 16/11/2026** (branch `ajuste/contrato-visual-e-locacao`): visual menos apertado e logo corrigida, e a locação simples passa a usar o mesmo template, sem o que é da promessa; o texto antigo de 10 cláusulas foi removido). Depende de ler os contratos de lá e comparar com `src/domain/contrato_modelo.py`.
 
 ### 23.2 Depois da prioridade
 
