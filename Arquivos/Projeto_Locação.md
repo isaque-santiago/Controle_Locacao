@@ -1219,15 +1219,20 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
    - **Hoje:** `src/web/sessao.py` expira com 30 min de inatividade (`LIMITE_INATIVIDADE_SEGUNDOS`) e 12 h de vida máxima (`LIMITE_VIDA_SEGUNDOS`); o cookie e o refresh token do Supabase também precisam durar. O aviso de expiração da tela (`data-sessao-limite`) deve ser revisto.
    - **Risco aceito:** celular perdido com sessão aberta. Mitigar com "Sair de todos os dispositivos" e revisar `Arquivos/Revisao_Seguranca.md`.
 2. **App na tela inicial do iPhone.** Já existem `static/manifest.webmanifest` e `apple-touch-icon.png`; **faltam** as metas `apple-mobile-web-app-capable` e `apple-mobile-web-app-title` em `base.html`. Verificar num iPhone real.
-3. **Nome do app no celular:** **"LA Locadora"** (decisão de 16/11/2026), no `name`/`short_name` do manifest, em `apple-mobile-web-app-title` e no `<title>` das páginas.
+3. **Nome do app: "LA Locadora"** (decisão de 16/11/2026), um só nome para tudo: `name`/`short_name` do manifest, `apple-mobile-web-app-title`, `<title>` das páginas e textos do sistema (inclui o item 9, que passa a ser "LA Motos" → "LA Locadora").
 4. **Acesso padronizado dos locatários.**
-   - **Decisão (16/11/2026):** e-mail `nome.sobrenome@locadora.com`; senha = nome + data de nascimento, sem separador (ex.: `joao15031990`).
-   - **A resolver:** homônimos (sufixo numérico?); normalização (minúsculas, sem acento/espaço); locatários já existentes (manter a senha até o dono redefinir?); como nome e nascimento ficam na criação do acesso (`clientes` tem data de nascimento? se não, usar outro valor, como o próprio Alisson previu); a senha derivada de dado pessoal é fraca, avaliar troca obrigatória no primeiro acesso.
+   - **E-mail:** `nome.sobrenome@locadora.com` (minúsculas, sem acento nem espaço). **Homônimos:** sufixo numérico (`joao.silva2@locadora.com`).
+   - **Senha:** o sistema **não tem data de nascimento** (`clientes` guarda nome, CPF, telefone, WhatsApp, e-mail e CNH). Usa-se então o **CPF**, que é obrigatório e único: primeiro nome + **últimos 6 dígitos do CPF**, sem separador (ex.: `joao123456`). Alterável: só mudar a regra pura em `src/domain`.
+   - **Segurança:** o dono aceitou a senha previsível, pois o locatário esquece senhas. A **troca de senha pelo próprio locatário continua existindo** (conferir/manter a tela do portal) e o "Esqueci minha senha" (22.2) segue valendo.
+   - **Locatários já existentes:** a decidir (manter a senha atual até o dono redefinir, ou redefinir todos).
 5. **Contratos no formato e valores dos "Contratos Locadora"** (conversa do Claude). Depende de ler os contratos de lá e comparar com `src/domain/contrato_modelo.py`.
 
 ### 23.2 Depois da prioridade
 
-6. **Cobranças pelo WhatsApp em grupo por locatário (Evolution API).** Cada locatário tem um grupo próprio, sem vazar dados pessoais. **Conflito com a seção 20:** a 20.1 decidiu enviar ao número individual `clientes.whatsapp`; precisa ser reconciliada (campo do ID do grupo no cadastro? o chip dedicado entra nos grupos?). Perguntar antes de implementar.
+6. **Cobranças pelo WhatsApp em grupo por locatário (Evolution API).** Hoje a locadora cria **um grupo por locatário**, com: o locatário, o dono e as duas pessoas do financeiro; sem vazar dados pessoais entre locatários. O chip dedicado da Evolution entra em todos os grupos.
+   - **Muda a seção 20:** o destino deixa de ser só o número individual (`clientes.whatsapp`, 20.1 itens 1 e 2) e passa a ser o **grupo** do cliente. Mensagens agrupadas por cliente/dia (20.1 item 5) continuam valendo, mas como uma mensagem no grupo.
+   - **Onde guardar o ID do grupo (proposta):** coluna `clientes.whatsapp_grupo_id text` (formato `1203...@g.us`), anulável e única, preenchida no cadastro do cliente. Cliente sem grupo: mensagem `ignorada`, com o motivo (como hoje sem número). Possível melhoria: listar os grupos da instância pela Evolution para o dono escolher, em vez de colar o ID.
+   - **Horários de envio:** o dono vai ajustar a janela (20.1 item 3); aguardar antes de implementar a seção 20.
 7. **Automação com os chats "Acompanhamento Financeiro" e "Contratos Locadora":** leitura e comparação de dados. Complexo; não é prioridade agora.
 8. **Checar dados** vindos desses dois chats contra o sistema.
 9. **Renomear "LA Motos" para "LA Locações"** em todo o sistema (o foco não são só motos, mas veículos). Diferente do nome do app no celular (item 3).
@@ -1235,5 +1240,5 @@ Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo es
 
 ### 23.3 Pendências de esclarecimento
 
-- Itens 4 e 6 (acima).
-- Item 3 e item 9 usam nomes diferentes ("LA Locadora" no ícone e "LA Locações" no sistema): confirmar se é isso mesmo.
+- Item 4: confirmar que a senha é primeiro nome + últimos 6 dígitos do CPF e o que fazer com os locatários atuais.
+- Item 6: novos horários de envio, e confirmar `clientes.whatsapp_grupo_id`.
