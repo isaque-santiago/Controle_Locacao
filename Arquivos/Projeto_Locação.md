@@ -1207,3 +1207,33 @@ Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de
 - **Regra:** só o bucket `trocas_oleo` e a pasta `portal/` do bucket `documentos`; só arquivos com mais de 24 horas e sem nenhuma referência; vistorias e arquivos do próprio dono ficam de fora.
 - **Banco e app:** RPC `rpc_listar_arquivos_orfaos` (migration `20261112160000_arquivos_orfaos_portal.sql`, roteiro `supabase/verificar_arquivos_orfaos_portal.sql`); a remoção usa a API do Storage e a lista é recalculada na hora de apagar. Regras puras em `src/domain/arquivos_orfaos.py`.
 
+
+## 23. Feedback do Alisson (16/11/2026): ajustes pós-entrega
+
+Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo está implementado; cada item vira uma branch/PR própria, na ordem de prioridade.
+
+### 23.1 Prioridade agora
+
+1. **Sessão longa (celular e desktop).** O locatário não quer entrar toda hora.
+   - **Decisão (16/11/2026):** 90 dias para **todos** os usuários, inclusive o dono/administrador.
+   - **Hoje:** `src/web/sessao.py` expira com 30 min de inatividade (`LIMITE_INATIVIDADE_SEGUNDOS`) e 12 h de vida máxima (`LIMITE_VIDA_SEGUNDOS`); o cookie e o refresh token do Supabase também precisam durar. O aviso de expiração da tela (`data-sessao-limite`) deve ser revisto.
+   - **Risco aceito:** celular perdido com sessão aberta. Mitigar com "Sair de todos os dispositivos" e revisar `Arquivos/Revisao_Seguranca.md`.
+2. **App na tela inicial do iPhone.** Já existem `static/manifest.webmanifest` e `apple-touch-icon.png`; **faltam** as metas `apple-mobile-web-app-capable` e `apple-mobile-web-app-title` em `base.html`. Verificar num iPhone real.
+3. **Nome do app no celular:** **"LA Locadora"** (decisão de 16/11/2026), no `name`/`short_name` do manifest, em `apple-mobile-web-app-title` e no `<title>` das páginas.
+4. **Acesso padronizado dos locatários.**
+   - **Decisão (16/11/2026):** e-mail `nome.sobrenome@locadora.com`; senha = nome + data de nascimento, sem separador (ex.: `joao15031990`).
+   - **A resolver:** homônimos (sufixo numérico?); normalização (minúsculas, sem acento/espaço); locatários já existentes (manter a senha até o dono redefinir?); como nome e nascimento ficam na criação do acesso (`clientes` tem data de nascimento? se não, usar outro valor, como o próprio Alisson previu); a senha derivada de dado pessoal é fraca, avaliar troca obrigatória no primeiro acesso.
+5. **Contratos no formato e valores dos "Contratos Locadora"** (conversa do Claude). Depende de ler os contratos de lá e comparar com `src/domain/contrato_modelo.py`.
+
+### 23.2 Depois da prioridade
+
+6. **Cobranças pelo WhatsApp em grupo por locatário (Evolution API).** Cada locatário tem um grupo próprio, sem vazar dados pessoais. **Conflito com a seção 20:** a 20.1 decidiu enviar ao número individual `clientes.whatsapp`; precisa ser reconciliada (campo do ID do grupo no cadastro? o chip dedicado entra nos grupos?). Perguntar antes de implementar.
+7. **Automação com os chats "Acompanhamento Financeiro" e "Contratos Locadora":** leitura e comparação de dados. Complexo; não é prioridade agora.
+8. **Checar dados** vindos desses dois chats contra o sistema.
+9. **Renomear "LA Motos" para "LA Locações"** em todo o sistema (o foco não são só motos, mas veículos). Diferente do nome do app no celular (item 3).
+10. **Definir dados a excluir ou não implementar mais.** Sugestão do Alisson: veículos vendidos e ex-locatários. Envolve LGPD (seção 8) e histórico financeiro: decidir entre arquivar e apagar.
+
+### 23.3 Pendências de esclarecimento
+
+- Itens 4 e 6 (acima).
+- Item 3 e item 9 usam nomes diferentes ("LA Locadora" no ícone e "LA Locações" no sistema): confirmar se é isso mesmo.
