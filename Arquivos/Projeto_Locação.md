@@ -1207,3 +1207,37 @@ Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de
 - **Regra:** só o bucket `trocas_oleo` e a pasta `portal/` do bucket `documentos`; só arquivos com mais de 24 horas e sem nenhuma referência; vistorias e arquivos do próprio dono ficam de fora.
 - **Banco e app:** RPC `rpc_listar_arquivos_orfaos` (migration `20261112160000_arquivos_orfaos_portal.sql`, roteiro `supabase/verificar_arquivos_orfaos_portal.sql`); a remoção usa a API do Storage e a lista é recalculada na hora de apagar. Regras puras em `src/domain/arquivos_orfaos.py`.
 
+
+## 23. Feedback do Alisson (16/11/2026): ajustes pós-entrega
+
+Feedback do segundo responsável após ver o sistema "terminado". Nada abaixo está implementado; cada item vira uma branch/PR própria, na ordem de prioridade.
+
+### 23.1 Prioridade agora
+
+1. **Sessão longa (celular e desktop).** O locatário não quer entrar toda hora.
+   - **Decisão (16/11/2026):** 90 dias para **todos** os usuários, inclusive o dono/administrador.
+   - **Hoje:** `src/web/sessao.py` expira com 30 min de inatividade (`LIMITE_INATIVIDADE_SEGUNDOS`) e 12 h de vida máxima (`LIMITE_VIDA_SEGUNDOS`); o cookie e o refresh token do Supabase também precisam durar. O aviso de expiração da tela (`data-sessao-limite`) deve ser revisto.
+   - **Risco aceito:** celular perdido com sessão aberta. Mitigar com "Sair de todos os dispositivos" e revisar `Arquivos/Revisao_Seguranca.md`.
+2. **App na tela inicial do iPhone.** Já existem `static/manifest.webmanifest` e `apple-touch-icon.png`; **faltam** as metas `apple-mobile-web-app-capable` e `apple-mobile-web-app-title` em `base.html`. Verificar num iPhone real.
+3. **Nome do app: "LA Locadora"** (decisão de 16/11/2026), um só nome para tudo: `name`/`short_name` do manifest, `apple-mobile-web-app-title`, `<title>` das páginas e textos do sistema (inclui o item 9, que passa a ser "LA Motos" → "LA Locadora").
+4. **Acesso padronizado dos locatários.**
+   - **E-mail:** `nome.sobrenome@locadora.com` (minúsculas, sem acento nem espaço). **Homônimos:** sufixo numérico (`joao.silva2@locadora.com`).
+   - **Senha:** o sistema **não tem data de nascimento** (`clientes` guarda nome, CPF, telefone, WhatsApp, e-mail e CNH). Usa-se então o **CPF**, que é obrigatório e único (**confirmado em 16/11/2026**): primeiro nome + **últimos 6 dígitos do CPF**, sem separador (ex.: `joao123456`). Alterável: só mudar a regra pura em `src/domain`.
+   - **Segurança:** o dono aceitou a senha previsível, pois o locatário esquece senhas. A **troca de senha pelo próprio locatário continua existindo** (conferir/manter a tela do portal) e o "Esqueci minha senha" (22.2) segue valendo.
+   - **Locatários já existentes:** **redefinir todos** para o padrão (e-mail e senha acima), decisão de 16/11/2026. Fazer por script/RPC com conferência, e avisar os locatários.
+5. **Contratos no formato e valores dos "Contratos Locadora"** (conversa do Claude). Depende de ler os contratos de lá e comparar com `src/domain/contrato_modelo.py`.
+
+### 23.2 Depois da prioridade
+
+6. **Cobranças pelo WhatsApp em grupo por locatário (Evolution API).** Hoje a locadora cria **um grupo por locatário**, com: o locatário, o dono e as duas pessoas do financeiro; sem vazar dados pessoais entre locatários. O chip dedicado da Evolution entra em todos os grupos.
+   - **Muda a seção 20:** o destino deixa de ser só o número individual (`clientes.whatsapp`, 20.1 itens 1 e 2) e passa a ser o **grupo** do cliente. Mensagens agrupadas por cliente/dia (20.1 item 5) continuam valendo, mas como uma mensagem no grupo.
+   - **Onde guardar o ID do grupo (proposta):** coluna `clientes.whatsapp_grupo_id text` (formato `1203...@g.us`), anulável e única, preenchida no cadastro do cliente. Cliente sem grupo: mensagem `ignorada`, com o motivo (como hoje sem número). Possível melhoria: listar os grupos da instância pela Evolution para o dono escolher, em vez de colar o ID.
+   - **Horários de envio:** o dono vai ajustar a janela (20.1 item 3); aguardar antes de implementar a seção 20.
+7. **Automação com os chats "Acompanhamento Financeiro" e "Contratos Locadora":** leitura e comparação de dados. Complexo; não é prioridade agora.
+8. **Checar dados** vindos desses dois chats contra o sistema.
+9. **Renomear "LA Motos" para "LA Locações"** em todo o sistema (o foco não são só motos, mas veículos). Diferente do nome do app no celular (item 3).
+10. **Definir dados a excluir ou não implementar mais.** Sugestão do Alisson: veículos vendidos e ex-locatários. Envolve LGPD (seção 8) e histórico financeiro: decidir entre arquivar e apagar.
+
+### 23.3 Pendências de esclarecimento
+
+- Item 6: novos horários de envio (o dono ainda vai definir) e confirmar `clientes.whatsapp_grupo_id`.
