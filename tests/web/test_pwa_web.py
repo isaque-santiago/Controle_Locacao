@@ -32,3 +32,11 @@ def test_pagina_de_login_aponta_para_o_manifesto_e_a_cor_do_tema(cliente):
 def test_favicon_ico_nao_da_404(cliente):
     resposta = cliente.get("/favicon.ico")
     assert resposta.status_code == 200 and resposta.headers["content-type"] == "image/png"
+
+
+def test_paginas_trazem_as_metas_do_iphone_para_a_tela_inicial(cliente):
+    html = cliente.get("/login").text
+    assert 'name="apple-mobile-web-app-capable" content="yes"' in html
+    assert 'name="mobile-web-app-capable" content="yes"' in html
+    assert 'name="apple-mobile-web-app-title" content="LA Locadora"' in html
+    assert 'name="apple-mobile-web-app-status-bar-style" content="default"' in html

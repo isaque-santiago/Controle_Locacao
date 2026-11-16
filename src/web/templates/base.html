@@ -9,6 +9,11 @@
 <link rel="icon" href="{{ url_estatico('favicon.svg') }}" type="image/svg+xml">
 <link rel="apple-touch-icon" href="{{ url_estatico('icones/apple-touch-icon.png') }}">
 <link rel="manifest" href="{{ url_estatico('manifest.webmanifest') }}">
+{# iPhone: "Adicionar à Tela de Início" abre o app em tela cheia (sem a barra do Safari) e usa este nome sob o ícone. #}
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LA Locadora">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0D0F11" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="{{ url_estatico('css/app.css') }}">
