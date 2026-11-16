@@ -414,7 +414,7 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
     item("9.1.", "Os gastos com o combustível do veículo deverão ser arcados integralmente pelo LOCATÁRIO. Em caso de devolução, "
          "o veículo deverá ser entregue com a mesma quantidade de combustível contida quando da entrega pelo LOCADOR, sob "
          "pena de cobrança do valor necessário para atingir tal quantidade.")
-    item("9.2.", "Qualquer valor inerente à cobrança por passagem, estacionamento ou pedágio do veículo durante a posse do "
+    item("9.2.", "Qualquer valor inerente a cobrança por passagem, estacionamento ou pedágio do veículo durante a posse do "
          "LOCATÁRIO deverá por este ser arcado. Caso o LOCADOR seja cobrado por qualquer valor desta natureza, o LOCATÁRIO "
          "deverá reembolsá-lo imediatamente.")
     item("9.3.", "Caso o veículo seja devolvido sujo, será cobrada a lavagem simples "
@@ -456,7 +456,7 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
          "anos e multa.")
 
     clausula(12, "DA QUITAÇÃO E DA TRANSFERÊNCIA DO VEÍCULO")
-    item("12.1.", "Quitadas a entrada, todas as parcelas e todos os demais débitos deste contrato, a promessa de compra e venda "
+    item("12.1.", "Quitados a entrada, todas as parcelas e todos os demais débitos deste contrato, a promessa de compra e venda "
          "tornar-se-á efetiva e o LOCADOR assinará a Autorização para Transferência de Propriedade do Veículo (ATPV-e) em favor "
          f"do LOCATÁRIO, em até {_n(t['transferencia_prazo_dias_uteis'])} dias úteis, mediante termo de quitação.")
     item("12.2.", "Todas as despesas da transferência, como taxas do DETRAN, vistoria, reconhecimento de firma, emplacamento e "

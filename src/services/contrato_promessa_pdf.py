@@ -18,13 +18,14 @@ SUBTITULO = "Locação de motocicletas com promessa de compra e venda"
 
 _MARGEM = 20
 _TOPO_CORPO = 38
-_TAMANHO = 9.5
-_ALTURA_LINHA = 5.0
+_TAMANHO = 10
+_ALTURA_LINHA = 5.5
 _PRETO = (13, 15, 17)
 _VERMELHO = (200, 16, 46)
 _CINZA_TEXTO = (90, 95, 102)
 _CINZA_FUNDO = (243, 243, 243)
 _CINZA_BORDA = (205, 205, 205)
+_VALORES_SEM_NEGRITO = ("Tipo", "Quilometragem na entrega", "Forma de pagamento")
 _RESERVA_ASSINATURAS = 120  # mm: bloco de assinaturas e testemunhas
 
 
@@ -51,9 +52,11 @@ class _Documento(FPDF):
         self.rect(0, 27, self.w, 1.3, style="F")
         logo = PASTA_IMAGENS / "logo.png"
         if logo.exists():
+            # Caixa branca de cantos arredondados com a logo no tamanho certo (proporção 105x96), dentro da faixa.
             self.set_fill_color(255, 255, 255)
-            self.rect(_MARGEM - 8, 4.5, 27, 20, style="F", round_corners=True, corner_radius=3)
-            self.image(str(logo), x=_MARGEM - 6.5, y=5.5, w=24)
+            self.rect(_MARGEM - 5.5, 3.5, 34, 20, style="F", round_corners=True, corner_radius=3)
+            altura = 16.5
+            self.image(str(logo), x=_MARGEM - 5.5 + (34 - altura * 105 / 96) / 2, y=3.5 + (20 - altura) / 2, h=altura)
         self.set_text_color(255, 255, 255)
         self.set_xy(self.w - _MARGEM - 110, 7)
         self.set_font("Helvetica", "B", 13)
@@ -91,13 +94,14 @@ def _quadro(pdf: _Documento, linhas: tuple) -> None:
     rotulo = FontFace(emphasis="BOLD", fill_color=_CINZA_FUNDO)
     pdf.set_font("Helvetica", size=_TAMANHO)
     pdf.set_draw_color(*_CINZA_BORDA)
-    with pdf.table(col_widths=(0.31, 0.69), width=largura, borders_layout="ALL", line_height=5.2,
-                   padding=(1.4, 2, 1.4, 2), first_row_as_headings=False, markdown=False) as tabela:
+    with pdf.table(col_widths=(0.31, 0.69), width=largura, borders_layout="ALL", line_height=4.7,
+                   padding=(1.0, 2.4, 1.0, 2.4), first_row_as_headings=False, markdown=False) as tabela:
         for nome, valor in linhas:
             linha = tabela.row()
             linha.cell(_latin1(nome), style=rotulo)
-            linha.cell(_latin1(valor), style=FontFace(emphasis="BOLD") if nome in ("Nome completo",) else None)
-    pdf.ln(3)
+            # Como no contrato de referência: os dados em negrito, menos tipo do veículo, km e forma de pagamento.
+            linha.cell(_latin1(valor), style=None if nome in _VALORES_SEM_NEGRITO else FontFace(emphasis="BOLD"))
+    pdf.ln(4)
 
 
 def _resumo(pdf: _Documento, linhas: tuple) -> None:
@@ -105,8 +109,8 @@ def _resumo(pdf: _Documento, linhas: tuple) -> None:
     cabecalho = FontFace(emphasis="BOLD", color=(255, 255, 255), fill_color=_PRETO)
     pdf.set_font("Helvetica", size=8.5)
     pdf.set_draw_color(*_CINZA_BORDA)
-    with pdf.table(col_widths=(0.52, 0.33, 0.15), width=largura, borders_layout="ALL", line_height=4.8,
-                   padding=(1.2, 2, 1.2, 2), headings_style=cabecalho, markdown=False) as tabela:
+    with pdf.table(col_widths=(0.52, 0.33, 0.15), width=largura, borders_layout="ALL", line_height=4.6,
+                   padding=(1.2, 2.4, 1.2, 2.4), headings_style=cabecalho, markdown=False) as tabela:
         cab = tabela.row()
         for titulo in ("Situação", "Valor / Consequência", "Cláusula"):
             cab.cell(_latin1(titulo))
@@ -171,7 +175,7 @@ def renderizar(blocos: list[Bloco], cabecalho: dict | None = None, rodape: str =
         elif bloco.tipo == "texto":
             pdf.set_font("Helvetica", size=_TAMANHO)
             pdf.multi_cell(0, _ALTURA_LINHA, texto, align="J", markdown=True)
-            pdf.ln(1.8)
+            pdf.ln(2.4)
         elif bloco.tipo == "legenda":
             titulo = texto.isupper()
             pdf.set_font("Helvetica", "B" if titulo else "", 9 if titulo else 8)
@@ -186,18 +190,18 @@ def renderizar(blocos: list[Bloco], cabecalho: dict | None = None, rodape: str =
         elif bloco.tipo == "clausula":
             if pdf.get_y() > pdf.h - 55:
                 pdf.add_page()
-            pdf.ln(2.5)
-            pdf.set_font("Helvetica", "B", 10)
+            pdf.ln(4)
+            pdf.set_font("Helvetica", "B", 10.5)
             pdf.set_text_color(*_VERMELHO)
-            pdf.multi_cell(0, 6, texto, align="L")
+            pdf.multi_cell(0, 6.5, texto, align="L")
             pdf.set_text_color(0, 0, 0)
-            pdf.ln(0.8)
+            pdf.ln(1.6)
         elif bloco.tipo in ("item", "subitem"):
             recuo = 8 if bloco.tipo == "subitem" else 0
             pdf.set_font("Helvetica", size=_TAMANHO)
             pdf.set_x(_MARGEM + recuo)
             pdf.multi_cell(largura - recuo, _ALTURA_LINHA, f"{bloco.numero} {texto}", align="J", markdown=True)
-            pdf.ln(1.4)
+            pdf.ln(2.2)
         elif bloco.tipo == "fecho":
             pdf.ln(2)
             pdf.set_font("Helvetica", size=_TAMANHO + 0.5)
