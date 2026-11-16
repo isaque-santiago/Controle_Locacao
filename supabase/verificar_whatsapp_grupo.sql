@@ -47,7 +47,7 @@ begin
   assert (r->>'enfileiradas')::int = 1 and (r->>'sem_numero')::int = 2, 'Deveria enfileirar 1 e ignorar 2: ' || r::text;
   assert (select status from mensagens_whatsapp where cliente_id = c1) = 'pendente', 'A mensagem do grupo deveria ficar pendente';
   assert (select numero from mensagens_whatsapp where cliente_id = c1) = '120363025246125486@g.us', 'O destino deveria ser o grupo';
-  assert (select count(*) from mensagens_whatsapp where cliente_id = c2 and status = 'ignorada' and erro like '%grupo%') = 1,
+  assert (select count(*) from mensagens_whatsapp where cliente_id = c2 and status = 'ignorada' and erro like 'Cliente sem grupo%') = 1,
          'Sem grupo deveria ficar ignorada, com o motivo';
   assert (select count(*) from mensagens_whatsapp where cliente_id = c2 and status = 'ignorada' and erro like '%inválido%') = 1,
          'Destino inválido deveria ficar ignorado, com o motivo';
