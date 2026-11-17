@@ -36,9 +36,9 @@ def test_dependencias_de_producao_estao_fixadas():
             assert "==" in linha, f"versão não fixada: {linha}"
 
 
-def test_dockerfile_usa_python_312_slim_e_usuario_sem_privilegios():
+def test_dockerfile_usa_python_315_slim_e_usuario_sem_privilegios():
     d = _ler("Dockerfile")
-    assert re.search(r"^FROM python:3\.12-slim\s*$", d, re.M)
+    assert re.search(r"^FROM python:3\.15-slim\s*$", d, re.M)
     usuarios = re.findall(r"^USER (\S+)", d, re.M)
     assert usuarios and usuarios[-1] not in ("root", "0")
 
