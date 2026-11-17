@@ -35,19 +35,19 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          python-version: "3.15"
       - run: pip install pip-audit
       - run: pip-audit -r requirements.txt
 
   testes-python:
     if: github.event_name != 'schedule'
-    # 3.12 é a versão da imagem de produção (Dockerfile); 3.14 é a do desenvolvimento local.
+    # 3.15 é a versão da imagem de produção (Dockerfile); 3.14 é a do desenvolvimento local.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.12", "3.14"]
+        python: ["3.15", "3.14"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -174,7 +174,7 @@ jobs:
           if-no-files-found: ignore
 
   deploy:
-    # Só publica no push para a main e só depois do pytest verde (3.12 e 3.14). O auto-deploy do Coolify deve ficar
+    # Só publica no push para a main e só depois do pytest verde (3.15 e 3.14). O auto-deploy do Coolify deve ficar
     # DESLIGADO (sem webhook do GitHub): este é o único gatilho. Segredos do repositório: COOLIFY_URL (ex.:
     # https://coolify.exemplo.com, sem barra no fim), COOLIFY_TOKEN (token de API com permissão de deploy) e
     # COOLIFY_APP_UUID. Reversão: aba Deployments do aplicativo no Coolify (Rollback). Passo a passo: Arquivos/Deploy_VPS.md.
