@@ -227,6 +227,16 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   do usuário no Supabase (escopo global) e encerra as sessões do servidor, então nenhum cookie `lembrar` volta a funcionar. Se o
   Supabase falhar, nada muda e a tela avisa. No Supabase, mantenha **sem** limite de sessão (Authentication > Sessions: time-box e
   inactivity timeout desligados ou de 90 dias ou mais), senão ele derruba a sessão antes.
+- **Conector do claude.ai (etapa 1 da seção 24 do plano; 17/11/2026).** `POST /mcp` (servidor MCP remoto, JSON-RPC sobre HTTP) com OAuth
+  2.1: registro dinâmico de cliente (`/oauth/register`), PKCE S256 e callback fixo do claude.ai (`src/web/rotas/conector.py`, regras
+  puras em `src/domain/conector_oauth.py` e `conector_mcp.py`). O dono entra com o login do app e autoriza o Claude numa tela de
+  consentimento (só donos; o CSP libera o destino do Claude apenas nessa tela). Os tokens são **sem estado** (Fernet com
+  `CONECTOR_CHAVE`; trocar a chave revoga tudo; sem a chave o conector fica desligado e todas as rotas dão 404). Nesta etapa a
+  única ferramenta é `ping` (só leitura): não lê nem grava o banco. As ferramentas de verdade só **propõem** lançamentos; aprovar,
+  editar e apagar nunca serão ferramentas. Variáveis: `CONECTOR_CHAVE` (chave Fernet) e `CONECTOR_URL_BASE` (endereço público
+  do app, ex.: `https://SEU-SUBDOMINIO.duckdns.org`; evita depender do cabeçalho Host); `CONECTOR_PERMITE_LOOPBACK=1` só para testes
+  locais. Como conectar: Claude > Personalizar > Conectores > Adicionar conector personalizado, URL `https://SEU-SUBDOMINIO.duckdns.org/mcp`,
+  deixar a autenticação como detectada (registro automático).
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.

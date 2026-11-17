@@ -17,8 +17,10 @@ from fastapi.staticfiles import StaticFiles
 from src.services.autenticacao import ServicoAutenticacao
 from src.web.erros import registrar_tratadores
 from src.web.lacre import CookiesDaSessao, lacre_do_ambiente
+from src.web.selos_conector import conector_do_ambiente
 from src.web.limitador import LimitadorTentativas
 from src.web.rotas import autenticacao as rotas_autenticacao
+from src.web.rotas import conector as rotas_conector
 from src.web.rotas import esqueci_senha as rotas_esqueci_senha
 from src.web.rotas import componentes as rotas_componentes
 from src.web.rotas import clientes as rotas_clientes
@@ -80,6 +82,7 @@ def criar_app(
     relogio=time,
     desenvolvimento: bool | None = None,
     lacre=None,
+    conector=None,
 ) -> FastAPI:
     """Monta o app. Os parâmetros existem para os testes injetarem fakes e um relógio."""
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
@@ -89,6 +92,8 @@ def criar_app(
     em_desenvolvimento = desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento()
     app.state.armazem = armazem or ArmazemSessoes(relogio=relogio, arquivo=arquivo_de_sessoes(em_desenvolvimento))
     app.state.lacre = lacre or lacre_do_ambiente(relogio)
+    app.state.conector = conector or conector_do_ambiente(relogio)
+    app.state.limitador_conector = LimitadorTentativas(30, JANELA_LIMITE_SEGUNDOS, relogio)
     app.state.limitador_ip = LimitadorTentativas(
         FALHAS_POR_IP, JANELA_LIMITE_SEGUNDOS, relogio
     )
@@ -141,6 +146,7 @@ def criar_app(
     # Formulários antes da ficha: /motos/nova não pode cair em /motos/{moto_id}
     app.include_router(rotas_motos_formularios.router)
     app.include_router(rotas_motos.router)
+    app.include_router(rotas_conector.router)
     app.include_router(rotas_autenticacao.router)
     app.include_router(rotas_esqueci_senha.router)
     if desenvolvimento if desenvolvimento is not None else ambiente_de_desenvolvimento():
