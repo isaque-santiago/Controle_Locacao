@@ -12,11 +12,11 @@ Requisitos de segurança: `Revisao_Seguranca.md`, seção "Requisitos para o dep
 
 | Item | Onde | Observação |
 |---|---|---|
-| Imagem | `Dockerfile` | `python:3.12-slim`, usuário `locacao` (uid 10001), `HEALTHCHECK` em `/saude`, só `src/` e `static/` |
+| Imagem | `Dockerfile` | `python:3.15-slim`, usuário `locacao` (uid 10001), `HEALTHCHECK` em `/saude`, só `src/` e `static/` |
 | Dependências | `requirements.txt` | Só produção. Testes: `requirements-dev.txt` (não entra na imagem) |
 | Comando | `CMD` do Dockerfile | `uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers --forwarded-allow-ips "$FORWARDED_ALLOW_IPS"` |
 | Ambiente | `LOCACAO_AMBIENTE=producao` na imagem | Nunca `dev` (liga `/componentes` e o espelho de sessões em arquivo) |
-| CI/CD | job `deploy` em `.github/workflows/ci.yml` | Só no push para a `main`, depois do `pytest` verde (Python 3.12 e 3.14) |
+| CI/CD | job `deploy` em `.github/workflows/ci.yml` | Só no push para a `main`, depois do `pytest` verde (Python 3.15 e 3.14) |
 
 ## 1. DNS (DuckDNS)
 
@@ -42,7 +42,7 @@ systemctl status unattended-upgrades --no-pager
 ```
 
 - Rotina periódica (não há verificação automática de CVE nem de imagens): `pip list --outdated` no repositório e rebuild
-  mensal da imagem para pegar correções da base `python:3.12-slim`.
+  mensal da imagem para pegar correções da base `python:3.15-slim`.
 
 ## 3. Medição de memória ANTES do primeiro build
 
@@ -115,7 +115,7 @@ docker network inspect coolify --format '{{range .Containers}}{{.Name}} {{.IPv4A
 
 ## 6. CI/CD: deploy só com o pytest verde
 
-O job `deploy` (em `.github/workflows/ci.yml`) roda **só no push para a `main`** e **só se `testes-python` passar** (3.12 e
+O job `deploy` (em `.github/workflows/ci.yml`) roda **só no push para a `main`** e **só se `testes-python` passar** (3.15 e
 3.14). Ele chama a API do Coolify.
 
 ### No Coolify
@@ -211,9 +211,9 @@ segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); f
   em todo pull request e **toda segunda-feira às 09:00 (Brasília)**. Se ficar vermelha, o GitHub avisa por e-mail: suba a versão indicada
   em `requirements.txt`, rode `pytest` e faça o push (o deploy sai pela CI). Ela não bloqueia o deploy.
 - **Atualizações:** o `.github/dependabot.yml` abre PRs semanais (pip, imagem base do Docker) e mensais (GitHub Actions). Cada PR passa
-  pelo `pytest` em Python 3.12 e 3.14; mesclar na `main` dispara o deploy. Ative também, no GitHub, *Settings > Code security > Dependabot
+  pelo `pytest` em Python 3.15 e 3.14; mesclar na `main` dispara o deploy. Ative também, no GitHub, *Settings > Code security > Dependabot
   alerts* (alertas de CVE por e-mail, independentes do `pip-audit`).
-- **Imagem base e sistema:** a imagem `python:3.12-slim` só recebe correções do Debian quando o Coolify reconstrói **sem cache**. Uma vez
+- **Imagem base e sistema:** a imagem `python:3.15-slim` só recebe correções do Debian quando o Coolify reconstrói **sem cache**. Uma vez
   por mês (e quando houver CVE grave no Debian ou no Python), no Coolify: aplicativo > *Deploy* com **Force rebuild**. Depois confira
   `/saude` e o login. O sistema da VPS já se atualiza sozinho (`unattended-upgrades`, seção 2); o que falta é só reiniciar quando o
   kernel pedir.
