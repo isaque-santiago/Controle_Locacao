@@ -129,7 +129,7 @@ TESTE ROTEIRO, contrato 12/10/2026, semanal, R$ 100,00, caução R$ 200,00). Os 
 | 7. Documento | IPVA vencido aparece no Dashboard; regularizado com comprovante PDF; cadastro do próximo ano aberto com vencimento em branco e criado |
 | 8. Encerramento | Devolução com avaria e danos de R$ 120: «Devolver R$ 80,00 de caução», 2 cobranças futuras canceladas, parcelas pagas preservadas, moto «Disponível», km rodados 660; comparação entrega × devolução marca o farol como alterado |
 | 9. Dashboard e relatórios | Recebido R$ 612 = R$ 300 de principal + R$ 192 de encargos + R$ 120 de danos retidos (a caução de R$ 200 não é receita); manutenção R$ 75; resultado R$ 487. CSV (BOM, `;`, vírgula decimal) e Excel das 4 abas abrem com acentos corretos |
-| 10. Backup | ZIP com as 15 tabelas, `manifesto.json` (contagens iguais às linhas dos CSV) e `LEIA-ME.txt`; resposta `no-store` |
+| 10. Backup | ZIP com as 29 tabelas, `manifesto.json` (contagens iguais às linhas dos CSV) e `LEIA-ME.txt`; resposta `no-store` |
 
 Não feito neste ambiente: alterar parâmetros em Configurações (afetaria os encargos reais), cobrança do excedente quando o dano passa da caução
 (só a prévia, «devolver R$ 0,00»; a regra é coberta por `tests/test_caucao.py`), Firefox e celular (com o proprietário).
