@@ -42,12 +42,14 @@ jobs:
   testes-python:
     if: github.event_name != 'schedule'
     # 3.15 é a versão da imagem de produção (Dockerfile); 3.14 é a do desenvolvimento local.
+    # 3.12 era a versão da imagem e continua na matriz porque o ruleset `proteger-main` ainda exige o check
+    # `testes-python (3.12)`. Quando o ruleset passar a exigir `testes-python (3.15)`, remova o 3.12 daqui.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.15", "3.14"]
+        python: ["3.12", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
