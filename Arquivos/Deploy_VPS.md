@@ -156,6 +156,11 @@ O deploy e o rollback do Coolify trocam só o contêiner; **o banco do Supabase 
    que aceita os dois formatos, depois a migration que remove o antigo.
 3. Se um deploy precisar de rollback, o app anterior continua funcionando com o banco já migrado (garantido pelo item 2).
 4. Registre no PR qual migration foi aplicada em produção e quando.
+5. Escreva a migration **idempotente** (`add column if not exists`, `create ... if not exists`, `drop ... if exists`,
+   `create or replace`): como ela é aplicada à mão antes do merge (item 1), a integração Supabase ↔ GitHub a executa de
+   novo na `main` e, sem isso, o check "Supabase Preview" falha (foi o caso da `20261117120000_dados_do_contrato.sql`).
+   Se uma migration não idempotente já falhou assim, marque-a como aplicada com
+   `supabase migration repair --status applied <versão>`.
 
 > **Atenção:** a migration `20260922000000_restringe_rls_ao_dono.sql` fixa o UUID do dono de **produção**
 > (`is_dono()`). Nunca a aplique em um projeto cujo usuário tenha outro UUID, ou o RLS bloqueia todos os dados.
