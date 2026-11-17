@@ -1290,9 +1290,14 @@ Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acess
 5. **Contratos pelo chat.**
 6. **Depois:** comprovantes dos grupos de WhatsApp na mesma caixa (com a decisão sobre a API da Anthropic).
 
+### 24.7a Decisões do dono (17/11/2026), que fecham a 24.8
+
+1. **Ordem dos tipos:** começam **pagamento e despesa**. Depois, na ordem que o dono decidir: dívidas, manutenções, contratos, locatários e o resto. O desenho de `pendencias_lancamento` já comporta novos `tipo`.
+2. **Identificar o cliente:** por **nome, CPF parcial e placa**, usados em conjunto; se a combinação não puder ser feita, só pelo **CPF parcial**. O conector devolve ao chat só esses campos (sem CPF completo).
+3. **Quem aprova:** **todo usuário dono**, ou seja, o dono e as duas pessoas do financeiro. Hoje só um é "dono" no sistema: as duas pessoas do financeiro precisam entrar na tabela `administradores` (migration `20261105120000`; README, "Administradores") antes de a tela de Pendências ser usada por elas. Como `is_dono()` vale para todos, os três veem e aprovam as mesmas pendências; o registro de **quem aprovou** (`decidido_por`) fica obrigatório.
+
 ### 24.8 Pendências de esclarecimento
 
-- Quais tipos entram primeiro (pagamento e despesa são a proposta) e como o chat identifica o cliente (nome, CPF parcial, placa).
-- Só o dono aprova, ou as duas pessoas do financeiro também?
+- Falta incluir as duas pessoas do financeiro em `administradores` (decisão 3 acima).
 - Termo de dados: aceitar que nomes e saldos passem pelo chat (já ocorre hoje).
 - Confirmar no plano do dono que o conector não tem cobrança adicional.
