@@ -197,7 +197,7 @@ O plano gratuito do Supabase não tem backup automático nem restauração de po
 segredos de administrador no GitHub) e o plano Pro (cerca de US$ 25 por mês); ficou o **backup manual semanal**. O risco aceito é perder até
 7 dias de lançamentos se o projeto for perdido entre duas cópias.
 
-- **Como:** Configurações > **Gerar e baixar backup** (ZIP com um CSV de cada uma das 15 tabelas, `manifesto.json` e `LEIA-ME.txt`). Confira as
+- **Como:** Configurações > **Gerar e baixar backup** (ZIP com um CSV de cada uma das 29 tabelas, `manifesto.json` e `LEIA-ME.txt`). Confira as
   contagens do `manifesto.json` contra as listas do app.
 - **Quando:** toda segunda-feira (use um lembrete recorrente na agenda). Faça com o app parado de uso: a cópia não é um snapshot transacional.
 - **Onde guardar:** fora da VPS e fora do computador de uso, em pasta privada (por exemplo o Google Drive do proprietário). O ZIP tem CPF e

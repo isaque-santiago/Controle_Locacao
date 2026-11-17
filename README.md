@@ -610,7 +610,7 @@ Use um projeto de homologação; os passos criam dados.
 9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
    Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente
    fica vazio; o cálculo usa a distância observada, sem extrapolar leituras ausentes.
-10. Gere e baixe o backup. Confira as 15 tabelas e as contagens em `manifesto.json`.
+10. Gere e baixe o backup. Confira as 29 tabelas e as contagens em `manifesto.json`.
     O ZIP não inclui os binários de fotos/comprovantes nem usuários do Auth. Evite
     alterações durante a geração, pois as leituras não formam um snapshot transacional.
 11. Confira os formulários e tabelas em celular. Saia da conta e verifique que os dados
@@ -792,6 +792,7 @@ Migration `20261106140000_whatsapp_painel.sql` (compatível com a versão anteri
 - **Ficha do cliente, aba WhatsApp**: para onde as mensagens vão, histórico do cliente e o bloqueio. Só o dono para o envio de um cliente (com motivo; fica a data); o cliente não consegue pedir isso pelo WhatsApp.
 - **Dashboard, Precisa de atenção**: envio automático parado (sem rodada há mais de 1h30), WhatsApp desconectado, Evolution fora do ar, modo teste ligado e clientes cuja mensagem mais recente não foi entregue. Sem o envio ligado, nenhum desses alertas aparece.
 - As tabelas `mensagens_whatsapp*` não entram no backup manual (é histórico derivado, com dados pessoais).
+- **Backup completo (17/11/2026).** O backup manual passou de 15 para 29 tabelas: além das originais, traz `despesas`, `multas_transito`, `dividas`, `dividas_vencimentos`, `pagamentos_divida`, `movimentos_socio`, `contas`, `fornecedores`, `contrato_motos`, `documento_comprovantes`, `importacoes_lote`, `whatsapp_grupos`, `pedidos_senha_portal` e `portal_eventos`. Ficam de fora só `administradores`, `servico_mensagens` (nem o dono as lê) e a fila `mensagens_whatsapp*`. Antes, conferir multas, despesas e dívidas contra planilha ou chats não era possível. O ZIP agora tem mais dados pessoais e financeiros: guarde-o em local privado.
 
 ### Envio ao grupo do locatário (item 6 da seção 23, 17/11/2026)
 

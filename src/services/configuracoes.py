@@ -24,7 +24,27 @@ TABELAS = (
     "vistorias",
     "vistoria_fotos",
     "trocas_oleo",
+    # Acrescentadas em 17/11/2026: sem elas o backup não servia para conferir despesas, multas, dívidas e sócio.
+    "contas",
+    "fornecedores",
+    "despesas",
+    "multas_transito",
+    "dividas",
+    "dividas_vencimentos",
+    "pagamentos_divida",
+    "movimentos_socio",
+    "contrato_motos",
+    "documento_comprovantes",
+    "importacoes_lote",
+    "whatsapp_grupos",
+    "pedidos_senha_portal",
+    "portal_eventos",
 )
+# Fora do backup, de propósito: `administradores` e `servico_mensagens` (nem o dono lê: só a própria linha) e a fila
+# `mensagens_whatsapp` / `mensagens_whatsapp_itens` (o envio a recria a partir das cobranças).
+
+# Tabelas sem coluna `id`: a ordem da leitura paginada usa a chave primária.
+ORDEM_DA_TABELA = {"contrato_motos": ("contrato_id", "moto_id")}
 
 
 def obter():
@@ -40,7 +60,7 @@ def backup():
     with ZipFile(saida, "w", ZIP_DEFLATED) as arquivo:
         manifesto = {}
         for nome in TABELAS:
-            linhas = todos(nome, usar_cache=False)
+            linhas = todos(nome, ordem=ORDEM_DA_TABELA.get(nome, "id"), usar_cache=False)
             texto = StringIO(newline="")
             if linhas:
                 escritor = csv.DictWriter(texto, fieldnames=list(linhas[0]))
@@ -61,6 +81,6 @@ def backup():
         arquivo.writestr("manifesto.json", json.dumps(manifesto, indent=2))
         arquivo.writestr(
             "LEIA-ME.txt",
-            "Backup de dados em CSV UTF-8. Tabelas vazias têm arquivo vazio. Não inclui arquivos dos buckets, usuários ou senhas. Não é um snapshot transacional: evite alterações durante a geração. Guarde em local privado. Valores textuais são preservados literalmente para restauração; importe as colunas como texto.\n",
+            "Backup de dados em CSV UTF-8. Tabelas vazias têm arquivo vazio. Não inclui arquivos dos buckets, usuários, senhas nem a fila de mensagens do WhatsApp. Não é um snapshot transacional: evite alterações durante a geração. Guarde em local privado. Valores textuais são preservados literalmente para restauração; importe as colunas como texto.\n",
         )
     return saida.getvalue()
