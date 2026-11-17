@@ -116,6 +116,26 @@ def test_backup_contem_todas_tabelas(monkeypatch):
         assert "João" in arquivo.read("clientes.csv").decode("utf-8-sig")
 
 
+def test_backup_inclui_despesas_multas_dividas_e_socio():
+    for tabela in ("despesas", "multas_transito", "dividas", "dividas_vencimentos", "pagamentos_divida", "movimentos_socio",
+                   "contas", "fornecedores", "contrato_motos", "importacoes_lote"):
+        assert tabela in configuracoes.TABELAS
+    assert "administradores" not in configuracoes.TABELAS and "servico_mensagens" not in configuracoes.TABELAS
+
+
+def test_backup_le_cada_tabela_com_a_ordem_certa(monkeypatch):
+    lidas = {}
+
+    def falso(nome, ordem="id", **_):
+        lidas[nome] = ordem
+        return []
+
+    monkeypatch.setattr(configuracoes, "todos", falso)
+    configuracoes.backup()
+    assert set(lidas) == set(configuracoes.TABELAS)
+    assert lidas["contrato_motos"] == ("contrato_id", "moto_id") and lidas["despesas"] == "id"
+
+
 def test_paginacao_continua_mesmo_com_limite_menor_do_servidor(monkeypatch):
     class Consulta:
         def table(self, *_):
