@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "componentes/macros.html" import icone, aviso %}
-{# Painel do dono: barra lateral (≥1100 px), trilho de ícones (720–1099 px) e barra inferior (<720 px). #}
+{# Painel do dono: menu lateral e barra superior fixa (≥1024 px); topo enxuto e barra inferior com o menu "Mais" suspenso (<1024 px). #}
 {% set ativo = item_ativo(caminho_atual) %}
 {% set inicial = (usuario_nome or "?")[0]|upper %}
 
@@ -78,7 +78,14 @@
     {% for item in barra_inferior %}
     <a href="{{ item.caminho }}"{% if item == ativo %} aria-current="page"{% endif %}>{{ icone(item.icone) }}{{ item.rotulo if item.chave != 'dashboard' else 'Início' }}</a>
     {% endfor %}
-    <button type="button" data-abrir="dlg-mais"{% if mais_esta_ativo(caminho_atual) %} aria-current="page"{% endif %}>{{ icone('mais') }}Mais</button>
+    <details class="menu-mais" data-conta>
+      <summary aria-label="Mais opções"{% if mais_esta_ativo(caminho_atual) %} aria-current="page"{% endif %}>{{ icone('mais') }}Mais</summary>
+      <ul class="mais-menu">
+        {% for item in folha_mais %}
+        <li><a href="{{ item.caminho }}"{% if item == ativo %} aria-current="page"{% endif %}>{{ icone(item.icone) }}{{ item.rotulo }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
   </nav>
 </div>
 
@@ -90,14 +97,5 @@
   <div class="dialogo-cab"><h2 id="dlg-confirmar-titulo">Confirmar ação</h2></div>
   <div class="dialogo-corpo"><p id="dlg-confirmar-texto"></p></div>
   <div class="dialogo-rodape"><button class="btn" type="button" data-fechar autofocus>Voltar</button><button class="btn btn-perigo" type="button" id="dlg-confirmar-ok">Confirmar</button></div>
-</dialog>
-
-<dialog class="folha" id="dlg-mais" aria-labelledby="t-mais">
-  <div class="dialogo-cab"><h2 id="t-mais">Mais opções</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
-  <ul class="folha-lista">
-    {% for item in folha_mais %}
-    <li><a href="{{ item.caminho }}">{{ icone(item.icone) }}{{ item.rotulo }}</a></li>
-    {% endfor %}
-  </ul>
 </dialog>
 {% endblock %}
