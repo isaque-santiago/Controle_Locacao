@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import filtro_colapsavel, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo %}
+{% from "componentes/macros.html" import filtro_colapsavel, icone_veiculo, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo %}
 {# Trecho trocado pelo HTMX: filtros em chips, lista e paginação. O campo oculto mantém a situação nos envios do formulário. #}
 <input type="hidden" name="situacao" value="{{ situacao }}">
 <input type="hidden" name="ordem" value="{{ ordem }}">
@@ -11,8 +11,8 @@
 {% call tabela([("Placa", ""), ("Veículo", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Veículos cadastrados", recolhivel=True, ordenacao=ordenacao) %}
   {% for item in d.itens %}{% set m = item.moto %}{% set man = item.proxima_manutencao %}
   <tr data-recolhivel>
-    {% call rc_titulo("c-placa") %}{{ placa(m.placa|placa_br) }}<span class="rc-so-cel"> {{ m.marca }} {{ m.modelo }}</span>{% endcall %}
-    <td class="c-moto modelo rc-oculto">{{ m.marca }} {{ m.modelo }}<span class="sub">{{ m.ano_modelo or m.ano_fabricacao or "—" }}{% if m.cor %}, {{ m.cor|lower }}{% endif %}</span></td>
+    {% call rc_titulo("c-placa") %}{{ placa(m.placa|placa_br) }}<span class="rc-so-cel"> {{ icone_veiculo(m.tipo) }}{{ m.marca }} {{ m.modelo }}</span>{% endcall %}
+    <td class="c-moto modelo rc-oculto">{{ icone_veiculo(m.tipo) }}{{ m.marca }} {{ m.modelo }}<span class="sub">{{ m.ano_modelo or m.ano_fabricacao or "—" }}{% if m.cor %}, {{ m.cor|lower }}{% endif %}</span></td>
     <td class="c-sit rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[m.status], tom_status_moto[m.status]) }}</td>
     <td class="c-km num mono" data-rotulo="Km">{{ m.km_atual|milhar }}</td>
     <td class="c-loc" data-rotulo="Locatário">{% if item.locatario %}{{ item.locatario }}{% else %}<span class="text-texto-3">Sem locatário</span>{% endif %}</td>

@@ -1,5 +1,5 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas, botao %}
+{% from "componentes/macros.html" import voltar, icone_veiculo, selo, placa, kpi, abas_remotas, botao %}
 
 {% block conteudo %}
 {{ voltar("/motos", "Voltar para veículos") }}
@@ -8,6 +8,7 @@
   <div class="cabecalho-texto">
     <div class="ficha-titulo">
       <h1 class="so-leitor">Veículo {{ moto.placa|placa_br }}</h1>
+      {{ icone_veiculo(moto.tipo) }}
       <span class="placa" aria-hidden="true">{{ moto.placa|placa_br }}</span>
       {{ selo(status_rotulo[moto.status], tom_status_moto[moto.status]) }}
     </div>
