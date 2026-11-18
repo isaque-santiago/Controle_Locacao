@@ -885,6 +885,19 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
   .ficha-dados .ficha-endereco {grid-column: span 7;}
   .ficha-dados .ficha-referencias {grid-column: span 5;}
 }
+/* Dados do veículo: 3 colunas; em cada célula o rótulo (caixa alta, largura fixa para alinhar) vem antes do valor, na mesma linha */
+.ficha-veiculo {grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 var(--e6);}
+.ficha-veiculo > div {display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); align-items: baseline; column-gap: var(--e3); padding-block: var(--e3);}
+.ficha-veiculo dt {margin: 0; text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px; line-height: 1.3;}
+.ficha-veiculo dd {font-weight: 600;}
+@media (max-width: 1099px) {
+  .ficha-veiculo {grid-template-columns: repeat(2, minmax(0, 1fr));}
+}
+@media (max-width: 719px) {
+  .ficha-veiculo {grid-template-columns: minmax(0, 1fr);}
+  .ficha-veiculo > div {grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--e4);}
+  .ficha-veiculo dd {text-align: right;}
+}
 /* Celular: dados pessoais como linhas "rótulo à esquerda, valor à direita" */
 @media (max-width: 719px) {
   .ficha-dados {grid-template-columns: minmax(0, 1fr); gap: 0;}
