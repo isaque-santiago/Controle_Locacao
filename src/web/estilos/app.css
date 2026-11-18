@@ -1172,3 +1172,26 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .ocupacao-card:has(.arco.livre:hover, .arco.livre:focus-visible, .t-livre:hover, .t-livre:focus-visible) .rosca-info-livre {display: grid;}
 .ocupacao-card:has(.t-livre:hover, .t-livre:focus-visible) .arco.livre {stroke-width: 16;}
 
+
+/* ---------- Animações no padrão do sistema de celulares (cell-pag) ----------
+   Microinterações curtas, sem movimento contínuo. Só rodam com movimento permitido. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes pagina-entra {from {opacity: 0; transform: translateY(4px);} to {opacity: 1; transform: none;}}
+  @keyframes bloco-entra {from {opacity: 0; transform: translateY(.45rem);} to {opacity: 1; transform: none;}}
+  @keyframes painel-entra {from {opacity: 0; transform: translateY(-.5rem) scale(.97);} to {opacity: 1; transform: none;}}
+  @keyframes aviso-entra {from {opacity: 0; transform: translateY(.7rem);} to {opacity: 1; transform: none;}}
+  /* "backwards" (não "both"): o transform final não pode ficar ativo, senão cada bloco vira contexto de empilhamento. */
+  main {animation: pagina-entra 220ms ease-out;}
+  #conteudo > :not(#avisos) {animation: bloco-entra 280ms ease-out backwards;}
+  .aviso {animation: aviso-entra 180ms ease-out;}
+  .conta[open] > .conta-menu {transform-origin: bottom left; animation: painel-entra 200ms cubic-bezier(.2, .8, .2, 1) both;}
+  .conta-movel[open] > .conta-menu {transform-origin: top right;}
+  /* Cartões que levam a outra página sobem um pouco; botões encolhem ao clicar. */
+  .kpi-link {transition: transform 180ms ease, border-color 150ms ease, box-shadow 150ms ease;}
+  @media (hover: hover) and (pointer: fine) {.kpi-link:hover {transform: translateY(-2px);}}
+  .btn:active, .btn-icone:active {transform: scale(.98);}
+  /* Menu: o item muda de cor suavemente e o ícone ativo ganha traço mais grosso. */
+  .nav-item, .conta-cartao, .conta-menu button, .conta-item {transition: background-color 160ms ease, color 160ms ease;}
+  .nav-item .i {transition: stroke-width 160ms ease;}
+}
+.nav-item[aria-current="page"] .i, .barra-inferior [aria-current="page"] .i {stroke-width: 2.2;}
