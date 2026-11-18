@@ -50,7 +50,7 @@ def test_erros_por_campo_nao_gravam_e_preservam_o_digitado(cliente, base_configu
     assert resposta.status_code == 422 and base_configuracoes.gravados == []
     assert "Corrija os campos destacados." in html and 'aria-invalid="true"' in html
     assert "Multa de atraso (no vencimento): use só números" in html and "o maior valor aceito é 100000" in html
-    assert "Documentos da moto (dias)" in html and 'value="abc"' in html and 'value="100001"' in html
+    assert "Documentos do veículo (dias)" in html and 'value="abc"' in html and 'value="100001"' in html
     assert 'value="15,00"' not in html  # o formulário mostra o digitado, não o salvo
 
 

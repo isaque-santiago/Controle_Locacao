@@ -49,7 +49,7 @@ def ler_vistorias_vinculadas(entrada: dict, motos: list) -> list:
     for n, moto in enumerate(motos, start=1):
         pref = prefixo(n)
         if str(entrada.get(pref + "moto") or "") != str(moto["id"]):
-            erros[pref + "km"] = "A lista de motos do contrato mudou. Volte uma etapa e reabra esta."
+            erros[pref + "km"] = "A lista de veículos do contrato mudou. Volte uma etapa e reabra esta."
             continue
         try:
             vistoria = ler_vistoria(sem_prefixo(entrada, pref), moto["km_atual"])

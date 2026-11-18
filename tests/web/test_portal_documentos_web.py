@@ -26,7 +26,7 @@ def _enviar(cliente, documento=DOC_PORTAL_VENCIDO, arquivo=("comprovante.pdf", P
 def test_portal_lista_os_documentos_com_situacao_e_o_que_fazer(cliente, base_portal):
     _locatario(cliente)
     html = cliente.get("/portal").text
-    assert "Documentos da moto" in html and "Troca de óleo e documentos da sua moto." in html
+    assert "Documentos do veículo" in html and "Troca de óleo e documentos do seu veículo." in html
     assert "IPVA 2026" in html and "Seguro 2026" in html and "Licenciamento 2026" in html and "BRA-2E19" in html
     assert "Vencido" in html and "A vencer" in html and "05/10/2026" in html
     # o vencido e o recusado têm formulário; o aguardando mostra o aviso e não tem
@@ -43,7 +43,7 @@ def test_sem_documentos_pendentes_a_secao_nao_aparece(cliente, base_portal):
     base_portal.documentos.clear()
     _locatario(cliente)
     html = cliente.get("/portal").text
-    assert "Documentos da moto" not in html and "Olá, Ana" in html
+    assert "Documentos do veículo" not in html and "Olá, Ana" in html
 
 
 def test_falha_ao_ler_os_documentos_nao_derruba_o_portal(cliente, base_portal):

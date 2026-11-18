@@ -57,7 +57,7 @@ def _enviar_troca(request, sessao, contrato_id, entrada, arquivos):
 
     def gravar():
         if not contrato["plano_configurado"]:
-            raise ValueError("O plano de troca de óleo desta moto ainda não foi configurado. Fale com o proprietário.")
+            raise ValueError("O plano de troca de óleo deste veículo ainda não foi configurado. Fale com o proprietário.")
         km = formulario.ler_troca_oleo(
             entrada, contrato, {campo: _resumo_arquivo(arquivo) for campo, arquivo in arquivos.items()}, contrato["multa"]
         )

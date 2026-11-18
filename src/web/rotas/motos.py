@@ -73,7 +73,7 @@ def lista(
     dados = dados_motos.carregar_lista(situacao, busca, _inteiro(pagina, 1), tamanho, ordem)
     p = dados["pagina"]
     contexto = {
-        "titulo": "Motos",
+        "titulo": "Veículos",
         "d": dados,
         "situacao": situacao,
         "busca": busca,
@@ -134,7 +134,7 @@ def ficha(
     moto = _moto_ou_404(moto_id)
     contexto = _contexto_da_aba(moto, motos_lista.aba_valida(aba))
     contexto.update(
-        titulo=f"Moto {formatar_placa(moto['placa'])}",
+        titulo=f"Veículo {formatar_placa(moto['placa'])}",
         cabecalho=dados_motos.carregar_cabecalho(moto),
     )
     return renderizar(request, "motos/ficha.html", contexto)

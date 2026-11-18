@@ -26,22 +26,22 @@ def validar_vistorias_vinculadas(
     for v in vistorias or []:
         moto_id = str(v.get("moto_id") or "").strip()
         if not moto_id:
-            raise ValueError("Informe a moto de cada vistoria.")
+            raise ValueError("Informe o veículo de cada vistoria.")
         if moto_id == str(moto_principal_id).strip():
-            raise ValueError("A vistoria da moto principal vai em campo próprio, não na lista das vinculadas.")
+            raise ValueError("A vistoria do veículo principal vai em campo próprio, não na lista dos vinculados.")
         if moto_id not in ids_validos:
-            raise ValueError("A vistoria é de uma moto que não pertence ao contrato.")
+            raise ValueError("A vistoria é de um veículo que não pertence ao contrato.")
         if moto_id in vistas:
-            raise ValueError("A mesma moto foi informada mais de uma vez.")
+            raise ValueError("O mesmo veículo foi informado mais de uma vez.")
         vistas.add(moto_id)
         try:
             km = int(v.get("km"))
         except (TypeError, ValueError):
-            raise ValueError("Informe a quilometragem de cada moto.") from None
+            raise ValueError("Informe a quilometragem de cada veículo.") from None
         if km < 0:
             raise ValueError("A quilometragem não pode ser negativa.")
         if km < int(km_atual_por_moto.get(moto_id, 0)):
-            raise ValueError("A quilometragem não pode ser menor que a atual da moto.")
+            raise ValueError("A quilometragem não pode ser menor que a atual do veículo.")
         normalizadas.append({**v, "moto_id": moto_id, "km": km})
     return normalizadas
 
@@ -76,4 +76,4 @@ def exigir_todas_as_motos(
     esperadas = set(todas_as_motos(moto_principal_id, vinculadas)[1:])
     informadas = {str(v.get("moto_id") or "").strip() for v in vistorias_vinculadas or []}
     if esperadas - informadas:
-        raise ValueError("Faça a vistoria de todas as motos do contrato.")
+        raise ValueError("Faça a vistoria de todos os veículos do contrato.")

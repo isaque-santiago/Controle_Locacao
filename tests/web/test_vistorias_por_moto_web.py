@@ -1,4 +1,4 @@
-"""Vistoria por moto em contrato com várias motos: lista, comparação, pendentes e registro (entrega retroativa)."""
+"""Vistoria por veículo em contrato com várias motos: lista, comparação, pendentes e registro (entrega retroativa)."""
 
 from datetime import timedelta
 from types import SimpleNamespace
@@ -16,7 +16,7 @@ VALOR = f"{CONTRATO_VISTORIAS}:{VINCULADA}"
 
 @pytest.fixture
 def com_vinculada(base_vistorias):
-    """O contrato com vistorias ganha a moto vinculada m9 (QRS4T21), ainda sem vistoria."""
+    """O contrato com vistorias ganha a veículo vinculado m9 (QRS4T21), ainda sem vistoria."""
     base_vistorias.vinculos.append({"contrato_id": CONTRATO_VISTORIAS, "moto_id": VINCULADA})
     return base_vistorias
 
@@ -60,7 +60,7 @@ def test_comparacao_mostra_um_grupo_por_moto_vinculada(cliente, com_vinculada):
     _entrega_da_vinculada(com_vinculada)
     entrar(cliente)
     html = cliente.get(f"/vistorias/contrato/{CONTRATO_VISTORIAS}").text
-    assert "moto principal" in html and "moto vinculada" in html and "QRS-4T21" in html
+    assert "veículo principal" in html and "veículo vinculado" in html and "QRS-4T21" in html
     assert html.count("vist-cartao") >= 3  # entrega e devolução da principal + a entrega da vinculada
 
 
@@ -74,7 +74,7 @@ def test_comparacao_oferece_registrar_a_devolucao_da_vinculada(cliente, com_vinc
 def test_comparacao_de_contrato_de_uma_moto_nao_muda(cliente, base_vistorias):
     entrar(cliente)
     html = cliente.get(f"/vistorias/contrato/{CONTRATO_VISTORIAS}").text
-    assert "moto principal" not in html and "moto vinculada" not in html
+    assert "veículo principal" not in html and "veículo vinculado" not in html
 
 
 # ------------------------------------------------------------- pendentes --
@@ -105,7 +105,7 @@ def test_entrega_da_principal_nao_vale_pela_vinculada(cliente, com_vinculada):
 def test_formulario_da_vinculada_traz_o_tipo_que_falta_e_o_km_dela(cliente, com_vinculada):
     entrar(cliente)
     html = cliente.get(f"/vistorias/registrar?contrato={VALOR}", headers=HX).text
-    assert f'name="contrato" value="{VALOR}"' in html and "moto vinculada" in html
+    assert f'name="contrato" value="{VALOR}"' in html and "veículo vinculado" in html
     assert "QRS-4T21" in html and 'value="5000"' in html and '<option value="entrega"' in html
 
 

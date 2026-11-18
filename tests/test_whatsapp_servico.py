@@ -9,7 +9,7 @@ from src.domain.textos_whatsapp import OpcoesTexto
 from src.services import whatsapp
 from src.services.evolution import ErroEnvio, EvolutionConfiguracaoInvalida, EvolutionIndisponivel
 
-OP = OpcoesTexto(empresa="LA Motos", contato="o Alisson")
+OP = OpcoesTexto(empresa="LA Locadora", contato="o Alisson")
 QUINTA_11H40 = datetime(2026, 11, 12, 11, 40, tzinfo=FUSO)  # dentro do disparo das 11:30
 QUINTA_20H = datetime(2026, 11, 12, 20, 0, tzinfo=FUSO)
 DOMINGO_10H = datetime(2026, 11, 15, 10, 0, tzinfo=FUSO)

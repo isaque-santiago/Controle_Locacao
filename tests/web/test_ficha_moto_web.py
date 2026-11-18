@@ -26,12 +26,12 @@ def test_moto_inexistente_ou_id_invalido_da_404(cliente):
 def test_cabecalho_da_ficha_mostra_placa_situacao_e_locatario(cliente):
     entrar(cliente)
     html = cliente.get(f"/motos/{MOTO}").text
-    assert "<title>Moto ABC-1D01 · LA Locadora</title>" in html
+    assert "<title>Veículo ABC-1D01 · LA Locadora</title>" in html
     assert len(re.findall(r"<h1[\s>]", html)) == 1
     assert "Honda CG 101, 2023, vermelha." in html
     assert "Locada para Joana &lt;b&gt;Prado&lt;/b&gt; desde 01/07/2026." in html
     assert "1.000" in html and "2023 / 2023" in html
-    assert 'href="/motos"' in html and "Voltar para motos" in html
+    assert 'href="/motos"' in html and "Voltar para veículos" in html
 
 
 def test_ficha_abre_no_resumo_com_contrato_e_leituras(cliente):
@@ -47,7 +47,7 @@ def test_ficha_abre_no_resumo_com_contrato_e_leituras(cliente):
 def test_resumo_sem_contrato_ativo(cliente):
     entrar(cliente)
     html = cliente.get(f"/motos/{SEM_CONTRATO}").text
-    assert "Nenhum contrato ativo para esta moto." in html
+    assert "Nenhum contrato ativo para este veículo." in html
     assert "Locada para" not in html
 
 

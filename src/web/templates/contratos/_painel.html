@@ -23,7 +23,7 @@
 {% endfor %}
 </div>
 {% endmacro %}
-{% if a.vistorias_extras %}<h3 class="rotulo">{% for m in a.motos if m.principal %}{{ m.placa|placa_br }} · moto principal{% endfor %}</h3>{% endif %}
+{% if a.vistorias_extras %}<h3 class="rotulo">{% for m in a.motos if m.principal %}{{ m.placa|placa_br }} · veículo principal{% endfor %}</h3>{% endif %}
 {{ grupo(a.vistorias) }}
 {% for extra in a.vistorias_extras %}
 <h3 class="rotulo">{{ extra.moto.placa|placa_br }} · {{ extra.moto.modelo }} (vinculada)</h3>

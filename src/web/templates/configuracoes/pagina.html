@@ -30,7 +30,7 @@
     <h2 id="cfg-documentos">Alertas de documentos e CNH</h2>
     <p class="text-texto-2 mb-4">Dias antes do vencimento para marcar como "a vencer".</p>
     <div class="formulario">
-      {{ campo("cfg-doc", "Documentos da moto (dias)", nome="alerta_documento_dias", valor=v.alerta_documento_dias, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_documento_dias, autocomplete="off") }}
+      {{ campo("cfg-doc", "Documentos do veículo (dias)", nome="alerta_documento_dias", valor=v.alerta_documento_dias, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_documento_dias, autocomplete="off") }}
       {{ campo("cfg-cnh", "CNH do cliente (dias)", nome="alerta_cnh_dias", valor=v.alerta_cnh_dias, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.alerta_cnh_dias, autocomplete="off") }}
     </div>
   </section>

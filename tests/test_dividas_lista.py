@@ -44,7 +44,7 @@ def test_linha_traz_a_proxima_parcela_em_aberto_e_as_atrasadas():
 def test_divida_sem_parcelas_nao_tem_proxima():
     linha = d.linhas_da_lista([_saldo("a", tipo="moto_fiado")], [])[0]
     assert linha["proxima_vencimento"] is None and linha["parcelas_abertas"] == 0 and linha["situacao"] == "em_aberto"
-    assert linha["tipo_rotulo"] == "Moto fiado"
+    assert linha["tipo_rotulo"] == "Veículo fiado"
 
 
 def test_parcela_sem_data_so_vale_se_nao_houver_com_data():

@@ -14,7 +14,7 @@
   {% set visual_atraso %}{{ barra_segmentos(cb.faixas_atraso, "Atraso por faixa: " ~ cb.faixas_atraso|map(attribute="rotulo")|join(", ")) }}{{ legenda_faixas(cb.faixas_atraso) }}{% endset %}
   {{ kpi("Em atraso", dinc(cb.em_atraso), (n_atraso ~ (" contrato" if n_atraso == 1 else " contratos") ~ " · " ~ cb.contratos_inadimplentes ~ (" inadimplente" if cb.contratos_inadimplentes == 1 else " inadimplentes")), atencao=(cb.contratos_inadimplentes > 0), extra=("+ " ~ dinc(cb.encargos) ~ " de encargos" if cb.encargos > 0 else None), visual=visual_atraso if cb.em_atraso > 0 else None, href="/cobrancas?aba=atrasadas") }}
   {% set fr = h.frota %}
-  {{ kpi("Frota", fr.ocupacao ~ "% ocupada", fr.contagem.alugada ~ " de " ~ fr.ativas ~ " motos ativas alugadas", extra=(fr.contagem.disponivel ~ " livres · " ~ fr.contagem.manutencao ~ " em manutenção"), visual=barra_segmentos(fr.segmentos, fr.descricao), href="/?aba=frota") }}
+  {{ kpi("Frota", fr.ocupacao ~ "% ocupada", fr.contagem.alugada ~ " de " ~ fr.ativas ~ " veículos ativos alugados", extra=(fr.contagem.disponivel ~ " livres · " ~ fr.contagem.manutencao ~ " em manutenção"), visual=barra_segmentos(fr.segmentos, fr.descricao), href="/?aba=frota") }}
   {% if h.caixa %}
   {{ kpi("Caixa do mês", din(h.caixa.valor), ("inclui " ~ dinc(h.caixa.investimento) ~ " de investimento em veículos") if h.caixa.investimento > 0 else "após dívidas e retiradas", atencao=(h.caixa.valor < 0), visual=sparkline(h.caixa.serie, "Caixa dos últimos 6 meses, de " ~ (h.caixa.serie.primeiro|moeda) ~ " a " ~ (h.caixa.serie.final|moeda)) if h.caixa.serie and not d.ocultar else None, href="/?aba=dinheiro") }}
   {% else %}
@@ -28,11 +28,11 @@
 <section class="cartao moto-lista-cards hoje-lista" aria-labelledby="t-cobrar">
   <div class="cartao-cab"><h2 id="t-cobrar">Cobrar agora</h2><span class="text-texto-2 text-[13px]">{% if cb.total_linhas > cb.linhas|length %}mostrando {{ cb.linhas|length }} de {{ cb.total_linhas }} contratos, do maior atraso para o menor{% else %}vencendo hoje e atrasados{% endif %}</span></div>
   {% if cb.linhas %}
-  {% call tabela([("Cliente", ""), ("Moto", ""), ("Atraso", ""), ("A cobrar", "num"), ("Situação", ""), ("Ação", "")], "Contratos com cobrança vencida ou que vence hoje, com encargos") %}
+  {% call tabela([("Cliente", ""), ("Veículo", ""), ("Atraso", ""), ("A cobrar", "num"), ("Situação", ""), ("Ação", "")], "Contratos com cobrança vencida ou que vence hoje, com encargos") %}
     {% for c in cb.linhas %}
     <tr>
       <td class="topo font-medium">{{ nome(c.cliente) }}</td>
-      <td data-rotulo="Moto">{% if c.placa != "—" %}{{ plac(c.placa) }}{% else %}—{% endif %}</td>
+      <td data-rotulo="Veículo">{% if c.placa != "—" %}{{ plac(c.placa) }}{% else %}—{% endif %}</td>
       <td class="mono" data-rotulo="Atraso">{% if c.dias_atraso %}{{ c.dias_atraso }} d{% else %}hoje{% endif %}</td>
       <td class="num mono" data-rotulo="A cobrar">{{ din(c.total) }}</td>
       <td data-rotulo="Situação">{% if c.faixa == "inadimplente" %}{{ selo("Inadimplente", "perigo") }}{% elif c.faixa == "em_atraso" %}{{ selo("Em atraso", "atencao") }}{% else %}{{ selo("Vence hoje", "neutro") }}{% endif %}</td>

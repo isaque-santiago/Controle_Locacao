@@ -16,11 +16,11 @@ def normalizar_motos_vinculadas(moto_principal_id: str, vinculadas: Optional[Ite
     ids = [str(v).strip() for v in (vinculadas or []) if v is not None and str(v).strip()]
     principal = str(moto_principal_id).strip()
     if len(set(ids)) != len(ids):
-        raise ValueError("A mesma moto foi informada mais de uma vez.")
+        raise ValueError("O mesmo veículo foi informado mais de uma vez.")
     if principal in ids:
-        raise ValueError("A moto principal não pode estar na lista de motos vinculadas.")
+        raise ValueError("O veículo principal não pode estar na lista de veículos vinculados.")
     if len(ids) + 1 > MAX_MOTOS_POR_CONTRATO:
-        raise ValueError(f"Um contrato aceita até {MAX_MOTOS_POR_CONTRATO} motos.")
+        raise ValueError(f"Um contrato aceita até {MAX_MOTOS_POR_CONTRATO} veículos.")
     return ids
 
 

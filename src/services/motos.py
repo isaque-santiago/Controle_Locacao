@@ -34,7 +34,7 @@ def criar(dados: dict) -> dict:
     except APIError as erro:
         if erro.code == _CODIGO_VIOLACAO_UNICIDADE:
             raise ValueError(
-                f"Já existe uma moto cadastrada com a placa {dados['placa']}."
+                f"Já existe um veículo cadastrado com a placa {dados['placa']}."
             ) from erro
         raise
 
@@ -53,7 +53,7 @@ def atualizar(moto_id: str, dados: dict) -> dict:
     except APIError as erro:
         if erro.code == _CODIGO_VIOLACAO_UNICIDADE:
             raise ValueError(
-                f"Já existe uma moto cadastrada com a placa {dados['placa']}."
+                f"Já existe um veículo cadastrado com a placa {dados['placa']}."
             ) from erro
         raise
 
@@ -69,11 +69,11 @@ def atualizar_km(
     km menor que o atual exige confirmação explícita (serve para lançar dado antigo)."""
     moto = motos.obter(moto_id)
     if moto is None:
-        raise ValueError("Moto não encontrada.")
+        raise ValueError("Veículo não encontrado.")
 
     if km < moto["km_atual"] and not confirmar_km_menor:
         raise ValueError(
-            f"O km informado ({km}) é menor que o km atual da moto ({moto['km_atual']}). "
+            f"O km informado ({km}) é menor que o km atual do veículo ({moto['km_atual']}). "
             "Confirme se deseja registrar mesmo assim."
         )
 

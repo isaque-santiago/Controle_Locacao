@@ -1,6 +1,6 @@
 {% from "componentes/macros.html" import campo, campo_lista, area_texto %}
 {# Campos da vistoria (entrega no assistente, devolução no encerramento). Contexto: v, erros, ajuda_km, itens_checklist, estados, niveis.
-   `pref` (opcional) prefixa nomes, ids e chaves de v/erros: é o bloco de uma moto vinculada (vinc1_, vinc2_...). #}
+   `pref` (opcional) prefixa nomes, ids e chaves de v/erros: é o bloco de uma veículo vinculado (vinc1_, vinc2_...). #}
 {% set p = pref|default("") %}
 {{ campo("v" ~ p ~ "-km", "Quilometragem da vistoria", nome=p ~ "km", valor=v[p ~ "km"], mono=True, inputmode="numeric", obrigatorio=True, erro=erros[p ~ "km"], ajuda=ajuda_km, autocomplete="off") }}
 {{ campo_lista("v" ~ p ~ "-comb", "Combustível", niveis, nome=p ~ "nivel_combustivel", selecionado=v[p ~ "nivel_combustivel"]) }}

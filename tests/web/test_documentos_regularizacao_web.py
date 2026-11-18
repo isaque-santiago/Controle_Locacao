@@ -81,7 +81,7 @@ def test_regulariza_e_abre_o_cadastro_do_ano_seguinte(cliente, base_documentos, 
     assert servico_reg.regularizados == [(E2, date(2026, 10, 8))]
     assert servico_reg.anexos == [(E2, "m1", "recibo.pdf", "application/pdf")]
     pagina = cliente.get(resposta.headers["HX-Redirect"]).text
-    assert "marcado como regularizado" in pagina and "Seguro 2026 da moto BRA-2E19" in pagina and "O cadastro do próximo já está aberto" in pagina
+    assert "marcado como regularizado" in pagina and "Seguro 2026 do veículo BRA-2E19" in pagina and "O cadastro do próximo já está aberto" in pagina
     assert '<option value="seguro" selected>' in pagina and 'value="2027"' in pagina
 
 
@@ -92,7 +92,7 @@ def test_regulariza_sem_pedir_o_proximo_ou_sem_sugestao_volta_para_a_lista(clien
     assert sem_marcar.status_code == 303 and sem_marcar.headers["location"] == "/documentos"
     outro = cliente.post(f"/documentos/{E5}/regularizar", data=_dados(token, criar_proximo="on"), headers=HX)
     assert outro.headers["HX-Redirect"] == "/documentos" and len(servico_reg.regularizados) == 2 and servico_reg.anexos == []
-    assert "Documento Outro 2026 da moto QRS-4T21 marcado como regularizado." in cliente.get("/documentos").text
+    assert "Documento Outro 2026 do veículo QRS-4T21 marcado como regularizado." in cliente.get("/documentos").text
 
 
 def test_comprovante_invalido_nao_regulariza_nada(cliente, base_documentos, servico_reg):

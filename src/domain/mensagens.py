@@ -40,20 +40,20 @@ def _alerta(texto, atencao=False):
 
 
 def moto_salva(placa, nova):
-    return _toast(f"Moto {placa} cadastrada." if nova else f"Dados da moto {placa} atualizados.")
+    return _toast(f"Veículo {placa} cadastrado." if nova else f"Dados do veículo {placa} atualizados.")
 
 
 def moto_status_alterado(placa, inativada):
-    return _toast(f"Moto {placa} inativada." if inativada else f"Moto {placa} reativada.")
+    return _toast(f"Veículo {placa} inativado." if inativada else f"Veículo {placa} reativado.")
 
 
 def km_atualizado(placa, km, km_atual=None):
     """`km_atual` é o km da moto antes do lançamento: se a leitura for menor, ela só entra no histórico."""
     if km_atual is not None and km < km_atual:
         return _toast(
-            f"Leitura de {_km(km)} registrada no histórico da moto {placa}. O km atual continua {_km(km_atual)}."
+            f"Leitura de {_km(km)} registrada no histórico do veículo {placa}. O km atual continua {_km(km_atual)}."
         )
-    return _toast(f"Quilometragem da moto {placa} registrada: {_km(km)}.")
+    return _toast(f"Quilometragem do veículo {placa} registrada: {_km(km)}.")
 
 
 # ----------------------------------------------------------------- clientes --
@@ -72,7 +72,7 @@ def acesso_portal_removido(nome):
 
 def contrato_criado(nome, placa, enviadas=0, falhas_fotos=0):
     """`enviadas` fotos da entrega foram anexadas; sem fotos, o aviso diz onde adicioná-las depois."""
-    texto = f"Contrato de {nome} com a moto {placa} criado."
+    texto = f"Contrato de {nome} com o veículo {placa} criado."
     if falhas_fotos:
         return _alerta(texto + _aviso_fotos(falhas_fotos), atencao=True)
     if enviadas:
@@ -83,7 +83,7 @@ def contrato_criado(nome, placa, enviadas=0, falhas_fotos=0):
 def contrato_encerrado(nome, placa, devolucao=None, desconto=None, excedente=None):
     """Confirma o encerramento. Com caução recebida (`devolucao` informada), diz quanto devolver
     e quanto foi descontado de danos; danos acima da caução geram cobrança e pedem atenção."""
-    texto = f"Contrato de {nome} encerrado. A moto {placa} está disponível."
+    texto = f"Contrato de {nome} encerrado. O veículo {placa} está disponível."
     if devolucao is not None:
         texto += f" Devolver {moeda(devolucao)} de caução ao cliente."
     if Decimal(str(desconto or 0)) > 0:
@@ -179,15 +179,15 @@ def documento_regularizado(descricao, cadastrar_proximo=False):
 
 
 def manutencao_registrada(placa, concluida, custo_total=None):
-    situacao = "concluída" if concluida else "aberta; a moto fica em manutenção"
-    texto = f"Manutenção da moto {placa} registrada como {situacao}."
+    situacao = "concluída" if concluida else "aberta; o veículo fica em manutenção"
+    texto = f"Manutenção do veículo {placa} registrada como {situacao}."
     if custo_total is not None and Decimal(str(custo_total)) > 0:
         texto += f" Custo de {moeda(custo_total)}."
     return _toast(texto)
 
 
 def manutencao_finalizada(placa, concluida):
-    return _toast(f"Manutenção da moto {placa} {'concluída' if concluida else 'cancelada'}.")
+    return _toast(f"Manutenção do veículo {placa} {'concluída' if concluida else 'cancelada'}.")
 
 
 def item_catalogo_salvo(nome, novo):
@@ -198,7 +198,7 @@ def item_catalogo_salvo(nome, novo):
 
 
 def vistoria_registrada(tipo, placa, falhas_fotos=0):
-    texto = f"Vistoria de {tipo} da moto {placa} registrada."
+    texto = f"Vistoria de {tipo} do veículo {placa} registrada."
     if falhas_fotos:
         return _alerta(texto + _aviso_fotos(falhas_fotos), atencao=True)
     return _toast(texto)

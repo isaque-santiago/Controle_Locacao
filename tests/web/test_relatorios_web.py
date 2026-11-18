@@ -18,7 +18,7 @@ def test_resultado_por_moto_mostra_valores_resumo_e_barras(cliente, base_relator
     entrar(cliente)
     html = cliente.get("/relatorios").text
     assert "BRA-2E19" in html and "QRS-4T21" in html and "R$ 1.000,00" in html and "R$ 850,00" in html
-    assert "Resultado total: <strong>R$ 750,00</strong> em 2 motos." in html
+    assert "Resultado total: <strong>R$ 750,00</strong> em 2 veículos." in html
     assert "Melhor: <strong>BRA-2E19</strong> (R$ 850,00). Pior: <strong>QRS-4T21</strong> (R$ -100,00)." in html
     assert html.index("BRA-2E19") < html.index("QRS-4T21")  # maior resultado primeiro
     assert 'class="barra-rel-ok" width="100"' in html and 'class="barra-rel-perigo"' not in html  # negativo fica sem barra
@@ -53,7 +53,7 @@ def test_abas_viajam_pelo_painel_com_o_periodo(cliente, base_relatorios):
     assert "<html" not in pagina
     assert "<html" in cliente.get("/relatorios?aba=fluxo").text
     assert cliente.get("/relatorios/abas/inexistente").status_code == 404
-    assert "Resultado por moto" in cliente.get("/relatorios?aba=invalida").text
+    assert "Resultado por veículo" in cliente.get("/relatorios?aba=invalida").text
 
 
 def test_custo_de_manutencao_por_modelo_e_por_moto(cliente, base_relatorios):
@@ -63,7 +63,7 @@ def test_custo_de_manutencao_por_modelo_e_por_moto(cliente, base_relatorios):
     assert "R$ 300,00" in modelo and "Custo total: <strong>R$ 400,00</strong> em 2 modelos." in modelo
     assert modelo.index("Factor") < modelo.index("CG 160")  # maior custo primeiro
     moto = cliente.get("/relatorios?aba=custo&visao=moto").text
-    assert "Custo de manutenção por moto" in moto and "500 km" in moto and "R$ 0,20" in moto
+    assert "Custo de manutenção por veículo" in moto and "500 km" in moto and "R$ 0,20" in moto
     assert moto.index("QRS-4T21") < moto.index("BRA-2E19") and "—" in moto
     assert "Custo de manutenção por modelo" in cliente.get("/relatorios?aba=custo&visao=x").text
 

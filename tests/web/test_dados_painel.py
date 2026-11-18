@@ -117,7 +117,7 @@ def test_frota_monta_ocupacao_rosca_legenda_e_manutencao(monkeypatch):
     f = dados_painel.carregar(HOJE, aba="frota")["frota"]
     assert f["total"] == 3 and f["ativas"] == 3 and f["ocupacao"] == 33 and f["contagem"]["manutencao"] == 1
     assert f["ordens_concluidas"] == 1 and f["manutencao_aberta"] == {"quantidade": 1, "total": Decimal("290")}
-    assert f["rosca"] and f["legenda"] and "3 motos" in f["descricao_medidor"]
+    assert f["rosca"] and f["legenda"] and "3 veículos" in f["descricao_medidor"]
     assert f["manutencao_mes"] == Decimal("10.00") and f["veiculos"] == []
 
 

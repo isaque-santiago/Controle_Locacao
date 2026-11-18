@@ -94,7 +94,7 @@ def test_cria_com_comprovante_e_volta_para_a_lista(cliente, base_documentos, ser
     assert dados["observacoes"] is None
     # O tipo de conteúdo vem da extensão, não do que o navegador declarou.
     assert servico_doc.anexos == [("novo-1", "m2", "recibo.pdf", PDF, "application/pdf")]
-    assert "Documento Seguro 2026 da moto QRS-4T21 cadastrado." in cliente.get("/documentos").text
+    assert "Documento Seguro 2026 do veículo QRS-4T21 cadastrado." in cliente.get("/documentos").text
 
 
 def test_cria_sem_javascript_e_sem_comprovante(cliente, base_documentos, servico_doc):
@@ -110,7 +110,7 @@ def test_edita_mantendo_a_moto_do_documento(cliente, base_documentos, servico_do
     assert resposta.status_code == 200 and resposta.headers["HX-Redirect"] == "/documentos"
     documento_id, dados = servico_doc.atualizados[0]
     assert documento_id == E2 and dados["moto_id"] == "m1" and dados["valor"] == "99.90" and servico_doc.criados == []
-    assert "Documento Seguro 2026 da moto BRA-2E19 atualizado." in cliente.get("/documentos").text
+    assert "Documento Seguro 2026 do veículo BRA-2E19 atualizado." in cliente.get("/documentos").text
 
 
 def test_comprovante_que_falha_nao_desfaz_o_documento(cliente, base_documentos, servico_doc):
@@ -152,7 +152,7 @@ def test_moto_invalida_e_documento_inexistente(cliente, base_documentos, servico
     entrar(cliente)
     token = csrf_da_sessao(cliente)
     invalida = cliente.post("/documentos/novo", data=_dados(token, moto_id="m3"), headers=HX)  # moto inativa
-    assert invalida.status_code == 422 and "escolha uma moto da frota" in invalida.text and servico_doc.criados == []
+    assert invalida.status_code == 422 and "escolha um veículo da frota" in invalida.text and servico_doc.criados == []
     assert cliente.post("/documentos/abc/editar", data=_dados(token), headers=HX).status_code == 404
 
 

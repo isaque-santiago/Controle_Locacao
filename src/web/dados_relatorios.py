@@ -34,7 +34,7 @@ def _resultado(dados):
         "chave": "resultado_por_moto",
         "linhas": [{**r, "largura": largura, "tom": _tom(r["resultado"])} for r, largura in zip(linhas, larguras)],
         "resumo": _resumo([(formatar_placa(r["placa"]), r["resultado"]) for r in linhas], "Resultado total",
-                          ("moto", "motos"), "Melhor", "Pior"),
+                          ("veículo", "veículos"), "Melhor", "Pior"),
         "exportacao": [
             {"Placa": formatar_placa(r["placa"]), "Modelo": r["modelo"], "Receita recebida": r["receita_recebida"],
              "Manutenção": r["custo_manutencao"], "Documentos": r["custo_documentos"], "Resultado": r["resultado"],
@@ -54,8 +54,8 @@ def _custo(dados, visao):
             "resumo": _resumo([(g["modelo"], g["custo_total"]) for g in grupos], "Custo total", ("modelo", "modelos"),
                               "Maior custo", "Menor custo"),
             "exportacao": [
-                {"Modelo": g["modelo"], "Motos": g["motos"], "Custo total": g["custo_total"],
-                 "Custo médio por moto": g["custo_medio"]}
+                {"Modelo": g["modelo"], "Veículos": g["motos"], "Custo total": g["custo_total"],
+                 "Custo médio por veículo": g["custo_medio"]}
                 for g in grupos
             ],
         }
@@ -65,7 +65,7 @@ def _custo(dados, visao):
         "chave": "custo_manutencao_moto",
         "linhas": [{**r, "largura": largura, "tom": "neutro"} for r, largura in zip(linhas, larguras)],
         "resumo": _resumo([(formatar_placa(r["placa"]), r["custo_manutencao"]) for r in linhas], "Custo total",
-                          ("moto", "motos"), "Maior custo", "Menor custo"),
+                          ("veículo", "veículos"), "Maior custo", "Menor custo"),
         "exportacao": [
             {"Placa": formatar_placa(r["placa"]), "Modelo": r["modelo"], "Custo de manutenção": r["custo_manutencao"],
              "Km rodados": r["km_rodados"], "Custo por km": r["custo_por_km"]}

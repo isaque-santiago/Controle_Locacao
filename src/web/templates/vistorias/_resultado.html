@@ -3,10 +3,10 @@
 {% if not na_pagina %}{{ filtro_colapsavel("Tipo", "Filtrar por tipo", chips, tipo, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 {% if d.itens %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Data", ""), ("Tipo", ""), ("Km", "num"), ("Combustível", ""), ("Avarias", ""), ("Ações", "col-acoes")], "Vistorias", recolhivel=True) %}
+{% call tabela([("Cliente", ""), ("Veículo", ""), ("Data", ""), ("Tipo", ""), ("Km", "num"), ("Combustível", ""), ("Avarias", ""), ("Ações", "col-acoes")], "Vistorias", recolhivel=True) %}
 {% for item in d.itens %}{% set v = item.vistoria %}<tr data-recolhivel>
 {% call rc_titulo("modelo") %}{{ item.cliente_nome }}{% endcall %}
-<td data-rotulo="Moto">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td data-rotulo="Veículo">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="mono rc-cab" data-rotulo="Data">{{ v.data|data_br }}</td>
 <td data-rotulo="Tipo">{{ tipo_rotulo[v.tipo] }}</td>
 <td class="num mono" data-rotulo="Km">{{ v.km|milhar }} km</td>

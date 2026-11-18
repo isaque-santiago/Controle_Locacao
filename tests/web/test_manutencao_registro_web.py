@@ -48,7 +48,7 @@ def test_envio_imediato_apos_trocar_moto_pede_confirmacao_do_km(cliente, base_ma
     resposta = cliente.post("/manutencao/registrar", data=_dados(
         csrf_da_sessao(cliente), moto_id="m2", moto_id_referencia="m1", km="18420"
     ), headers=HX)
-    assert resposta.status_code == 422 and "a moto mudou; confira a leitura atualizada" in resposta.text
+    assert resposta.status_code == 422 and "o veículo mudou; confira a leitura atualizada" in resposta.text
     assert 'name="km" type="number" value="9000"' in resposta.text
     assert acoes_manutencao_falsas.registros == []
 
@@ -66,7 +66,7 @@ def test_erros_por_campo_preservam_valores_e_nao_gravam(cliente, base_manutencao
     moto_invalida = cliente.post("/manutencao/registrar", data=_dados(
         csrf_da_sessao(cliente), moto_id="inexistente"
     ), headers=HX)
-    assert moto_invalida.status_code == 422 and "escolha uma das motos disponíveis" in moto_invalida.text
+    assert moto_invalida.status_code == 422 and "escolha um dos veículos disponíveis" in moto_invalida.text
 
 
 def test_registra_com_itens_chave_e_redireciona_ao_historico(cliente, base_manutencao, acoes_manutencao_falsas):
@@ -79,7 +79,7 @@ def test_registra_com_itens_chave_e_redireciona_ao_historico(cliente, base_manut
     dados, chave = acoes_manutencao_falsas.registros[0]
     assert chave == "chave-1" and dados["cobrar_do_cliente"] is True and len(dados["itens"]) == 2
     aviso = cliente.get("/manutencao?aba=historico").text
-    assert "Manutenção da moto BRA-2E19 registrada como concluída" in aviso and "R$ 120,00" in aviso
+    assert "Manutenção do veículo BRA-2E19 registrada como concluída" in aviso and "R$ 120,00" in aviso
 
 
 def test_post_sem_htmx_redireciona_e_csrf_e_papel_sao_exigidos(cliente, base_manutencao):

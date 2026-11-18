@@ -68,10 +68,10 @@ def ler_moto(entrada: dict, nova: bool) -> dict:
 
     marca = _texto(entrada, "marca")
     if not marca:
-        erros["marca"] = "Marca: informe a marca da moto."
+        erros["marca"] = "Marca: informe a marca do veículo."
     modelo = _texto(entrada, "modelo")
     if not modelo:
-        erros["modelo"] = "Modelo: informe o modelo da moto."
+        erros["modelo"] = "Modelo: informe o modelo do veículo."
 
     ano_fabricacao = _coletar(
         erros, "ano_fabricacao", inteiro_campo,

@@ -14,7 +14,7 @@ def _vistoria(**extra):
 
 
 def _bloco_vinculada(n, moto_id, **extra):
-    """Campos da vistoria de entrega da n-ésima moto vinculada (prefixo vinc<n>_ e o id da moto escondido)."""
+    """Campos da vistoria de entrega da n-ésima veículo vinculado (prefixo vinc<n>_ e o id da moto escondido)."""
     campos = {"km": "1000", "nivel_combustivel": "cheio", "adicionais": "", "avarias": "",
               **{f"item_{i}": "ok" for i in CHECKLIST_PADRAO}, **extra}
     return {f"vinc{n}_{chave}": valor for chave, valor in campos.items()} | {f"vinc{n}_moto": moto_id}
@@ -79,7 +79,7 @@ def test_etapa_dois_lista_so_motos_disponiveis_e_marca_a_escolhida(cliente, base
     html = cliente.get(f"{BASE}?etapa=2").text
     assert "QRS-4T21" in html and "R$ 300,00" in html and "Maria &lt;b&gt;Silva&lt;/b&gt;" in html
     assert 'aria-label="Escolher BRA-2E19"' not in html  # a moto alugada não é oferecida
-    assert "Selecione uma moto disponível para continuar." in html
+    assert "Selecione um veículo disponível para continuar." in html
     cliente.post(f"{BASE}/moto", data={"csrf_token": token, "moto_id": base_contratos.moto_livre["id"]})
     escolhida = cliente.get(f"{BASE}?etapa=2").text
     assert "Selecionada" in escolhida and f"{BASE}?etapa=3" in escolhida
@@ -91,13 +91,13 @@ def test_vincular_moto_extra_aparece_no_resumo_e_vai_no_payload(cliente, base_co
     token = _preparar(cliente, base_contratos, ate=2)
     extra = base_contratos.moto_livre2["id"]
     html = cliente.get(f"{BASE}?etapa=2").text
-    assert "Vincular ao contrato" in html and 'aria-label="Vincular ao mesmo contrato a moto ABC-1D23"' in html
+    assert "Vincular ao contrato" in html and 'aria-label="Vincular ao mesmo contrato o veículo ABC-1D23"' in html
     resposta = cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
     assert resposta.status_code == 303 and resposta.headers["location"] == f"{BASE}?etapa=2"
     html = cliente.get(f"{BASE}?etapa=2").text
-    assert "Motos vinculadas (1)" in html and "Vinculada · tirar" in html
+    assert "Veículos vinculados (1)" in html and "Vinculada · tirar" in html
     cliente.post(f"{BASE}/condicoes", data={"csrf_token": token, **CONDICOES})
-    assert "Motos vinculadas (1)" in cliente.get(f"{BASE}?etapa=4").text
+    assert "Veículos vinculados (1)" in cliente.get(f"{BASE}?etapa=4").text
     cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria(), **_bloco_vinculada(1, extra)})
     dados, _ = acoes_contratos_falsas.chamadas[0]
     assert dados["motos_vinculadas"] == [extra]
@@ -108,16 +108,16 @@ def test_remover_moto_extra_e_trocar_principal_descarta_a_vinculada(cliente, bas
     extra = base_contratos.moto_livre2["id"]
     cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
     cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "remover"})
-    assert "Motos vinculadas" not in cliente.get(f"{BASE}?etapa=2").text
+    assert "Veículos vinculados" not in cliente.get(f"{BASE}?etapa=2").text
     cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": extra, "acao": "vincular"})
     cliente.post(f"{BASE}/moto", data={"csrf_token": token, "moto_id": extra})  # vira a principal
-    assert "Motos vinculadas" not in cliente.get(f"{BASE}?etapa=2").text
+    assert "Veículos vinculados" not in cliente.get(f"{BASE}?etapa=2").text
 
 
 def test_vincular_exige_principal_e_recusa_moto_indisponivel(cliente, base_contratos):
     token = _preparar(cliente, base_contratos, ate=1)
     cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": base_contratos.moto_livre2["id"], "acao": "vincular"})
-    assert "Escolha primeiro a moto principal" in cliente.get(f"{BASE}?etapa=1").text
+    assert "Escolha primeiro o veículo principal" in cliente.get(f"{BASE}?etapa=1").text
     cliente.post(f"{BASE}/moto", data={"csrf_token": token, "moto_id": base_contratos.moto_livre["id"]})
     cliente.post(f"{BASE}/moto-extra", data={"csrf_token": token, "moto_id": base_contratos.moto["id"], "acao": "vincular"})
     assert "não está disponível para vincular" in cliente.get(f"{BASE}?etapa=2").text
@@ -203,7 +203,7 @@ def test_criar_contrato_grava_e_redireciona_com_aviso(cliente, base_contratos, a
     assert dados["km_inicial"] == 5000 and dados["data_fim_prevista"] is None
     assert dados["valor_periodo"] == "320.00" and dados["caucao_valor"] == "500.00" and dados["periodicidade"] == "semanal"
     assert vistoria["km"] == 5000 and vistoria["avarias"] == "arranhão" and vistoria["checklist"]["farol_dianteiro"] == "ok"
-    assert "Contrato de Maria &lt;b&gt;Silva&lt;/b&gt; com a moto QRS-4T21 criado" in cliente.get("/contratos").text
+    assert "Contrato de Maria &lt;b&gt;Silva&lt;/b&gt; com o veículo QRS-4T21 criado" in cliente.get("/contratos").text
     assert cliente.get(f"{BASE}?etapa=2").headers["location"] == f"{BASE}?etapa=1"  # o rascunho foi descartado
 
 
@@ -298,17 +298,17 @@ def _com_vinculada(cliente, base):
 def test_etapa_confirmar_tem_um_bloco_de_vistoria_por_moto_vinculada(cliente, base_contratos):
     _, extra = _com_vinculada(cliente, base_contratos)
     html = cliente.get(f"{BASE}?etapa=4").text
-    assert "moto principal" in html and "(vinculada)" in html
+    assert "veículo principal" in html and "(vinculada)" in html
     assert f'name="vinc1_moto" value="{extra}"' in html
     for nome in ("km", "nivel_combustivel", "avarias", "item_farol_dianteiro"):
         assert f'name="vinc1_{nome}"' in html
-    assert 'id="vvinc1_-km"' in html and "A vistoria de todas as motos do contrato é obrigatória" in html
+    assert 'id="vvinc1_-km"' in html and "A vistoria de todos os veículos do contrato é obrigatória" in html
 
 
 def test_etapa_confirmar_sem_vinculada_nao_muda(cliente, base_contratos):
     _preparar(cliente, base_contratos, ate=3)
     html = cliente.get(f"{BASE}?etapa=4").text
-    assert "vinc1_" not in html and "moto principal" not in html and 'id="v-km"' in html
+    assert "vinc1_" not in html and "veículo principal" not in html and 'id="v-km"' in html
 
 
 def test_criar_envia_a_vistoria_de_entrega_de_cada_vinculada(cliente, base_contratos, acoes_contratos_falsas):
@@ -324,7 +324,7 @@ def test_criar_sem_a_vistoria_da_vinculada_volta_com_erro_e_nao_grava(cliente, b
     token, extra = _com_vinculada(cliente, base_contratos)
     resposta = cliente.post(f"{BASE}/criar", data={"csrf_token": token, **_vistoria()})
     assert acoes_contratos_falsas.chamadas == []
-    assert resposta.status_code == 422 and "A lista de motos do contrato mudou" in resposta.text
+    assert resposta.status_code == 422 and "A lista de veículos do contrato mudou" in resposta.text
 
 
 def test_erro_na_vinculada_volta_com_o_texto_digitado_e_nao_grava(cliente, base_contratos, acoes_contratos_falsas):

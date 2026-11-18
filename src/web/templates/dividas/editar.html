@@ -18,7 +18,7 @@
     {{ campo("f-n", "Número de parcelas", nome="numero_parcelas", valor=v.numero_parcelas, mono=True, inputmode="numeric", erro=erros.numero_parcelas, autocomplete="off", ajuda="Informe junto com o valor da parcela.") }}
     {{ campo("f-parcela", "Valor da parcela", nome="valor_parcela", valor=v.valor_parcela, prefixo="R$", mono=True, inputmode="decimal", erro=erros.valor_parcela, autocomplete="off") }}
     {% endif %}
-    {{ campo_lista("f-moto", "Moto ligada à dívida", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
+    {{ campo_lista("f-moto", "Veículo ligado à dívida", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
     {{ campo("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, autocomplete="off", largo=True) }}
     {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
     <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. Para acertar o que falta pagar, use "Confirmar saldo". A compra parcelada não troca de tipo.</p>

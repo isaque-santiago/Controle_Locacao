@@ -44,7 +44,7 @@ def ler_documento(entrada: dict, motos_validas, moto_fixa: str | None = None) ->
     erros: dict[str, str] = {}
     moto_id = moto_fixa or _texto(entrada, "moto_id")
     if moto_id not in motos_validas:
-        erros["moto_id"] = "Moto: escolha uma moto da frota."
+        erros["moto_id"] = "Veículo: escolha um veículo da frota."
     tipo = _texto(entrada, "tipo")
     if tipo not in TIPOS_ROTULO:
         erros["tipo"] = "Tipo: escolha um dos tipos."

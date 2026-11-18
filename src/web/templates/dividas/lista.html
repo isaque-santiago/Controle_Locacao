@@ -11,7 +11,7 @@
 
 <dl class="grade kpis">
   {{ kpi("Total em aberto", t.total_em_aberto|moeda, "todas as dívidas com saldo") }}
-  {{ kpi("Motos fiado", t.moto_fiado|moeda, "parte do total em aberto") }}
+  {{ kpi("Veículos fiado", t.moto_fiado|moeda, "parte do total em aberto") }}
   {{ kpi("Parcelas atrasadas", t.parcelas_atrasadas, "vencidas e não pagas", atencao=(t.parcelas_atrasadas > 0)) }}
   {{ kpi("Próximo vencimento", (t.proximo_vencimento|data_br) if t.proximo_vencimento else "—", t.proximo_credor if t.proximo_credor else "nenhuma parcela com data") }}
 </dl>
@@ -19,12 +19,12 @@
 {% if d.linhas %}
 <section class="cartao moto-lista-cards" aria-labelledby="t-dividas">
   <div class="cartao-cab"><h2 id="t-dividas">Todas as dívidas</h2></div>
-  {% call tabela([("Credor", ""), ("Tipo", ""), ("Moto", ""), ("Valor original", "num"), ("Pago", "num"), ("Saldo", "num"), ("Próxima parcela", ""), ("Situação", "")], "Dívidas com saldo e próxima parcela") %}
+  {% call tabela([("Credor", ""), ("Tipo", ""), ("Veículo", ""), ("Valor original", "num"), ("Pago", "num"), ("Saldo", "num"), ("Próxima parcela", ""), ("Situação", "")], "Dívidas com saldo e próxima parcela") %}
     {% for l in d.linhas %}
     <tr>
       <td class="topo font-medium"><a href="/dividas/{{ l.divida_id }}">{{ l.credor }}</a></td>
       <td data-rotulo="Tipo">{{ l.tipo_rotulo }}</td>
-      <td data-rotulo="Moto">{% if l.placa %}{{ placa(l.placa|placa_br) }}{% else %}—{% endif %}</td>
+      <td data-rotulo="Veículo">{% if l.placa %}{{ placa(l.placa|placa_br) }}{% else %}—{% endif %}</td>
       <td class="num mono" data-rotulo="Valor original">{{ l.valor_original|moeda }}</td>
       <td class="num mono" data-rotulo="Pago">{{ l.total_pago|moeda }}</td>
       <td class="num mono" data-rotulo="Saldo">{{ l.saldo|moeda }}{% if l.saldo_confirmado %} <small class="text-texto-2">confirmado</small>{% endif %}</td>

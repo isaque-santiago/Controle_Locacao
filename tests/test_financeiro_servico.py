@@ -76,7 +76,7 @@ def test_painel_hoje_traz_cobranca_frota_caixa_e_atencao(monkeypatch):
     assert cobranca["encargos"] == Decimal("93.00") and cobranca["linhas"][0]["cobranca_id"] == "k1"
     assert {k: p["frota"][k] for k in ("total", "contagem", "ativas", "ocupacao")} == {
         "total": 3, "contagem": {"alugada": 1, "disponivel": 1, "manutencao": 1, "inativa": 0}, "ativas": 3, "ocupacao": 33}
-    assert [s["classe"] for s in p["frota"]["segmentos"]] == ["cheio", "oficina", "livre"] and "3 motos" in p["frota"]["descricao"]
+    assert [s["classe"] for s in p["frota"]["segmentos"]] == ["cheio", "oficina", "livre"] and "3 veículos" in p["frota"]["descricao"]
     assert p["caixa"]["valor"] == Decimal("25.00") and p["caixa"]["investimento"] == Decimal("20.00")  # 100 - 40 - 20 - 10 - 5
     assert p["caixa"]["serie"]["final"] == Decimal("25.00") and len(p["caixa"]["serie"]["pontos"].split()) == 6
     assert [f["contratos"] for f in cobranca["faixas_atraso"]] == [0, 1, 0, 0]  # 9 dias de atraso: faixa de 7 a 14
@@ -160,7 +160,7 @@ def test_painel_frota_traz_veiculos_e_o_gasto_com_manutencao_da_mesma_fonte_do_d
     p = financeiro.painel_frota(HOJE)
     assert p["veiculos"][0]["placa"] == "POU7015" and p["veiculos"][0]["locatario"] == "JOSE" and p["veiculos"][0]["resultado"] == Decimal("75.00")
     assert p["manutencao_mes"] == Decimal("25.00") and p["mes_rotulo"] == "novembro de 2026"
-    # 3 motos ativas, receita do mês R$ 100 (fixture): 100 ÷ 3; oficina: m3 de 8 a 10/11 = 3 dias de 30 moto-dias
+    # 3 veículos ativos, receita do mês R$ 100 (fixture): 100 ÷ 3; oficina: m3 de 8 a 10/11 = 3 dias de 30 moto-dias
     assert p["receita_por_moto"] == Decimal("33.33") and p["tempo_parado"] == {"dias": 3, "percentual": Decimal("10.0")}
     assert [(l["placa"], l["motivo"], l["dias"]) for l in p["paradas"]["linhas"]] == [("OSL8828", "Disponível", 10), ("PMP2B63", "Em manutenção", 2)]
     # a categoria Manutenção da aba Dinheiro mostra o mesmo valor

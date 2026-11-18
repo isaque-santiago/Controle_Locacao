@@ -15,7 +15,7 @@
     {{ campo("f-primeira", "Primeira parcela vence em", nome="primeira_parcela", valor=v.primeira_parcela, tipo="date", obrigatorio=True, erro=erros.primeira_parcela, ajuda="As demais vencem no mesmo dia dos meses seguintes (em mês curto, no último dia).") }}
     {{ campo("f-pagas", "Parcelas já pagas", nome="parcelas_pagas", valor=v.parcelas_pagas, mono=True, inputmode="numeric", erro=erros.parcelas_pagas, autocomplete="off", ajuda="As primeiras parcelas entram como pagas, com a data do vencimento (estimada).") }}
     {{ campo_lista("f-conta", "Conta que pagou", contas, nome="conta_id", selecionado=v.conta_id, erro=erros.conta_id) }}
-    {{ campo_lista("f-moto", "Moto ligada à compra", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
+    {{ campo_lista("f-moto", "Veículo ligado à compra", motos, nome="moto_id", selecionado=v.moto_id, erro=erros.moto_id) }}
     {{ campo("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, autocomplete="off", largo=True) }}
     {{ area_texto("f-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
     <p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório. O total é calculado: entrada + parcelas.</p>

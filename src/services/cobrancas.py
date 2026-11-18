@@ -10,6 +10,7 @@ from postgrest.exceptions import APIError
 
 from src.db import usuario_id_atual
 from src.domain.encargos import calcular_encargos
+from src.domain.mensagens_banco import para_o_usuario
 from src.repositories import cobrancas, configuracoes, pagamentos
 
 _CODIGO_REGRA_DE_NEGOCIO = "P0001"  # raise exception ... nas RPCs
@@ -82,7 +83,7 @@ def cancelar_cobranca(cobranca_id: str, motivo: str) -> dict:
         return cobrancas.cancelar_via_rpc(cobranca_id, motivo)
     except APIError as erro:
         if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
-            raise ValueError(erro.message) from erro
+            raise ValueError(para_o_usuario(erro.message)) from erro
         raise
 
 

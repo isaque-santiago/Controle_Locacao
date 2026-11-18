@@ -112,7 +112,7 @@ def test_registra_com_fotos_e_volta_para_a_comparacao(cliente, base_vistorias, s
     assert dados["data"].date() == hoje_br()
     # O tipo de conteúdo vem da extensão, não do que o navegador declarou.
     assert [(f[0], f[1], f[3]) for f in servico_vist.fotos] == [("nova-1", "a.jpg", "image/jpeg"), ("nova-1", "b.png", "image/png")]
-    assert "Vistoria de entrega da moto BRA-2E19 registrada." in cliente.get(resposta.headers["HX-Redirect"]).text
+    assert "Vistoria de entrega do veículo BRA-2E19 registrada." in cliente.get(resposta.headers["HX-Redirect"]).text
 
 
 def test_registra_sem_javascript_e_sem_fotos(cliente, base_vistorias, servico_vist):

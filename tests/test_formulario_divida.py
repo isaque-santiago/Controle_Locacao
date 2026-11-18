@@ -87,7 +87,7 @@ def test_compra_sem_entrada_nem_parcelas_pagas():
     ("valor_parcela", "", "Valor da parcela"), ("valor_parcela", "0", "Valor da parcela"),
     ("primeira_parcela", "", "Primeira parcela"), ("primeira_parcela", "28/05/2026", "Primeira parcela"),
     ("parcelas_pagas", "10", "no máximo 9"), ("parcelas_pagas", "-1", "Parcelas já pagas"),
-    ("data_entrada", "ontem", "Data da entrada"), ("conta_id", "x", "Conta"), ("moto_id", "x", "Moto"),
+    ("data_entrada", "ontem", "Data da entrada"), ("conta_id", "x", "Conta"), ("moto_id", "x", "Veículo"),
 ])
 def test_compra_com_campo_invalido_nao_passa(campo, valor, erro):
     with pytest.raises(ErroDeCampos) as e:
@@ -115,7 +115,7 @@ def _divida(**extra):
 def test_tipos_da_lista_nao_incluem_a_compra_parcelada():
     tipos = dict(f.tipos_para_selecao())
     assert set(tipos) == {"moto_fiado", "financiamento", "fornecedor", "rastreador", "emprestimo"}
-    assert tipos["moto_fiado"] == "Moto fiado" and tipos["emprestimo"] == "Empréstimo"
+    assert tipos["moto_fiado"] == "Veículo fiado" and tipos["emprestimo"] == "Empréstimo"
     assert set(f.divida_inicial()) == set(f.CAMPOS_DIVIDA)
 
 
@@ -143,7 +143,7 @@ def test_valor_original_vazio_vale_zero_e_saldo_confirmado_zero_e_aceito():
     ("tipo", "compra_parcelada", "Tipo"), ("tipo", "", "Tipo"), ("credor", "", "Credor"), ("credor", "x" * 121, "no máximo 120"),
     ("valor_original", "-1", "Valor original"), ("valor_original", "abc", "Valor original"),
     ("numero_parcelas", "0", "Número de parcelas"), ("dia_vencimento", "32", "Dia do vencimento"),
-    ("dia_vencimento", "0", "Dia do vencimento"), ("saldo_confirmado", "-5", "Saldo confirmado"), ("moto_id", "x", "Moto"),
+    ("dia_vencimento", "0", "Dia do vencimento"), ("saldo_confirmado", "-5", "Saldo confirmado"), ("moto_id", "x", "Veículo"),
 ])
 def test_divida_com_campo_invalido_nao_passa(campo, valor, erro):
     extra = {campo: valor}
@@ -205,7 +205,7 @@ def test_edicao_da_compra_parcelada_ignora_valores_e_parcelas():
 
 @pytest.mark.parametrize("campo,valor,erro", [
     ("credor", "", "Credor"), ("credor", "x" * 121, "no máximo 120"), ("valor_original", "-1", "Valor original"),
-    ("numero_parcelas", "0", "Número de parcelas"), ("dia_vencimento", "32", "Dia do vencimento"), ("moto_id", "x", "Moto"),
+    ("numero_parcelas", "0", "Número de parcelas"), ("dia_vencimento", "32", "Dia do vencimento"), ("moto_id", "x", "Veículo"),
 ])
 def test_edicao_invalida_nao_passa(campo, valor, erro):
     extra = {campo: valor}

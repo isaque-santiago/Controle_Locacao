@@ -22,7 +22,7 @@ def test_lista_mostra_situacoes_e_saldo_confirmado(cliente):
     entrar(cliente)
     html = cliente.get("/dividas").text
     assert "Parcela atrasada (2)" in html and "Quitada" in html and "Em aberto" in html
-    assert "confirmado" in html and "Moto fiado" in html and "Empréstimo" in html
+    assert "confirmado" in html and "Veículo fiado" in html and "Empréstimo" in html
 
 
 def test_nomes_do_banco_sao_escapados_na_lista(cliente):
@@ -259,7 +259,7 @@ def test_conta_ou_moto_que_nao_existe_e_recusada(cliente, base_dividas):
     entrar(cliente)
     resposta = _compra(cliente, "criar", conta_id="00000000-0000-0000-0000-00000000ffff", moto_id="00000000-0000-0000-0000-00000000fffe")
     assert resposta.status_code == 422 and base_dividas.compras == []
-    assert "Conta: escolha uma das opções" in resposta.text and "Moto: escolha uma das opções" in resposta.text
+    assert "Conta: escolha uma das opções" in resposta.text and "Veículo: escolha uma das opções" in resposta.text
 
 
 def test_cadastro_sem_csrf_e_recusado(cliente, base_dividas):
@@ -300,7 +300,7 @@ def test_formulario_de_nova_divida_oferece_os_cinco_tipos(cliente):
     entrar(cliente)
     html = cliente.get("/dividas/nova-divida").text
     assert "Nova dívida" in html and 'name="tipo"' in html and 'name="saldo_confirmado"' in html
-    for rotulo in ("Moto fiado", "Financiamento", "Fornecedor", "Rastreador", "Empréstimo"):
+    for rotulo in ("Veículo fiado", "Financiamento", "Fornecedor", "Rastreador", "Empréstimo"):
         assert rotulo in html
     assert "Compra parcelada</option>" not in html
     assert "OID-7656 · Celta &lt;b&gt;LS&lt;/b&gt;" in html

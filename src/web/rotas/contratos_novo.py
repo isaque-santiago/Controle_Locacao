@@ -27,7 +27,7 @@ from src.web.templates import renderizar
 
 router = APIRouter()
 
-ETAPAS = (("Cliente", "Quem vai alugar"), ("Moto", "Disponível"), ("Condições", "Prazo e valores"), ("Confirmar", "Vistoria e agenda"))
+ETAPAS = (("Cliente", "Quem vai alugar"), ("Veículo", "Disponível"), ("Condições", "Prazo e valores"), ("Confirmar", "Vistoria e agenda"))
 _ESTADOS_ROTULO = {"ok": "OK", "avaria": "Avaria", "ausente": "Ausente", "nao_aplicavel": "N/A"}
 _BASE = "/contratos/novo"
 PREFIXO = formulario.PREFIXO_ITEM
@@ -109,7 +109,7 @@ def _blocos_extras(extras):
     """Um bloco de vistoria por moto vinculada, com o prefixo dos campos e a ajuda do km."""
     return [
         {"moto": m, "pref": vistoria_por_moto.prefixo(n),
-         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(m['km_atual'])} km)."}
+         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual do veículo ({formatar_milhar(m['km_atual'])} km)."}
         for n, m in enumerate(extras, start=1)
     ]
 
@@ -121,7 +121,7 @@ def _extra_confirmar(rascunho, moto):
     return {
         "condicoes": condicoes, "valor_total": formulario.valor_total_promessa(condicoes), "agenda": dados_contratos.previa_agenda(condicoes), "tem_caucao": Decimal(condicoes["caucao_valor"]) > 0,
         "v": _textos_da_vistoria(rascunho, moto, extras), "blocos_extras": _blocos_extras(extras),
-        "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(moto['km_atual'])} km) e vira o km inicial do contrato.",
+        "ajuda_km": f"Em km. Não pode ser menor que a leitura atual do veículo ({formatar_milhar(moto['km_atual'])} km) e vira o km inicial do contrato.",
         "itens_checklist": [(PREFIXO + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],
         "estados": [(e, _ESTADOS_ROTULO[e]) for e in ESTADOS_ITEM],
         "niveis": [(n, n.capitalize()) for n in NIVEIS_COMBUSTIVEL],
@@ -191,7 +191,7 @@ async def escolher_moto(request: Request, sessao: Sessao = Depends(exigir_dono))
     busca = (entrada.get("q") or "").strip()[:80]
     moto = await run_in_threadpool(dados_contratos.moto_para_contrato, entrada.get("moto_id"))
     if moto is None:
-        sessao.avisos.append({"tipo": "erro", "texto": "Esta moto não está mais disponível."})
+        sessao.avisos.append({"tipo": "erro", "texto": "Este veículo não está mais disponível."})
     else:
         sessao.rascunho_contrato["moto_id"] = moto["id"]
         extras = [i for i in sessao.rascunho_contrato.get("motos_extras", []) if i != moto["id"]]
@@ -209,17 +209,17 @@ async def vincular_moto(request: Request, sessao: Sessao = Depends(exigir_dono))
     moto_id = entrada.get("moto_id")
     extras = [m["id"] for m in await run_in_threadpool(_extras, rascunho, principal)]
     if principal is None:
-        sessao.avisos.append({"tipo": "erro", "texto": "Escolha primeiro a moto principal."})
+        sessao.avisos.append({"tipo": "erro", "texto": "Escolha primeiro o veículo principal."})
     elif entrada.get("acao") == "remover":
         rascunho["motos_extras"] = [i for i in extras if i != moto_id]
     else:
         moto = await run_in_threadpool(dados_contratos.moto_para_contrato, moto_id)
         if moto is None or moto_id == principal["id"]:
-            sessao.avisos.append({"tipo": "erro", "texto": "Esta moto não está disponível para vincular."})
+            sessao.avisos.append({"tipo": "erro", "texto": "Este veículo não está disponível para vincular."})
         elif moto_id in extras:
             pass
         elif len(extras) + 1 >= MAX_MOTOS_POR_CONTRATO:
-            sessao.avisos.append({"tipo": "erro", "texto": f"Um contrato aceita até {MAX_MOTOS_POR_CONTRATO} motos."})
+            sessao.avisos.append({"tipo": "erro", "texto": f"Um contrato aceita até {MAX_MOTOS_POR_CONTRATO} veículos."})
         else:
             rascunho["motos_extras"] = [*extras, moto_id]
     return _ir(2, busca)

@@ -9,5 +9,5 @@
 </dl>
 <p class="text-texto-2">Custo por km rodado desde a aquisição: <span class="mono text-texto font-medium">{% if f.custo_por_km is not none %}{{ f.custo_por_km|moeda }}{% else %}—{% endif %}</span></p>
 {% else %}
-{% call estado_vazio("Sem dados financeiros", "Quando esta moto tiver recebimentos ou custos, o resultado aparece aqui.", "0") %}{% endcall %}
+{% call estado_vazio("Sem dados financeiros", "Quando este veículo tiver recebimentos ou custos, o resultado aparece aqui.", "0") %}{% endcall %}
 {% endif %}

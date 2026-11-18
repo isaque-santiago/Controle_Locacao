@@ -38,7 +38,7 @@ def mensagem_cobranca(
     else:
         situacao = "vence na data indicada"
     return (
-        f"Olá, {cliente}. A cobrança de {vencimento}, referente à moto {placa}, "
+        f"Olá, {cliente}. A cobrança de {vencimento}, referente ao veículo {placa}, "
         f"{situacao}, com saldo de {saldo} antes dos encargos. "
         "Por favor, entre em contato para regularizar."
     )

@@ -71,7 +71,7 @@ def _regularizar(request, sessao, documento_id, entrada, arquivo):
         resultado = acoes_documentos.regularizar_documento(documento["id"], dados["data"])
         sugestao = resultado.get("sugestao_proximo") if dados["criar_proximo"] else None
         referencia = documento.get("ano_referencia") or documento.get("descricao") or ""
-        descricao = f"{contexto['tipo_rotulo']} {referencia} da moto {formatar_placa(moto['placa'])}".replace("  ", " ")
+        descricao = f"{contexto['tipo_rotulo']} {referencia} do veículo {formatar_placa(moto['placa'])}".replace("  ", " ")
         aviso = mensagens.documento_regularizado(descricao, bool(sugestao))
         if sugestao:
             parametros = urlencode({"moto": documento["moto_id"], "tipo": sugestao["tipo"], "ano": sugestao["ano_referencia"]})

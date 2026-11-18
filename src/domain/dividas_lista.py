@@ -6,7 +6,7 @@ from typing import Optional
 
 _ZERO = Decimal("0.00")
 TIPOS_ROTULO = {
-    "moto_fiado": "Moto fiado",
+    "moto_fiado": "Veículo fiado",
     "financiamento": "Financiamento",
     "fornecedor": "Fornecedor",
     "rastreador": "Rastreador",

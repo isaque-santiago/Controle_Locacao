@@ -83,7 +83,7 @@ class SegmentoFrota:
     status: str
     quantidade: int
     rotulo: str  # ex.: "18 alugadas"
-    percentual: int | None = None  # % das motos ativas; None nas inativas (ficam fora da conta)
+    percentual: int | None = None  # % dos veículos ativos; None nas inativas (ficam fora da conta)
 
 
 def segmentos_frota(contagem: dict[str, int]) -> list[SegmentoFrota]:
@@ -127,7 +127,7 @@ def descricao_medidor(contagem: dict[str, int]) -> str:
     """Texto alternativo do medidor para leitores de tela."""
     total = sum(contagem.values())
     partes = ", ".join(s.rotulo for s in segmentos_frota(contagem))
-    return f"Frota de {total} motos: {partes}"
+    return f"Frota de {total} veículos: {partes}"
 
 
 def percentual_recebido(recebido: Decimal, previsto: Decimal) -> int:
@@ -296,7 +296,7 @@ def agrupar_alertas(
     doc_vencidos = [a for a in documentos if a["situacao"] == "vencido"]
     if doc_vencidos:
         primeiro = doc_vencidos[0]
-        descricao = _com_restante(f"{primeiro['tipo'].upper()} · moto {primeiro['placa']}", len(doc_vencidos))
+        descricao = _com_restante(f"{primeiro['tipo'].upper()} · veículo {primeiro['placa']}", len(doc_vencidos))
         itens.append(ItemAlerta(len(doc_vencidos), "Documento vencido", descricao, TOM_PERIGO, "documentos", "/documentos?situacao=vencido"))
 
     doc_a_vencer = [a for a in documentos if a["situacao"] == "a_vencer"]

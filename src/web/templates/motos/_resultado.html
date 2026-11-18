@@ -8,7 +8,7 @@
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 
 {% if d.itens %}
-{% call tabela([("Placa", ""), ("Moto", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Motos cadastradas", recolhivel=True, ordenacao=ordenacao) %}
+{% call tabela([("Placa", ""), ("Veículo", ""), ("Situação", ""), ("Km", "num"), ("Locatário", ""), ("Próxima manutenção", ""), ("Ações", "col-acoes")], "Veículos cadastrados", recolhivel=True, ordenacao=ordenacao) %}
   {% for item in d.itens %}{% set m = item.moto %}{% set man = item.proxima_manutencao %}
   <tr data-recolhivel>
     {% call rc_titulo("c-placa") %}{{ placa(m.placa|placa_br) }}<span class="rc-so-cel"> {{ m.marca }} {{ m.modelo }}</span>{% endcall %}
@@ -25,16 +25,16 @@
 {{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}
 {% if d.pagina.total > opcoes_por_pagina[0] %}
 <div class="campo por-pagina">
-  <label for="por_pagina">Motos por página</label>
+  <label for="por_pagina">Veículos por página</label>
   <select class="entrada" id="por_pagina" name="por_pagina" hx-get="/motos" hx-include="#filtros" hx-target="#resultado" hx-push-url="true" hx-trigger="change">
     {% for n in opcoes_por_pagina %}<option value="{{ n }}"{% if n == por_pagina %} selected{% endif %}>{{ n }}</option>{% endfor %}
   </select>
 </div>
 {% endif %}
 {% elif filtrando %}
-{% call estado_vazio("Nenhuma moto encontrada", "Nenhuma moto atende à busca ou ao filtro escolhido.", "0") %}
+{% call estado_vazio("Nenhum veículo encontrado", "Nenhum veículo atende à busca ou ao filtro escolhido.", "0") %}
   {{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}
 {% endcall %}
 {% else %}
-{% call estado_vazio("Nenhuma moto cadastrada", "As motos da frota aparecem aqui assim que forem cadastradas.", "0") %}{% endcall %}
+{% call estado_vazio("Nenhum veículo cadastrado", "Os veículos da frota aparecem aqui assim que forem cadastradas.", "0") %}{% endcall %}
 {% endif %}

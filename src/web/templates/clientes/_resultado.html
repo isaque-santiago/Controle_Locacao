@@ -4,12 +4,12 @@
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 {% if d.itens %}
-{% call tabela([("Cliente", ""), ("Situação", ""), ("CPF", ""), ("WhatsApp", ""), ("CNH", ""), ("Moto atual", ""), ("Ações", "col-acoes")], "Clientes cadastrados", recolhivel=True, ordenacao=ordenacao) %}
+{% call tabela([("Cliente", ""), ("Situação", ""), ("CPF", ""), ("WhatsApp", ""), ("CNH", ""), ("Veículo atual", ""), ("Ações", "col-acoes")], "Clientes cadastrados", recolhivel=True, ordenacao=ordenacao) %}
 {% for item in d.itens %}{% set c = item.cliente %}<tr data-recolhivel>
 {% call rc_titulo("modelo") %}{{ c.nome }}{% endcall %}<td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else "neutro") }}</td>
 <td class="mono" data-rotulo="CPF">{{ c.cpf|cpf_mascarado }}</td><td class="mono" data-rotulo="WhatsApp">{{ (c.whatsapp or c.telefone or "—")|telefone_br }}</td>
 <td data-rotulo="CNH">{% if c.cnh_validade %}{{ selo(c.cnh_validade|data_br, "perigo" if item.cnh_situacao == "vencida" else ("atencao" if item.cnh_situacao == "a_vencer" else "ok")) }}{% else %}—{% endif %}</td>
-<td data-rotulo="Moto atual">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td data-rotulo="Veículo atual">{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="c-acao"><a class="btn" href="/clientes/{{ c.id }}" aria-label="Abrir a ficha de {{ c.nome }}">Abrir ficha</a></td></tr>{% endfor %}
 {% endcall %}
 {{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}

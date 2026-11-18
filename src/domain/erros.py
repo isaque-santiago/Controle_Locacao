@@ -8,6 +8,8 @@ exceção é lida por atributos (`code`, `message`, `status`) e pelo nome das cl
 
 from collections import namedtuple
 
+from src.domain.mensagens_banco import para_o_usuario
+
 VALIDACAO = "validacao"
 SESSAO_EXPIRADA = "sessao_expirada"
 SEM_PERMISSAO = "sem_permissao"
@@ -105,7 +107,7 @@ def classificar_erro(erro):
         # `raise exception` das RPCs: o texto foi escrito para quem usa o sistema
         mensagem = getattr(erro, "message", None)
         if mensagem:
-            return Falha(VALIDACAO, str(mensagem), False)
+            return Falha(VALIDACAO, para_o_usuario(str(mensagem)), False)
     if codigo in _MENSAGENS_POR_CODIGO:
         categoria, mensagem = _MENSAGENS_POR_CODIGO[codigo]
         return Falha(categoria, mensagem, False)
