@@ -106,7 +106,7 @@ def test_menu_marca_a_pagina_atual_e_a_barra_inferior(cliente):
     assert re.search(r'<a class="nav-item" href="/motos"[^>]*aria-current="page"', html)
     assert re.search(r'<a href="/motos" aria-current="page">', html)  # barra inferior
     clientes = cliente.get("/clientes").text
-    assert re.search(r'<button type="button" data-abrir="dlg-mais" aria-current="page">', clientes)
+    assert re.search(r'<summary aria-label="Mais opções" aria-current="page">', clientes)  # menu "Mais" suspenso
 
 
 def test_logout_do_menu_tem_o_token_csrf_da_sessao(cliente):
