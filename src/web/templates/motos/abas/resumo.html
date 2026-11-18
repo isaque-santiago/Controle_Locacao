@@ -49,15 +49,16 @@
 
 <section class="cartao recolhivel mt-4" data-recolhivel aria-labelledby="t-dados">
   <div class="cartao-cab"><h2 id="t-dados"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">Dados do veículo{{ icone("chevron", "recolhe-seta") }}</button></h2></div>
-  <dl class="dl ficha-dados">
+  <dl class="grade-dados ficha-veiculo">
+    <div class="fv-placa"><dt>Placa</dt><dd class="mono">{{ moto.placa|placa_br }}</dd></div>
     <div><dt>Renavam</dt><dd class="mono">{{ moto.renavam or "—" }}</dd></div>
-    <div><dt>Chassi</dt><dd class="mono">{{ moto.chassi or "—" }}</dd></div>
+    <div class="fv-largo"><dt>Chassi</dt><dd class="mono">{{ moto.chassi or "—" }}</dd></div>
     <div><dt>Motor</dt><dd class="mono">{{ moto.motor or "—" }}</dd></div>
-    <div><dt>Cor / combustível</dt><dd>{{ moto.cor or "—" }}{% if moto.combustivel %} · {{ moto.combustivel }}{% endif %}</dd></div>
-    <div><dt>Placa</dt><dd class="mono">{{ moto.placa|placa_br }}</dd></div>
+    <div><dt>Cor</dt><dd>{{ moto.cor or "—" }}</dd></div>
+    <div><dt>Combustível</dt><dd>{{ moto.combustivel or "—" }}</dd></div>
+    <div><dt>Situação</dt><dd>{{ status_rotulo[moto.status] }}</dd></div>
     <div><dt>Valor de aquisição</dt><dd class="mono">{{ moto.valor_aquisicao|moeda }}</dd></div>
     <div><dt>Data de aquisição</dt><dd class="mono">{{ moto.data_aquisicao|data_br }}</dd></div>
-    <div><dt>Situação</dt><dd>{{ status_rotulo[moto.status] }}</dd></div>
   </dl>
   {% if moto.observacoes %}<p class="mt-4 text-texto-2">{{ moto.observacoes }}</p>{% endif %}
 </section>

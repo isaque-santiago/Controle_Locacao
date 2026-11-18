@@ -885,6 +885,15 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
   .ficha-dados .ficha-endereco {grid-column: span 7;}
   .ficha-dados .ficha-referencias {grid-column: span 5;}
 }
+/* Dados do veículo: grade de 4 colunas (chassi ocupa 2), rótulo em caixa alta sobre o valor; no celular, 2 colunas */
+.ficha-veiculo {grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e3) var(--e5);}
+.ficha-veiculo dt {text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px;}
+.ficha-veiculo dd {font-weight: 500;}
+.ficha-veiculo .fv-largo {grid-column: span 2;}
+@media (max-width: 719px) {
+  .ficha-veiculo {grid-template-columns: repeat(2, minmax(0, 1fr));}
+  .ficha-veiculo .fv-largo {grid-column: span 2;}
+}
 /* Celular: dados pessoais como linhas "rótulo à esquerda, valor à direita" */
 @media (max-width: 719px) {
   .ficha-dados {grid-template-columns: minmax(0, 1fr); gap: 0;}
