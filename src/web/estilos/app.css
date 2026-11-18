@@ -61,7 +61,7 @@
   --fonte-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --fonte-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
   --fonte-num: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --lateral-larg: 240px;
+  --lateral-larg: 232px;
   --barra-inferior: 64px;
   color-scheme: light;
 }
@@ -134,19 +134,25 @@ a {color: inherit;}
 main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word; padding: clamp(24px, 4vw, 40px) var(--pad) 48px;}
 
 /* Barra lateral (desktop) / trilho (tablet) */
-.lateral {position: sticky; top: 0; height: 100dvh; background: var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; border-right: 1px solid var(--lateral-linha);}
+.lateral {position: sticky; top: 0; height: 100dvh; background: var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--lateral-linha);}
 .marca {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e2) var(--e5); text-decoration: none; color: var(--lateral-forte);}
 .marca-simbolo {width: 36px; height: 36px; border-radius: var(--raio-md); background: var(--marca); color: var(--grafite); display: grid; place-items: center; font: 600 15px var(--fonte-titulo); letter-spacing: .02em; flex: none;}
 .marca strong {display: block; font: 600 17px/1.1 var(--fonte-titulo); color: var(--lateral-forte);}
 .marca span.sub {display: block; font-size: 12px; color: var(--lateral-sub);}
 .nav-grupo {margin-bottom: var(--e4);}
-.nav-grupo h2 {font: 600 12px/1 var(--fonte-ui); color: var(--lateral-sub); padding: 0 var(--e3) var(--e2);}
+.nav-grupo h2 {font: 600 11.2px/1 var(--fonte-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--lateral-sub); padding: 0 var(--e3) var(--e2);}
 .nav-lista {list-style: none; margin: 0; padding: 0; display: grid; gap: 2px;}
-.nav-item {position: relative; display: flex; align-items: center; gap: var(--e3); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); color: var(--lateral-texto); text-decoration: none; font-weight: 500; transition: background 150ms ease, color 150ms ease;}
+.nav-item {position: relative; display: flex; align-items: center; gap: .85rem; font-size: 14.9px; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); color: var(--lateral-texto); text-decoration: none; font-weight: 500; transition: background 150ms ease, color 150ms ease;}
 .nav-item:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
 .nav-item[aria-current="page"] {background: var(--lateral-ativo); color: var(--lateral-forte);}
 .nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
-.nav-item .i {opacity: .9;}
+.nav-item .i {width: 24px; height: 24px; opacity: .9;}
+.nav-item[aria-current="page"] {font-weight: 600;}
+.lateral::-webkit-scrollbar {display: none;}
+/* Telas baixas: o menu se compacta para caber sem barra de rolagem. */
+@media (min-width: 720px) and (max-height: 1040px) {
+  .lateral {padding-block: var(--e3);} .marca {padding-bottom: var(--e4);} .nav-grupo {margin-bottom: var(--e3);} .nav-item {min-height: 40px;}
+}
 .icone-veiculo {width: 18px; height: 18px; margin-right: 6px; vertical-align: -3px; color: var(--texto-2);}
 .ficha-titulo .icone-veiculo {width: 26px; height: 26px; margin-right: 0;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
