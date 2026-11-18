@@ -619,4 +619,36 @@
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
   });
+  // ---- Menu lateral: o traço do item ativo desliza, ao abrir a página, do item da página anterior até o item tocado ----
+  (function () {
+    var nav = document.querySelector('.lateral nav');
+    if (!nav) return;
+    var CHAVE = 'nav-marcador';
+    var marcador = document.createElement('span');
+    marcador.className = 'nav-marcador';
+    marcador.setAttribute('aria-hidden', 'true');
+    nav.appendChild(marcador);
+    function guardar(valor) { try { sessionStorage.setItem(CHAVE, valor); } catch (e) { /* sem armazenamento: só não continua de onde parou */ } }
+    function lido() { try { return sessionStorage.getItem(CHAVE); } catch (e) { return null; } }
+    function itens() { return Array.prototype.slice.call(nav.querySelectorAll('.nav-item')); }
+    function porCaminho(caminho) { return itens().filter(function (a) { return a.getAttribute('href') === caminho; })[0] || null; }
+    function posicionar(item) {
+      var r = item.getBoundingClientRect(), n = nav.getBoundingClientRect();
+      marcador.style.height = Math.max(r.height - 16, 0) + 'px';
+      marcador.style.transform = 'translateY(' + (r.top - n.top + 8) + 'px)';
+      marcador.classList.add('visivel');
+    }
+    var ativo = nav.querySelector('.nav-item[aria-current="page"]');
+    if (!ativo || !nav.offsetParent) return;
+    document.documentElement.classList.add('com-marcador');
+    var anterior = porCaminho(lido());
+    posicionar(anterior || ativo);
+    if (anterior && anterior !== ativo) {
+      marcador.getBoundingClientRect();
+      window.setTimeout(function () { marcador.classList.add('desliza'); posicionar(ativo); }, 60);
+    } else {
+      window.setTimeout(function () { marcador.classList.add('desliza'); }, 60);
+    }
+    guardar(ativo.getAttribute('href'));
+  })();
 })();

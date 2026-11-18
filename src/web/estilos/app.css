@@ -147,7 +147,13 @@ main {width: 100%; max-width: 1600px; margin: 0 auto; overflow-wrap: break-word;
 .nav-item {position: relative; display: flex; align-items: center; gap: .85rem; font-size: 14.9px; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); color: var(--lateral-texto); text-decoration: none; font-weight: 500; transition: background 150ms ease, color 150ms ease;}
 .nav-item:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
 .nav-item[aria-current="page"] {background: var(--lateral-ativo); color: var(--lateral-forte);}
-.nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
+/* Traço do item ativo: um só elemento (criado pelo app.js) que desliza até o item tocado. Sem JS, o traço fica no próprio item. */
+.lateral nav {position: relative;}
+.nav-marcador {position: absolute; left: -12px; top: 0; width: 4px; height: 0; border-radius: 0 4px 4px 0; background: var(--marca); opacity: 0; pointer-events: none; will-change: transform;}
+.nav-marcador.visivel {opacity: 1;}
+.nav-marcador.desliza {transition: transform 320ms cubic-bezier(.3, .7, .2, 1), height 320ms cubic-bezier(.3, .7, .2, 1);}
+@media (prefers-reduced-motion: reduce) {.nav-marcador.desliza {transition: none;}}
+html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
 .nav-item .i {width: 24px; height: 24px; opacity: .9;}
 .nav-item[aria-current="page"] {font-weight: 600;}
 .lateral::-webkit-scrollbar {display: none;}
@@ -1199,3 +1205,79 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .btn-icone[data-alternar-tema]:hover {background: var(--superficie-hover); border-color: transparent; color: var(--texto); box-shadow: none;}
 .topo-movel .btn-icone[data-alternar-tema] {color: var(--lateral-texto);}
 .topo-movel .btn-icone[data-alternar-tema]:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+
+/* ---------- Hover e foco suaves (padrão do cell-pag) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  a {transition: color 120ms ease;}
+  .entrada {transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;}
+  .dados tbody tr {transition: background-color 100ms ease;}
+  .chip {transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;}
+  .abas button, .abas a {transition: color 150ms ease, border-color 150ms ease;}
+  .selo {transition: background-color 150ms ease, color 150ms ease;}
+  .cartao, .kpi {transition: box-shadow 180ms ease, border-color 180ms ease;}
+  .nav-item .i {transition: stroke-width 160ms ease, transform 160ms ease;}
+  @media (hover: hover) and (pointer: fine) {
+    .chip:not([aria-pressed="true"]):not([aria-current="true"]):hover {transform: translateY(-1px); border-color: var(--texto-3);}
+    .cartao:hover, .kpi:hover {border-color: var(--linha-forte); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .28);}
+    .nav-item:hover .i {transform: scale(1.08);}
+  }
+}
+
+/* ---------- Entrada em sequência e gráficos que crescem ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes linha-entra {from {opacity: 0; transform: translateY(6px);} to {opacity: 1; transform: none;}}
+  @keyframes coluna-cresce {from {transform: scaleY(0);} to {transform: scaleY(1);}}
+  @keyframes barra-cresce {from {transform: scaleX(0);} to {transform: scaleX(1);}}
+  @keyframes arco-aparece {from {opacity: 0;} to {opacity: 1;}}
+  /* Os blocos da página entram um após o outro (cabeçalho, filtros, KPIs, tabela...). */
+  #conteudo > :nth-child(3) {animation-delay: 60ms;}
+  #conteudo > :nth-child(4) {animation-delay: 120ms;}
+  #conteudo > :nth-child(5) {animation-delay: 180ms;}
+  #conteudo > :nth-child(n+6) {animation-delay: 240ms;}
+  /* Cartões de KPI e colunas lado a lado entram em escada; linhas de tabela, nas primeiras dez. */
+  .kpis > *, .cols-2 > * {animation: bloco-entra 320ms ease-out backwards;}
+  .kpis > :nth-child(2), .cols-2 > :nth-child(2) {animation-delay: 60ms;}
+  .kpis > :nth-child(3) {animation-delay: 120ms;}
+  .kpis > :nth-child(4) {animation-delay: 180ms;}
+  .kpis > :nth-child(n+5) {animation-delay: 240ms;}
+  .dados tbody tr {animation: linha-entra 240ms ease-out backwards;}
+  .dados tbody tr:nth-child(2) {animation-delay: 30ms;} .dados tbody tr:nth-child(3) {animation-delay: 60ms;}
+  .dados tbody tr:nth-child(4) {animation-delay: 90ms;} .dados tbody tr:nth-child(5) {animation-delay: 120ms;}
+  .dados tbody tr:nth-child(6) {animation-delay: 150ms;} .dados tbody tr:nth-child(7) {animation-delay: 180ms;}
+  .dados tbody tr:nth-child(8) {animation-delay: 210ms;} .dados tbody tr:nth-child(9) {animation-delay: 240ms;}
+  .dados tbody tr:nth-child(n+10) {animation-delay: 270ms;}
+  /* Gráficos: colunas sobem, barras avançam e o anel da frota aparece. */
+  .grafico-colunas rect {transform-box: fill-box; transform-origin: 50% 100%; animation: coluna-cresce 600ms cubic-bezier(.2, .8, .2, 1) 150ms backwards;}
+  .grafico-colunas rect:nth-of-type(2n) {animation-delay: 190ms;} .grafico-colunas rect:nth-of-type(4n+3), .grafico-colunas rect:nth-of-type(4n+4) {animation-delay: 230ms;}
+  .barras-lista .barra-cheia, .kpi-barra-cheia {transform-box: fill-box; transform-origin: 0 50%; animation: barra-cresce 700ms cubic-bezier(.2, .8, .2, 1) 200ms backwards;}
+  .rosca .arco {animation: arco-aparece 700ms ease-out 200ms backwards;}
+}
+
+/* ---------- Diálogos e painéis que abrem e fecham com suavidade ----------
+   O fechamento anima por `transition-behavior: allow-discrete`; em navegador sem esse recurso o diálogo só abre e fecha, sem animação. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog {opacity: 0; transform: translateY(10px) scale(.98); transition: opacity 180ms ease, transform 200ms cubic-bezier(.2, .8, .2, 1), overlay 200ms allow-discrete, display 200ms allow-discrete;}
+  dialog[open] {opacity: 1; transform: none;}
+  dialog::backdrop {background: rgba(21,24,28,0); transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;}
+  dialog[open]::backdrop {background: rgba(21,24,28,.55);}
+  @starting-style {
+    dialog[open] {opacity: 0; transform: translateY(10px) scale(.98);}
+    dialog[open]::backdrop {background: rgba(21,24,28,0);}
+  }
+  @media (max-width: 719px) {
+    dialog.cheio, dialog.folha {transform: translateY(24px);}
+    dialog.cheio[open], dialog.folha[open] {transform: none;}
+    @starting-style {dialog.cheio[open], dialog.folha[open] {transform: translateY(24px);}}
+  }
+  /* Painéis dos filtros e do seletor de visão. */
+  .filtro-col[open] > .filtro-opcoes, .colapsavel-visao[open] > .opcoes {animation: painel-entra 200ms cubic-bezier(.2, .8, .2, 1) both; transform-origin: top left;}
+  .filtro-col .seta-filtro {transition: transform 180ms ease;}
+}
+
+/* ---------- Troca de conteúdo via HTMX: o trecho novo entra com fade em vez de piscar ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  #resultado > :not(input), #painel-aba > * {animation: bloco-entra 240ms ease-out backwards;}
+  #painel-aba > :nth-child(2) {animation-delay: 50ms;} #painel-aba > :nth-child(n+3) {animation-delay: 100ms;}
+  /* Enviando um formulário: o botão esmaece suavemente enquanto espera. */
+  form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {transition: opacity 150ms ease;}
+}
