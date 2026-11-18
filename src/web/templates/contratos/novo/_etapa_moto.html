@@ -1,11 +1,11 @@
 {% from "componentes/macros.html" import icone %}
-{% set rotulo_busca = "Buscar moto disponível por placa ou modelo" %}
+{% set rotulo_busca = "Buscar veículo disponível por placa ou modelo" %}
 {% include "contratos/novo/_resumo_selecao.html" %}
 {% include "contratos/novo/_busca.html" %}
-{% if selecionado_id %}<p class="text-texto-2 text-[13px]">Opcional: um contrato pode cobrir até {{ max_extras + 1 }} motos (a parcela e a receita ficam na moto principal). Use "Vincular ao contrato" nas outras motos.</p>{% endif %}
+{% if selecionado_id %}<p class="text-texto-2 text-[13px]">Opcional: um contrato pode cobrir até {{ max_extras + 1 }} veículos (a parcela e a receita ficam no veículo principal). Use "Vincular ao contrato" nos outros veículos.</p>{% endif %}
 <div id="resultado" tabindex="-1">{% include "contratos/novo/_selecao.html" %}</div>
 <div class="rodape-acoes">
   <a class="btn" href="{{ base }}?etapa=1">Voltar</a>
   {% if selecionado_id %}<a class="btn btn-primario" href="{{ base }}?etapa=3">Avançar</a>
-  {% else %}<div class="avancar-grupo"><small id="dica-avancar" class="dica-avancar">Selecione uma moto disponível para continuar.</small><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button></div>{% endif %}
+  {% else %}<div class="avancar-grupo"><small id="dica-avancar" class="dica-avancar">Selecione um veículo disponível para continuar.</small><button class="btn btn-primario" type="button" disabled aria-describedby="dica-avancar">Avançar</button></div>{% endif %}
 </div>

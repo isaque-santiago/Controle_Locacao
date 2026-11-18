@@ -21,8 +21,8 @@ def test_locatario_nao_acessa_a_lista(cliente):
 def test_lista_mostra_motos_com_dados_formatados(cliente):
     entrar(cliente)
     html = cliente.get("/motos").text
-    assert "<h1>Motos</h1>" in html
-    assert "3 motos cadastradas" in html
+    assert "<h1>Veículos</h1>" in html
+    assert "3 veículos cadastrados" in html
     assert "ABC1D01" not in html and "ABC-1D01" in html  # placa formatada
     assert "Honda CG 101" in html and "1.000" in html
     assert "vencida há 120 km" in html
@@ -60,7 +60,7 @@ def test_busca_por_placa_com_hifen_e_por_locatario(cliente):
 def test_busca_sem_resultado_oferece_limpar_filtros(cliente):
     entrar(cliente)
     html = cliente.get("/motos?q=nao-existe").text
-    assert "Nenhuma moto encontrada" in html
+    assert "Nenhum veículo encontrado" in html
     assert 'href="/motos"' in html and "Limpar filtros" in html
 
 
@@ -68,7 +68,7 @@ def test_sem_motos_cadastradas_mostra_estado_vazio(cliente, base_motos):
     base_motos.motos.clear()
     entrar(cliente)
     html = cliente.get("/motos").text
-    assert "Nenhuma moto cadastrada" in html and "<table" not in html
+    assert "Nenhum veículo cadastrado" in html and "<table" not in html
 
 
 def test_termo_da_busca_e_escapado_no_campo(cliente):

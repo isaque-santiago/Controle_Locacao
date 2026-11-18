@@ -28,7 +28,7 @@ _MODELO = "documentos/conferir.html"
 
 def _nome(registro):
     d = registro["documento"]
-    return f"{regras.nome_do_documento(d['tipo'], d.get('descricao'), d.get('ano_referencia'))} da moto {formatar_placa(registro['moto']['placa'])}"
+    return f"{regras.nome_do_documento(d['tipo'], d.get('descricao'), d.get('ano_referencia'))} do veículo {formatar_placa(registro['moto']['placa'])}"
 
 
 def _contexto(registro, v=None, erros=None, erro_geral=None, motivo="", erros_recusa=None):

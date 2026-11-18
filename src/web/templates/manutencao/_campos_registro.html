@@ -5,7 +5,7 @@
 <input type="hidden" name="extras_ids" value="{{ v.extras_ids }}">
 <input type="hidden" name="moto_id_referencia" value="{{ v.moto_id_referencia }}">
 {% if not frota %}
-<div class="largo aviso info" role="status"><div>Cadastre uma moto ativa antes de registrar manutenções.</div></div>
+<div class="largo aviso info" role="status"><div>Cadastre um veículo ativo antes de registrar manutenções.</div></div>
 {% else %}
 <div class="campo largo{{ ' com-erro' if erros.moto_id else '' }}"><label for="f-moto">Moto <span aria-hidden="true">*</span></label><select class="entrada" id="f-moto" name="moto_id" required{% if erros.moto_id %} aria-invalid="true"{% endif %} {{ atualizar|safe }} hx-trigger="change" hx-vals='{"alteracao":"moto"}'>{% for m in frota %}<option value="{{ m.id }}"{% if m.id == v.moto_id %} selected{% endif %}>{{ m.placa|placa_br }} · {{ m.marca }} {{ m.modelo }}</option>{% endfor %}</select>{% if erros.moto_id %}<small class="msg-erro">{{ erros.moto_id }}</small>{% endif %}</div>
 <div class="campo{{ ' com-erro' if erros.tipo else '' }}"><label for="f-tipo">Tipo</label><select class="entrada" id="f-tipo" name="tipo"{% if erros.tipo %} aria-invalid="true"{% endif %}><option value="preventiva"{{ ' selected' if v.tipo == 'preventiva' else '' }}>Preventiva</option><option value="corretiva"{{ ' selected' if v.tipo == 'corretiva' else '' }}>Corretiva</option></select>{% if erros.tipo %}<small class="msg-erro">{{ erros.tipo }}</small>{% endif %}</div>
@@ -16,7 +16,7 @@
 {{ campo("f-oficina", "Oficina", nome="oficina", valor=v.oficina, autocomplete="organization") }}
 {{ area_texto("f-descricao", "Descrição", nome="descricao", valor=v.descricao, erro=erros.descricao, largo=True, linhas=3) }}
 
-<fieldset class="largo"><legend><b>Itens do plano substituídos ou revisados</b></legend><p class="text-texto-2 text-[13px] mb-3">Itens marcados reiniciam o contador do plano da moto.</p>
+<fieldset class="largo"><legend><b>Itens do plano substituídos ou revisados</b></legend><p class="text-texto-2 text-[13px] mb-3">Itens marcados reiniciam o contador do plano do veículo.</p>
 {% if catalogo %}<div class="grade-dados">{% for item in catalogo %}<label class="caixa"><input type="checkbox" name="item_{{ item.id }}" value="1"{{ ' checked' if v.get('item_' ~ item.id) else '' }} {{ atualizar|safe }} hx-trigger="change"> {{ item.nome }}</label>{% endfor %}</div>{% else %}<p>Nenhum item ativo no catálogo.</p>{% endif %}</fieldset>
 
 {% for selecionado in previa.selecionados %}{% set item = selecionado.item %}<section class="largo cartao"><h3>{{ item.nome }} <span class="sub">(plano)</span></h3><div class="formulario mt-3">

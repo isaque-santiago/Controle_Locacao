@@ -39,7 +39,7 @@ def test_concluir_grava_e_avisa(cliente, base_manutencao, acoes_manutencao_falsa
     resposta = cliente.post(_url("concluir"), data=_dados(csrf_da_sessao(cliente)), headers=HX)
     assert resposta.status_code == 200 and resposta.headers["HX-Redirect"] == "/manutencao?aba=historico"
     assert acoes_manutencao_falsas.finalizacoes == [("h1", "concluida", date(2026, 10, 7), 18420)]
-    assert "Manutenção da moto BRA-2E19 concluída" in cliente.get("/manutencao?aba=historico").text
+    assert "Manutenção do veículo BRA-2E19 concluída" in cliente.get("/manutencao?aba=historico").text
 
 
 def test_cancelar_exige_confirmacao_e_grava_cancelada(cliente, base_manutencao, acoes_manutencao_falsas):

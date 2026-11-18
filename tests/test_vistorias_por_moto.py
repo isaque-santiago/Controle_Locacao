@@ -1,4 +1,4 @@
-"""Vistoria por moto em contrato com várias motos: validação, motos pendentes e exigência da tela."""
+"""Vistoria por veículo em contrato com várias motos: validação, motos pendentes e exigência da tela."""
 
 import pytest
 
@@ -46,7 +46,7 @@ class TestValidarVistoriasVinculadas:
             validar_vistorias_vinculadas("m1", ["m2"], [{"moto_id": "m2", "km": 1100}, {"moto_id": "m2", "km": 1200}], KM)
 
     def test_recusa_vistoria_sem_moto(self):
-        with pytest.raises(ValueError, match="Informe a moto"):
+        with pytest.raises(ValueError, match="Informe o veículo"):
             validar_vistorias_vinculadas("m1", ["m2"], [{"km": 10}], KM)
 
 
@@ -80,11 +80,11 @@ class TestExigirTodasAsMotos:
         exigir_todas_as_motos("m1", ["m2", "m3"], [{"moto_id": "m3"}, {"moto_id": "m2"}])
 
     def test_falta_uma_recusa(self):
-        with pytest.raises(ValueError, match="todas as motos"):
+        with pytest.raises(ValueError, match="todos os veículos"):
             exigir_todas_as_motos("m1", ["m2", "m3"], [{"moto_id": "m2"}])
 
     def test_com_vinculadas_e_nenhuma_vistoria_recusa(self):
-        with pytest.raises(ValueError, match="todas as motos"):
+        with pytest.raises(ValueError, match="todos os veículos"):
             exigir_todas_as_motos("m1", ["m2"], [])
 
 

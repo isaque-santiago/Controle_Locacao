@@ -1,4 +1,4 @@
-"""Contrato com várias motos: vistoria de entrega e de devolução de cada moto vinculada (serviço)."""
+"""Contrato com várias motos: vistoria de entrega e de devolução de cada veículo vinculado (serviço)."""
 
 from datetime import date
 from unittest.mock import patch
@@ -35,7 +35,7 @@ class TestCriar:
 
     def test_exigir_todas_recusa_quando_falta_uma_vinculada(self):
         with patch("src.services.contratos.contratos.criar_com_vistoria") as rpc:
-            with pytest.raises(ValueError, match="todas as motos"):
+            with pytest.raises(ValueError, match="todos os veículos"):
                 contratos.criar_com_vistoria(DADOS, VISTORIA, [], exigir_todas=True)
         rpc.assert_not_called()
 
@@ -83,7 +83,7 @@ class TestEncerrar:
     def test_exigir_todas_recusa_quando_falta_devolucao_de_vinculada(self):
         with patch("src.services.contratos.contratos.listar_motos_do_contrato", return_value=MOTOS_DO_CONTRATO), \
              patch("src.services.contratos.contratos.encerrar_com_vistoria") as rpc:
-            with pytest.raises(ValueError, match="todas as motos"):
+            with pytest.raises(ValueError, match="todos os veículos"):
                 contratos.encerrar_com_vistoria("ct", date(2026, 11, 5), {"km": 150}, exigir_todas=True)
         rpc.assert_not_called()
 

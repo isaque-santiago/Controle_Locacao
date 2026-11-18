@@ -9,7 +9,7 @@ from src.domain.valores import decimal_br
 CAMPOS_INTEIROS = {
     "alerta_manutencao_km": "Avisar (km antes)",
     "alerta_manutencao_dias": "Avisar (dias antes)",
-    "alerta_documento_dias": "Documentos da moto",
+    "alerta_documento_dias": "Documentos do veículo",
     "alerta_cnh_dias": "CNH do cliente",
     "dias_inadimplencia": "Inadimplente a partir de (dias de atraso)",
 }

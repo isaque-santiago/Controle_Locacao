@@ -1,6 +1,6 @@
 {% extends "layout_painel.html" %}
 {% from "componentes/macros.html" import voltar, cabecalho_pagina %}
-{% set descricoes = {1: "Escolha o cliente que vai alugar.", 2: "Escolha uma moto disponível.", 3: "Defina o prazo e os valores.", 4: "Confira o resumo e registre a vistoria de entrega."} %}
+{% set descricoes = {1: "Escolha o cliente que vai alugar.", 2: "Escolha um veículo disponível.", 3: "Defina o prazo e os valores.", 4: "Confira o resumo e registre a vistoria de entrega."} %}
 {% block conteudo %}
 {{ voltar("/contratos", "Voltar para contratos") }}
 {{ cabecalho_pagina("Novo contrato", "Etapa " ~ etapa ~ " de " ~ total_etapas ~ ": " ~ descricoes[etapa]) }}

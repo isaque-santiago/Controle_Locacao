@@ -3,12 +3,12 @@
 from datetime import date
 
 ABAS = (
-    ("resultado", "Resultado por moto"),
+    ("resultado", "Resultado por veículo"),
     ("custo", "Custo de manutenção"),
     ("inadimplencia", "Inadimplência"),
     ("fluxo", "Fluxo de caixa"),
 )
-VISOES_CUSTO = (("modelo", "Por modelo"), ("moto", "Por moto"))
+VISOES_CUSTO = (("modelo", "Por modelo"), ("moto", "Por veículo"))
 MENSAGEM_PERIODO_INVERTIDO = "A data final deve ser igual ou posterior à inicial."
 
 

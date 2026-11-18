@@ -16,7 +16,7 @@ def ambiente(monkeypatch):
     chamadas = SimpleNamespace(executou=0, evolution=None)
 
     monkeypatch.setattr(script, "get_servico_mensagens", lambda: ("robo@exemplo.com", "s"))
-    monkeypatch.setattr(script, "get_textos_whatsapp", lambda: {"empresa": "LA Motos", "contato": None, "pix": None, "link_portal": None})
+    monkeypatch.setattr(script, "get_textos_whatsapp", lambda: {"empresa": "LA Locadora", "contato": None, "pix": None, "link_portal": None})
     monkeypatch.setattr(script, "ServicoAutenticacao", lambda: SimpleNamespace(entrar=lambda e, s: SimpleNamespace(access_token="tok")))
     monkeypatch.setattr(script.db, "criar_cliente_autenticado", lambda token: object())
 

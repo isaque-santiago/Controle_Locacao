@@ -93,7 +93,7 @@ def ler_compra_parcelada(entrada: dict, contas_validas: set[str], motos_validas:
         erros["conta_id"] = "Conta: escolha uma das opções."
     moto_id = _texto(entrada, "moto_id")
     if moto_id and moto_id not in motos_validas:
-        erros["moto_id"] = "Moto: escolha uma das opções."
+        erros["moto_id"] = "Veículo: escolha uma das opções."
     if erros:
         raise ErroDeCampos(erros)
     return {
@@ -164,7 +164,7 @@ def ler_divida(entrada: dict, motos_validas: set[str]) -> dict:
         confirmado = _coletar(erros, "saldo_confirmado", decimal_campo, entrada.get("saldo_confirmado"), "Saldo confirmado")
     moto_id = _texto(entrada, "moto_id")
     if moto_id and moto_id not in motos_validas:
-        erros["moto_id"] = "Moto: escolha uma das opções."
+        erros["moto_id"] = "Veículo: escolha uma das opções."
     if erros:
         raise ErroDeCampos(erros)
     return {
@@ -226,7 +226,7 @@ def ler_edicao_divida(entrada: dict, tipo: str, motos_validas: set[str]) -> dict
         erros["credor"] = f"Credor: use no máximo {MAX_CREDOR} caracteres."
     moto_id = _texto(entrada, "moto_id")
     if moto_id and moto_id not in motos_validas:
-        erros["moto_id"] = "Moto: escolha uma das opções."
+        erros["moto_id"] = "Veículo: escolha uma das opções."
     dados = {"credor": credor, "moto_id": moto_id or None, "descricao": _texto(entrada, "descricao") or None,
              "observacoes": _texto(entrada, "observacoes") or None}
     if tipo != "compra_parcelada":

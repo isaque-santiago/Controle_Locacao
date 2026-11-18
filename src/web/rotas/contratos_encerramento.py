@@ -60,7 +60,7 @@ def _blocos_extras(extras):
     """Um bloco de vistoria de devolução por moto vinculada, com o prefixo dos campos e a ajuda do km."""
     return [
         {"moto": m, "pref": vistoria_por_moto.prefixo(n),
-         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual da moto ({formatar_milhar(m['km_atual'])} km)."}
+         "ajuda_km": f"Em km. Não pode ser menor que a leitura atual do veículo ({formatar_milhar(m['km_atual'])} km)."}
         for n, m in enumerate(extras, start=1)
     ]
 

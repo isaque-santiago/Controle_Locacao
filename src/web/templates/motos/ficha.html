@@ -2,12 +2,12 @@
 {% from "componentes/macros.html" import voltar, selo, placa, kpi, abas_remotas, botao %}
 
 {% block conteudo %}
-{{ voltar("/motos", "Voltar para motos") }}
+{{ voltar("/motos", "Voltar para veículos") }}
 
 <header class="cabecalho">
   <div class="cabecalho-texto">
     <div class="ficha-titulo">
-      <h1 class="so-leitor">Moto {{ moto.placa|placa_br }}</h1>
+      <h1 class="so-leitor">Veículo {{ moto.placa|placa_br }}</h1>
       <span class="placa" aria-hidden="true">{{ moto.placa|placa_br }}</span>
       {{ selo(status_rotulo[moto.status], tom_status_moto[moto.status]) }}
     </div>
@@ -20,7 +20,7 @@
     {{ botao("Editar", extra='hx-get="/motos/' ~ moto.id ~ '/editar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
     {{ botao("Atualizar km", extra='hx-get="/motos/' ~ moto.id ~ '/km" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}
     {% if moto.status in ("disponivel", "inativa") %}
-    <form method="post" action="/motos/{{ moto.id }}/situacao"{% if moto.status != "inativa" %} data-confirmar="A moto sai das disponíveis e não poderá ser alugada até ser reativada." data-confirmar-titulo="Inativar moto" data-confirmar-rotulo="Inativar"{% endif %}>
+    <form method="post" action="/motos/{{ moto.id }}/situacao"{% if moto.status != "inativa" %} data-confirmar="O veículo sai dos disponíveis e não poderá ser alugada até ser reativada." data-confirmar-titulo="Inativar veículo" data-confirmar-rotulo="Inativar"{% endif %}>
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {{ botao("Reativar" if moto.status == "inativa" else "Inativar", tipo="submit") }}
     </form>

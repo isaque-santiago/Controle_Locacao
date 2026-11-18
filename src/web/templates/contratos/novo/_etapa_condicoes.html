@@ -10,7 +10,7 @@
       {{ campo_lista("c-tipo", "Tipo do contrato", tipos_contrato.items()|list, nome="tipo_contrato", selecionado=v.tipo_contrato) }}
       {{ campo("c-inicio", "Data de início", nome="data_inicio", valor=v.data_inicio, tipo="date", obrigatorio=True, erro=erros.data_inicio) }}
       {{ campo_lista("c-periodo", "Periodicidade", periodos_rotulo.items()|list, nome="periodicidade", selecionado=v.periodicidade) }}
-      {{ caixa("c-indeterminado", "Prazo indeterminado", nome="indeterminado", marcada=v.indeterminado, ajuda="O contrato segue aberto enquanto o cliente estiver com a moto e pagando, até ser encerrado. Desmarque só se houver data final combinada.") }}
+      {{ caixa("c-indeterminado", "Prazo indeterminado", nome="indeterminado", marcada=v.indeterminado, ajuda="O contrato segue aberto enquanto o cliente estiver com o veículo e pagando, até ser encerrado. Desmarque só se houver data final combinada.") }}
       {{ campo("c-fim", "Fim previsto", nome="data_fim_prevista", valor=v.data_fim_prevista, tipo="date", erro=erros.data_fim_prevista, ajuda="Vale só na locação com prazo definido; na promessa de compra o prazo vem do número de parcelas.", largo=True) }}
       {{ campo("c-valor", "Valor do período", nome="valor_periodo", valor=v.valor_periodo, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor_periodo, autocomplete="off") }}
       {{ campo("c-caucao", "Caução", nome="caucao_valor", valor=v.caucao_valor, prefixo="R$", mono=True, inputmode="decimal", erro=erros.caucao_valor, ajuda="Devolvida ao encerrar o contrato, se não houver pendências.", autocomplete="off") }}
@@ -24,7 +24,7 @@
       {{ campo("c-dia", "Dia da cobrança", nome="dia_cobranca", valor=v.dia_cobranca, mono=True, inputmode="numeric", erro=erros.dia_cobranca, ajuda="Opcional. Semanal: 1 = domingo até 7 = sábado. Mensal: dia do mês.", autocomplete="off") }}
       {{ campo("c-primeira", "Primeira cobrança", nome="primeira_cobranca", valor=v.primeira_cobranca, tipo="date", erro=erros.primeira_cobranca, ajuda="Opcional. Data da primeira parcela em aberto; vazio = data de início.") }}
     </fieldset>
-    <p class="text-texto-2 text-[13px]">Km inicial: <span class="mono">{{ moto.km_atual|milhar }} km</span> (leitura atual da moto). <span aria-hidden="true">*</span> Campo obrigatório.</p>
+    <p class="text-texto-2 text-[13px]">Km inicial: <span class="mono">{{ moto.km_atual|milhar }} km</span> (leitura atual do veículo). <span aria-hidden="true">*</span> Campo obrigatório.</p>
     <div class="rodape-acoes">
       <button class="btn" type="submit" name="acao" value="voltar" formnovalidate>Voltar</button>
       <button class="btn btn-primario" type="submit" name="acao" value="avancar">Avançar</button>

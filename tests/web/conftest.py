@@ -1114,7 +1114,7 @@ def base_portal(monkeypatch):
 def _linha_divida(id, credor, tipo="compra_parcelada", saldo="3000.00", situacao="em_aberto", **extra):
     return {
         "divida_id": id, "credor": credor, "tipo": tipo, "tipo_rotulo": {"compra_parcelada": "Compra parcelada",
-        "moto_fiado": "Moto fiado", "emprestimo": "Empréstimo"}.get(tipo, tipo), "moto_id": None, "placa": None,
+        "moto_fiado": "Veículo fiado", "emprestimo": "Empréstimo"}.get(tipo, tipo), "moto_id": None, "placa": None,
         "valor_original": Decimal("14000.00"), "total_pago": Decimal("11000.00"), "saldo": Decimal(saldo),
         "saldo_confirmado": False, "proxima_vencimento": date(2026, 11, 28), "proxima_valor": Decimal("1000.00"),
         "parcelas_abertas": 3, "parcelas_atrasadas": 0, "situacao": situacao, **extra,
@@ -1156,12 +1156,12 @@ def ficha_divida_exemplo():
 
 
 def ficha_divida_fiado():
-    """Moto fiado: sem parcelas, então o pagamento é direto."""
+    """Veículo fiado: sem parcelas, então o pagamento é direto."""
     return {
         "divida": {"id": DIVIDA_FIADO_ID, "credor": "Nilson", "tipo": "moto_fiado", "descricao": None, "valor_original": "9675.00",
                    "valor_entrada": "0", "numero_parcelas": None, "valor_parcela": None, "dia_vencimento": None,
                    "confirmado_em": None, "observacoes": None},
-        "tipo_rotulo": "Moto fiado", "saldo": Decimal("7600.00"), "total_pago": Decimal("2075.00"),
+        "tipo_rotulo": "Veículo fiado", "saldo": Decimal("7600.00"), "total_pago": Decimal("2075.00"),
         "saldo_confirmado": None, "diferenca": None, "moto": None, "parcelas": [], "pagamentos": [],
     }
 

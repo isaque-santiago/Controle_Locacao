@@ -2,7 +2,7 @@
 {% from "componentes/macros.html" import voltar, cabecalho_pagina, aviso %}
 {% block conteudo %}
 {{ voltar("/vistorias", "Voltar para vistorias") }}
-{{ cabecalho_pagina("Registrar vistoria", "Informe a leitura da moto, o checklist e as fotos.") }}
+{{ cabecalho_pagina("Registrar vistoria", "Informe a leitura do veículo, o checklist e as fotos.") }}
 <form class="cartao" id="form-registro" method="post" action="{{ acao }}" enctype="multipart/form-data">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   {% if erro_geral %}{{ aviso("erro", erro_geral) }}{% endif %}

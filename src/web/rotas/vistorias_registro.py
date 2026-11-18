@@ -58,7 +58,7 @@ def _contexto(request, registro, v, erros=None, erro_geral=None):
         "titulo": "Registrar vistoria", "c": registro, "v": v, "erros": erros or {}, "erro_geral": erro_geral,
         "acao": "/vistorias/registrar", "hoje": hoje_br().isoformat(), "limite_fotos": formulario.LIMITE_FOTOS,
         "alterar_hx": _ALTERAR_HX if _htmx(request) else "",
-        "ajuda_km": f"Não pode ser menor que o km atual da moto ({formatar_milhar(moto['km_atual'])} km).",
+        "ajuda_km": f"Não pode ser menor que o km atual do veículo ({formatar_milhar(moto['km_atual'])} km).",
         "tipos": [(t, TIPO_ROTULO[t]) for t in registro["faltantes"]],
         "itens_checklist": [(PREFIXO_ITEM + item, rotulo_item(item)) for item in CHECKLIST_PADRAO],
         "estados": [(e, _ESTADOS_ROTULO[e]) for e in ESTADOS_ITEM],

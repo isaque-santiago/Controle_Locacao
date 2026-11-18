@@ -7,7 +7,7 @@
   <div class="impacto" role="group" aria-label="O que o encerramento altera">
     <p><b>O que acontece ao encerrar</b></p>
     <ul>
-      <li>O contrato passa a Encerrado e a moto volta a ficar disponível.</li>
+      <li>O contrato passa a Encerrado e o veículo volta a ficar disponível.</li>
       {% if d.excedente > 0 %}<li>Os danos passam da caução: será criada uma cobrança de <span class="mono">{{ d.excedente|moeda }}</span> contra o cliente.</li>{% endif %}
       <li>{% if resumo.afetadas|length > 1 %}As {{ resumo.afetadas|length }} cobranças abaixo serão canceladas:{% elif resumo.afetadas %}A cobrança abaixo será cancelada:{% else %}Nenhuma cobrança será cancelada.{% endif %}</li>
     </ul>

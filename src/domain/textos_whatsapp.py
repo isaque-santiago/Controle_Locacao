@@ -38,7 +38,7 @@ _DOCUMENTO = {
 
 @dataclass(frozen=True)
 class OpcoesTexto:
-    empresa: str | None = None        # "LA Motos": aparece na saudação
+    empresa: str | None = None        # "LA Locadora": aparece na saudação
     contato: str | None = None        # como falar com o dono: "o Alisson, no (11) 99999-0000"
     pix: str | None = None            # chave Pix estática (decisão do dono adiada: sem ela, a linha não aparece)
     link_portal: str | None = None
@@ -54,7 +54,7 @@ def _contato(op: OpcoesTexto) -> str:
 
 
 def _moto(placa) -> str:
-    return f" da moto {formatar_placa(placa)}" if placa else ""
+    return f" do veículo {formatar_placa(placa)}" if placa else ""
 
 
 def _quando(vencimento, dias_ate) -> str:
@@ -164,11 +164,11 @@ def _bloco_oleo(a: Aviso, op: OpcoesTexto):
     registro = ("Faça a troca e registre pelo portal, com a foto do painel e a nota fiscal"
                 + (f": {op.link_portal}" if op.link_portal else "."))
     if a.tipo == "oleo_proxima":
-        return "Troca de óleo próxima", [f"A moto {formatar_placa(d['placa'])} está perto da troca de óleo (faltam {_faltam(d)}).", registro]
+        return "Troca de óleo próxima", [f"O veículo {formatar_placa(d['placa'])} está perto da troca de óleo (faltam {_faltam(d)}).", registro]
     passou = _passou(d)
     atraso = f" (passou {passou})" if passou else ""
     return "Troca de óleo atrasada", [
-        f"A troca de óleo da moto {formatar_placa(d['placa'])} passou do prazo{atraso}. Trocas fora do intervalo podem gerar multa.",
+        f"A troca de óleo do veículo {formatar_placa(d['placa'])} passou do prazo{atraso}. Trocas fora do intervalo podem gerar multa.",
         registro,
     ]
 

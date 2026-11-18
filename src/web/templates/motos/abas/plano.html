@@ -1,7 +1,7 @@
 {% from "componentes/macros.html" import tabela, selo, estado_vazio, rc_titulo %}
 {% set tom = {"vencida": "perigo", "proxima": "atencao", "em_dia": "ok"} %}
 {% if a.linhas %}
-{% call tabela([("Item", ""), ("Intervalo", ""), ("Última", ""), ("Próxima", ""), ("Restante", ""), ("Situação", "")], "Plano de manutenção da moto", recolhivel=True) %}
+{% call tabela([("Item", ""), ("Intervalo", ""), ("Última", ""), ("Próxima", ""), ("Restante", ""), ("Situação", "")], "Plano de manutenção do veículo", recolhivel=True) %}
   {% for l in a.linhas %}
   <tr data-recolhivel>
     {% call rc_titulo("font-medium") %}{{ l.item }}{% endcall %}
@@ -14,5 +14,5 @@
   {% endfor %}
 {% endcall %}
 {% else %}
-{% call estado_vazio("Nenhum item no plano", "Esta moto ainda não tem itens de manutenção programados.", "0") %}{% endcall %}
+{% call estado_vazio("Nenhum item no plano", "Este veículo ainda não tem itens de manutenção programados.", "0") %}{% endcall %}
 {% endif %}

@@ -11,7 +11,7 @@ from src.domain.janela_envio import FUSO
 from src.domain.textos_whatsapp import ORDEM, OpcoesTexto, montar_mensagem, montar_payload, texto_bloco
 
 DIA = date(2026, 11, 13)
-OP = OpcoesTexto(empresa="LA Motos", contato="o Alisson, no (11) 99999-0000", link_portal="https://portal.exemplo.com.br")
+OP = OpcoesTexto(empresa="LA Locadora", contato="o Alisson, no (11) 99999-0000", link_portal="https://portal.exemplo.com.br")
 
 
 def _aviso(tipo, ref="ref-1", cliente="cli-1", **dados):
@@ -101,7 +101,7 @@ def test_documento_cita_o_portal_so_quando_habilitado():
 def test_documento_outro_usa_a_descricao():
     aviso = _aviso("documento_vencido", ref="doc-1", placa="ABC1D23", tipo_documento="outro", descricao="Taxa do rastreador",
                    vencimento=date(2026, 11, 5), dias=-1)
-    assert "Taxa do rastreador da moto ABC-1D23 venceu" in "\n".join(texto_bloco(aviso, OP)[1])
+    assert "Taxa do rastreador do veículo ABC-1D23 venceu" in "\n".join(texto_bloco(aviso, OP)[1])
 
 
 def test_oleo_proxima_e_vencida_levam_o_link_do_portal():
@@ -130,7 +130,7 @@ def test_portal_nunca_leva_senha():
 
 def test_mensagem_de_um_assunto():
     texto, entram, sobram = montar_mensagem("maria da silva", [_atraso()], OP)
-    assert texto.startswith("Olá, Maria! Aqui é da LA Motos. Segue um aviso:")
+    assert texto.startswith("Olá, Maria! Aqui é da LA Locadora. Segue um aviso:")
     assert "*Pagamento em atraso*" in texto and "1." not in texto.split("\n\n")[1].split("\n")[0]
     assert texto.endswith("Dúvidas? Fale com o Alisson, no (11) 99999-0000.")
     assert len(entram) == 1 and sobram == []

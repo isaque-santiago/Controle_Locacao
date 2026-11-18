@@ -20,7 +20,7 @@ def test_dialogo_traz_o_texto_de_atraso_escapado_e_o_botao_de_copiar(cliente, ba
     entrar(cliente)
     html = cliente.get("/cobrancas/a2/mensagem", headers=HX).text
     assert "<html" not in html and 'id="dlg-form-titulo"' in html and "data-fechar" in html
-    assert "Olá, Bruno Lima. A cobrança de 20/09/2026, referente à moto QRS-4T21, está em atraso há 17 dia(s)" in html
+    assert "Olá, Bruno Lima. A cobrança de 20/09/2026, referente ao veículo QRS-4T21, está em atraso há 17 dia(s)" in html
     assert "saldo de R$ 300,00 antes dos encargos" in html
     assert 'data-copiar="texto-mensagem"' in html and 'data-copiar-aviso="aviso-copia"' in html
     assert 'id="texto-mensagem"' in html and "readonly" in html and 'role="status"' in html

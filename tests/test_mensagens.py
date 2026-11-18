@@ -36,8 +36,8 @@ def test_arquivos_orfaos_apagados_avisa_quantos_e_se_algum_falhou():
 
 
 def test_cadastro_e_edicao_tem_textos_distintos_e_citam_o_registro():
-    assert mensagens.moto_salva("ABC-1D23", nova=True).texto == "Moto ABC-1D23 cadastrada."
-    assert mensagens.moto_salva("ABC-1D23", nova=False).texto == "Dados da moto ABC-1D23 atualizados."
+    assert mensagens.moto_salva("ABC-1D23", nova=True).texto == "Veículo ABC-1D23 cadastrado."
+    assert mensagens.moto_salva("ABC-1D23", nova=False).texto == "Dados do veículo ABC-1D23 atualizados."
     assert mensagens.cliente_salvo("Maria", novo=True).texto == "Cliente Maria cadastrado."
     assert mensagens.cliente_salvo("Maria", novo=False).texto == "Dados de Maria atualizados."
 
@@ -114,7 +114,7 @@ def test_campos_alterados_compara_numeros_e_ignora_ausentes():
 
 def test_encerramento_diz_quanto_devolver_da_caucao_e_o_que_foi_descontado():
     simples = mensagens.contrato_encerrado("Maria", "ABC-1D23")
-    assert simples.texto == "Contrato de Maria encerrado. A moto ABC-1D23 está disponível."
+    assert simples.texto == "Contrato de Maria encerrado. O veículo ABC-1D23 está disponível."
     assert simples.tom == TOAST
     com_desconto = mensagens.contrato_encerrado(
         "Maria", "ABC-1D23", devolucao=Decimal("700"), desconto=Decimal("300"), excedente=Decimal("0")

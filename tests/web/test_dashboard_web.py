@@ -99,7 +99,7 @@ def test_hoje_mostra_os_quatro_indicadores_em_reais(cliente):
     # A cobrar: vencido + vence hoje (sem encargos)
     assert "R$ 2.670" in html and "R$ 280 vencem hoje · R$ 2.390 em atraso" in html
     assert "R$ 2.390" in html and "2 contratos · 1 inadimplente" in html and "+ R$ 248 de encargos" in html
-    assert "60% ocupada" in html and "3 de 5 motos ativas alugadas" in html and "1 livres · 1 em manutenção" in html
+    assert "60% ocupada" in html and "3 de 5 veículos ativos alugados" in html and "1 livres · 1 em manutenção" in html
     assert "R$ -3.451,93" in html and "inclui R$ 800 de investimento em veículos" in html
 
 
@@ -256,8 +256,8 @@ def test_dinheiro_indisponivel_mostra_o_aviso_e_mantem_o_seletor_de_mes(cliente,
 def test_frota_mostra_ocupacao_manutencao_e_veiculos(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
-    assert "5 motos" in html and "60%" in html and "3 alugadas de 5 ativas" in html and "1 livres" in html
-    assert "1 moto" in html and "1 ordem concluída no mês" in html and 'href="/manutencao"' in html
+    assert "5 veículos" in html and "60%" in html and "3 alugadas de 5 ativas" in html and "1 livres" in html
+    assert "1 veículo" in html and "1 ordem concluída no mês" in html and 'href="/manutencao"' in html
     assert "Gasto com manutenção no mês" in html and "R$ 85" in html and "igual à categoria Manutenção em Dinheiro" in html
     assert "Resultado por veículo" in html and "POU-7015" in html and "R$ 7.300,00" in html and "R$ -120,00" in html
 
@@ -268,11 +268,11 @@ def test_frota_tem_pizza_interativa_com_fatias_focaveis_texto_alternativo_e_a_ba
     rosca = re.search(r'<div class="rosca rosca-interativa" role="group" aria-label="([^"]+)">(.*?)</div>', html, re.S)
     assert rosca and "3 alugadas" in rosca.group(1) and 'class="barra-seg"' not in html and 'class="rosca"' not in html
     arcos = re.findall(r'<circle class="arco (\w+)"[^>]*tabindex="0" role="img" aria-label="([^"]+)"><title>([^<]+)</title>', rosca.group(2))
-    assert [a[0] for a in arcos] == ["cheio", "oficina", "livre"] and "60% das 5 motos ativas" in arcos[0][1] and arcos[0][2] == "3 alugadas (60%)"
+    assert [a[0] for a in arcos] == ["cheio", "oficina", "livre"] and "60% das 5 veículos ativos" in arcos[0][1] and arcos[0][2] == "3 alugadas (60%)"
     assert "style=" not in rosca.group(0) and "60%" in rosca.group(2)
     # o centro tem o texto padrão e um bloco por fatia, que o CSS mostra ao passar o mouse ou focar (só com :has)
     assert rosca.group(2).count('class="rosca-centro rosca-info rosca-info-') == 3 and "rosca-padrao" in rosca.group(2)
-    assert "Ocupação = alugadas ÷ motos ativas (5). Motos inativas não entram na conta." in html
+    assert "Ocupação = alugadas ÷ veículos ativos (5). Veículos inativos não entram na conta." in html
 
 
 def test_cartoes_da_ocupacao_acompanham_as_fatias_e_a_inativa_nao_tem_fatia(cliente):
@@ -439,8 +439,8 @@ def test_sem_a_leitura_do_dinheiro_nao_ha_card_de_proximos_dias(cliente, monkeyp
 def test_frota_tem_receita_por_moto_e_tempo_parado(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
-    assert "Receita por moto" in html and "R$ 689,10" in html and "receita do mês ÷ 5 motos ativas" in html
-    assert "Tempo parado no mês" in html and "8.0%" in html and "12 dias de moto na oficina" in html
+    assert "Receita por veículo" in html and "R$ 689,10" in html and "receita do mês ÷ 5 veículos ativos" in html
+    assert "Tempo parado no mês" in html and "8.0%" in html and "12 dias de veículo na oficina" in html
 
 
 def test_tempo_parado_acima_de_5_por_cento_pede_atencao(cliente, monkeypatch):
@@ -464,7 +464,7 @@ def test_motos_paradas_lista_motivo_desde_e_dias(cliente):
 def test_sem_motos_paradas_diz_que_todas_estao_alugadas(cliente, monkeypatch):
     _com(monkeypatch, ajustes={"frota": {"paradas": {"total": 0, "linhas": []}}})
     entrar(cliente)
-    assert "Nenhuma moto parada" in cliente.get("/?aba=frota").text
+    assert "Nenhum veículo parado" in cliente.get("/?aba=frota").text
 
 
 def test_ocultar_mascara_placas_e_valores_da_fase_3(cliente):
@@ -472,12 +472,12 @@ def test_ocultar_mascara_placas_e_valores_da_fase_3(cliente):
     hoje = cliente.get("/?ocultar=1").text
     assert "R$ 1.250,00" not in hoje and "R$ -286,23" not in hoje and "Próximos 7 dias" in hoje
     frota = cliente.get("/?aba=frota&ocultar=1").text
-    assert "OSL-8828" not in frota and "R$ 689,10" not in frota and "Motos paradas" in frota
+    assert "OSL-8828" not in frota and "R$ 689,10" not in frota and "Veículos parados" in frota
 
 
 def test_modo_compacto_da_frota_esconde_a_lista_de_paradas(cliente):
     entrar(cliente)
-    assert "Motos paradas" not in cliente.get("/?aba=frota&compacto=1").text
+    assert "Veículos parados" not in cliente.get("/?aba=frota&compacto=1").text
 
 
 def test_moto_em_manutencao_sem_ordem_aberta_diz_isso_em_vez_de_contrato_anterior(cliente, monkeypatch):
@@ -515,4 +515,4 @@ def test_frota_sem_a_leitura_do_dinheiro_volta_a_quatro_indicadores(cliente, mon
     _com(monkeypatch, ajustes={"frota": {"indisponivel": True, "veiculos": []}})
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
-    assert "kpis-6" not in html and "Receita por moto" not in html and "ocupacao-card" in html
+    assert "kpis-6" not in html and "Receita por veículo" not in html and "ocupacao-card" in html

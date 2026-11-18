@@ -37,7 +37,7 @@ def test_segmentos_e_descricao_do_medidor():
     assert [s.status for s in painel.segmentos_frota(contagem)] == list(painel.STATUS_FROTA)
     assert painel.segmentos_frota(contagem)[0].rotulo == "18 alugadas"
     assert painel.descricao_medidor(contagem) == (
-        "Frota de 24 motos: 18 alugadas, 3 disponíveis, 3 em manutenção, 0 inativas"
+        "Frota de 24 veículos: 18 alugadas, 3 disponíveis, 3 em manutenção, 0 inativas"
     )
 
 
@@ -120,7 +120,7 @@ def test_alertas_de_documento_e_cnh():
     cnh = [{"situacao": "vencida", "nome": "Ana", "cnh_validade": "2026-09-01"}]
     itens = painel.agrupar_alertas(CONFIG, [], docs, cnh)
     assert [i.titulo for i in itens] == ["Documento vencido", "Documento a vencer", "CNH vencida"]
-    assert itens[0].descricao == "CRLV · moto ABC1D23 e mais 1"
+    assert itens[0].descricao == "CRLV · veículo ABC1D23 e mais 1"
     assert itens[1].descricao == "próximos 30 dias"
     assert itens[2].descricao == "Ana · 01/09/2026"
     assert itens[2].area == "clientes"

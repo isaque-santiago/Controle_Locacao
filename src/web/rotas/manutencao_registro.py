@@ -69,12 +69,12 @@ def _registrar(request, sessao, entrada):
         frota = contexto["frota"]
         moto = next((m for m in frota if m["id"] == valores.get("moto_id")), None)
         if not frota:
-            raise ValueError("Cadastre uma moto ativa antes de registrar manutenções.")
+            raise ValueError("Cadastre um veículo ativo antes de registrar manutenções.")
         if moto is None:
-            raise ErroDeCampos({"moto_id": "Moto: escolha uma das motos disponíveis."})
+            raise ErroDeCampos({"moto_id": "Veículo: escolha um dos veículos disponíveis."})
         if valores.get("moto_id_referencia") != moto["id"]:
             contexto["v"] = {**valores, "km": str(moto["km_atual"]), "moto_id_referencia": moto["id"]}
-            raise ErroDeCampos({"km": "Quilometragem: a moto mudou; confira a leitura atualizada e salve novamente."})
+            raise ErroDeCampos({"km": "Quilometragem: o veículo mudou; confira a leitura atualizada e salve novamente."})
         chave = (valores.get("chave_operacao") or "").strip()[:64] or str(uuid4())
         dados = formulario.ler(valores, moto, contexto["catalogo"])
         acoes_manutencao.registrar(dados, chave)

@@ -109,7 +109,7 @@ def _gravar(request, sessao, entrada, arquivo, registro):
         else:
             salvo = acoes_documentos.criar_documento(dados, v["chave_operacao"])
         moto = next(m for m in contexto["motos"] if m[0] == dados["moto_id"])[1].split(" · ")[0]
-        descricao = f"{documentos_lista.TIPOS_ROTULO[dados['tipo']]} {dados['ano_referencia']} da moto {moto}"
+        descricao = f"{documentos_lista.TIPOS_ROTULO[dados['tipo']]} {dados['ano_referencia']} do veículo {moto}"
         if arquivo is not None:
             try:
                 acoes_documentos.anexar_comprovante(salvo["id"], dados["moto_id"], arquivo)

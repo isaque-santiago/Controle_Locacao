@@ -4,10 +4,10 @@
 {% if editando %}
 <div class="largo flex flex-wrap items-center gap-3">{{ placa(registro.moto.placa|placa_br) }}<span>{{ registro.moto.marca }} {{ registro.moto.modelo }}</span></div>
 {% elif motos %}
-{{ campo_lista("d-moto", "Moto", motos, nome="moto_id", selecionado=v.moto_id, largo=True) }}
+{{ campo_lista("d-moto", "Veículo", motos, nome="moto_id", selecionado=v.moto_id, largo=True) }}
 {% if erros.moto_id %}<small class="msg-erro largo" role="alert">{{ erros.moto_id }}</small>{% endif %}
 {% else %}
-<p class="largo text-texto-2">Cadastre uma moto antes de registrar documentos.</p>
+<p class="largo text-texto-2">Cadastre um veículo antes de registrar documentos.</p>
 {% endif %}
 {{ campo_lista("d-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, largo=True) }}
 {% if erros.tipo %}<small class="msg-erro largo" role="alert">{{ erros.tipo }}</small>{% endif %}

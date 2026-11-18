@@ -127,7 +127,7 @@ def test_lista_mostra_motos_vinculadas_e_promessa(cliente, base_contratos):
     base_contratos.vinculadas = {base_contratos.id: 2}
     base_contratos.contratos[0]["tipo_contrato"] = "promessa_compra"
     html = cliente.get("/contratos").text
-    assert "+2 motos" in html and "Promessa de compra" in html
+    assert "+2 veículos" in html and "Promessa de compra" in html
 
 
 def test_ficha_de_promessa_mostra_totais_e_motos_do_contrato(cliente, base_contratos):
@@ -150,7 +150,7 @@ def test_aba_vistorias_do_contrato_com_vinculada_mostra_um_grupo_por_moto(client
                                           "checklist": {"farol": "avaria"}}]
     entrar(cliente)
     html = cliente.get(f"/contratos/{base_contratos.id}?aba=vistorias").text
-    assert "moto principal" in html and "(vinculada)" in html and "QRS-4T21" in html
+    assert "veículo principal" in html and "(vinculada)" in html and "QRS-4T21" in html
     assert html.count('class="cartao vistoria-resumo"') == 4  # entrega e devolução de cada uma das duas motos
     assert "5.000 km" in html and "farol" in html
 
@@ -159,5 +159,5 @@ def test_aba_vistorias_de_contrato_de_uma_moto_nao_mostra_grupos(cliente, base_c
     base_contratos.com_vinculada = False
     entrar(cliente)
     html = cliente.get(f"/contratos/{base_contratos.id}?aba=vistorias").text
-    assert "(vinculada)" not in html and "moto principal" not in html
+    assert "(vinculada)" not in html and "veículo principal" not in html
     assert html.count('class="cartao vistoria-resumo"') == 2

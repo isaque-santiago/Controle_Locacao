@@ -54,7 +54,7 @@ def test_locatario_nao_grava(cliente, acoes_motos_falsas):
 def test_nova_nao_e_confundida_com_a_ficha(cliente):
     _logado(cliente)
     html = cliente.get("/motos/nova", headers=HX).text
-    assert "<html" not in html and 'id="form-dialogo"' in html and "Nova moto" in html
+    assert "<html" not in html and 'id="form-dialogo"' in html and "Novo veículo" in html
 
 
 # ------------------------------------------------------------- cadastrar --
@@ -90,7 +90,7 @@ def test_aviso_de_confirmacao_aparece_uma_vez_na_proxima_pagina(cliente, base_mo
     base_motos.motos.append({**base_motos.motos[0], "id": NOVA, "placa": "ABC1D23"})
     _post(cliente, "/motos/nova", {**CADASTRO, "csrf_token": token})
     primeira = cliente.get(f"/motos/{NOVA}").text
-    assert "Moto ABC-1D23 cadastrada." in primeira and 'class="aviso sucesso"' in primeira
+    assert "Veículo ABC-1D23 cadastrado." in primeira and 'class="aviso sucesso"' in primeira
     assert "cadastrada." not in cliente.get(f"/motos/{NOVA}").text.replace("motos cadastradas", "")
 
 
@@ -109,7 +109,7 @@ def test_cadastro_invalido_devolve_o_formulario_com_erro_no_campo(cliente, acoes
     assert "Corrija os campos destacados." in html
     assert 'id="f-placa-erro"' in html and "Placa: use ABC1234 ou ABC1D23." in html
     assert re.search(r'id="f-placa"[^>]*aria-invalid="true"[^>]*aria-describedby="f-placa-erro"', html)
-    assert "Marca: informe a marca da moto." in html
+    assert "Marca: informe a marca do veículo." in html
     assert 'value="123"' in html  # o que o usuário digitou é mantido
     assert 'class="aviso erro"' in html and 'role="alert"' in html
     assert acoes_motos_falsas.chamadas == []
@@ -117,10 +117,10 @@ def test_cadastro_invalido_devolve_o_formulario_com_erro_no_campo(cliente, acoes
 
 def test_erro_do_servico_aparece_no_dialogo_sem_perder_os_dados(cliente, acoes_motos_falsas):
     token = _logado(cliente)
-    acoes_motos_falsas.falhar_com = ValueError("Já existe uma moto cadastrada com a placa ABC1D23.")
+    acoes_motos_falsas.falhar_com = ValueError("Já existe uma veículo cadastrado com a placa ABC1D23.")
     resposta = _post(cliente, "/motos/nova", {**CADASTRO, "csrf_token": token})
     assert resposta.status_code == 422
-    assert "Já existe uma moto cadastrada com a placa ABC1D23." in resposta.text
+    assert "Já existe uma veículo cadastrado com a placa ABC1D23." in resposta.text
     assert 'value="Honda"' in resposta.text
 
 
@@ -143,7 +143,7 @@ def test_valores_digitados_sao_escapados_ao_voltar_com_erro(cliente):
 def test_formulario_de_edicao_vem_preenchido_e_sem_km_inicial(cliente):
     _logado(cliente)
     html = cliente.get(f"/motos/{MOTO}/editar").text
-    assert "Editar dados da moto" in html and f'hx-post="/motos/{MOTO}/editar"' in html
+    assert "Editar dados do veículo" in html and f'hx-post="/motos/{MOTO}/editar"' in html
     assert 'value="ABC-1D01"' in html and 'value="Honda"' in html and 'name="km_atual"' not in html
 
 
@@ -186,7 +186,7 @@ def test_km_menor_so_passa_com_confirmacao(cliente, acoes_motos_falsas):
     ficha = cliente.get(f"/motos/{MOTO}").text
     assert "Leitura de 10 km registrada no histórico" in ficha and "O km atual continua 1.000 km" in ficha
     acoes_motos_falsas.chamadas.clear()
-    acoes_motos_falsas.falhar_com = ValueError("O km informado (10) é menor que o km atual da moto (1000).")
+    acoes_motos_falsas.falhar_com = ValueError("O km informado (10) é menor que o km atual do veículo (1000).")
     resposta = _post(cliente, f"/motos/{MOTO}/km", {"csrf_token": token, "km": "10"})
     assert resposta.status_code == 422 and "menor que o km atual" in resposta.text
 
@@ -206,14 +206,14 @@ def test_inativar_moto_disponivel(cliente, acoes_motos_falsas):
     resposta = cliente.post(f"/motos/{DISPONIVEL}/situacao", data={"csrf_token": token})
     assert resposta.status_code == 303 and resposta.headers["location"] == f"/motos/{DISPONIVEL}"
     assert acoes_motos_falsas.chamadas == [("alterar_situacao", DISPONIVEL, True)]
-    assert "inativada." in cliente.get(f"/motos/{DISPONIVEL}").text
+    assert "inativado." in cliente.get(f"/motos/{DISPONIVEL}").text
 
 
 def test_reativar_moto_inativa(cliente, acoes_motos_falsas):
     token = _logado(cliente)
     cliente.post(f"/motos/{INATIVA}/situacao", data={"csrf_token": token})
     assert acoes_motos_falsas.chamadas == [("alterar_situacao", INATIVA, False)]
-    assert "reativada." in cliente.get(f"/motos/{INATIVA}").text
+    assert "reativado." in cliente.get(f"/motos/{INATIVA}").text
 
 
 def test_moto_alugada_nao_muda_de_situacao(cliente, acoes_motos_falsas):
@@ -282,8 +282,8 @@ def test_documento_de_outra_moto_ou_id_invalido_da_404(cliente):
 def test_inativar_pede_confirmacao_e_reativar_nao(cliente):
     _logado(cliente)
     disponivel = cliente.get(f"/motos/{DISPONIVEL}").text
-    assert 'data-confirmar="A moto sai das disponíveis' in disponivel and 'id="dlg-confirmar"' in disponivel
-    assert 'data-confirmar="A moto sai das disponíveis' not in cliente.get(f"/motos/{INATIVA}").text
+    assert 'data-confirmar="O veículo sai dos disponíveis' in disponivel and 'id="dlg-confirmar"' in disponivel
+    assert 'data-confirmar="O veículo sai dos disponíveis' not in cliente.get(f"/motos/{INATIVA}").text
 
 
 def test_formulario_em_dialogo_bloqueia_envio_duplo(cliente):

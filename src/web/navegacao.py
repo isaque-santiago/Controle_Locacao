@@ -15,7 +15,7 @@ DASHBOARD = ItemNavegacao("dashboard", "Dashboard", "painel", "/")
 CONTRATOS = ItemNavegacao("contratos", "Contratos", "contrato", "/contratos")
 COBRANCAS = ItemNavegacao("cobrancas", "Cobranças", "cobranca", "/cobrancas")
 MENSAGENS = ItemNavegacao("mensagens", "Mensagens", "documento", "/mensagens")
-MOTOS = ItemNavegacao("motos", "Motos", "moto", "/motos")
+MOTOS = ItemNavegacao("motos", "Veículos", "moto", "/motos")
 CLIENTES = ItemNavegacao("clientes", "Clientes", "cliente", "/clientes")
 MANUTENCAO = ItemNavegacao("manutencao", "Manutenção", "manutencao", "/manutencao")
 DOCUMENTOS = ItemNavegacao("documentos", "Documentos", "documento", "/documentos")
@@ -41,7 +41,7 @@ TODOS: tuple[ItemNavegacao, ...] = tuple(i for _, itens in GRUPOS for i in itens
 
 
 def item_ativo(caminho_atual: str) -> ItemNavegacao | None:
-    """Item do menu que corresponde ao caminho (a ficha /motos/123 ativa 'Motos')."""
+    """Item do menu que corresponde ao caminho (a ficha /motos/123 ativa 'Veículos')."""
     for item in TODOS:
         if item.caminho == "/":
             if caminho_atual == "/":

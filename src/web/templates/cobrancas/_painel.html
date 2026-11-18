@@ -4,10 +4,10 @@
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
 {% if d.itens %}
 {% if aba == "atrasadas" %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Atraso", ""), ("Original", "num"), ("Encargos", "num"), ("Total", "num"), ("Ações", "col-acoes")], "Cobranças atrasadas", recolhivel=True) %}
+{% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Atraso", ""), ("Original", "num"), ("Encargos", "num"), ("Total", "num"), ("Ações", "col-acoes")], "Cobranças atrasadas", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
 {% call rc_titulo("modelo") %}{{ c.cliente or "—" }}<span class="rc-sub rc-so-cel text-perigo">{{ c.encargos.dias_atraso }} dia(s) em atraso</span>{% endcall %}
-<td data-rotulo="Moto">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td data-rotulo="Veículo">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="text-perigo" data-rotulo="Atraso">{{ c.encargos.dias_atraso }} dia(s)</td>
 <td class="num mono" data-rotulo="Original">{{ c.saldo|moeda }}</td>
@@ -17,10 +17,10 @@
 </tr>{% endfor %}
 {% endcall %}
 {% elif aba == "pagas" %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Pago em", ""), ("Forma", ""), ("Valor", "num")], "Cobranças pagas", recolhivel=True) %}
+{% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Pago em", ""), ("Forma", ""), ("Valor", "num")], "Cobranças pagas", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
 {% call rc_titulo("modelo") %}{{ c.cliente or "—" }}{% endcall %}
-<td data-rotulo="Moto">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td data-rotulo="Veículo">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="mono" data-rotulo="Pago em">{% if c.pago_em %}{{ c.pago_em|data_br }}{% else %}—{% endif %}</td>
 <td data-rotulo="Forma">{{ formas_rotulo.get(c.forma, "—") }}</td>
@@ -28,10 +28,10 @@
 </tr>{% endfor %}
 {% endcall %}
 {% else %}
-{% call tabela([("Cliente", ""), ("Moto", ""), ("Vencimento", ""), ("Valor", "num"), ("Ações", "col-acoes")], "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias", recolhivel=True) %}
+{% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Valor", "num"), ("Ações", "col-acoes")], "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
 {% call rc_titulo("modelo") %}{{ c.cliente or "—" }}{% if aba == "proximos" and c.numero == 1 %}<span class="sub">1ª parcela</span>{% endif %}{% endcall %}
-<td data-rotulo="Moto">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td data-rotulo="Veículo">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="num mono rc-cab" data-rotulo="Valor">{{ c.saldo|moeda }}</td>
 {% if aba == "hoje" %}{{ pagar(c) }}{% else %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ cancelar(c) }}</div></td>{% endif %}

@@ -1,6 +1,6 @@
 {% from "componentes/macros.html" import tabela, estado_vazio, rc_titulo %}
 {% if a.manutencoes %}
-{% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Oficina", ""), ("Custo", "num")], "Histórico de manutenção da moto", recolhivel=True) %}
+{% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Oficina", ""), ("Custo", "num")], "Histórico de manutenção do veículo", recolhivel=True) %}
   {% for m in a.manutencoes %}
   <tr data-recolhivel>
     {% call rc_titulo("mono") %}{{ m.data_entrada|data_br }}{% endcall %}
@@ -13,5 +13,5 @@
   {% endfor %}
 {% endcall %}
 {% else %}
-{% call estado_vazio("Nenhuma manutenção registrada", "O histórico de serviços feitos nesta moto aparece aqui.", "0") %}{% endcall %}
+{% call estado_vazio("Nenhuma manutenção registrada", "O histórico de serviços feitos neste veículo aparece aqui.", "0") %}{% endcall %}
 {% endif %}

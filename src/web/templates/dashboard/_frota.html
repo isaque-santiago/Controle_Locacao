@@ -5,17 +5,17 @@
 {% set ab = fr.manutencao_aberta %}
 
 <dl class="grade kpis{% if not fr.indisponivel %} kpis-6{% endif %}">
-  {{ kpi("Frota", fr.total ~ (" moto" if fr.total == 1 else " motos"), fr.ativas ~ " ativas"~ ((" · " ~ fr.contagem.inativa ~ " inativas") if fr.contagem.inativa else "")) }}
+  {{ kpi("Frota", fr.total ~ (" veículo" if fr.total == 1 else " veículos"), fr.ativas ~ " ativas"~ ((" · " ~ fr.contagem.inativa ~ " inativas") if fr.contagem.inativa else "")) }}
   {{ kpi("Ocupação", fr.ocupacao ~ "%", fr.contagem.alugada ~ " alugadas de " ~ fr.ativas ~ " ativas", extra=(fr.contagem.disponivel ~ " livres")) }}
-  {{ kpi("Em manutenção", fr.contagem.manutencao ~ (" moto" if fr.contagem.manutencao == 1 else " motos"), fr.ordens_concluidas ~ (" ordem concluída no mês" if fr.ordens_concluidas == 1 else " ordens concluídas no mês"), atencao=(fr.contagem.manutencao > 0), href="/manutencao") }}
+  {{ kpi("Em manutenção", fr.contagem.manutencao ~ (" veículo" if fr.contagem.manutencao == 1 else " veículos"), fr.ordens_concluidas ~ (" ordem concluída no mês" if fr.ordens_concluidas == 1 else " ordens concluídas no mês"), atencao=(fr.contagem.manutencao > 0), href="/manutencao") }}
   {% if fr.indisponivel %}
   {{ kpi("Gasto com manutenção no mês", "—", "indisponível agora") }}
   {% else %}
   {{ kpi("Gasto com manutenção no mês", dinc(fr.manutencao_mes), "igual à categoria Manutenção em Dinheiro", extra=(("+ " ~ dinc(ab.total) ~ " lançados em " ~ ab.quantidade ~ (" ordem em andamento" if ab.quantidade == 1 else " ordens em andamento")) if ab.quantidade else None)) }}
   {% endif %}
   {% if not fr.indisponivel %}
-  {{ kpi("Receita por moto", din(fr.receita_por_moto) if fr.receita_por_moto is not none else "—", "receita do mês ÷ " ~ fr.ativas ~ " motos ativas") }}
-  {{ kpi("Tempo parado no mês", ((fr.tempo_parado.percentual ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de moto na oficina", atencao=(fr.tempo_parado.percentual is not none and fr.tempo_parado.percentual > 5)) }}
+  {{ kpi("Receita por veículo", din(fr.receita_por_moto) if fr.receita_por_moto is not none else "—", "receita do mês ÷ " ~ fr.ativas ~ " veículos ativos") }}
+  {{ kpi("Tempo parado no mês", ((fr.tempo_parado.percentual ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de veículo na oficina", atencao=(fr.tempo_parado.percentual is not none and fr.tempo_parado.percentual > 5)) }}
   {% endif %}
 </dl>
 
@@ -33,7 +33,7 @@
     <svg viewBox="0 0 100 100">
       <circle class="arco-fundo" cx="50" cy="50" r="40" pathLength="100"/>
       {% for arco in fr.rosca %}{% set seg = leg[status_da[arco.classe]] %}
-      <circle class="arco {{ arco.classe }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ arco.tamanho }} {{ 100 - arco.tamanho }}" stroke-dashoffset="{{ -arco.inicio }}" tabindex="0" role="img" aria-label="{{ seg.rotulo }}: {{ arco.tamanho|round|int }}% das {{ fr.ativas }} motos ativas"><title>{{ seg.rotulo }} ({{ arco.tamanho|round|int }}%)</title></circle>
+      <circle class="arco {{ arco.classe }}" cx="50" cy="50" r="40" pathLength="100" stroke-dasharray="{{ arco.tamanho }} {{ 100 - arco.tamanho }}" stroke-dashoffset="{{ -arco.inicio }}" tabindex="0" role="img" aria-label="{{ seg.rotulo }}: {{ arco.tamanho|round|int }}% das {{ fr.ativas }} veículos ativos"><title>{{ seg.rotulo }} ({{ arco.tamanho|round|int }}%)</title></circle>
       {% endfor %}
     </svg>
     <span class="rosca-centro rosca-padrao"><strong>{{ fr.ocupacao }}%</strong><small>ocupação</small>{% if fr.ativas %}<small>{{ fr.contagem.alugada }} de {{ fr.ativas }} ativas</small>{% endif %}</span>
@@ -52,14 +52,14 @@
     </li>
     {% endfor %}
   </ul>
-  {% if fr.ativas %}<p class="legenda-nota">Ocupação = alugadas ÷ motos ativas ({{ fr.ativas }}). Motos inativas não entram na conta.</p>{% endif %}
+  {% if fr.ativas %}<p class="legenda-nota">Ocupação = alugadas ÷ veículos ativos ({{ fr.ativas }}). Veículos inativos não entram na conta.</p>{% endif %}
 </section>
 
   {% if not fr.indisponivel %}
   <section class="cartao moto-lista-cards paradas-lista" aria-labelledby="t-paradas">
-    <div class="cartao-cab"><h2 id="t-paradas">Motos paradas</h2><span class="text-texto-2 text-[13px]">{% if fr.paradas.total > fr.paradas.linhas|length %}mostrando {{ fr.paradas.linhas|length }} de {{ fr.paradas.total }}, as paradas há mais tempo primeiro{% else %}em manutenção ou disponíveis, há mais tempo primeiro{% endif %}</span></div>
+    <div class="cartao-cab"><h2 id="t-paradas">Veículos parados</h2><span class="text-texto-2 text-[13px]">{% if fr.paradas.total > fr.paradas.linhas|length %}mostrando {{ fr.paradas.linhas|length }} de {{ fr.paradas.total }}, as paradas há mais tempo primeiro{% else %}em manutenção ou disponíveis, há mais tempo primeiro{% endif %}</span></div>
     {% if fr.paradas.linhas %}
-    {% call tabela([("Moto", ""), ("Situação", ""), ("Desde", ""), ("Parada há", "num")], "Motos em manutenção ou disponíveis, com há quantos dias") %}
+    {% call tabela([("Veículo", ""), ("Situação", ""), ("Desde", ""), ("Parada há", "num")], "Veículos em manutenção ou disponíveis, com há quantos dias") %}
       {% for p in fr.paradas.linhas %}
       <tr>
         <td class="topo">{{ plac(p.placa) }}</td>
@@ -70,7 +70,7 @@
       {% endfor %}
     {% endcall %}
     {% else %}
-    <p class="text-texto-2">Nenhuma moto parada: todas as ativas estão alugadas.</p>
+    <p class="text-texto-2">Nenhum veículo parado: todas as ativas estão alugadas.</p>
     {% endif %}
   </section>
   {% endif %}
@@ -81,7 +81,7 @@
     {% if fr.indisponivel %}
     {{ indisponivel("Resultado por veículo") }}
     {% elif fr.veiculos %}
-    {% set cols_veic = [("Moto", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")] %}
+    {% set cols_veic = [("Veículo", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")] %}
     {% macro linha_veiculo(v) %}
       <tr>
         <td class="topo">{% if v.placa != "—" %}{{ plac(v.placa) }}{% else %}—{% endif %}</td>

@@ -14,10 +14,10 @@
 </header>
 <main id="conteudo" tabindex="-1">
   <div id="avisos" aria-live="polite">{% for a in avisos %}{{ aviso(a.tipo, a.texto) }}{% endfor %}</div>
-  {{ cabecalho_pagina("Olá, " ~ d.primeiro_nome, "Troca de óleo e documentos da sua moto.") }}
+  {{ cabecalho_pagina("Olá, " ~ d.primeiro_nome, "Troca de óleo e documentos do seu veículo.") }}
 
   {% if not d.contratos %}
-  {{ estado_vazio("Você não tem contrato ativo no momento", "Quando houver um contrato ativo no seu nome, a sua moto aparece aqui.", "0") }}
+  {{ estado_vazio("Você não tem contrato ativo no momento", "Quando houver um contrato ativo no seu nome, o seu veículo aparece aqui.", "0") }}
   {% endif %}
 
   {% for c in d.contratos %}
@@ -36,7 +36,7 @@
   </section>
 
   {% if not c.plano_configurado %}
-  <div class="mb-4">{{ aviso("atencao", "O plano de troca de óleo desta moto ainda não foi configurado. Fale com o proprietário.") }}</div>
+  <div class="mb-4">{{ aviso("atencao", "O plano de troca de óleo deste veículo ainda não foi configurado. Fale com o proprietário.") }}</div>
   {% else %}
   <form class="cartao mb-4" id="troca-{{ c.contrato_id }}" method="post" action="/portal/troca-oleo/{{ c.contrato_id }}" enctype="multipart/form-data" novalidate aria-labelledby="titulo-troca-{{ c.contrato_id }}">
     <h2 id="titulo-troca-{{ c.contrato_id }}">Reportar troca de óleo</h2>
@@ -74,7 +74,7 @@
 
   {% if d.documentos or d.erro_documentos %}
   <section class="mb-4" id="documentos" aria-labelledby="titulo-documentos">
-    <h2 id="titulo-documentos" class="mb-2">Documentos da moto</h2>
+    <h2 id="titulo-documentos" class="mb-2">Documentos do veículo</h2>
     {% if d.erro_documentos %}
     <div class="mb-3">{{ aviso("atencao", "Não foi possível carregar os documentos agora. Tente de novo em instantes.") }}</div>
     {% else %}

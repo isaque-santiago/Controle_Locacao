@@ -39,7 +39,7 @@
     {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês") }}
     {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ din(f.atual.aportes)) }}
     {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos") }}
-    {{ kpi("Dívidas em aberto", din(f.dividas.total), "motos fiado: " ~ din(f.dividas.moto_fiado), href="/dividas") }}
+    {{ kpi("Dívidas em aberto", din(f.dividas.total), "veículos fiado: " ~ din(f.dividas.moto_fiado), href="/dividas") }}
   </dl>
 
   {% if not comp %}

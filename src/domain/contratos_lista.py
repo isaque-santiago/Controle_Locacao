@@ -40,7 +40,7 @@ def filtrar(itens: list[dict], status: str, busca: str) -> list[dict]:
 
 
 # Coluna da tabela -> campo da URL (`?ordem=inicio`, `?ordem=-inicio` para decrescente)
-COLUNAS_ORDENAVEIS = {"Cliente": "cliente", "Situação": "situacao", "Moto": "placa", "Início": "inicio", "Valor / período": "valor"}
+COLUNAS_ORDENAVEIS = {"Cliente": "cliente", "Situação": "situacao", "Veículo": "placa", "Início": "inicio", "Valor / período": "valor"}
 
 
 def ordenar_contratos(itens, campo, decrescente):

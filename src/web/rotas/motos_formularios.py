@@ -198,7 +198,7 @@ def alterar_situacao(request: Request, moto_id: str, sessao: Sessao = Depends(ex
     if moto["status"] not in ("disponivel", "inativa"):
         return _concluir(
             request, sessao, destino, tipo="erro",
-            texto="Só é possível inativar ou reativar motos disponíveis ou inativas; esta moto está em uso.",
+            texto="Só é possível inativar ou reativar veículos disponíveis ou inativos; este veículo está em uso.",
         )
     inativando = moto["status"] != "inativa"
     try:
@@ -207,7 +207,7 @@ def alterar_situacao(request: Request, moto_id: str, sessao: Sessao = Depends(ex
         falha = erros.classificar_erro(erro)
         if falha.categoria == erros.SESSAO_EXPIRADA:
             raise
-        logger.exception("Falha ao alterar a situação da moto %s", moto_id)
+        logger.exception("Falha ao alterar a situação do veículo %s", moto_id)
         return _concluir(request, sessao, destino, tipo="erro", texto=falha.mensagem)
     return _concluir(request, sessao, destino, mensagens.moto_status_alterado(formatar_placa(moto["placa"]), inativando))
 

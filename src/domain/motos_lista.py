@@ -74,7 +74,7 @@ def filtrar_motos(
 
 
 # Coluna da tabela -> campo da URL (`?ordem=km`, `?ordem=-km` para decrescente)
-COLUNAS_ORDENAVEIS = {"Placa": "placa", "Moto": "moto", "Situação": "situacao", "Km": "km", "Locatário": "locatario"}
+COLUNAS_ORDENAVEIS = {"Placa": "placa", "Veículo": "moto", "Situação": "situacao", "Km": "km", "Locatário": "locatario"}
 
 
 def ordenar_motos(motos: list[dict], campo: str | None, decrescente: bool, locatarios: dict[str, str] | None = None) -> list[dict]:

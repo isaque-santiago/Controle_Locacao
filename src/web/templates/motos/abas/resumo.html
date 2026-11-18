@@ -17,7 +17,7 @@
       <div><dt>Caução</dt><dd class="mono">{{ c.caucao|moeda }}</dd></div>
     </dl>
     {% else %}
-    <p class="text-texto-2">Nenhum contrato ativo para esta moto.</p>
+    <p class="text-texto-2">Nenhum contrato ativo para este veículo.</p>
     {% endif %}
   </section>
 
@@ -48,7 +48,7 @@
 </div>
 
 <section class="cartao recolhivel mt-4" data-recolhivel aria-labelledby="t-dados">
-  <div class="cartao-cab"><h2 id="t-dados"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">Dados da moto{{ icone("chevron", "recolhe-seta") }}</button></h2></div>
+  <div class="cartao-cab"><h2 id="t-dados"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">Dados do veículo{{ icone("chevron", "recolhe-seta") }}</button></h2></div>
   <dl class="dl ficha-dados">
     <div><dt>Renavam</dt><dd class="mono">{{ moto.renavam or "—" }}</dd></div>
     <div><dt>Chassi</dt><dd class="mono">{{ moto.chassi or "—" }}</dd></div>
