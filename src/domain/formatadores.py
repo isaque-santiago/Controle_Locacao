@@ -61,3 +61,26 @@ def formatar_data_hora(momento) -> str:
     if momento.tzinfo is not None:
         momento = momento.astimezone(ZoneInfo("America/Sao_Paulo"))
     return momento.strftime("%d/%m/%Y %H:%M")
+
+
+_ABREVIACOES_ENDERECO = (
+    ("avenida", "Av."), ("alameda", "Al."), ("rodovia", "Rod."), ("travessa", "Tv."),
+    ("estrada", "Estr."), ("praça", "Pç."), ("praca", "Pç."), ("loteamento", "Lot."),
+    ("conjunto", "Conj."), ("residencial", "Res."), ("condomínio", "Cond."),
+    ("condominio", "Cond."), ("sítio", "Sít."), ("fazenda", "Faz."), ("rua", "R."),
+    ("bairro", "B."), ("apartamento", "Ap."), ("quadra", "Q."),
+)
+
+
+def abreviar_endereco(endereco: str | None) -> str:
+    """Encurta o endereço para caber na ficha: tipos de via viram abreviações (Rua -> R.),
+    'Cidade, CE' vira 'Cidade/CE' e os espaços sobrando somem. O endereço guardado não muda."""
+    import re
+
+    texto = re.sub(r"\s+", " ", endereco or "").strip()
+    if not texto:
+        return "—"
+    for palavra, sigla in _ABREVIACOES_ENDERECO:
+        texto = re.sub(rf"(?<![\wÀ-ÿ]){palavra}(?![\wÀ-ÿ])\.?", sigla, texto, flags=re.IGNORECASE)
+    texto = re.sub(r",\s*([A-Za-z]{2})\s*$", r"/\1", texto)
+    return texto

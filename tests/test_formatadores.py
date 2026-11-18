@@ -2,6 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from src.domain.formatadores import (
+    abreviar_endereco,
     formatar_data,
     formatar_moeda,
     formatar_moeda_compacta,
@@ -45,3 +46,16 @@ def test_formatar_data_hora_no_horario_de_brasilia():
     assert formatar_data_hora(datetime(2026, 11, 6, 17, 35, tzinfo=timezone.utc)) == "06/11/2026 14:35"
     assert formatar_data_hora("2026-11-06T14:35:00") == "06/11/2026 14:35"  # sem fuso: vale como está
     assert formatar_data_hora(None) == "—"
+
+
+def test_abreviar_endereco_encurta_tipo_de_via_e_uf():
+    assert (
+        abreviar_endereco("Rua Raimundo Pinheiro Neto, 36, Betolândia, Juazeiro do Norte, CE")
+        == "R. Raimundo Pinheiro Neto, 36, Betolândia, Juazeiro do Norte/CE"
+    )
+    assert abreviar_endereco("Avenida  Brasil, 10") == "Av. Brasil, 10"
+
+
+def test_abreviar_endereco_vazio_e_palavra_dentro_de_outra():
+    assert abreviar_endereco(None) == "—"
+    assert abreviar_endereco("Ruas Novas, 5") == "Ruas Novas, 5"
