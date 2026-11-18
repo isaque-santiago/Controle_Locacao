@@ -147,7 +147,13 @@ main {width: 100%; max-width: 1600px; margin: 0 auto; overflow-wrap: break-word;
 .nav-item {position: relative; display: flex; align-items: center; gap: .85rem; font-size: 14.9px; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); color: var(--lateral-texto); text-decoration: none; font-weight: 500; transition: background 150ms ease, color 150ms ease;}
 .nav-item:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
 .nav-item[aria-current="page"] {background: var(--lateral-ativo); color: var(--lateral-forte);}
-.nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
+/* Traço do item ativo: um só elemento (criado pelo app.js) que desliza até o item tocado. Sem JS, o traço fica no próprio item. */
+.lateral nav {position: relative;}
+.nav-marcador {position: absolute; left: -12px; top: 0; width: 4px; height: 0; border-radius: 0 4px 4px 0; background: var(--marca); opacity: 0; pointer-events: none; will-change: transform;}
+.nav-marcador.visivel {opacity: 1;}
+.nav-marcador.desliza {transition: transform 320ms cubic-bezier(.3, .7, .2, 1), height 320ms cubic-bezier(.3, .7, .2, 1);}
+@media (prefers-reduced-motion: reduce) {.nav-marcador.desliza {transition: none;}}
+html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
 .nav-item .i {width: 24px; height: 24px; opacity: .9;}
 .nav-item[aria-current="page"] {font-weight: 600;}
 .lateral::-webkit-scrollbar {display: none;}
