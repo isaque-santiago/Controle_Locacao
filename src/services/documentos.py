@@ -4,6 +4,7 @@ import logging
 from datetime import date
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.mensagens_banco import para_o_usuario
 from src.domain.comprovante_documento import alertas_de_comprovantes as _alertas_de_comprovantes, nome_do_documento
 from src.domain.privacidade_imagem import remover_dados_pessoais
 from src.domain.documentos import sugerir_proximo_documento
@@ -91,7 +92,7 @@ def aceitar_comprovante(envio_id: str, data_regularizacao: date) -> dict:
         resultado = documento_comprovantes.aceitar(envio_id, data_regularizacao)
     except APIError as erro:
         if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
-            raise ValueError(erro.message) from erro
+            raise ValueError(para_o_usuario(erro.message)) from erro
         raise
     documento = documentos_moto.obter(resultado["documento_id"])
     return {"documento": documento, "sugestao_proximo": sugerir_proximo_documento(documento["tipo"], documento.get("ano_referencia"))}

@@ -4,6 +4,7 @@ import logging
 
 from postgrest.exceptions import APIError
 
+from src.domain.mensagens_banco import para_o_usuario
 from src.domain.arquivos_orfaos import HORAS_MINIMAS, agrupar_por_bucket, em_lotes, formatar_tamanho, resumir
 from src.repositories import arquivos_orfaos
 
@@ -17,7 +18,7 @@ def _listar(horas: int) -> list[dict]:
         return arquivos_orfaos.listar(horas)
     except APIError as erro:
         if erro.code == _CODIGO_REGRA_DE_NEGOCIO:
-            raise ValueError(erro.message) from erro
+            raise ValueError(para_o_usuario(erro.message)) from erro
         raise
 
 

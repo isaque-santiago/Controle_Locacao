@@ -104,3 +104,9 @@ def test_repeticao_de_envio_so_vale_para_a_chave_de_operacao():
     assert not erros.eh_repeticao_de_envio(_api("23505", 'unique constraint "motos_placa_key"'))
     assert not erros.eh_repeticao_de_envio(_api("23514", "uq_pagamentos_chave_operacao"))
     assert not erros.eh_repeticao_de_envio(ValueError("chave_operacao"))
+
+
+def test_regra_do_banco_sobre_moto_chega_a_tela_com_veiculo():
+    falha = erros.classificar_erro(_api("P0001", "Moto ABC-1D23 não está disponível (status atual: alugada)."))
+    assert falha.categoria == erros.VALIDACAO
+    assert falha.mensagem == "Veículo ABC-1D23 não está disponível (status atual: alugada)."

@@ -7,6 +7,7 @@ from pathlib import PurePath
 from postgrest.exceptions import APIError
 
 from src.domain.arquivos import validar_arquivo
+from src.domain.mensagens_banco import para_o_usuario
 from src.domain.comprovante_documento import EXTENSOES as EXTENSOES_COMPROVANTE
 from src.domain.formulario_documento import TIPOS_CONTEUDO
 from src.domain.privacidade_imagem import remover_dados_pessoais
@@ -22,7 +23,7 @@ _TIPOS = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
 def _como_regra_de_negocio(erro: APIError) -> ValueError:
     """As RPCs explicam o problema em pt-BR; o app mostra a mensagem como está."""
-    return ValueError(erro.message)
+    return ValueError(para_o_usuario(erro.message))
 
 
 def dados_portal() -> dict:
