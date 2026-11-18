@@ -1199,3 +1199,20 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .btn-icone[data-alternar-tema]:hover {background: var(--superficie-hover); border-color: transparent; color: var(--texto); box-shadow: none;}
 .topo-movel .btn-icone[data-alternar-tema] {color: var(--lateral-texto);}
 .topo-movel .btn-icone[data-alternar-tema]:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+
+/* ---------- Hover e foco suaves (padrão do cell-pag) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  a {transition: color 120ms ease;}
+  .entrada {transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;}
+  .dados tbody tr {transition: background-color 100ms ease;}
+  .chip {transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;}
+  .abas button, .abas a {transition: color 150ms ease, border-color 150ms ease;}
+  .selo {transition: background-color 150ms ease, color 150ms ease;}
+  .cartao, .kpi {transition: box-shadow 180ms ease, border-color 180ms ease;}
+  .nav-item .i {transition: stroke-width 160ms ease, transform 160ms ease;}
+  @media (hover: hover) and (pointer: fine) {
+    .chip:not([aria-pressed="true"]):not([aria-current="true"]):hover {transform: translateY(-1px); border-color: var(--texto-3);}
+    .cartao:hover, .kpi:hover {border-color: var(--linha-forte); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .28);}
+    .nav-item:hover .i {transform: scale(1.08);}
+  }
+}
