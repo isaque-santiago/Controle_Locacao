@@ -1272,6 +1272,6 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 @media (prefers-reduced-motion: no-preference) {
   #resultado > :not(input), #painel-aba > * {animation: bloco-entra 240ms ease-out backwards;}
   #painel-aba > :nth-child(2) {animation-delay: 50ms;} #painel-aba > :nth-child(n+3) {animation-delay: 100ms;}
-  /* Enviando um formulário: o botão pulsa de leve enquanto espera. */
+  /* Enviando um formulário: o botão esmaece suavemente enquanto espera. */
   form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {transition: opacity 150ms ease;}
 }
