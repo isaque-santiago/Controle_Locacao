@@ -131,7 +131,7 @@ a {color: inherit;}
 /* ---------- Estrutura: três faixas ---------- */
 .app {min-height: 100dvh; display: grid; grid-template-columns: var(--lateral-larg) minmax(0, 1fr);}
 .coluna {min-width: 0; display: flex; flex-direction: column;}
-main {width: 100%; max-width: 1280px; margin: 0 auto; overflow-wrap: break-word; padding: 20px var(--pad) 32px;}
+main {width: 100%; max-width: 1600px; margin: 0 auto; overflow-wrap: break-word; padding: 20px var(--pad) 32px;}
 @media (min-width: 640px) {main {padding-top: 28px; padding-bottom: 48px;}}
 @media (min-width: 1024px) {main {padding-top: 32px; padding-bottom: 64px;}}
 
