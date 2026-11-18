@@ -1,6 +1,8 @@
-# Controle de Locação e Manutenção de Motos
+# LA Locadora: controle de locação e manutenção de veículos
 
-Sistema web para controlar locação, manutenção, documentação e vistorias de uma frota de motos de aluguel.
+Sistema web para controlar locação, manutenção, documentação e vistorias de uma frota de veículos de aluguel (hoje, motos).
+
+> **Nomes (16/11/2026).** A marca é **LA Locadora**. Nas telas e mensagens o termo é «veículo»; por dentro (tabelas `motos`, rotas `/motos`, colunas `moto_id`, funções) o nome técnico continua «moto», para não mexer no banco em produção. As mensagens de regra de negócio que vêm do banco são ajustadas na exibição (`src/domain/mensagens_banco.py`). O contrato em PDF mantém «motocicleta» e a razão social da empresa, pois é texto jurídico.
 
 Ver plano completo em [Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md).
 
