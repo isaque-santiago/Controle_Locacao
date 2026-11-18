@@ -1246,3 +1246,24 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   .barras-lista .barra-cheia, .kpi-barra-cheia {transform-box: fill-box; transform-origin: 0 50%; animation: barra-cresce 700ms cubic-bezier(.2, .8, .2, 1) 200ms backwards;}
   .rosca .arco {animation: arco-aparece 700ms ease-out 200ms backwards;}
 }
+
+/* ---------- Diálogos e painéis que abrem e fecham com suavidade ----------
+   O fechamento anima por `transition-behavior: allow-discrete`; em navegador sem esse recurso o diálogo só abre e fecha, sem animação. */
+@media (prefers-reduced-motion: no-preference) {
+  dialog {opacity: 0; transform: translateY(10px) scale(.98); transition: opacity 180ms ease, transform 200ms cubic-bezier(.2, .8, .2, 1), overlay 200ms allow-discrete, display 200ms allow-discrete;}
+  dialog[open] {opacity: 1; transform: none;}
+  dialog::backdrop {background: rgba(21,24,28,0); transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;}
+  dialog[open]::backdrop {background: rgba(21,24,28,.55);}
+  @starting-style {
+    dialog[open] {opacity: 0; transform: translateY(10px) scale(.98);}
+    dialog[open]::backdrop {background: rgba(21,24,28,0);}
+  }
+  @media (max-width: 719px) {
+    dialog.cheio, dialog.folha {transform: translateY(24px);}
+    dialog.cheio[open], dialog.folha[open] {transform: none;}
+    @starting-style {dialog.cheio[open], dialog.folha[open] {transform: translateY(24px);}}
+  }
+  /* Painéis dos filtros e do seletor de visão. */
+  .filtro-col[open] > .filtro-opcoes, .colapsavel-visao[open] > .opcoes {animation: painel-entra 200ms cubic-bezier(.2, .8, .2, 1) both; transform-origin: top left;}
+  .filtro-col .seta-filtro {transition: transform 180ms ease;}
+}
