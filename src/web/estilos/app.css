@@ -147,6 +147,8 @@ main {width: 100%; max-width: 1240px; margin: 0 auto; overflow-wrap: break-word;
 .nav-item[aria-current="page"] {background: var(--lateral-ativo); color: var(--lateral-forte);}
 .nav-item[aria-current="page"]::before {content: ""; position: absolute; left: -12px; top: 8px; bottom: 8px; width: 4px; border-radius: 0 4px 4px 0; background: var(--marca);}
 .nav-item .i {opacity: .9;}
+.icone-veiculo {width: 18px; height: 18px; margin-right: 6px; vertical-align: -3px; color: var(--texto-2);}
+.ficha-titulo .icone-veiculo {width: 26px; height: 26px; margin-right: 0;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
 .topo-desktop {display: flex; justify-content: flex-end; padding: var(--e3) var(--pad) 0;}
 .conta {position: relative;}

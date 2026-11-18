@@ -5,6 +5,12 @@
 <svg class="i {{ classe }}" aria-hidden="true" focusable="false"><use href="#i-{{ nome }}"/></svg>
 {%- endmacro %}
 
+{# Ícone do tipo do veículo: moto ou carro (`tipo` vem de motos.tipo; qualquer valor diferente de "carro" é moto).
+   Decorativo: o tipo também aparece no nome acessível de quem usa o macro, quando importa. #}
+{% macro icone_veiculo(tipo) -%}
+{{ icone("carro" if tipo == "carro" else "moto", "icone-veiculo") }}
+{%- endmacro %}
+
 {# Botão ou link com aparência de botão (href). variante: "", "primario", "perigo". `aria` dá o nome acessível
    (escapado aqui; nunca o monte dentro de `extra`, que entra sem escape). #}
 {% macro botao(rotulo, href=None, tipo="button", variante="", icone_nome=None, bloco=False, extra="", aria=None) -%}
