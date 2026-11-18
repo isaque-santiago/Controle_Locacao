@@ -877,8 +877,8 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 /* Dados pessoais em telas largas: 3 colunas (dados principais), 4 (curtos) e 2 (endereço, mais largo para não quebrar linha, e referências) */
 @media (min-width: 900px) {
   .ficha-dados {grid-template-columns: repeat(12, minmax(0, 1fr));}
-  .ficha-dados .ficha-c3 {grid-column: span 4; display: flex; align-items: baseline; gap: var(--e3); padding-block: var(--e2);}
-  .ficha-dados .ficha-c3 dt {margin: 0; flex: none; width: 5.25rem; text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px;}
+  .ficha-dados .ficha-c3 {grid-column: span 4; display: flex; align-items: baseline; gap: var(--e2); padding-block: var(--e2);}
+  .ficha-dados .ficha-c3 dt {margin: 0; flex: none; text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px;}
   .ficha-dados .ficha-c3 dd {min-width: 0; font-weight: 500;}
   .ficha-dados .ficha-endereco:last-child {grid-column: span 12;}
   .ficha-dados .ficha-c4 {grid-column: span 3;}
