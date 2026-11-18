@@ -1193,3 +1193,9 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   .nav-item .i {transition: stroke-width 160ms ease;}
 }
 .nav-item[aria-current="page"] .i, .barra-inferior [aria-current="page"] .i {stroke-width: 2.2;}
+
+/* Botão de tema no padrão do cell-pag: 40 px, sem contorno, fundo só ao passar o mouse; sol no claro, lua no escuro. */
+.btn-icone[data-alternar-tema], .topo-movel .btn-icone[data-alternar-tema] {width: 40px; min-height: 40px; height: 40px; border-color: transparent; border-radius: var(--raio-campo); color: var(--texto-2); box-shadow: none;}
+.btn-icone[data-alternar-tema]:hover {background: var(--superficie-hover); border-color: transparent; color: var(--texto); box-shadow: none;}
+.topo-movel .btn-icone[data-alternar-tema] {color: var(--lateral-texto);}
+.topo-movel .btn-icone[data-alternar-tema]:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
