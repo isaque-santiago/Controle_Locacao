@@ -953,6 +953,8 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .entrada-vitrine > * {position: relative; z-index: 1;}
 .entrada-vitrine .marca {padding: 0; min-height: var(--alvo);}
 .entrada-vitrine .marca {width: auto; justify-content: flex-start;}
+.entrada-vitrine .marca, .entrada-vitrine .marca strong {color: #fff;}
+.entrada-vitrine .marca span.sub {color: rgba(255,255,255,.7);}
 .entrada-vitrine .marca > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
 .vitrine-texto {display: grid; gap: var(--e5); max-width: 34rem;}
 .vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: rgba(242,183,5,.14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
