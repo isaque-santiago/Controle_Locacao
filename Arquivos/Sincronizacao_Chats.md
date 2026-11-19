@@ -92,11 +92,22 @@ Abra uma sessão nova neste projeto e use este texto de partida:
 
 ## 10. Pendências
 
-- **Formato das pastas:** o dono vai tentar compartilhar a pasta de cada chat com a sessão. Depois da primeira leitura, registrar aqui
-  o formato (texto copiado, JSON de exportação, PDF) e ajustar a extração da seção 5.
-- **Primeira sincronização:** acaba sendo o item 8 do plano (checar os dados dos chats contra o sistema): é a conciliação inicial
-  de todo o histórico. As seguintes só olham o que é novo.
+- **Formato das pastas (registrado em 19/11/2026):** as pastas dos chats **não foram usadas**. Na primeira sincronização o dono deixou a aba do navegador
+  embutido logada e a sessão leu os **links de compartilhamento** só para leitura (sem digitar credenciais); a página renderizada virou texto
+  (≈ 80 mil e 125 mil caracteres, sem as imagens, que o claude.ai oculta). Isso contraria a decisão 3 e o §8, e foi feito por pedido expresso do dono.
+  O link é uma **foto** do chat no momento em que foi gerado: para a próxima sincronização, o dono gera um link novo (ou exporta o texto).
+- **Primeira sincronização: FEITA em 19/11/2026** (item 8 do plano). Ver o registro na seção 11. As seguintes só olham o que é novo.
 - **Contratos:** parte do que está em "Contratos Locadora" já foi usada para o modelo e os valores do contrato (item 5). A comparação
   agora é entre os **contratos individuais** e o cadastro, não mais sobre o modelo.
 - **Tela no app (futuro, opcional):** se o procedimento se repetir muito, uma tela de importação de lote no app poderia substituir o
   SQL colado à mão. Só vale a pena depois de algumas sincronizações reais.
+
+## 11. Registro das sincronizações
+
+O relatório de cada uma e o `ultima_sincronizacao.txt` ficam **fora do repositório** (têm dado pessoal): `~/Documentos/Projetos/LA - Veiculos/Sincronizacoes/AAAA-MM-DD/`.
+
+| Data | Backup | Chats lidos | Lote | Resultado |
+| --- | --- | --- | --- | --- |
+| 19/11/2026 (1ª) | `backup-2026-11-19` (29 tabelas, 14:07 antes e 14:36 depois) | Financeiro até 16/10; Contratos até 03/11 | `chats-2026-11-19-correcoes` (SQL 01 a 04 e 06 a 11) | Multas, Celta, Ricão, Lima, seguros e 6 contratos conferem. Em produção: 10 locatários novos (8 com CPF provisório), 4 contratos corrigidos, 33 pagamentos, 2 encerramentos e 2 clientes inativados. Estado final: 27 clientes, 25 contratos, 179 cobranças, 139 pagamentos; os débitos batem com a planilha. Abertos: aluguel do Jhonatan, encargos de quem saiu, retomada do Joel, 8 CPFs, Celta/Gabriel, remendo da Biz, compressor e seguro "PNM". |
+
+Na primeira sincronização a conferência usou também a planilha "PAGAMENTO MOTOS" e a "Completar Dados", porque os chats só chegam até outubro e o início de novembro.
