@@ -62,7 +62,7 @@
     {% call tabela([("Veículo", ""), ("Situação", ""), ("Desde", ""), ("Parada há", "num")], "Veículos em manutenção ou disponíveis, com há quantos dias") %}
       {% for p in fr.paradas.linhas %}
       <tr>
-        <td class="topo">{{ plac(p.placa) }}</td>
+        <td class="topo">{{ plac(p.placa, "/motos/" ~ p.moto_id) }}</td>
         <td data-rotulo="Situação">{{ p.motivo }}</td>
         <td class="mono" data-rotulo="Desde">{{ (p.desde|data_br) if p.desde else ("sem ordem aberta" if p.motivo == "Em manutenção" else "sem contrato anterior") }}</td>
         <td class="num mono" data-rotulo="Parada há">{% if p.dias is not none %}{{ p.dias }} {{ "dia" if p.dias == 1 else "dias" }}{% else %}—{% endif %}</td>
@@ -84,7 +84,7 @@
     {% set cols_veic = [("Veículo", ""), ("Locatário", ""), ("Receita", "num"), ("Despesas", "num"), ("Resultado", "num")] %}
     {% macro linha_veiculo(v) %}
       <tr>
-        <td class="topo">{% if v.placa != "—" %}{{ plac(v.placa) }}{% else %}—{% endif %}</td>
+        <td class="topo">{% if v.placa != "—" %}{{ plac(v.placa, "/motos/" ~ v.moto_id) }}{% else %}—{% endif %}</td>
         <td data-rotulo="Locatário">{{ nome(v.locatario) }}</td>
         <td class="num mono" data-rotulo="Receita">{{ din(v.receita) }}</td>
         <td class="num mono" data-rotulo="Despesas">{{ din(v.despesas) }}</td>

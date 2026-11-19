@@ -516,3 +516,16 @@ def test_frota_sem_a_leitura_do_dinheiro_volta_a_quatro_indicadores(cliente, mon
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
     assert "kpis-6" not in html and "Receita por veículo" not in html and "ocupacao-card" in html
+
+
+def test_nome_e_placa_levam_as_fichas_mas_nao_com_os_dados_ocultos(cliente, monkeypatch):
+    _com(monkeypatch)
+    entrar(cliente)
+    hoje = cliente.get("/").text
+    assert '<a class="link-nome" href="/clientes/c1">Joana &lt;b&gt;Prado&lt;/b&gt;</a>' in hoje
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">QRS-4T21</span></a>' in hoje
+    frota = cliente.get("/?aba=frota").text
+    assert '<a class="link-nome" href="/motos/m3"><span class="placa">OSL-8828</span></a>' in frota
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">POU-7015</span></a>' in frota
+    oculto = cliente.get("/?ocultar=1").text + cliente.get("/?aba=frota&ocultar=1").text
+    assert 'href="/clientes/c1"' not in oculto and 'href="/motos/m' not in oculto
