@@ -147,3 +147,14 @@ def test_relatorios_exigem_dono(cliente, base_relatorios):
     assert cliente.get("/relatorios").status_code == 403
     assert cliente.get("/relatorios/exportar").status_code == 403
     assert cliente.get("/relatorios/abas/fluxo").status_code == 403
+
+
+def test_placa_e_cliente_levam_as_fichas_nos_relatorios(cliente, base_relatorios):
+    entrar(cliente)
+    resultado = cliente.get("/relatorios").text
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in resultado
+    custo = cliente.get("/relatorios?aba=custo&visao=moto").text
+    assert '<a class="link-nome" href="/motos/m2"><span class="placa">QRS-4T21</span></a>' in custo
+    atraso = cliente.get("/relatorios?aba=inadimplencia").text
+    assert '<a class="link-nome" href="/clientes/c1">Maria &lt;b&gt;Silva&lt;/b&gt;</a>' in atraso
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in atraso

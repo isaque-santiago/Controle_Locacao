@@ -961,9 +961,9 @@ class BaseRelatorios:
         ]
         self.inadimplencia = {
             "linhas": [
-                {"cliente": "Maria <b>Silva</b>", "placa": "BRA2E19", "vencimento": "2026-09-01", "dias_atraso": 37,
+                {"cliente_id": "c1", "moto_id": "m1", "cliente": "Maria <b>Silva</b>", "placa": "BRA2E19", "vencimento": "2026-09-01", "dias_atraso": 37,
                  "saldo": Decimal("280"), "total_com_encargos": Decimal("554")},
-                {"cliente": "Pedro", "placa": "", "vencimento": "2026-10-01", "dias_atraso": 7,
+                {"cliente_id": "c2", "moto_id": None, "cliente": "Pedro", "placa": "", "vencimento": "2026-10-01", "dias_atraso": 7,
                  "saldo": Decimal("100"), "total_com_encargos": Decimal("164")},
             ],
             "total_atraso": Decimal("380"), "clientes": 2, "percentual_carteira": Decimal("13.6"),
