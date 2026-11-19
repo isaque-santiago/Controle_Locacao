@@ -33,6 +33,7 @@ def carregar_lista(status, busca, pagina, por_pagina, ordem=""):
             "cliente": cliente,
             "cnh_situacao": situacao_cnh(validade, hoje, alerta),
             "placa": placas.get(contrato["moto_id"]) if contrato else None,
+            "moto_id": contrato["moto_id"] if contrato else None,
         })
     return {"itens": saida, "pagina": recorte, "contagem": contagem, "total_cadastrados": len(registros)}
 
