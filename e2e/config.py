@@ -50,7 +50,7 @@ PAGINAS = (
     Pagina("Contratos", "/contratos"),
     Pagina("Cobranças", "/cobrancas"),
     Pagina("Mensagens", "/mensagens"),
-    Pagina("Motos", "/motos"),
+    Pagina("Veículos", "/motos"),
     Pagina("Clientes", "/clientes"),
     Pagina("Manutenção", "/manutencao"),
     Pagina("Documentos", "/documentos"),

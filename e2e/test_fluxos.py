@@ -89,7 +89,7 @@ def _lista_busca_filtro_ficha(c: Contexto, titulo: str) -> None:
 
 
 def fluxo_buscar_e_abrir_fichas(c: Contexto) -> None:
-    _lista_busca_filtro_ficha(c, "Motos")
+    _lista_busca_filtro_ficha(c, "Veículos")
     _lista_busca_filtro_ficha(c, "Clientes")
 
 
