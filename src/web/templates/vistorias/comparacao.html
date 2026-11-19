@@ -5,8 +5,8 @@
 {{ voltar("/vistorias", "Voltar para vistorias") }}
 <header class="cabecalho">
   <div class="cabecalho-texto">
-    <h1>{{ c.cliente.nome }}</h1>
-    <p>{{ c.moto.marca }} {{ c.moto.modelo }} {{ placa(c.moto.placa|placa_br) }}</p>
+    <h1><a class="link-nome" href="/clientes/{{ c.cliente.id }}">{{ c.cliente.nome }}</a></h1>
+    <p>{{ c.moto.marca }} {{ c.moto.modelo }} <a class="link-nome" href="/motos/{{ c.moto.id }}">{{ placa(c.moto.placa|placa_br) }}</a></p>
   </div>
   <div class="acoes"><a class="btn" href="/contratos/{{ contrato.id }}">Ver contrato</a></div>
 </header>

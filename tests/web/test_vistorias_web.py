@@ -90,3 +90,10 @@ def test_lista_nome_leva_ao_cliente_e_placa_ao_veiculo(cliente, base_vistorias):
     html = cliente.get("/vistorias").text
     assert 'class="link-nome rc-so-larga" href="/clientes/c1">Maria &lt;b&gt;Silva&lt;/b&gt;</a>' in html
     assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in html
+
+
+def test_comparacao_leva_ao_cliente_e_ao_veiculo(cliente, base_vistorias):
+    entrar(cliente)
+    html = cliente.get(f"/vistorias/contrato/{CONTRATO}").text
+    assert '<h1><a class="link-nome" href="/clientes/c1">Maria &lt;b&gt;Silva&lt;/b&gt;</a></h1>' in html
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in html
