@@ -56,7 +56,7 @@ de cartão no celular).
 
 ## 4. Componentes padrão
 
-- **Sidebar**: fixa, 240px, fundo `grafite-900`. Item ativo com barra esquerda `amarelo-farol` + fundo sutil.
+- **Sidebar**: fixa, 232px, fundo branco (escuro no modo escuro). Item ativo com fundo sutil e traço amarelo (`--marca`) à esquerda.
 - **Selo de status**: bolinha de 6-8px colorida + texto (tabelas) ou círculo maior com borda tracejada + número
   dentro (alertas do Dashboard/Manutenção) — remete a adesivo de vistoria.
 - **Chip de placa**: `mono`, fundo `grafite-900`, texto `neblina-0`, `border-radius: 6px`, letter-spacing.
