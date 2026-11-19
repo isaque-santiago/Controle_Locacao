@@ -601,6 +601,11 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .filtro-opcoes {left: 0; right: 0;}
   .pendencia {grid-template-columns: 44px minmax(0, 1fr);} .pendencia .btn {grid-column: 1 / -1;}
 }
+/* Celulares estreitos: KPIs em uma coluna, para o texto não quebrar letra a letra */
+@media (max-width: 519px) {
+  .kpis, .kpis.kpis-5 {grid-template-columns: minmax(0, 1fr);}
+  .kpis.kpis-5 .kpi:last-child {grid-column: auto;}
+}
 @media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}
 
 /* Lista de motos em cartões: a ordem de leitura difere da ordem das colunas */
