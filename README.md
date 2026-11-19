@@ -75,6 +75,14 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
   o HTMX troca só `#resultado` (e a restauração do histórico recebe a página inteira); chips são links, então
   funcionam sem JS. A tabela vira cartões conforme a largura **da própria caixa** (container query), não da tela.
+- **Nome que leva à ficha** (como no cell-pag): em qualquer lista ou ficha, o nome do cliente e a placa do veículo são
+  links para a ficha de cada um. Em tabela recolhível use `rc_titulo(classe, href=..., estica=...)`: a célula leva o
+  link (só a partir de 720 px) e o botão que abre/fecha o cartão (só no celular), porque link não pode ficar dentro de
+  botão; no celular tocar no nome continua abrindo o cartão. Com `<tr class="linha-link">` o link do título (ou o botão
+  "Abrir ficha" com a classe `link-linha`, quando o título leva a outra ficha) estica e a linha inteira abre a ficha
+  (Clientes, Veículos e Contratos). Fora do título, use `link_nome(href)` (ou `<a class="link-nome">`). As linhas
+  precisam trazer `cliente_id` e `moto_id` (a camada de dados é quem os passa). No Dashboard não há link com "ocultar
+  dados" ligado.
 - **Ficha com abas** (`macros.abas_remotas`): cada aba carrega o painel por HTMX, com URL própria
   (`/motos/{id}?aba=plano`); o servidor devolve as abas junto do painel (swap fora de banda), então o botão
   voltar do navegador fica coerente. Setas movem o foco, Enter abre.
