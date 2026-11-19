@@ -37,7 +37,7 @@ def test_promessa_e_locacao_usam_o_mesmo_visual_com_subtitulo_e_rodape_proprios(
         contrato_pdf.gerar({**CONTRATO, "tipo_contrato": "locacao"}, CLIENTE, MOTO)
     (blocos_p, cab_p, rodape_p), (blocos_l, cab_l, rodape_l) = (c.args for c in desenhar.call_args_list)
     assert "PROMESSA DE COMPRA E VENDA" in blocos_p[0].texto and "PROMESSA" not in blocos_l[0].texto
-    assert cab_p["subtitulo"] == "Locação de motocicletas com promessa de compra e venda" and cab_l["subtitulo"] == "Locação de motocicletas"
+    assert cab_p["subtitulo"] == "Locação de veículos com promessa de compra e venda" and cab_l["subtitulo"] == "Locação de veículos"
     assert cab_p["contato"] == cab_l["contato"] == "Crato/CE · (88) 9 9806-4387"
     assert rodape_p == "Contrato de Locação com Promessa de Compra e Venda - Alberto Filho da Silva Costa"
     assert rodape_l == "Contrato de Locação de Veículo - Alberto Filho da Silva Costa"

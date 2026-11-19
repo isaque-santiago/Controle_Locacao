@@ -302,9 +302,9 @@ def _resumo_de_multas() -> Bloco:
         ("Acionar a Proteção Veicular sem permissão", _moeda(t["multa_acionar_protecao"]), "5.6"),
         (f"Sair do {t['perimetro_permitido']} sem autorização", f"{_moeda(t['multa_fora_perimetro'])} + custos", "5.8"),
         ("Erro na troca de óleo (prazo, óleo errado ou sem foto/nota)", f"{_moeda(t['multa_troca_oleo'])} por ocorrência", "5.13.1"),
-        (f"Moto apreendida e não liberada em {t['apreensao_prazo_dias']} dias", "Rescisão e retomada da moto", "7.4"),
+        (f"Veículo apreendido e não liberado em {t['apreensao_prazo_dias']} dias", "Rescisão e retomada do veículo", "7.4"),
         ("Atraso no pagamento", f"{_moeda(t['atraso_multa'])} + {_moeda(t['atraso_juros_por_dia'])} por dia", "8.2"),
-        (f"Atraso de parcela acima de {t['atraso_dias_rescisao']} dias", "Rescisão e retomada da moto", "8.4"),
+        (f"Atraso de parcela acima de {t['atraso_dias_rescisao']} dias", "Rescisão e retomada do veículo", "8.4"),
         (f"Dívida acima de {_moeda(t['divida_limite_retomada'])} sem quitar", f"{_moeda(t['multa_retomada_por_dia'])} por dia sem devolver", "10.2.5"),
         ("Atraso na devolução após rescisão", f"{_moeda(t['multa_devolucao_por_dia'])} por dia", "11.1"),
     ))
@@ -422,7 +422,7 @@ def montar(contrato: dict, cliente: dict, moto: dict | list, locador: dict) -> l
          "prazo para a transferência dos pontos.")
     item("5.4.", "Caso o veículo seja rebocado por estacionamento irregular, ou outra hipótese à qual o LOCATÁRIO tenha dado "
          "causa, este deverá arcar com todos os custos necessários para a recuperação do veículo junto ao respectivo depósito "
-         f"público, além de multa contratual de {_r(t['multa_deposito_por_dia'])} por dia em que a moto permanecer no depósito, "
+         f"público, além de multa contratual de {_r(t['multa_deposito_por_dia'])} por dia em que o veículo permanecer no depósito, "
          "a título de lucro cessante, observado o disposto na Cláusula 7ª.")
     item("5.5.", "Caso o LOCATÁRIO estacione em local diferente do informado ao LOCADOR, conforme declaração assinada, deverá "
          "arcar com qualquer dano ou prejuízo pecuniário ao veículo, inclusive os inerentes a caso fortuito ou força maior.")
