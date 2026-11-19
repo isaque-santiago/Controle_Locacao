@@ -85,6 +85,8 @@ def analisar_cobranca(
         {
             "contrato_id": contrato,
             "cobranca_id": v["cobranca_id"],
+            "cliente_id": cliente,
+            "moto_id": moto,
             "cliente": nomes_clientes.get(cliente, "—"),
             "placa": placas_motos.get(moto, "—"),
             "dias_atraso": v["dias"],

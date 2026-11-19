@@ -196,6 +196,8 @@ def analisar_inadimplencia(cobrancas, clientes, motos, config, hoje):
         )
         linhas.append(
             {
+                "cliente_id": c["cliente_id"],
+                "moto_id": c["moto_id"],
                 "cliente": nomes.get(c["cliente_id"], "Cliente"),
                 "placa": placas.get(c["moto_id"], ""),
                 "vencimento": c["vencimento"],

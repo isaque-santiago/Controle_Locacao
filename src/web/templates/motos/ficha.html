@@ -14,7 +14,7 @@
     </div>
     <p class="mt-3">
       {{ moto.marca }} {{ moto.modelo }}{% if moto.ano_modelo %}, {{ moto.ano_modelo }}{% endif %}{% if moto.cor %}, {{ moto.cor|lower }}{% endif %}.
-      {% if cabecalho.locatario %}Locada para {{ cabecalho.locatario }} desde {{ cabecalho.desde|data_br }}.{% endif %}
+      {% if cabecalho.locatario %}Locada para {% if cabecalho.cliente_id %}<a class="link-nome" href="/clientes/{{ cabecalho.cliente_id }}">{{ cabecalho.locatario }}</a>{% else %}{{ cabecalho.locatario }}{% endif %} desde {{ cabecalho.desde|data_br }}.{% endif %}
     </p>
   </div>
   <div class="acoes">

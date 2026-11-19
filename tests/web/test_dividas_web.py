@@ -860,3 +860,17 @@ def test_corrigir_pagamento_404_csrf_login_e_falha_do_banco(cliente, base_divida
     base_dividas.falhar_com = RuntimeError("banco fora do ar")
     falha = _corrigir(cliente)
     assert falha.status_code in (500, 503) and 'value="500,00"' in falha.text
+
+
+def test_lista_placa_leva_a_ficha_do_veiculo(cliente):
+    entrar(cliente)
+    html = cliente.get("/dividas").text
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">OID-7656</span></a>' in html
+
+
+def test_ficha_da_divida_leva_ao_veiculo(cliente):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_ID}").text
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">OID-7656</span></a>' in html

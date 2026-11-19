@@ -5,7 +5,7 @@
 {% if d.itens %}
 {% call tabela([("Veículo", ""), ("Tipo", ""), ("Referência", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Documentos da frota", recolhivel=True) %}
 {% for item in d.itens %}{% set doc = item.documento %}{% set tipo = tipos.get(doc.tipo, doc.tipo) %}<tr data-recolhivel>
-{% call rc_titulo("d-placa") %}{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}{% endcall %}
+{% call rc_titulo("d-placa", href=("/motos/" ~ doc.moto_id) if item.placa else None, estica=False) %}{% if item.placa %}{{ placa(item.placa|placa_br) }}{% else %}—{% endif %}{% endcall %}
 <td class="d-tipo" data-rotulo="Tipo">{{ tipo }}</td>
 <td class="d-ref text-texto-2" data-rotulo="Referência">{{ doc.descricao or doc.ano_referencia or "—" }}</td>
 <td class="d-venc mono" data-rotulo="Vencimento">{{ doc.vencimento|data_br }}</td>

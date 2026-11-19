@@ -117,13 +117,15 @@ def _conteudo_hoje():
         "mes_texto": "2026-10",
         "cobranca": {
             "linhas": [
-                {"contrato_id": "k1", "cobranca_id": "00000000-0000-0000-0000-0000000000a1", "cliente": "Joana <b>Prado</b>",
-                 "placa": "QRS4T21", "dias_atraso": 44, "faixa": "inadimplente", "debito": Decimal("2100.00"), "hoje": Decimal("0.00"),
+                {"contrato_id": "k1", "cobranca_id": "00000000-0000-0000-0000-0000000000a1", "cliente_id": "c1", "moto_id": "m1",
+                 "cliente": "Joana <b>Prado</b>", "placa": "QRS4T21", "dias_atraso": 44, "faixa": "inadimplente", "debito": Decimal("2100.00"), "hoje": Decimal("0.00"),
                  "encargos": Decimal("176.00"), "total": Decimal("2276.00")},
-                {"contrato_id": "k2", "cobranca_id": "00000000-0000-0000-0000-0000000000a2", "cliente": "Marcos Teles", "placa": "BRA2E19",
+                {"contrato_id": "k2", "cobranca_id": "00000000-0000-0000-0000-0000000000a2", "cliente_id": "c2", "moto_id": "m2",
+                 "cliente": "Marcos Teles", "placa": "BRA2E19",
                  "dias_atraso": 6, "faixa": "em_atraso", "debito": Decimal("290.00"), "hoje": Decimal("0.00"),
                  "encargos": Decimal("57.00"), "total": Decimal("347.00")},
-                {"contrato_id": "k3", "cobranca_id": "00000000-0000-0000-0000-0000000000a3", "cliente": "Diego", "placa": "—",
+                {"contrato_id": "k3", "cobranca_id": "00000000-0000-0000-0000-0000000000a3", "cliente_id": "c3", "moto_id": None,
+                 "cliente": "Diego", "placa": "—",
                  "dias_atraso": 0, "faixa": "hoje", "debito": Decimal("0.00"), "hoje": Decimal("280.00"),
                  "encargos": Decimal("15.00"), "total": Decimal("295.00")},
             ],
@@ -959,9 +961,9 @@ class BaseRelatorios:
         ]
         self.inadimplencia = {
             "linhas": [
-                {"cliente": "Maria <b>Silva</b>", "placa": "BRA2E19", "vencimento": "2026-09-01", "dias_atraso": 37,
+                {"cliente_id": "c1", "moto_id": "m1", "cliente": "Maria <b>Silva</b>", "placa": "BRA2E19", "vencimento": "2026-09-01", "dias_atraso": 37,
                  "saldo": Decimal("280"), "total_com_encargos": Decimal("554")},
-                {"cliente": "Pedro", "placa": "", "vencimento": "2026-10-01", "dias_atraso": 7,
+                {"cliente_id": "c2", "moto_id": None, "cliente": "Pedro", "placa": "", "vencimento": "2026-10-01", "dias_atraso": 7,
                  "saldo": Decimal("100"), "total_com_encargos": Decimal("164")},
             ],
             "total_atraso": Decimal("380"), "clientes": 2, "percentual_carteira": Decimal("13.6"),
@@ -1171,7 +1173,7 @@ class BaseDividas:
 
     def __init__(self):
         self.linhas = [
-            _linha_divida("d1", "Celta <b>Zero</b>", placa="OID7656"),
+            _linha_divida("d1", "Celta <b>Zero</b>", placa="OID7656", moto_id="m1"),
             _linha_divida("d2", "Nilson", tipo="moto_fiado", saldo="7600.00", situacao="atrasada", parcelas_atrasadas=2,
                           proxima_vencimento=date(2026, 10, 10), saldo_confirmado=True),
             _linha_divida("d3", "Etios", tipo="emprestimo", saldo="0.00", situacao="quitada", proxima_vencimento=None,

@@ -2,12 +2,12 @@
 {% set c = a.contrato %}
 <div class="grade duas-colunas motos-resumo-grade{% if c %} motos-resumo-igual{% endif %}">
   <section class="cartao" aria-labelledby="t-contrato">
-    <div class="cartao-cab"><h2 id="t-contrato">Contrato ativo</h2>{% if c %}<a href="/contratos" aria-label="Ver contratos de {{ c.cliente }}">Ver contrato</a>{% endif %}</div>
+    <div class="cartao-cab"><h2 id="t-contrato">Contrato ativo</h2>{% if c %}<a href="/contratos/{{ c.contrato_id }}" aria-label="Ver o contrato de {{ c.cliente }}">Ver contrato</a>{% endif %}</div>
     {% if c %}
     <div class="flex items-center gap-3 mb-4">
       <span class="avatar text-white" aria-hidden="true">{{ c.cliente[:1]|upper }}</span>
       <div class="min-w-0">
-        <strong class="block">{{ c.cliente }}</strong>
+        <strong class="block"><a class="link-nome" href="/clientes/{{ c.cliente_id }}">{{ c.cliente }}</a></strong>
         <span class="text-texto-2 text-[13px]">desde {{ c.data_inicio|data_br }} · {{ c.periodicidade }}</span>
       </div>
     </div>

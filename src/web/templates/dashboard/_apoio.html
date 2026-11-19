@@ -3,8 +3,9 @@
 {% from "componentes/macros.html" import placa %}
 {% macro din(v) -%}{% if d.ocultar %}R$ ••••{% else %}{{ v|moeda }}{% endif %}{%- endmacro %}
 {% macro dinc(v) -%}{% if d.ocultar %}R$ ••••{% else %}{{ v|moeda_compacta }}{% endif %}{%- endmacro %}
-{% macro nome(t) -%}{% if d.ocultar %}••••••{% else %}{{ t }}{% endif %}{%- endmacro %}
-{% macro plac(t) -%}{% if d.ocultar %}{{ placa("•••••••") }}{% else %}{{ placa(t|placa_br) }}{% endif %}{%- endmacro %}
+{# `href` (opcional) faz do nome ou da placa um link para a ficha; com "ocultar dados" não há link (o destino também revelaria quem é). #}
+{% macro nome(t, href=None) -%}{% if d.ocultar %}••••••{% elif href %}<a class="link-nome" href="{{ href }}">{{ t }}</a>{% else %}{{ t }}{% endif %}{%- endmacro %}
+{% macro plac(t, href=None) -%}{% if d.ocultar %}{{ placa("•••••••") }}{% elif href %}<a class="link-nome" href="{{ href }}">{{ placa(t|placa_br) }}</a>{% else %}{{ placa(t|placa_br) }}{% endif %}{%- endmacro %}
 {# Aviso de aba (ou de bloco) que não carregou: o resto do Dashboard continua funcionando. #}
 {% macro indisponivel(titulo) -%}
 <div class="cartao vazio" role="status">

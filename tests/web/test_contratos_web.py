@@ -161,3 +161,19 @@ def test_aba_vistorias_de_contrato_de_uma_moto_nao_mostra_grupos(cliente, base_c
     html = cliente.get(f"/contratos/{base_contratos.id}?aba=vistorias").text
     assert "(vinculada)" not in html and "veículo principal" not in html
     assert html.count('class="cartao vistoria-resumo"') == 2
+
+
+def test_lista_nome_leva_ao_cliente_placa_ao_veiculo_e_linha_ao_contrato(cliente, base_contratos):
+    entrar(cliente)
+    html = cliente.get("/contratos").text
+    assert f'class="link-nome rc-so-larga" href="/clientes/{base_contratos.cliente["id"]}">Maria &lt;b&gt;Silva&lt;/b&gt;</a>' in html
+    assert f'<a class="link-nome" href="/motos/{base_contratos.moto["id"]}"><span class="placa">BRA-2E19</span></a>' in html
+    # a linha toda abre o contrato pelo botão, que estica sobre ela
+    assert f'<a class="btn link-linha" href="/contratos/{base_contratos.id}"' in html
+
+
+def test_ficha_do_contrato_leva_ao_cliente_e_ao_veiculo(cliente, base_contratos):
+    entrar(cliente)
+    html = cliente.get(f"/contratos/{base_contratos.id}").text
+    assert f'<h1><a class="link-nome" href="/clientes/{base_contratos.cliente["id"]}">Maria &lt;b&gt;Silva&lt;/b&gt;</a></h1>' in html
+    assert f'<a class="link-nome" href="/motos/{base_contratos.moto["id"]}"><span class="placa">BRA-2E19</span></a>' in html

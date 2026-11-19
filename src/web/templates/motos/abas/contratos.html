@@ -5,7 +5,7 @@
 {% call tabela([("Cliente", ""), ("Início", ""), ("Fim", ""), ("Status", ""), ("Valor / período", "num")], "Contratos do veículo", recolhivel=True) %}
   {% for c in a.contratos %}
   <tr data-recolhivel>
-    {% call rc_titulo("font-medium") %}{{ c.cliente }}{% endcall %}
+    {% call rc_titulo("font-medium", href="/clientes/" ~ c.cliente_id, estica=False) %}{{ c.cliente }}{% endcall %}
     <td class="mono" data-rotulo="Início">{{ c.data_inicio|data_br }}</td>
     <td class="mono" data-rotulo="Fim">{{ c.data_encerramento|data_br }}</td>
     <td class="rc-cab" data-rotulo="Status">{{ selo(rotulo[c.status], tom[c.status]) }}</td>

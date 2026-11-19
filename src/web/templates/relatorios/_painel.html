@@ -14,8 +14,8 @@
 {% if d.linhas %}
 {% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Dias em atraso", "num"), ("Valor + encargos", "num")], "Inadimplência", cartoes=True) %}
 {% for l in d.linhas %}<tr>
-<td class="modelo">{{ l.cliente }}</td>
-<td class="k-d k-selo" data-rotulo="Veículo">{% if l.placa %}{{ placa(l.placa|placa_br) }}{% else %}—{% endif %}</td>
+<td class="modelo"><a class="link-nome" href="/clientes/{{ l.cliente_id }}">{{ l.cliente }}</a></td>
+<td class="k-d k-selo" data-rotulo="Veículo">{% if l.placa %}<a class="link-nome" href="/motos/{{ l.moto_id }}">{{ placa(l.placa|placa_br) }}</a>{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ l.vencimento|data_br }}</td>
 <td class="num mono k-d text-perigo" data-rotulo="Dias em atraso">{{ l.dias_atraso }} dia(s)</td>
 <td class="num mono k-larga" data-rotulo="Valor + encargos">{{ l.total_com_encargos|moeda }}</td>
@@ -27,7 +27,7 @@
 {% if aba == "resultado" %}
 {% call tabela([("Veículo", ""), ("Receita recebida", "num"), ("Manutenção", "num"), ("Documentos", "num"), ("Resultado", "num"), ("", "")], "Resultado por veículo", cartoes=True) %}
 {% for r in d.linhas %}<tr>
-<td class="k-larga">{{ placa(r.placa|placa_br) }}</td>
+<td class="k-larga"><a class="link-nome" href="/motos/{{ r.moto_id }}">{{ placa(r.placa|placa_br) }}</a></td>
 <td class="num mono" data-rotulo="Receita recebida">{{ r.receita_recebida|moeda }}</td>
 <td class="num mono k-d" data-rotulo="Manutenção">{{ r.custo_manutencao|moeda }}</td>
 <td class="num mono" data-rotulo="Documentos">{{ r.custo_documentos|moeda }}</td>
@@ -48,7 +48,7 @@
 {% elif aba == "custo" %}
 {% call tabela([("Veículo", ""), ("Modelo", ""), ("Custo de manutenção", "num"), ("Km rodados", "num"), ("Custo / km", "num"), ("", "")], "Custo de manutenção por veículo", cartoes=True) %}
 {% for r in d.linhas %}<tr>
-<td class="k-larga">{{ placa(r.placa|placa_br) }}</td>
+<td class="k-larga"><a class="link-nome" href="/motos/{{ r.moto_id }}">{{ placa(r.placa|placa_br) }}</a></td>
 <td data-rotulo="Modelo">{{ r.modelo }}</td>
 <td class="num mono k-d" data-rotulo="Custo de manutenção">{{ r.custo_manutencao|moeda }}</td>
 <td class="num mono" data-rotulo="Km rodados">{% if r.km_rodados %}{{ r.km_rodados|milhar }} km{% else %}—{% endif %}</td>

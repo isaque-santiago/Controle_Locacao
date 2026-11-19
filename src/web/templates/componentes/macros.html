@@ -156,9 +156,22 @@
 {%- endmacro %}
 
 {# Título da linha recolhível (tabela com recolhivel=True; a <tr> leva data-recolhivel): no celular é o botão que abre/fecha o cartão, com a seta.
-   O dado de destaque do cabeçalho é a <td class="rc-cab" data-rotulo="...">. #}
-{% macro rc_titulo(classe="") -%}
+   O dado de destaque do cabeçalho é a <td class="rc-cab" data-rotulo="...">.
+   `href` (opcional) faz do título um link para a ficha, só em telas largas (um link não pode ficar dentro de botão, então a
+   célula leva o link e o botão com o mesmo texto, e o CSS mostra um por vez). Se a <tr> tiver a classe `linha-link`, o link
+   estica e a linha inteira leva à ficha (no celular o toque continua abrindo o cartão). Com `estica=False` o título é só um link
+   comum (a linha leva a outro destino, pelo botão "Abrir ficha" com a classe `link-linha`). #}
+{% macro rc_titulo(classe="", href=None, estica=True) -%}
+{% if href -%}
+<td class="rc-titulo {{ classe }}"><a class="{{ 'link-linha' if estica else 'link-nome' }} rc-so-larga" href="{{ href }}">{{ caller() }}</a><button type="button" class="recolhe-gatilho rc-so-cel" data-recolher aria-expanded="false">{{ caller() }}{{ icone("chevron", "recolhe-seta") }}</button></td>
+{%- else -%}
 <td class="rc-titulo {{ classe }}"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">{{ caller() }}{{ icone("chevron", "recolhe-seta") }}</button></td>
+{%- endif %}
+{%- endmacro %}
+
+{# Link de nome (cliente, placa, contrato) numa célula comum de tabela ou texto: herda a cor e sublinha ao passar o mouse. #}
+{% macro link_nome(href, rotulo=None) -%}
+<a class="link-nome" href="{{ href }}"{% if rotulo %} aria-label="{{ rotulo }}"{% endif %}>{{ caller() }}</a>
 {%- endmacro %}
 
 {# Abas acessíveis (setas, Home e End funcionam via app.js). itens: lista de (id, rotulo); a primeira abre selecionada. #}

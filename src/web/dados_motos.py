@@ -30,15 +30,17 @@ def _contratos_ativos_por_moto() -> dict[str, dict]:
     return contratos_por_moto(contratos.listar(), contratos.listar_vinculos())
 
 
-def _locatarios_por_moto() -> dict[str, str]:
-    """Nome do cliente do contrato ativo de cada moto."""
+def _locatarios_por_moto(ativos: dict[str, dict] | None = None) -> dict[str, str]:
+    """Nome do cliente do contrato ativo de cada moto (`ativos`: o resultado de `_contratos_ativos_por_moto`, se já tiver)."""
     nomes = {c["id"]: c["nome"] for c in clientes.listar()}
-    return {moto_id: nomes.get(c["cliente_id"], "—") for moto_id, c in _contratos_ativos_por_moto().items()}
+    ativos = _contratos_ativos_por_moto() if ativos is None else ativos
+    return {moto_id: nomes.get(c["cliente_id"], "—") for moto_id, c in ativos.items()}
 
 
 def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, ordem: str = "") -> dict:
     registros = motos.listar()
-    locatarios = _locatarios_por_moto()
+    ativos = _contratos_ativos_por_moto()
+    locatarios = _locatarios_por_moto(ativos)
     filtradas = motos_lista.filtrar_motos(registros, situacao, busca, locatarios)
     campo, decrescente = interpretar(ordem, motos_lista.COLUNAS_ORDENAVEIS.values())
     filtradas = motos_lista.ordenar_motos(filtradas, campo, decrescente, locatarios)
@@ -55,6 +57,7 @@ def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, orde
         {
             "moto": m,
             "locatario": locatarios.get(m["id"]),
+            "cliente_id": ativos[m["id"]]["cliente_id"] if m["id"] in ativos else None,
             "proxima_manutencao": motos_lista.proxima_manutencao(plano_por_moto[m["id"]]),
         }
         for m in pagina_atual
@@ -86,6 +89,7 @@ def carregar_cabecalho(moto: dict) -> dict:
     contrato = _contrato_ativo(moto["id"]) if moto["status"] == "alugada" else None
     return {
         "locatario": _nome_do_cliente(contrato["cliente_id"]) if contrato else None,
+        "cliente_id": contrato["cliente_id"] if contrato else None,
         "desde": contrato["data_inicio"] if contrato else None,
     }
 
@@ -110,6 +114,8 @@ def _aba_resumo(moto: dict, hoje: date) -> dict:
         )
         resumo_contrato = {
             "cliente": _nome_do_cliente(contrato["cliente_id"]),
+            "cliente_id": contrato["cliente_id"],
+            "contrato_id": contrato["id"],
             "data_inicio": contrato["data_inicio"],
             "periodicidade": contrato["periodicidade"],
             "valor_periodo": contrato["valor_periodo"],

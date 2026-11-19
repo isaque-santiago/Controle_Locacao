@@ -31,8 +31,8 @@
   {% call tabela([("Cliente", ""), ("Veículo", ""), ("Atraso", ""), ("A cobrar", "num"), ("Situação", ""), ("Ação", "")], "Contratos com cobrança vencida ou que vence hoje, com encargos") %}
     {% for c in cb.linhas %}
     <tr>
-      <td class="topo font-medium">{{ nome(c.cliente) }}</td>
-      <td data-rotulo="Veículo">{% if c.placa != "—" %}{{ plac(c.placa) }}{% else %}—{% endif %}</td>
+      <td class="topo font-medium">{{ nome(c.cliente, "/clientes/" ~ c.cliente_id) }}</td>
+      <td data-rotulo="Veículo">{% if c.placa != "—" %}{{ plac(c.placa, "/motos/" ~ c.moto_id) }}{% else %}—{% endif %}</td>
       <td class="mono" data-rotulo="Atraso">{% if c.dias_atraso %}{{ c.dias_atraso }} d{% else %}hoje{% endif %}</td>
       <td class="num mono" data-rotulo="A cobrar">{{ din(c.total) }}</td>
       <td data-rotulo="Situação">{% if c.faixa == "inadimplente" %}{{ selo("Inadimplente", "perigo") }}{% elif c.faixa == "em_atraso" %}{{ selo("Em atraso", "atencao") }}{% else %}{{ selo("Vence hoje", "neutro") }}{% endif %}</td>

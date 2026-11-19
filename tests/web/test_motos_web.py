@@ -178,3 +178,11 @@ def test_vinculada_de_contrato_encerrado_volta_a_ficar_sem_locatario(cliente, ba
     base_motos.vinculos.append({"contrato_id": "k0", "moto_id": base_motos.motos[1]["id"]})
     entrar(cliente)
     assert "Factor" not in cliente.get("/motos?q=joana").text
+
+
+def test_lista_placa_e_locatario_levam_as_fichas(cliente, base_motos):
+    entrar(cliente)
+    html = cliente.get("/motos").text
+    assert f'class="link-linha rc-so-larga" href="/motos/{base_motos.motos[0]["id"]}"><span class="placa">' in html
+    assert 'class="linha-link"' in html
+    assert '<a class="link-nome" href="/clientes/c1">Joana &lt;b&gt;Prado&lt;/b&gt;</a>' in html

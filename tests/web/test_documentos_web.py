@@ -63,3 +63,9 @@ def test_documentos_exigem_dono(cliente, base_documentos):
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get("/documentos").status_code == 403
     assert cliente.get(f"/documentos/{E1}/comprovante").status_code == 403
+
+
+def test_placa_leva_a_ficha_do_veiculo(cliente, base_documentos):
+    entrar(cliente)
+    html = cliente.get("/documentos").text
+    assert 'class="link-nome rc-so-larga" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in html

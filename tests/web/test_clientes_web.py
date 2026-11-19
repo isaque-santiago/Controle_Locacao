@@ -166,3 +166,20 @@ def test_lista_de_clientes_oferece_ordenacao(cliente, base_clientes):
     assert 'aria-sort="ascending"' in html and 'id="ord-nome"' in html and 'href="/clientes?ordem=-nome"' in html
     assert 'name="ordem" value="nome"' in html
     assert 'aria-sort="ascending"' not in cliente.get("/clientes?ordem=xpto").text
+
+
+def test_lista_nome_e_placa_levam_as_fichas(cliente, base_clientes):
+    entrar(cliente)
+    html = cliente.get("/clientes").text
+    # o nome é o link que estica a linha (só em telas largas) e a placa leva à ficha do veículo
+    assert f'class="link-linha rc-so-larga" href="/clientes/{base_clientes.id}">Maria &lt;b&gt;Silva&lt;/b&gt;</a>' in html
+    assert 'class="linha-link"' in html
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in html
+
+
+def test_ficha_do_cliente_leva_ao_veiculo_nas_abas_resumo_e_contratos(cliente, base_clientes):
+    entrar(cliente)
+    resumo = cliente.get(f"/clientes/{base_clientes.id}").text
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in resumo
+    contratos = cliente.get(f"/clientes/{base_clientes.id}?aba=contratos").text
+    assert 'class="link-nome rc-so-larga" href="/motos/m1"><span class="placa">BRA-2E19</span>' in contratos

@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, botao, rc_titulo %}
+{% from "componentes/macros.html" import tabela, selo, placa, estado_vazio, paginacao, botao, rc_titulo, link_nome %}
 {% macro cancelar(c) %}{% if c.pode_cancelar %}{{ botao("Cancelar", href="/cobrancas/" ~ c.id ~ "/cancelar", aria="Cancelar a cobrança de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/cancelar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endif %}{% endmacro %}
 {% macro pagar(c) %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ botao("Mensagem", href="/cobrancas/" ~ c.id ~ "/mensagem", aria="Mensagem de cobrança para " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/mensagem" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Pagar", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ cancelar(c) }}</div></td>{% endmacro %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
@@ -6,8 +6,8 @@
 {% if aba == "atrasadas" %}
 {% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Atraso", ""), ("Original", "num"), ("Encargos", "num"), ("Total", "num"), ("Ações", "col-acoes")], "Cobranças atrasadas", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
-{% call rc_titulo("modelo") %}{{ c.cliente or "—" }}<span class="rc-sub rc-so-cel text-perigo">{{ c.encargos.dias_atraso }} dia(s) em atraso</span>{% endcall %}
-<td data-rotulo="Veículo">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+{% call rc_titulo("modelo", href=("/clientes/" ~ c.cliente_id) if c.cliente else None, estica=False) %}{{ c.cliente or "—" }}<span class="rc-sub rc-so-cel text-perigo">{{ c.encargos.dias_atraso }} dia(s) em atraso</span>{% endcall %}
+<td data-rotulo="Veículo">{% if c.placa %}{% call link_nome("/motos/" ~ c.moto_id) %}{{ placa(c.placa|placa_br) }}{% endcall %}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="text-perigo" data-rotulo="Atraso">{{ c.encargos.dias_atraso }} dia(s)</td>
 <td class="num mono" data-rotulo="Original">{{ c.saldo|moeda }}</td>
@@ -19,8 +19,8 @@
 {% elif aba == "pagas" %}
 {% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Pago em", ""), ("Forma", ""), ("Valor", "num")], "Cobranças pagas", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
-{% call rc_titulo("modelo") %}{{ c.cliente or "—" }}{% endcall %}
-<td data-rotulo="Veículo">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+{% call rc_titulo("modelo", href=("/clientes/" ~ c.cliente_id) if c.cliente else None, estica=False) %}{{ c.cliente or "—" }}{% endcall %}
+<td data-rotulo="Veículo">{% if c.placa %}{% call link_nome("/motos/" ~ c.moto_id) %}{{ placa(c.placa|placa_br) }}{% endcall %}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="mono" data-rotulo="Pago em">{% if c.pago_em %}{{ c.pago_em|data_br }}{% else %}—{% endif %}</td>
 <td data-rotulo="Forma">{{ formas_rotulo.get(c.forma, "—") }}</td>
@@ -30,8 +30,8 @@
 {% else %}
 {% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Valor", "num"), ("Ações", "col-acoes")], "Cobranças de hoje" if aba == "hoje" else "Cobranças dos próximos 7 dias", recolhivel=True) %}
 {% for c in d.itens %}<tr data-recolhivel>
-{% call rc_titulo("modelo") %}{{ c.cliente or "—" }}{% if aba == "proximos" and c.numero == 1 %}<span class="sub">1ª parcela</span>{% endif %}{% endcall %}
-<td data-rotulo="Veículo">{% if c.placa %}{{ placa(c.placa|placa_br) }}{% else %}—{% endif %}</td>
+{% call rc_titulo("modelo", href=("/clientes/" ~ c.cliente_id) if c.cliente else None, estica=False) %}{{ c.cliente or "—" }}{% if aba == "proximos" and c.numero == 1 %}<span class="sub">1ª parcela</span>{% endif %}{% endcall %}
+<td data-rotulo="Veículo">{% if c.placa %}{% call link_nome("/motos/" ~ c.moto_id) %}{{ placa(c.placa|placa_br) }}{% endcall %}{% else %}—{% endif %}</td>
 <td class="mono" data-rotulo="Vencimento">{{ c.vencimento|data_br }}</td>
 <td class="num mono rc-cab" data-rotulo="Valor">{{ c.saldo|moeda }}</td>
 {% if aba == "hoje" %}{{ pagar(c) }}{% else %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ cancelar(c) }}</div></td>{% endif %}
