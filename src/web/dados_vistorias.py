@@ -29,7 +29,9 @@ def carregar_lista(tipo, busca, pagina, por_pagina):
         itens.append({
             "vistoria": v,
             "contrato_id": contrato["id"] if contrato else None,
+            "cliente_id": contrato["cliente_id"] if contrato else None,
             "cliente_nome": nomes.get(contrato["cliente_id"], "—") if contrato else "—",
+            "moto_id": moto["id"] if moto else None,
             "placa": moto["placa"] if moto else "",
             "avarias": resumo_avarias(v),
         })
