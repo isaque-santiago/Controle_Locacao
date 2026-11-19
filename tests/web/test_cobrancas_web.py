@@ -37,7 +37,7 @@ def test_proximos_7_dias_marcam_a_primeira_parcela_e_excluem_hoje_e_o_distante(c
     entrar(cliente)
     html = cliente.get("/cobrancas?aba=proximos").text
     assert "10/10/2026" in html and "14/10/2026" in html and "30/10/2026" not in html and "07/10/2026" not in html
-    assert html.count("1ª parcela") == 1
+    assert html.count("1ª parcela") == 2  # a única parcela 1 aparece no link do título (telas largas) e no botão (celular)
 
 
 def test_pagas_mostram_pagamento_forma_e_o_mais_recente_primeiro(cliente, base_cobrancas):
@@ -92,3 +92,11 @@ def test_cobrancas_exigem_dono(cliente, base_cobrancas):
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get("/cobrancas").status_code == 403
     assert cliente.get("/cobrancas/abas/hoje").status_code == 403
+
+
+def test_nome_leva_a_ficha_do_cliente_e_placa_a_do_veiculo(cliente, base_cobrancas):
+    entrar(cliente)
+    for aba in ("hoje", "atrasadas", "proximos", "pagas"):
+        html = cliente.get(f"/cobrancas?aba={aba}").text
+        assert 'class="link-nome rc-so-larga" href="/clientes/cl1">' in html, aba
+        assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in html, aba
