@@ -1171,7 +1171,7 @@ class BaseDividas:
 
     def __init__(self):
         self.linhas = [
-            _linha_divida("d1", "Celta <b>Zero</b>", placa="OID7656"),
+            _linha_divida("d1", "Celta <b>Zero</b>", placa="OID7656", moto_id="m1"),
             _linha_divida("d2", "Nilson", tipo="moto_fiado", saldo="7600.00", situacao="atrasada", parcelas_atrasadas=2,
                           proxima_vencimento=date(2026, 10, 10), saldo_confirmado=True),
             _linha_divida("d3", "Etios", tipo="emprestimo", saldo="0.00", situacao="quitada", proxima_vencimento=None,
