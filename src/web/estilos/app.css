@@ -702,8 +702,8 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 /* Nome que leva à ficha (cliente, veículo, contrato). Em telas largas o link do título (.link-linha) estica sobre a linha
    (<tr class="linha-link">) e ela inteira abre a ficha; botões e outros links da linha ficam por cima e seguem funcionando.
    No celular o título é o botão que abre o cartão (macro `rc_titulo`), então o link só existe a partir de 720px. */
-.link-linha, .link-nome {color: inherit; text-decoration: none;}
-.link-linha:hover, .link-nome:hover {text-decoration: underline;}
+.link-linha:not(.btn), .link-nome {color: inherit; text-decoration: none;}
+.link-linha:not(.btn):hover, .link-nome:hover {text-decoration: underline;}
 @media (max-width: 719px) {
   .lista-cartoes .dados tr[data-recolhivel] .rc-so-larga {display: none;}
 }
@@ -712,7 +712,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .linha-link .link-linha::after {content: ""; position: absolute; inset: 0; z-index: 0;}
   .linha-link a:not(.link-linha), .linha-link button {position: relative; z-index: 1;}
   .linha-link:has(.link-linha:focus-visible) {outline: 2px solid var(--foco); outline-offset: -2px;}
-  .linha-link .link-linha:focus-visible {outline: none;}
+  .linha-link .link-linha:focus-visible:not(.btn) {outline: none;}
 }
 
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
