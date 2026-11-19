@@ -866,3 +866,11 @@ def test_lista_placa_leva_a_ficha_do_veiculo(cliente):
     entrar(cliente)
     html = cliente.get("/dividas").text
     assert '<a class="link-nome" href="/motos/m1"><span class="placa">OID-7656</span></a>' in html
+
+
+def test_ficha_da_divida_leva_ao_veiculo(cliente):
+    from tests.web.conftest import DIVIDA_ID
+
+    entrar(cliente)
+    html = cliente.get(f"/dividas/{DIVIDA_ID}").text
+    assert '<a class="link-nome" href="/motos/m1"><span class="placa">OID-7656</span></a>' in html
