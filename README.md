@@ -2,7 +2,7 @@
 
 Sistema web para controlar locação, manutenção, documentação e vistorias de uma frota de veículos de aluguel (hoje, motos).
 
-> **Nomes (16/11/2026).** A marca é **LA Locadora**. Nas telas e mensagens o termo é «veículo»; por dentro (tabelas `motos`, rotas `/motos`, colunas `moto_id`, funções) o nome técnico continua «moto», para não mexer no banco em produção. As mensagens de regra de negócio que vêm do banco são ajustadas na exibição (`src/domain/mensagens_banco.py`). O contrato em PDF mantém «motocicleta» e a razão social da empresa, pois é texto jurídico.
+> **Nomes (16/11/2026).** A marca é **LA Locadora**. Nas telas e mensagens o termo é «veículo»; por dentro (tabelas `motos`, rotas `/motos`, colunas `moto_id`, funções) o nome técnico continua «moto», para não mexer no banco em produção. As mensagens de regra de negócio que vêm do banco são ajustadas na exibição (`src/domain/mensagens_banco.py`). O contrato em PDF também diz «veículo» (a frota tem motos e carros; o quadro do veículo mostra «Motocicleta» ou «Automóvel» conforme o tipo); só a razão social «L.A ALUGUEL DE MOTOS» continua como está.
 
 Ver plano completo em [Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md).
 
