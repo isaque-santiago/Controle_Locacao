@@ -84,3 +84,10 @@ def test_manutencao_exige_dono(cliente, base_manutencao):
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     assert cliente.get("/manutencao").status_code == 403
     assert cliente.get("/manutencao/abas/alertas").status_code == 403
+
+
+def test_placa_leva_a_ficha_do_veiculo_nos_alertas_e_no_historico(cliente, base_manutencao):
+    entrar(cliente)
+    for url in ("/manutencao", "/manutencao?aba=historico"):
+        html = cliente.get(url).text
+        assert 'class="link-nome rc-so-larga" href="/motos/m1"><span class="placa">BRA-2E19</span>' in html, url
