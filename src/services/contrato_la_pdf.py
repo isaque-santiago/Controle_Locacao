@@ -14,8 +14,8 @@ from src.domain.contrato_la import Bloco
 
 PASTA_IMAGENS = Path(__file__).resolve().parents[2] / "static" / "contrato"
 EMPRESA = "L.A ALUGUEL DE MOTOS"
-SUBTITULO_PROMESSA = "Locação de motocicletas com promessa de compra e venda"
-SUBTITULO_LOCACAO = "Locação de motocicletas"
+SUBTITULO_PROMESSA = "Locação de veículos com promessa de compra e venda"
+SUBTITULO_LOCACAO = "Locação de veículos"
 
 _MARGEM = 20
 _TOPO_CORPO = 38
