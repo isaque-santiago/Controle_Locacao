@@ -14,43 +14,45 @@
 ## 1. Conceito
 
 O sistema é uma ferramenta de trabalho operacional (não uma landing page): o dono da frota abre para decisão rápida
-— quem está atrasado, qual moto precisa de manutenção, o que vence essa semana. A identidade visual nasce do
-universo de oficina/moto/estrada, evitando os padrões genéricos de dashboard SaaS (gradientes, sombras pesadas, paleta cream+terracota ou preto+neon).
+— quem está atrasado, qual moto precisa de manutenção, o que vence essa semana.
 
-Conceito central: **painel de instrumentos**. KPIs como leitura tipo odômetro (números grandes em mono), barra de
-ocupação da frota como medidor de combustível, selos de status circulares tracejados como adesivo de
-vistoria/licenciamento.
+**Atualização (nov/2026): visual de SaaS moderno**, alinhado ao `cell-pag` (sistema de pagamentos de celulares) e às
+referências Linear, Vercel e Stripe: interface calma, superfícies brancas sobre fundo cinza-claro, linhas finas,
+sombras suaves, cor só para dar significado (status) e tabelas limpas com números alinhados à direita. O amarelo
+da marca segue como acento (símbolo LA, item ativo do menu, abas e estados de atenção).
+
+Elementos herdados do conceito original de "painel de instrumentos" que continuam: placas em mono sobre fundo
+escuro, barra de ocupação da frota em segmentos e selos de status circulares tracejados nos alertas.
 
 ## 2. Paleta de cores
 
-| Token | Hex | Uso |
-|---|---|---|
-| `grafite-900` | `#1E2227` | Sidebar, texto principal, elementos "selecionados/ativos" |
-| `grafite-700` | `#2B3036` | Avatar/variações escuras |
-| `grafite-500` | `#585F66` | Texto secundário, ícones neutros |
-| `grafite-300` | `#9AA0A6` | Texto terciário, placeholders |
-| `neblina-50` | `#EEF0F0` | Fundo da página (modo claro) |
-| `neblina-0` | `#FAFAF9` | Fundo de cards/painéis |
-| `amarelo-farol` | `#F2B705` | Acento da marca **e** status "próxima/a vencer" — nunca usado em botões de ação (fica reservado para sinalizar atenção) |
-| `verde-ok` | `#2F9E6E` | Status "em dia / disponível / paga" |
-| `vermelho-freio` | `#D64545` | Status "vencida / atrasada / vencido" |
-| `cinza-inativo` | `#9AA0A6` | Status "inativa / encerrado" |
-| `linha` | `rgba(30,34,39,0.12)` | Bordas hairline (cards, tabelas, divisores) |
+Os valores vivem como variáveis CSS em `src/web/estilos/app.css` (`:root`, e o modo escuro redefine só os tokens).
 
-Regra: a cor de status é a única que "grita" na interface. Tudo em volta fica neutro (grafite/neblina). Ainda não
-existe modo escuro definido — pendente (ver seção 6).
+| Token | Claro | Uso |
+|---|---|---|
+| `--fundo` | `#F6F7F9` | Fundo da página |
+| `--superficie` | `#FFFFFF` | Cartões, tabelas, campos |
+| `--superficie-hover` | `#F3F4F6` | Hover e cabeçalho de tabela |
+| `--texto` / `--texto-2` / `--texto-3` | `#111827` / `#4B5563` / `#6B7280` | Texto principal, de apoio e rótulos |
+| `--linha` / `--linha-forte` | `#E5E7EB` / `#D1D5DB` | Bordas finas e contornos |
+| `--btn` | `#111827` | Ação primária (grafite sólido) |
+| `--marca` | `#F2B705` | Acento da marca; no escuro também o botão primário |
+| `--sucesso` / `--alerta` / `--perigo` / `--info` | `#2F9E6E` / `#F2B705` / `#D64545` / `#3F6E9C` | Só situação (em dia, a vencer, atrasado, informação) |
+
+Sombras: `--sombra-1` (cartões), `--sombra-2` (hover), `--sombra-menu` (menus e popovers), `--sombra-modal`.
+Raios: 6 / 8 / 10 / 14 px (`--raio-sm`, `-campo`, `-md`, `-lg`).
+
+Regra: a cor de status é a única que "grita". Tudo em volta fica neutro. O modo escuro (`#0B0D10` de fundo,
+superfícies `#14171C`) existe e segue o sistema ou o botão sol/lua.
 
 ## 3. Tipografia
 
-Duas famílias com motivo funcional, carregadas via Google Fonts:
+- **DM Sans** (variável 100–1000, a mesma do `cell-pag`) — títulos, texto, tabelas e formulários; números com
+  `tabular-nums` (classe `.mono`). Empacotada em `static/fontes/` (licença OFL em `DM-Sans-OFL.txt`).
+- **IBM Plex Mono** (500/600) — apenas placas.
 
-- **Barlow Semi Condensed** (600/700) — títulos, rótulos de seção. Remete a sinalização viária/placas.
-- **IBM Plex Sans** (400/500/600) — texto corrido, tabelas, formulários.
-- **IBM Plex Mono** (500/600) — **apenas leituras numéricas** (km, R$, datas, placas). Nunca usado em rótulos ou
-  texto decorativo — é funcional, como um odômetro real.
-
-Nunca usar caixa alta em rótulos (exceto os pequenos selos de status, que imitam adesivos reais). Nunca separar
-itens com "·" decorativo fora de listas realmente compactas.
+Títulos com peso 650 e espaçamento levemente negativo. Caixa alta só em rótulos pequenos (grupos do menu, rótulos
+de cartão no celular).
 
 ## 4. Componentes padrão
 
