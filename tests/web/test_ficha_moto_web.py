@@ -29,7 +29,7 @@ def test_cabecalho_da_ficha_mostra_placa_situacao_e_locatario(cliente):
     assert "<title>Veículo ABC-1D01 · LA Locadora</title>" in html
     assert len(re.findall(r"<h1[\s>]", html)) == 1
     assert "Honda CG 101, 2023, vermelha." in html
-    assert "Locada para Joana &lt;b&gt;Prado&lt;/b&gt; desde 01/07/2026." in html
+    assert 'Locada para <a class="link-nome" href="/clientes/c1">Joana &lt;b&gt;Prado&lt;/b&gt;</a> desde 01/07/2026.' in html
     assert "1.000" in html and "2023 / 2023" in html
     assert 'href="/motos"' in html and "Voltar para veículos" in html
 
@@ -148,6 +148,13 @@ def test_ficha_da_moto_vinculada_mostra_locatario_e_contrato(cliente, base_motos
     base_motos.vinculos.append({"contrato_id": "k1", "moto_id": SEM_CONTRATO})
     entrar(cliente)
     cabecalho = cliente.get(f"/motos/{SEM_CONTRATO}").text
-    assert "Locada para Joana &lt;b&gt;Prado&lt;/b&gt; desde 01/07/2026." in cabecalho
+    assert 'Locada para <a class="link-nome" href="/clientes/c1">Joana &lt;b&gt;Prado&lt;/b&gt;</a> desde 01/07/2026.' in cabecalho
     contratos = cliente.get(f"/motos/{SEM_CONTRATO}/abas/contratos", headers=PAINEL).text
     assert "01/07/2026" in contratos and "01/01/2026" not in contratos
+
+
+def test_resumo_leva_ao_cliente_e_ao_contrato_ativo(cliente):
+    entrar(cliente)
+    html = cliente.get(f"/motos/{MOTO}").text
+    assert '<a class="link-nome" href="/clientes/c1">Joana &lt;b&gt;Prado&lt;/b&gt;</a>' in html
+    assert '<a href="/contratos/k1" aria-label="Ver o contrato de Joana &lt;b&gt;Prado&lt;/b&gt;">Ver contrato</a>' in html
