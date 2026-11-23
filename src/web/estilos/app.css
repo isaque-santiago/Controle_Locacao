@@ -151,6 +151,12 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .icone-veiculo {width: 18px; height: 18px; margin-right: 6px; vertical-align: -3px; color: var(--texto-2);}
 .ficha-titulo .icone-veiculo {width: 26px; height: 26px; margin-right: 0;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
+.topo-titulo {display: flex; align-items: baseline; gap: var(--e2); min-width: 0; margin-right: auto; font-size: 15px; color: var(--texto-2);}
+.topo-titulo strong {font-weight: 600; color: var(--texto); white-space: nowrap;}
+.topo-sep {color: var(--texto-3);}
+.topo-sub {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.topo-atalhos {display: flex; align-items: center; gap: var(--e2);}
+.topo-atalhos .btn {min-height: 36px; font-size: 13px;}
 .topo-desktop {position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: flex-end; gap: var(--e2); height: 60px; padding: 0 var(--pad); background: var(--lateral-fundo); border-bottom: 1px solid var(--lateral-linha);}
 /* Filete da marca sob a barra superior: o amarelo como detalhe de identidade */
 .topo-desktop::after, .topo-movel::after {content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, var(--marca) 0, var(--marca-a14) 38%, transparent 70%); pointer-events: none;}
@@ -326,8 +332,8 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .quilometragem-mais[open] > summary {margin-bottom: var(--e1, 4px);}
 .quilometragem-mais .quilometragem-item:first-child {padding-top: var(--e2); border-top: 1px solid var(--linha-sutil);}
 /* Selo: sempre uma linha só e nunca estoura o contêiner. Se o texto não couber, termina em reticências (o title do selo traz o texto completo). */
-.selo {display: inline-block; max-width: 100%; box-sizing: border-box; padding: 1px 10px 1px 8px; min-height: 26px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 99px; font-size: 12.5px; font-weight: 500; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;}
-.selo::before {content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: currentColor; vertical-align: middle; position: relative; top: -1px;}
+.selo {display: inline-block; max-width: 100%; box-sizing: border-box; padding: 2px 12px 2px 10px; min-height: 28px; border: 1px solid color-mix(in srgb, currentColor 32%, transparent); border-radius: 99px; font-size: 13px; font-weight: 600; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;}
+.selo::before {content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background: var(--selo-ponto, currentColor); box-shadow: 0 0 0 3px color-mix(in srgb, var(--selo-ponto, currentColor) 22%, transparent); vertical-align: middle; position: relative; top: -1px;}
 /* Grupo de selos (ou placa + selos) na mesma célula. Cabe em uma linha até o teto de 24rem: a tabela dimensiona a coluna para o conteúdo (width: max-content) e, como o teto é fixo, mais selos nunca espremem as outras colunas. O que passa da primeira linha é escondido pelo app.js (.selos-oculto) atrás de um botão "+N" (.selos-mais) que abre e fecha o grupo (.aberto), e nesse caso os selos quebram de linha. Sem JS, os selos que não cabem descem inteiros. */
 .selos {display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; width: max-content; max-width: 24rem; min-width: 0;}
 .selos > .placa {flex: none;}
@@ -337,11 +343,13 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .selos-mais:hover {filter: brightness(1.25);}
 .selos-mais:focus-visible {outline: 2px solid var(--marca); outline-offset: 2px;}
 .selos-linha {display: inline-flex; vertical-align: middle; margin-left: 4px;}
-.selo.ok {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
-.selo.atencao {background: var(--alerta-fundo); color: var(--alerta-texto);}
-.selo.perigo {background: var(--perigo-fundo); color: var(--perigo-texto);}
-.selo.info {background: var(--info-fundo); color: var(--info-texto);}
-.selo.neutro {background: var(--neutro-fundo); color: var(--neutro-texto);}
+.selo.ok {--selo-ponto: var(--sucesso); background: var(--sucesso-fundo); color: var(--sucesso-texto);}
+.selo.atencao {--selo-ponto: var(--alerta); background: var(--alerta-fundo); color: var(--alerta-texto);}
+.selo.perigo {--selo-ponto: var(--perigo); background: var(--perigo-fundo); color: var(--perigo-texto);}
+.selo.info {--selo-ponto: var(--info); background: var(--info-fundo); color: var(--info-texto);}
+.selo.neutro {--selo-ponto: var(--neutro); background: var(--neutro-fundo); color: var(--neutro-texto);}
+.sem-dado-grupo {margin: 0; font-size: 13px; color: var(--texto-3);}
+.sem-dado {color: var(--texto-3); opacity: .7; font-weight: 400;}
 .placa {display: inline-block; white-space: nowrap; padding: 3px 9px; border-radius: var(--raio-sm); background: var(--chip-fundo); color: var(--chip-texto); font: 600 13.5px/1.3 var(--fonte-mono); letter-spacing: .06em;}
 
 /* Medidor de ocupação: 24 segmentos, um por moto */
@@ -720,6 +728,14 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .linha-link:has(.link-linha:focus-visible) {outline: 2px solid var(--foco); outline-offset: -2px;}
   .linha-link .link-linha:focus-visible:not(.btn) {outline: none;}
 }
+
+/* Nome longo na tabela: no máximo duas linhas, com reticências (o texto completo continua na ficha) */
+.dados td.rc-titulo {max-width: 22rem;}
+.dados td.rc-titulo > a.rc-so-larga {display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;}
+
+/* Traço amarelo de seção (o mesmo dos grupos da ficha do veículo) nos cartões das fichas */
+#painel-aba .cartao > h2, #painel-aba .cartao-cab h2 {display: flex; align-items: center; gap: var(--e2);}
+#painel-aba .cartao > h2::before, #painel-aba .cartao-cab h2::before {content: ""; flex: none; width: 3px; height: 16px; border-radius: var(--raio-pill); background: var(--marca);}
 
 /* "Abrir ficha" só existe no cartão do celular (a linha inteira já é o link em telas largas): a regra do cartão recolhível, mais específica, o mostra de volta */
 .dados td.c-acao-cel {display: none;}
