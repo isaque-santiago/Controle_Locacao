@@ -1,8 +1,7 @@
 """Contraste mínimo de 4,5:1 (WCAG 1.4.3) dos pares texto/fundo definidos pelos tokens do design system.
 
-Lê as variáveis CSS de src/web/estilos/app.css (bloco `:root` = tema claro; `:root[data-tema="escuro"]`
-sobrepõe o claro) e confere
-os pares que o app realmente usa. A auditoria no navegador (axe-core, Etapa 9) cobre o que é
+Lê as variáveis CSS de src/web/estilos/app.css (bloco `:root`: cada cor é `light-dark(claro, escuro)`)
+e confere os pares que o app realmente usa. A auditoria no navegador (axe-core, Etapa 9) cobre o que é
 renderizado; este teste pega a regressão de token antes de abrir o navegador."""
 
 import re
@@ -18,12 +17,42 @@ _RGBA = re.compile(r"^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\
 MINIMO = 4.5
 
 
-def _tokens(seletor: str) -> dict[str, str]:
-    """Variáveis do primeiro bloco que começa em `seletor {`."""
+def _argumentos(texto: str) -> list[str]:
+    """Divide os argumentos de nível zero de uma função CSS (`a, rgba(1,2,3,.4)` -> 2 itens)."""
+    itens, fundo, atual = [], 0, ""
+    for ch in texto:
+        if ch == "(":
+            fundo += 1
+        elif ch == ")":
+            fundo -= 1
+        if ch == "," and fundo == 0:
+            itens.append(atual.strip())
+            atual = ""
+        else:
+            atual += ch
+    itens.append(atual.strip())
+    return itens
+
+
+def _resolver(valor: str, bruto: dict[str, str], escuro: bool) -> str:
+    """Resolve `light-dark(claro, escuro)` e `var(--x)` de um valor, para o tema pedido."""
+    valor = valor.strip()
+    if valor.startswith("light-dark(") and valor.endswith(")"):
+        claro, noite = _argumentos(valor[len("light-dark(") : -1])
+        return _resolver(noite if escuro else claro, bruto, escuro)
+    m = re.fullmatch(r"var\(--([a-z0-9-]+)\)", valor)
+    if m:
+        return _resolver(bruto[m.group(1)], bruto, escuro)
+    return valor
+
+
+def _tokens(tema: str) -> dict[str, str]:
+    """Tokens do bloco `:root` (cada cor é definida uma vez, como light-dark(claro, escuro)) já resolvidos para o tema."""
     texto = CSS.read_text(encoding="utf-8")
-    inicio = texto.index(seletor + " {")
-    bloco = texto[inicio : texto.index("}", inicio)]
-    return {nome: valor.strip() for nome, valor in _VAR.findall(bloco)}
+    inicio = texto.index(":root {")
+    bloco = texto[inicio : texto.index("\n}", inicio)]
+    bruto = {nome: valor.strip() for nome, valor in _VAR.findall(bloco)}
+    return {nome: _resolver(valor, bruto, tema == "escuro") for nome, valor in bruto.items()}
 
 
 def _cor(valor: str) -> tuple[float, float, float, float]:
@@ -58,10 +87,7 @@ def contraste(texto: tuple, fundo: tuple) -> float:
 
 @pytest.fixture(scope="module", params=["claro", "escuro"])
 def tema(request):
-    tokens = _tokens(":root")
-    if request.param == "escuro":
-        tokens = {**tokens, **_tokens(':root[data-tema="escuro"]')}
-    return request.param, tokens
+    return request.param, _tokens(request.param)
 
 
 _SUPERFICIES = ("fundo", "superficie", "superficie-elevada")

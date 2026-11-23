@@ -31,89 +31,73 @@
 }
 
 @layer base {
+/* Tokens de cor: cada um é definido UMA vez só, como light-dark(claro, escuro).
+   O tema vem de color-scheme: sem data-tema segue o sistema; data-tema="claro"/"escuro" (botão de tema) força um dos lados. */
 :root {
-  --marca: #F2B705; --marca-hover: #FFC933; --grafite: #111827; --grafite-700: #1F2937;
-  --fundo: #F6F7F9; --superficie: #FFFFFF; --superficie-elevada: #FFFFFF; --superficie-hover: #F3F4F6;
-  --linha: #E5E7EB; --linha-sutil: #F0F1F3; --linha-forte: #D1D5DB;
-  --borda-campo: #8B929C; /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
-  --texto: #111827; --texto-2: #4B5563; --texto-3: #6B7280; --texto-invertido: #FFFFFF;
-  --sucesso: #2F9E6E; --sucesso-texto: #1B6F4D; --sucesso-fundo: rgba(47,158,110,.12);
-  --alerta: #F2B705;  --alerta-texto: #7A5A00;  --alerta-fundo: rgba(242,183,5,.18);
-  --perigo: #D64545;  --perigo-texto: #B83232;  --perigo-fundo: rgba(214,69,69,.10);
-  --info: #3F6E9C;    --info-texto: #2F5F8A;    --info-fundo: rgba(63,110,156,.12);
-  --neutro: #9CA3AF;  --neutro-texto: #4B5563;  --neutro-fundo: #F3F4F6;
-  --btn: #111827; --btn-hover: #1F2937; --btn-texto: #FFFFFF;
-  --foco: #B88A00; --foco-halo: rgba(184,138,0,.22);
-  --lateral-fundo: #FFFFFF; --lateral-texto: #4B5563; --lateral-ativo: #F3F4F6;
-  --lateral-forte: #111827; --lateral-sub: #6B7280; --lateral-linha: #E5E7EB; --lateral-avatar: #EEF0F3;
-  --chip-fundo: #111827; --chip-texto: #FFFFFF;
-  --seg-cheio: #111827; --seg-vazio: #E5E7EB;
-  --sombra-modal: 0 24px 60px rgba(17,24,39,.28), 0 0 0 1px rgba(17,24,39,.06);
-  --sombra-1: 0 1px 2px rgba(17,24,39,.05); --sombra-2: 0 4px 14px rgba(17,24,39,.08); --sombra-menu: 0 10px 30px rgba(17,24,39,.14), 0 0 0 1px rgba(17,24,39,.05);
+  color-scheme: light dark;
+  --marca: var(--marca-500); --marca-hover: var(--marca-400); --grafite: #111827; --grafite-700: #1F2937;
+  /* Escalas de tons (iguais nos dois temas): a marca e as quatro cores de status, do mais claro (50) ao mais escuro (900).
+     500 é a cor base; 700 é o tom de texto no claro; 300 é o tom de texto no escuro; 950 é o fundo tingido no escuro. */
+  --marca-50: #FFF9E5; --marca-100: #FFF0BF; --marca-200: #FFE285; --marca-300: #FFD24D; --marca-400: #FFC933; --marca-500: #F2B705; --marca-600: #C99400; --marca-700: #9C7000; --marca-800: #6E4F00; --marca-900: #453200;
+  --sucesso-50: #F0F9F5; --sucesso-100: #E1F3EA; --sucesso-200: #A6E6C8; --sucesso-300: #5FD3A0; --sucesso-400: #3DB886; --sucesso-500: #2F9E6E; --sucesso-600: #25805A; --sucesso-700: #1B6F4D; --sucesso-800: #155A3E; --sucesso-900: #0F3F2B; --sucesso-950: #192F2B;
+  --alerta-50: #FFF9E5; --alerta-100: #FEF1C4; --alerta-200: #FDE48B; --alerta-300: #F2C94C; --alerta-400: #F5BE1F; --alerta-500: #F2B705; --alerta-600: #B88A00; --alerta-700: #7A5A00; --alerta-800: #5C4300; --alerta-900: #3D2D00; --alerta-950: #383118;
+  --perigo-50: #FEF4F4; --perigo-100: #FBE9E9; --perigo-200: #F8C3C3; --perigo-300: #FF8A8A; --perigo-400: #EB6464; --perigo-500: #D64545; --perigo-600: #C53D3D; --perigo-700: #B83232; --perigo-800: #8B2D2D; --perigo-900: #651919; --perigo-950: #371F23;
+  --info-50: #F0F5FA; --info-100: #E3ECF5; --info-200: #BCD3E8; --info-300: #8DB7E0; --info-400: #6296C8; --info-500: #3F6E9C; --info-600: #3A6794; --info-700: #2F5F8A; --info-800: #244A6D; --info-900: #19344D; --info-950: #1E2A38;
+  /* Faixas de atraso (do amarelo ao vinho) e véus translúcidos usados por cima de fundos escuros */
+  --faixa-1: var(--alerta-500); --faixa-2: #E37836; --faixa-3: var(--perigo-500); --faixa-4: var(--perigo-800);
+  --veu: rgba(21,24,28,.55);
+  --branco-07: rgba(255,255,255,.07); --branco-10: rgba(255,255,255,.10); --branco-70: rgba(255,255,255,.7);
+  --marca-a10: rgba(242,183,5,.10); --marca-a14: rgba(242,183,5,.14);
+  --fundo: light-dark(#F6F7F9, #0B0D10); --superficie: light-dark(#FFFFFF, #14171C); --superficie-elevada: light-dark(#FFFFFF, #1A1E24); --superficie-hover: light-dark(#F3F4F6, #20252C);
+  --linha: light-dark(#E5E7EB, #262B33); --linha-sutil: light-dark(#F0F1F3, #1D2128); --linha-forte: light-dark(#D1D5DB, #3A414C);
+  --borda-campo: light-dark(#8B929C, #7C858D); /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
+  --texto: light-dark(#111827, #ECEEEE); --texto-2: light-dark(#4B5563, #AEB4BA); --texto-3: light-dark(#6B7280, #9BA2A9); --texto-invertido: light-dark(#FFFFFF, #1E2227);
+  --sucesso: var(--sucesso-500); --sucesso-texto: light-dark(var(--sucesso-700), var(--sucesso-300)); --sucesso-fundo: light-dark(var(--sucesso-100), var(--sucesso-950));
+  --alerta: var(--alerta-500); --alerta-texto: light-dark(var(--alerta-700), var(--alerta-300)); --alerta-fundo: light-dark(var(--alerta-100), var(--alerta-950));
+  --perigo: var(--perigo-500); --perigo-texto: light-dark(var(--perigo-700), var(--perigo-300)); --perigo-fundo: light-dark(var(--perigo-100), var(--perigo-950)); --perigo-borda: light-dark(#DE9EA0, #75373B);
+  --info: var(--info-500); --info-texto: light-dark(var(--info-700), var(--info-300)); --info-fundo: light-dark(var(--info-100), var(--info-950));
+  --neutro: #9CA3AF;  --neutro-texto: light-dark(#4B5563, #C0C5CA);  --neutro-fundo: light-dark(#F3F4F6, #23262B);
+  --btn: light-dark(var(--grafite), var(--marca-500)); --btn-hover: light-dark(var(--grafite-700), var(--marca-400)); --btn-texto: light-dark(#FFFFFF, #1E2227);
+  --foco: light-dark(var(--alerta-600), var(--marca-500)); --foco-halo: light-dark(rgba(184,138,0,.22), rgba(242,183,5,.25));
+  --lateral-fundo: light-dark(#FFFFFF, #0F1216); --lateral-texto: light-dark(#4B5563, #B4BAC5); --lateral-ativo: light-dark(#F3F4F6, #1D2128);
+  --lateral-forte: light-dark(#111827, #FFFFFF); --lateral-sub: light-dark(#6B7280, #9AA0A6); --lateral-linha: light-dark(#E5E7EB, #262B33); --lateral-avatar: light-dark(#EEF0F3, var(--grafite-700));
+  --chip-fundo: light-dark(#111827, #ECEEEE); --chip-texto: light-dark(#FFFFFF, #1E2227);
+  --seg-cheio: light-dark(var(--grafite), var(--marca-500)); --seg-vazio: light-dark(#E5E7EB, rgba(255,255,255,.12));
+  /* Sombras em duas camadas: uma curta e nítida (contato) e uma longa e suave (ambiente), mais o anel de 1 px nos elevados. */
+  --sombra-cor-a: light-dark(rgba(17,24,39,.07), rgba(0,0,0,.45)); --sombra-cor-b: light-dark(rgba(17,24,39,.07), rgba(0,0,0,.35));
+  --sombra-cor-c: light-dark(rgba(17,24,39,.16), rgba(0,0,0,.55)); --sombra-anel: light-dark(rgba(17,24,39,.06), rgba(255,255,255,.07));
+  --sombra-1: 0 1px 2px var(--sombra-cor-a), 0 2px 8px -2px var(--sombra-cor-b);
+  --sombra-2: 0 2px 4px var(--sombra-cor-a), 0 10px 24px -6px var(--sombra-cor-c);
+  --sombra-hover: 0 2px 4px var(--sombra-cor-a), 0 12px 24px -10px var(--sombra-cor-c);
+  --sombra-menu: 0 4px 8px var(--sombra-cor-a), 0 16px 36px -8px var(--sombra-cor-c), 0 0 0 1px var(--sombra-anel);
+  --sombra-modal: 0 8px 16px var(--sombra-cor-a), 0 32px 72px -12px var(--sombra-cor-c), 0 0 0 1px var(--sombra-anel);
+  --realce: inset 0 1px 0 rgba(255,255,255,.14); /* filete de luz no topo dos botões cheios */
+  /* Fundos em camadas: fundo da página (com um brilho da marca no topo), cartão e elevado (menus, diálogos, campos). */
+  --fundo-topo: light-dark(#FBF7E8, #17150C);
+  /* Vidro fosco (barras fixas): fundo translúcido sobre blur; sem backdrop-filter o fundo fica sólido (veja @supports adiante). */
+  --vidro: light-dark(rgba(255,255,255,.82), rgba(15,18,22,.8)); --vidro-borda: light-dark(rgba(17,24,39,.08), rgba(255,255,255,.08));
+  --cabecalho-tabela: light-dark(#F7F8FA, #1A1E24);
 
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 40px;
   --alvo: 44px;
   --pad: clamp(16px, 4vw, 32px);
-  --raio-sm: 6px; --raio-campo: 8px; --raio-md: 10px; --raio-lg: 14px; --raio-pill: 999px;
+  --raio-sm: 6px; --raio-campo: 10px; --raio-md: 12px; --raio-lg: 16px; --raio-pill: 999px; /* campos e botões 10, cartões 16 */
   --fonte-titulo: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --fonte-ui: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --fonte-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
   --fonte-num: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --lateral-larg: 232px;
   --barra-inferior: 64px;
-  color-scheme: light;
 }
-
-/* Modo escuro: só redefine tokens. Automático pelo sistema, ou forçado pelo botão. */
-:root[data-tema="escuro"] {
-  --fundo: #0B0D10; --superficie: #14171C; --superficie-elevada: #1A1E24; --superficie-hover: #20252C;
-  --linha: #262B33; --linha-sutil: #1D2128; --linha-forte: #3A414C;
-  --borda-campo: #7C858D;
-  --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
-  --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
-  --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
-  --perigo-texto: #FF8A8A; --perigo-fundo: rgba(214,69,69,.18);
-  --info-texto: #8DB7E0; --info-fundo: rgba(63,110,156,.22);
-  --neutro-texto: #C0C5CA; --neutro-fundo: rgba(255,255,255,.08);
-  --btn: #F2B705; --btn-hover: #FFC933; --btn-texto: #1E2227;
-  --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
-  --lateral-fundo: #0F1216; --lateral-texto: #B4BAC5; --lateral-ativo: #1D2128;
-  --lateral-forte: #fff; --lateral-sub: #9AA0A6; --lateral-linha: #262B33; --lateral-avatar: var(--grafite-700);
-  --chip-fundo: #ECEEEE; --chip-texto: #1E2227;
-  --seg-cheio: #F2B705; --seg-vazio: rgba(255,255,255,.12);
-  --sombra-1: 0 1px 2px rgba(0,0,0,.4); --sombra-2: 0 4px 14px rgba(0,0,0,.45); --sombra-menu: 0 10px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
-  --sombra-modal: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
-  color-scheme: dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]) {
-    --fundo: #0B0D10; --superficie: #14171C; --superficie-elevada: #1A1E24; --superficie-hover: #20252C;
-    --linha: #262B33; --linha-sutil: #1D2128; --linha-forte: #3A414C;
-    --borda-campo: #7C858D;
-    --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
-    --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
-    --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
-    --perigo-texto: #FF8A8A; --perigo-fundo: rgba(214,69,69,.18);
-    --info-texto: #8DB7E0; --info-fundo: rgba(63,110,156,.22);
-    --neutro-texto: #C0C5CA; --neutro-fundo: rgba(255,255,255,.08);
-    --btn: #F2B705; --btn-hover: #FFC933; --btn-texto: #1E2227;
-    --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
-    --lateral-fundo: #0F1216; --lateral-texto: #B4BAC5; --lateral-ativo: #1D2128;
-  --lateral-forte: #fff; --lateral-sub: #9AA0A6; --lateral-linha: #262B33; --lateral-avatar: var(--grafite-700);
-  --chip-fundo: #ECEEEE; --chip-texto: #1E2227;
-    --seg-cheio: #F2B705; --seg-vazio: rgba(255,255,255,.12);
-    --sombra-1: 0 1px 2px rgba(0,0,0,.4); --sombra-2: 0 4px 14px rgba(0,0,0,.45); --sombra-menu: 0 10px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
-    --sombra-modal: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
-    color-scheme: dark;
-  }
-}
+:root[data-tema="claro"] {color-scheme: light;}
+:root[data-tema="escuro"] {color-scheme: dark;}
 
 /* ---------- Base ---------- */
 *, *::before, *::after {box-sizing: border-box;}
 html {-webkit-text-size-adjust: 100%;}
 /* No celular a barra inferior é fixa: o que recebe foco por teclado não pode ficar atrás dela. */
 @media (max-width: 1023px) {html {scroll-padding-bottom: calc(var(--alvo) + 40px + env(safe-area-inset-bottom, 0px));}}
-body {margin: 0; background: var(--fundo); color: var(--texto); font: 400 15px/1.55 var(--fonte-ui); -webkit-font-smoothing: antialiased; font-optical-sizing: auto;}
+body {margin: 0; background: linear-gradient(180deg, var(--fundo-topo), var(--fundo) 420px) no-repeat, var(--fundo); color: var(--texto); font: 400 15px/1.55 var(--fonte-ui); -webkit-font-smoothing: antialiased; font-optical-sizing: auto;}
 h1, h2, h3, p {margin: 0;}
 h1, h2, h3 {font-family: var(--fonte-titulo); font-weight: 650; letter-spacing: -.015em; line-height: 1.25; font-size: revert;}
 button, input, select, textarea {font: inherit; color: inherit;}
@@ -138,9 +122,9 @@ main {width: 100%; max-width: 1600px; margin: 0 auto; overflow-wrap: break-word;
 @media (min-width: 1024px) {main {padding-top: 32px; padding-bottom: 64px;}}
 
 /* Barra lateral (computador, a partir de 1024 px) */
-.lateral {position: sticky; top: 0; height: 100dvh; background: var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--lateral-linha);}
+.lateral {position: sticky; top: 0; height: 100dvh; background: linear-gradient(180deg, var(--marca-a10), transparent 180px), var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--lateral-linha);}
 .marca {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e2) var(--e5); text-decoration: none; color: var(--lateral-forte);}
-.marca-simbolo {width: 36px; height: 36px; border-radius: var(--raio-md); background: var(--marca); color: var(--grafite); display: grid; place-items: center; font: 600 15px var(--fonte-titulo); letter-spacing: .02em; flex: none;}
+.marca-simbolo {width: 36px; height: 36px; border-radius: var(--raio-md); background: linear-gradient(135deg, var(--marca-400), var(--marca-500)); box-shadow: 0 4px 12px -4px var(--marca-600), var(--realce); color: var(--grafite); display: grid; place-items: center; font: 600 15px var(--fonte-titulo); letter-spacing: .02em; flex: none;}
 .marca strong {display: block; font: 600 17px/1.1 var(--fonte-titulo); color: var(--lateral-forte);}
 .marca span.sub {display: block; font-size: 12px; color: var(--lateral-sub);}
 .nav-grupo {margin-bottom: var(--e4);}
@@ -168,6 +152,8 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .ficha-titulo .icone-veiculo {width: 26px; height: 26px; margin-right: 0;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
 .topo-desktop {position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: flex-end; gap: var(--e2); height: 60px; padding: 0 var(--pad); background: var(--lateral-fundo); border-bottom: 1px solid var(--lateral-linha);}
+/* Filete da marca sob a barra superior: o amarelo como detalhe de identidade */
+.topo-desktop::after, .topo-movel::after {content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, var(--marca) 0, var(--marca-a14) 38%, transparent 70%); pointer-events: none;}
 .conta {position: relative;}
 .conta summary {list-style: none; cursor: pointer;}
 .conta summary::-webkit-details-marker {display: none;}
@@ -201,9 +187,9 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
   .topo-movel .marca {padding: 0; flex: 1; min-width: 0;}
   .topo-movel .marca-simbolo {width: 32px; height: 32px; font-size: 13px;}
   .topo-movel .btn-icone {color: var(--lateral-forte); border-color: var(--lateral-linha);}
-  .topo-movel .btn-icone:hover {background: rgba(255,255,255,.12); border-color: var(--lateral-linha);}
+  .topo-movel .btn-icone:hover {background: var(--lateral-ativo); border-color: var(--lateral-linha);}
   main {padding-bottom: calc(var(--barra-inferior) + 32px + env(safe-area-inset-bottom));}
-  .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: color-mix(in srgb, var(--superficie-elevada) 88%, transparent); backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom);}
+  .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--vidro); backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--vidro-borda); padding-bottom: env(safe-area-inset-bottom);}
   .barra-inferior a, .barra-inferior summary {position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--barra-inferior); padding: var(--e2) 2px; border: 0; background: none; color: var(--texto-2); text-decoration: none; font-size: 12px; font-weight: 500; cursor: pointer;}
   .barra-inferior [aria-current="page"] {color: var(--texto); font-weight: 600;}
   .barra-inferior [aria-current="page"]::before {content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--marca);}
@@ -245,8 +231,8 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .btn:disabled, .btn[aria-disabled="true"] {opacity: .5; cursor: not-allowed; transform: none; box-shadow: none;}
 .btn:disabled:hover, .btn[aria-disabled="true"]:hover {background: var(--superficie-elevada); border-color: var(--linha-forte); box-shadow: none;}
 .btn .i {transition: transform 150ms ease;}
-.btn-primario {background: var(--btn); border-color: var(--btn); color: var(--btn-texto); box-shadow: var(--sombra-1), inset 0 1px 0 rgba(255,255,255,.14);}
-.btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover); box-shadow: var(--sombra-2), inset 0 1px 0 rgba(255,255,255,.14);}
+.btn-primario {background: var(--btn); border-color: var(--btn); color: var(--btn-texto); box-shadow: var(--sombra-1), var(--realce);}
+.btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover); box-shadow: var(--sombra-2), var(--realce);}
 .btn-perigo {border-color: var(--perigo); color: var(--perigo-texto); background: var(--superficie-elevada);}
 .btn-perigo:hover {background: var(--perigo-fundo); border-color: var(--perigo); box-shadow: none;}
 .btn-primario:disabled:hover, .btn-primario[aria-disabled="true"]:hover {background: var(--btn); border-color: var(--btn);}
@@ -292,7 +278,7 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .grade {display: grid; gap: var(--e4);}
 .kpis {grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: var(--e4);}
 .kpi {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); padding: var(--e4) var(--e5) var(--e4); box-shadow: var(--sombra-1);}
-.kpi.atencao {border-color: color-mix(in srgb, var(--perigo) 45%, var(--linha)); background: linear-gradient(180deg, var(--perigo-fundo), transparent 38%), var(--superficie);}
+.kpi.atencao {border-color: var(--perigo-borda); background: linear-gradient(180deg, var(--perigo-fundo), transparent 38%), var(--superficie);}
 .kpi dt {color: var(--texto-2); font-size: 13px; font-weight: 500;}
 .kpi dd {margin: var(--e2) 0 0; font: 600 clamp(22px, 2.2vw, 26px)/1.1 var(--fonte-num); letter-spacing: -.02em; overflow-wrap: anywhere;}
 .kpi {min-width: 0;}
@@ -409,7 +395,7 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .chip b {font: 600 12.5px var(--fonte-num);}
 .tabela-caixa {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); box-shadow: var(--sombra-1); overflow-x: auto; overflow-y: hidden; container-type: inline-size;}
 table.dados {width: 100%; border-collapse: collapse;}
-.dados th {text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--texto-3); padding: 10px var(--e4); background: color-mix(in srgb, var(--superficie-hover) 60%, var(--superficie)); border-bottom: 1px solid var(--linha);}
+.dados th {text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--texto-3); padding: 10px var(--e4); background: var(--cabecalho-tabela); border-bottom: 1px solid var(--linha);}
 .dados td {padding: var(--e3) var(--e4); border-top: 1px solid var(--linha-sutil); vertical-align: middle;}
 /* Cabeçalho ordenável (só aparece na tabela; em cartões o thead some) */
 .dados th a.ordenar {display: inline-flex; align-items: center; gap: var(--e1); min-height: var(--alvo); margin-block: calc(var(--e3) * -1); color: inherit; text-decoration: none; border-radius: var(--raio-campo);}
@@ -522,7 +508,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 
 /* ---------- Diálogos ---------- */
 dialog {margin: auto; border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
-dialog::backdrop {background: rgba(17,24,39,.5); backdrop-filter: blur(3px);}
+dialog::backdrop {background: var(--veu); backdrop-filter: blur(3px);}
 .dialogo-cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
 .dialogo-cab h2 {font-size: 20px;}
 .dialogo-corpo {padding: var(--e5); overflow-y: auto;}
@@ -753,7 +739,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .portal-topo {display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha);}
 .portal-topo .marca {padding: 0; flex: 1; min-width: 0;}
 .portal-topo .btn-icone, .portal-topo .btn-texto {color: var(--lateral-forte); border: 1px solid var(--lateral-linha); background: transparent;}
-.portal-topo .btn-icone:hover, .portal-topo .btn-texto:hover {background: rgba(255,255,255,.12); border-color: var(--lateral-linha);}
+.portal-topo .btn-icone:hover, .portal-topo .btn-texto:hover {background: var(--lateral-ativo); border-color: var(--lateral-linha);}
 .portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer;}
 .entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
 .campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
@@ -854,7 +840,7 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .colapsavel-visao .seta {width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s;}
 .colapsavel-visao[open] .seta {transform: translateY(2px) rotate(-135deg);}
 .colapsavel-visao .opcoes {position: absolute; z-index: 10; top: calc(100% + var(--e2)); left: 0; display: grid; gap: var(--e1); min-width: max(100%, 170px); padding: var(--e2); border: 1px solid var(--linha-forte); border-radius: 14px; background: var(--superficie-elevada); box-shadow: 0 8px 24px rgb(0 0 0 / .25);}
-.colapsavel-visao .opcoes .chip {white-space: nowrap; width: 100%; justify-content: flex-start; border: 0; border-radius: 10px; background: transparent; padding: 0 var(--e4);}
+.colapsavel-visao .opcoes .chip {white-space: nowrap; width: 100%; justify-content: flex-start; border: 0; border-radius: var(--raio-campo); background: transparent; padding: 0 var(--e4);}
 .colapsavel-visao .opcoes .chip:hover {background: var(--superficie-hover);}
 .colapsavel-visao .opcoes .chip[aria-current="true"] {background: var(--superficie-hover); color: inherit; font-weight: 600;}
 .exportar-rel {display: flex; flex-wrap: wrap; gap: var(--e2);}
@@ -941,23 +927,23 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 /* ---------- Tela de login (painel de apresentação + formulário) ---------- */
 .entrada-tela {max-width: none; margin: 0; padding: 0; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
 .entrada-vitrine {position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--e6); padding: clamp(28px, 4vw, 56px); padding-left: clamp(28px, 12vw, 240px); padding-right: max(22%, clamp(28px, 4vw, 56px)); color: #ECEEEE; background: linear-gradient(90deg, transparent 52%, color-mix(in srgb, var(--fundo) 10%, transparent) 64%, color-mix(in srgb, var(--fundo) 35%, transparent) 76%, color-mix(in srgb, var(--fundo) 68%, transparent) 87%, color-mix(in srgb, var(--fundo) 90%, transparent) 95%, var(--fundo) 100%), radial-gradient(120% 80% at 0% 0%, #2B3036 0%, #1E2227 45%, #121518 100%);}
-.entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid rgba(242,183,5,.10); pointer-events: none; mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%); -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%);}
-.entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); mask-composite: intersect; -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-composite: source-in; pointer-events: none;}
+.entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid var(--marca-a10); pointer-events: none; mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%); -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%);}
+.entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(var(--branco-07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); mask-composite: intersect; -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-composite: source-in; pointer-events: none;}
 .entrada-vitrine > * {position: relative; z-index: 1;}
 .entrada-vitrine .marca {padding: 0; min-height: var(--alvo);}
 .entrada-vitrine .marca {width: auto; justify-content: flex-start;}
 .entrada-vitrine .marca, .entrada-vitrine .marca strong {color: #fff;}
-.entrada-vitrine .marca span.sub {color: rgba(255,255,255,.7);}
+.entrada-vitrine .marca span.sub {color: var(--branco-70);}
 .entrada-vitrine .marca > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
 .vitrine-texto {display: grid; gap: var(--e5); max-width: 34rem;}
-.vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: rgba(242,183,5,.14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
+.vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: var(--marca-a14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
 .entrada-vitrine h2 {font-size: clamp(30px, 3.4vw, 46px); line-height: 1.08; color: #fff;}
 .entrada-vitrine h2 em {font-style: normal; color: var(--marca);}
 .vitrine-lista {list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e4);}
 .vitrine-lista li {display: flex; align-items: flex-start; gap: var(--e3);}
 .vitrine-lista strong {display: block; font-weight: 600; color: #fff;}
 .vitrine-lista li span:not(.vitrine-icone) {display: block; font-size: 13px; color: #AEB4BA;}
-.vitrine-icone {flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--raio-md); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); color: var(--marca);}
+.vitrine-icone {flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--raio-md); background: var(--branco-07); border: 1px solid var(--branco-10); color: var(--marca);}
 .vitrine-faixa {height: 6px; border-radius: 3px; background: repeating-linear-gradient(90deg, var(--marca) 0 28px, transparent 28px 48px); opacity: .85; mask-image: linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 100%);}
 .entrada-painel {display: grid; place-items: center; padding: var(--pad);}
 .entrada-conteudo {width: min(24rem, 100%); display: grid; gap: var(--e5);}
@@ -1105,10 +1091,10 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .barra-seg-fundo {fill: var(--seg-vazio);}
 .barra-seg .seg {stroke: var(--superficie); stroke-width: .5;}
 .seg.cheio {fill: var(--seg-cheio);} .seg.oficina {fill: var(--alerta);} .seg.livre {fill: var(--neutro);}
-.seg.f1, .seg-ponto.f1 {fill: var(--alerta); background: var(--alerta);}
-.seg.f2, .seg-ponto.f2 {fill: color-mix(in srgb, var(--alerta) 45%, var(--perigo)); background: color-mix(in srgb, var(--alerta) 45%, var(--perigo));}
-.seg.f3, .seg-ponto.f3 {fill: var(--perigo); background: var(--perigo);}
-.seg.f4, .seg-ponto.f4 {fill: color-mix(in srgb, var(--perigo) 65%, #000); background: color-mix(in srgb, var(--perigo) 65%, #000);}
+.seg.f1, .seg-ponto.f1 {fill: var(--faixa-1); background: var(--faixa-1);}
+.seg.f2, .seg-ponto.f2 {fill: var(--faixa-2); background: var(--faixa-2);}
+.seg.f3, .seg-ponto.f3 {fill: var(--faixa-3); background: var(--faixa-3);}
+.seg.f4, .seg-ponto.f4 {fill: var(--faixa-4); background: var(--faixa-4);}
 .faixas-legenda {display: grid; gap: var(--e1); margin: var(--e2) 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--texto-2);}
 .faixas-legenda li {display: flex; align-items: baseline; gap: var(--e2);}
 .seg-ponto {display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 2px; align-self: center;}
@@ -1224,6 +1210,18 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .topo-movel .btn-icone[data-alternar-tema] {color: var(--lateral-texto);}
 .topo-movel .btn-icone[data-alternar-tema]:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
 
+/* ---------- Vidro fosco: barra superior (desktop e celular), barra lateral e barra inferior ----------
+   Só onde há backdrop-filter; sem ele valem os fundos sólidos de cima. Texto e bordas seguem os mesmos tokens (contraste mantido). */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topo-desktop, .topo-movel {background: var(--vidro); border-bottom-color: var(--vidro-borda); -webkit-backdrop-filter: saturate(1.5) blur(16px); backdrop-filter: saturate(1.5) blur(16px);}
+  .lateral {background: linear-gradient(180deg, var(--marca-a10), transparent 180px), var(--vidro); border-right-color: var(--vidro-borda); -webkit-backdrop-filter: saturate(1.5) blur(18px); backdrop-filter: saturate(1.5) blur(18px);}
+}
+/* Modo de alto contraste do sistema: cores e transparências ficam por conta do sistema */
+@media (forced-colors: active) {
+  .topo-desktop, .topo-movel, .lateral, .barra-inferior {-webkit-backdrop-filter: none; backdrop-filter: none;}
+  .topo-desktop::after, .topo-movel::after {display: none;}
+}
+
 /* ---------- Hover e foco suaves (padrão do cell-pag) ---------- */
 @media (prefers-reduced-motion: no-preference) {
   a {transition: color 120ms ease;}
@@ -1236,7 +1234,7 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   .nav-item .i {transition: stroke-width 160ms ease, transform 160ms ease;}
   @media (hover: hover) and (pointer: fine) {
     .chip:not([aria-pressed="true"]):not([aria-current="true"]):hover {transform: translateY(-1px); border-color: var(--texto-3);}
-    .cartao:hover, .kpi:hover {border-color: var(--linha-forte); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .28);}
+    .cartao:hover, .kpi:hover {border-color: var(--linha-forte); box-shadow: var(--sombra-hover);}
     .nav-item:hover .i {transform: scale(1.08);}
   }
 }
@@ -1276,11 +1274,11 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 @media (prefers-reduced-motion: no-preference) {
   dialog {opacity: 0; transform: translateY(10px) scale(.98); transition: opacity 180ms ease, transform 200ms cubic-bezier(.2, .8, .2, 1), overlay 200ms allow-discrete, display 200ms allow-discrete;}
   dialog[open] {opacity: 1; transform: none;}
-  dialog::backdrop {background: rgba(21,24,28,0); transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;}
-  dialog[open]::backdrop {background: rgba(21,24,28,.55);}
+  dialog::backdrop {background: transparent; transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;}
+  dialog[open]::backdrop {background: var(--veu);}
   @starting-style {
     dialog[open] {opacity: 0; transform: translateY(10px) scale(.98);}
-    dialog[open]::backdrop {background: rgba(21,24,28,0);}
+    dialog[open]::backdrop {background: transparent;}
   }
   @media (max-width: 719px) {
     dialog.cheio, dialog.folha {transform: translateY(24px);}

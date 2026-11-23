@@ -121,7 +121,7 @@ def test_css_compilado_existe_e_tem_os_componentes():
     css = (RAIZ / "static" / "css" / "app.css").read_text(encoding="utf-8")
     for classe in (".btn", ".cartao", ".lateral", ".barra-inferior", ".selo", ".aviso"):
         assert classe in css, f"{classe} ausente: rode python scripts/construir_css.py"
-    assert "--foco" in css and "prefers-color-scheme:dark" in css.replace(" ", "")
+    assert "--foco" in css and "light-dark(" in css and "color-scheme:light dark" in css
 
 
 def test_htmx_nao_reaplica_o_atributo_style_ao_trocar_trechos(cliente):
