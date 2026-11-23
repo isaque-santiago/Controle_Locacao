@@ -625,6 +625,48 @@
   document.body.addEventListener('htmx:afterSettle', function (e) {
     if (e.detail.target && e.detail.target.id === 'conteudo') e.detail.target.focus({ preventScroll: true });
   });
+  // ---- Números que contam: [data-contar] (valor dos KPIs) sobe de 0 até o valor que o servidor já escreveu no HTML ----
+  // Só visual: o texto final é sempre o original (restaurado no fim), então se o JS falhar ou o movimento estiver reduzido o
+  // número certo já está na tela. Só conta quando há exatamente um número no texto ("R$ 1.234,56", "72% ocupada", "5 veículos").
+  var NUMERO_PT = /\d{1,3}(?:\.\d{3})+(?:,\d+)?|\d+(?:,\d+)?/g;
+  var DURACAO_CONTAGEM = 700;
+  var movimentoReduzido = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  function dividirNumero(texto) {
+    var achados = texto.match(NUMERO_PT);
+    if (!achados || achados.length !== 1 || texto.length > 40) return null;
+    var numero = achados[0];
+    if (/^0\d/.test(numero)) return null;  // "007", códigos
+    var posicao = texto.indexOf(numero);
+    var virgula = numero.indexOf(',');
+    var valor = parseFloat(numero.replace(/\./g, '').replace(',', '.'));  // só para exibição; o texto final volta a ser o do servidor
+    if (!isFinite(valor) || valor === 0) return null;
+    return { antes: texto.slice(0, posicao), depois: texto.slice(posicao + numero.length), valor: valor, casas: virgula < 0 ? 0 : numero.length - virgula - 1 };
+  }
+  function contarAte(elemento) {
+    var original = elemento.textContent;
+    var partes = dividirNumero(original);
+    if (!partes || !window.requestAnimationFrame) return;
+    var inicio = null;
+    function quadro(agora) {
+      if (inicio === null) inicio = agora;
+      var t = Math.min((agora - inicio) / DURACAO_CONTAGEM, 1);
+      if (t >= 1 || !elemento.isConnected) { elemento.textContent = original; return; }
+      var atual = partes.valor * (1 - Math.pow(1 - t, 3));
+      elemento.textContent = partes.antes + atual.toLocaleString('pt-BR', { minimumFractionDigits: partes.casas, maximumFractionDigits: partes.casas }) + partes.depois;
+      window.requestAnimationFrame(quadro);
+    }
+    window.requestAnimationFrame(quadro);
+  }
+  function iniciarContagens() {
+    document.querySelectorAll('[data-contar]:not([data-contado])').forEach(function (el) {
+      el.setAttribute('data-contado', '');
+      if (movimentoReduzido.matches || document.hidden || el.children.length) return;
+      contarAte(el);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', iniciarContagens);
+  document.addEventListener('htmx:afterSettle', iniciarContagens);
+
   // ---- Menu lateral: o traço do item ativo desliza, ao abrir a página, do item da página anterior até o item tocado ----
   (function () {
     var nav = document.querySelector('.lateral nav');
