@@ -151,6 +151,20 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
   `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
   `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
+- **Animações e feedback** (redesign, Fase 5; CSS em `src/web/estilos/app.css`, JS em `static/js/app.js`; tudo respeita `prefers-reduced-motion`, que mostra só o
+  estado final):
+  - **Entrada curta**: blocos, cartões e as primeiras linhas das tabelas entram em 180 a 200 ms, com atraso de no máximo ~175 ms. A grade de KPIs e o
+    `<main>` não animam por si (a opacidade de pai e filho se multiplica; era isso que deixava a página desbotada por mais de um segundo).
+  - **Números que contam**: o macro `kpi` marca o valor com `data-contar`; o JS sobe de 0 até o número (700 ms) e devolve o texto original no fim. O HTML já traz o valor
+    final, então sem JS o número está certo. Só conta quando há um único número no texto. Barras e colunas dos gráficos crescem por CSS.
+  - **Toasts**: `#avisos` é uma pilha fixa no canto (sem JS já funciona). O JS acrescenta o botão Fechar e o fechamento automático (sucesso 5 s, informação 6 s,
+    atenção 9 s, erro 12 s; pausa com mouse ou foco), no máximo 4 ao mesmo tempo. `role`/`aria-live` vêm do macro `aviso`. Erros HTMX usam `HX-Reswap: beforeend` e as
+    respostas fora de banda preservam os toasts na tela, então eles empilham. Dentro de diálogo, o aviso de falha de rede continua inline no diálogo.
+  - **Skeleton** (≥ 720 px): enquanto `#resultado`/`#painel-aba` estão com `aria-busy`, as células viram barras cinzas depois de 150 ms (respostas rápidas não piscam).
+  - **Estados vazios**: `estado_vazio(titulo, texto, icone_nome=...)` mostra ícone em placa, título, texto e, no bloco `{% call %}`, a ação sugerida (`.vazio-acoes`).
+  - **Microinterações**: faixa de foco na linha sob o ponteiro, resposta ao clique em botões, chips e cartões.
+  - **Transição entre páginas**: View Transitions entre documentos (`@view-transition`), com o menu lateral e as barras parados; navegador sem suporte navega normalmente.
+  - Testes: `tests/test_animacoes_feedback.py` (contratos do CSS/JS/templates). A conferência visual no app logado é manual.
 - **Formulário em diálogo** (`macros.form_dialogo`, `rotas/motos_formularios.py`): o diálogo `#dlg-form` abre ao
   chegar o conteúdo; a validação é no servidor, campo a campo (`src/domain/formulario_moto.py`): com erro o mesmo
   formulário volta com a mensagem ao lado do campo; com sucesso vem `HX-Redirect` e um aviso de confirmação
