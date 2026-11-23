@@ -11,7 +11,7 @@
 <td class="rc-cab" data-rotulo="Situação">{{ selo(c.situacao|capitalize, "ok" if c.situacao == "paga" else ("perigo" if c.situacao == "atrasada" else "neutro")) }}</td>
 </tr>{% endfor %}
 {% endcall %}
-{% else %}{{ estado_vazio("Nenhuma cobrança", "As cobranças deste contrato aparecerão aqui.") }}{% endif %}
+{% else %}{{ estado_vazio("Nenhuma cobrança", "As cobranças deste contrato aparecerão aqui.", icone_nome="cobranca") }}{% endif %}
 {% elif aba == "vistorias" %}
 {% macro grupo(lista) %}
 <div class="grade cols-2">
@@ -42,6 +42,6 @@
 </tr>{% endfor %}
 {% endcall %}
 <p class="text-texto-2 text-[13px]">Mostrando apenas manutenções realizadas durante a vigência deste contrato.</p>
-{% else %}{{ estado_vazio("Nenhuma manutenção no período", "As manutenções feitas durante a vigência deste contrato aparecerão aqui.") }}{% endif %}
+{% else %}{{ estado_vazio("Nenhuma manutenção no período", "As manutenções feitas durante a vigência deste contrato aparecerão aqui.", icone_nome="manutencao") }}{% endif %}
 {% endif %}
 </div>

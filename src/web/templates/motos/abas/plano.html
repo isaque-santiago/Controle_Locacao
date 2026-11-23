@@ -14,5 +14,5 @@
   {% endfor %}
 {% endcall %}
 {% else %}
-{% call estado_vazio("Nenhum item no plano", "Este veículo ainda não tem itens de manutenção programados.", "0") %}{% endcall %}
+{% call estado_vazio("Nenhum item no plano", "Este veículo ainda não tem itens de manutenção programados.", icone_nome="manutencao") %}{% endcall %}
 {% endif %}

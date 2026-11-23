@@ -34,9 +34,9 @@
 </div>
 {% endif %}
 {% elif filtrando %}
-{% call estado_vazio("Nenhum veículo encontrado", "Nenhum veículo atende à busca ou ao filtro escolhido.", "0") %}
+{% call estado_vazio("Nenhum veículo encontrado", "Nenhum veículo atende à busca ou ao filtro escolhido.", icone_nome="busca") %}
   {{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}
 {% endcall %}
 {% else %}
-{% call estado_vazio("Nenhum veículo cadastrado", "Os veículos da frota aparecem aqui assim que forem cadastradas.", "0") %}{% endcall %}
+{% call estado_vazio("Nenhum veículo cadastrado", "Os veículos da frota aparecem aqui assim que forem cadastrados.", icone_nome="moto") %}{{ botao("Novo veículo", variante="primario", icone_nome="novo", extra='hx-get="/motos/nova" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endcall %}
 {% endif %}

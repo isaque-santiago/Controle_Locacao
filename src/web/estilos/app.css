@@ -492,10 +492,17 @@ table.dados {width: 100%; border-collapse: collapse;}
 .dl dt {color: var(--texto-3); font-size: 12.5px;} .dl dd {margin: 2px 0 0; font-weight: 500;}
 .progresso {height: 10px; border-radius: 99px; background: var(--seg-vazio); overflow: hidden; margin: var(--e3) 0 var(--e2);}
 .progresso span {display: block; height: 100%; background: var(--alerta); border-radius: 99px;}
+/* Estado vazio: ícone em placa suave, título, texto e a ação sugerida (botões em .vazio-acoes). */
 .vazio {text-align: center; padding: var(--e7) var(--e4); display: grid; justify-items: center; gap: var(--e3);}
-.vazio .adesivo {width: 56px; height: 56px; color: var(--texto-3);}
+.vazio-icone {display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--neutro-fundo); color: var(--texto-2); box-shadow: 0 0 0 8px color-mix(in srgb, var(--neutro-fundo) 45%, transparent);}
+.vazio-icone .i {width: 28px; height: 28px;}
 .vazio p {max-width: 40ch; color: var(--texto-2);}
 .vazio h2 {font-size: 18px;}
+.vazio-acoes {display: flex; flex-wrap: wrap; justify-content: center; gap: var(--e2); margin-top: var(--e2);}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes icone-vazio-entra {from {opacity: 0; transform: scale(.85);} to {opacity: 1; transform: none;}}
+  .vazio-icone {animation: icone-vazio-entra 260ms cubic-bezier(.2, .8, .2, 1) 80ms backwards;}
+}
 
 /* ---------- Assistente de contrato ---------- */
 .passos {list-style: none; margin: 0 0 var(--e5); padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e2);}
@@ -754,8 +761,28 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .aviso.sucesso {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
 .aviso.atencao {background: var(--alerta-fundo); color: var(--alerta-texto);}
 .aviso.info {background: var(--info-fundo); color: var(--info-texto);}
+
+/* Toasts: #avisos vira uma pilha fixa no canto (sem JS ela já funciona; o app.js acrescenta o botão de fechar e o fechamento automático). */
 #avisos:empty {display: none;}
-#avisos {display: grid; gap: var(--e2); margin-bottom: var(--e4);}
+#avisos {position: fixed; z-index: 60; top: calc(60px + var(--e3)); right: var(--e4); width: min(26rem, calc(100vw - 2 * var(--e4))); display: flex; flex-direction: column; gap: var(--e2); margin: 0; pointer-events: none;}
+#avisos .aviso {position: relative; pointer-events: auto; align-items: center; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); box-shadow: var(--sombra-menu); overflow-wrap: anywhere;}
+#avisos .aviso > div {flex: 1; min-width: 0;}
+#avisos .aviso .i {flex: none; margin-top: 0;}
+.aviso-fechar {flex: none; display: inline-grid; place-items: center; width: 32px; min-height: 32px; margin: -4px -8px -4px 0; padding: 0; border: 0; border-radius: var(--raio-campo); background: transparent; color: inherit; cursor: pointer; opacity: .75;}
+.aviso-fechar:hover, .aviso-fechar:focus-visible {opacity: 1; background: color-mix(in srgb, currentColor 14%, transparent);}
+.aviso-fechar:focus-visible {outline: 2px solid var(--foco); outline-offset: 1px;}
+@media (max-width: 1023px) {#avisos {top: calc(56px + var(--e2)); left: var(--e3); right: var(--e3); width: auto;}}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes toast-entra {from {opacity: 0; transform: translateX(1.5rem);} to {opacity: 1; transform: none;}}
+  @keyframes toast-sai {to {opacity: 0; transform: translateX(1.5rem);}}
+  @media (max-width: 1023px) {
+    @keyframes toast-entra {from {opacity: 0; transform: translateY(-.75rem);} to {opacity: 1; transform: none;}}
+    @keyframes toast-sai {to {opacity: 0; transform: translateY(-.75rem);}}
+  }
+  #avisos .aviso {animation: toast-entra 220ms cubic-bezier(.2, .8, .2, 1) both;}
+  #avisos .aviso.saindo {animation: toast-sai 180ms ease-in forwards;}
+}
+@media print {#avisos {display: none;}}
 
 /* ---------- Acesso (login, erros) e portal ---------- */
 .acesso {min-height: 100dvh; display: grid; place-items: center; padding: var(--pad);}
@@ -1216,13 +1243,13 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 /* ---------- Animações no padrão do sistema de celulares (cell-pag) ----------
    Microinterações curtas, sem movimento contínuo. Só rodam com movimento permitido. */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes pagina-entra {from {opacity: 0; transform: translateY(4px);} to {opacity: 1; transform: none;}}
-  @keyframes bloco-entra {from {opacity: 0; transform: translateY(.45rem);} to {opacity: 1; transform: none;}}
+  @keyframes bloco-entra {from {opacity: 0; transform: translateY(.35rem);} to {opacity: 1; transform: none;}}
   @keyframes painel-entra {from {opacity: 0; transform: translateY(-.5rem) scale(.97);} to {opacity: 1; transform: none;}}
   @keyframes aviso-entra {from {opacity: 0; transform: translateY(.7rem);} to {opacity: 1; transform: none;}}
   /* "backwards" (não "both"): o transform final não pode ficar ativo, senão cada bloco vira contexto de empilhamento. */
-  main {animation: pagina-entra 220ms ease-out;}
-  #conteudo > :not(#avisos) {animation: bloco-entra 280ms ease-out backwards;}
+  /* Entrada curta: cada camada anima por conta própria (a opacidade se multiplica entre pai e filho), então o conjunto
+     inteiro tem de caber em ~400 ms. Ver o bloco "Entrada em sequência" mais abaixo. */
+  #conteudo > :not(#avisos) {animation: bloco-entra 200ms ease-out backwards;}
   .aviso {animation: aviso-entra 180ms ease-out;}
   .conta[open] > .conta-menu {transform-origin: bottom left; animation: painel-entra 200ms cubic-bezier(.2, .8, .2, 1) both;}
   .conta-movel[open] > .conta-menu {transform-origin: top right;}
@@ -1277,28 +1304,29 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   @keyframes coluna-cresce {from {transform: scaleY(0);} to {transform: scaleY(1);}}
   @keyframes barra-cresce {from {transform: scaleX(0);} to {transform: scaleX(1);}}
   @keyframes arco-aparece {from {opacity: 0;} to {opacity: 1;}}
-  /* Os blocos da página entram um após o outro (cabeçalho, filtros, KPIs, tabela...). */
-  #conteudo > :nth-child(3) {animation-delay: 60ms;}
-  #conteudo > :nth-child(4) {animation-delay: 120ms;}
-  #conteudo > :nth-child(5) {animation-delay: 180ms;}
-  #conteudo > :nth-child(n+6) {animation-delay: 240ms;}
-  /* Cartões de KPI e colunas lado a lado entram em escada; linhas de tabela, nas primeiras dez. */
-  .kpis > *, .cols-2 > * {animation: bloco-entra 320ms ease-out backwards;}
-  .kpis > :nth-child(2), .cols-2 > :nth-child(2) {animation-delay: 60ms;}
-  .kpis > :nth-child(3) {animation-delay: 120ms;}
-  .kpis > :nth-child(4) {animation-delay: 180ms;}
-  .kpis > :nth-child(n+5) {animation-delay: 240ms;}
-  .dados tbody tr {animation: linha-entra 240ms ease-out backwards;}
-  .dados tbody tr:nth-child(2) {animation-delay: 30ms;} .dados tbody tr:nth-child(3) {animation-delay: 60ms;}
-  .dados tbody tr:nth-child(4) {animation-delay: 90ms;} .dados tbody tr:nth-child(5) {animation-delay: 120ms;}
-  .dados tbody tr:nth-child(6) {animation-delay: 150ms;} .dados tbody tr:nth-child(7) {animation-delay: 180ms;}
-  .dados tbody tr:nth-child(8) {animation-delay: 210ms;} .dados tbody tr:nth-child(9) {animation-delay: 240ms;}
-  .dados tbody tr:nth-child(n+10) {animation-delay: 270ms;}
+  /* Os blocos da página entram um após o outro (cabeçalho, filtros, KPIs, tabela...): atraso pequeno e limitado (máx. 120 ms). */
+  #conteudo > :nth-child(3) {animation-delay: 30ms;}
+  #conteudo > :nth-child(4) {animation-delay: 60ms;}
+  #conteudo > :nth-child(5) {animation-delay: 90ms;}
+  #conteudo > :nth-child(n+6) {animation-delay: 120ms;}
+  /* Grades de KPI e de colunas: quem entra são os cartões (em escada), não a grade, para a opacidade não se multiplicar. */
+  #conteudo > .kpis, #conteudo > .cols-2 {animation: none;}
+  .kpis > *, .cols-2 > * {animation: bloco-entra 200ms ease-out backwards;}
+  .kpis > :nth-child(2), .cols-2 > :nth-child(2) {animation-delay: 40ms;}
+  .kpis > :nth-child(3) {animation-delay: 80ms;}
+  .kpis > :nth-child(4) {animation-delay: 120ms;}
+  .kpis > :nth-child(n+5) {animation-delay: 160ms;}
+  /* Linhas de tabela: as oito primeiras em escada de 25 ms; as demais entram junto com a oitava. */
+  .dados tbody tr {animation: linha-entra 180ms ease-out backwards;}
+  .dados tbody tr:nth-child(2) {animation-delay: 25ms;} .dados tbody tr:nth-child(3) {animation-delay: 50ms;}
+  .dados tbody tr:nth-child(4) {animation-delay: 75ms;} .dados tbody tr:nth-child(5) {animation-delay: 100ms;}
+  .dados tbody tr:nth-child(6) {animation-delay: 125ms;} .dados tbody tr:nth-child(7) {animation-delay: 150ms;}
+  .dados tbody tr:nth-child(n+8) {animation-delay: 175ms;}
   /* Gráficos: colunas sobem, barras avançam e o anel da frota aparece. */
-  .grafico-colunas rect {transform-box: fill-box; transform-origin: 50% 100%; animation: coluna-cresce 600ms cubic-bezier(.2, .8, .2, 1) 150ms backwards;}
-  .grafico-colunas rect:nth-of-type(2n) {animation-delay: 190ms;} .grafico-colunas rect:nth-of-type(4n+3), .grafico-colunas rect:nth-of-type(4n+4) {animation-delay: 230ms;}
-  .barras-lista .barra-cheia, .kpi-barra-cheia {transform-box: fill-box; transform-origin: 0 50%; animation: barra-cresce 700ms cubic-bezier(.2, .8, .2, 1) 200ms backwards;}
-  .rosca .arco {animation: arco-aparece 700ms ease-out 200ms backwards;}
+  .grafico-colunas rect {transform-box: fill-box; transform-origin: 50% 100%; animation: coluna-cresce 500ms cubic-bezier(.2, .8, .2, 1) 100ms backwards;}
+  .grafico-colunas rect:nth-of-type(2n) {animation-delay: 130ms;} .grafico-colunas rect:nth-of-type(4n+3), .grafico-colunas rect:nth-of-type(4n+4) {animation-delay: 160ms;}
+  .barras-lista .barra-cheia, .kpi-barra-cheia {transform-box: fill-box; transform-origin: 0 50%; animation: barra-cresce 550ms cubic-bezier(.2, .8, .2, 1) 120ms backwards;}
+  .rosca .arco {animation: arco-aparece 500ms ease-out 120ms backwards;}
 }
 
 /* ---------- Diálogos e painéis que abrem e fecham com suavidade ----------
@@ -1324,10 +1352,24 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 
 /* ---------- Troca de conteúdo via HTMX: o trecho novo entra com fade em vez de piscar ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  #resultado > :not(input), #painel-aba > * {animation: bloco-entra 240ms ease-out backwards;}
-  #painel-aba > :nth-child(2) {animation-delay: 50ms;} #painel-aba > :nth-child(n+3) {animation-delay: 100ms;}
+  #resultado > :not(input), #painel-aba > * {animation: bloco-entra 180ms ease-out backwards;}
+  #painel-aba > :nth-child(2) {animation-delay: 30ms;} #painel-aba > :nth-child(n+3) {animation-delay: 60ms;}
   /* Enviando um formulário: o botão esmaece suavemente enquanto espera. */
   form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {transition: opacity 150ms ease;}
+}
+
+/* ---------- Skeleton: enquanto o HTMX troca a lista, as células viram barras cinzas (depois de 150 ms, para respostas rápidas não piscarem) ----------
+   Só em tela larga: no celular a tabela vira cartões e vale apenas o esmaecer do #resultado. Sem movimento: barras paradas. */
+@media (min-width: 720px) {
+  #resultado[aria-busy="true"] .dados tbody td, #painel-aba[aria-busy="true"] .dados tbody td {position: relative; color: transparent; transition: color 0s 150ms;}
+  #resultado[aria-busy="true"] .dados tbody td > *, #painel-aba[aria-busy="true"] .dados tbody td > * {visibility: hidden; transition: visibility 0s 150ms;}
+  #resultado[aria-busy="true"] .dados tbody td::after, #painel-aba[aria-busy="true"] .dados tbody td::after {content: ""; position: absolute; inset: 50% var(--e3) auto; height: 12px; margin-top: -6px; border-radius: 6px; background: var(--seg-vazio);}
+  #resultado[aria-busy="true"] .dados tbody td:nth-child(3n+1)::after {right: 38%;} #resultado[aria-busy="true"] .dados tbody td:nth-child(3n+2)::after {right: 18%;}
+}
+@media (min-width: 720px) and (prefers-reduced-motion: no-preference) {
+  @keyframes skeleton-brilho {from {background-position: 200% 0;} to {background-position: -200% 0;}}
+  @keyframes skeleton-entra {from {opacity: 0;}}
+  #resultado[aria-busy="true"] .dados tbody td::after, #painel-aba[aria-busy="true"] .dados tbody td::after {background: linear-gradient(90deg, var(--seg-vazio) 30%, var(--superficie-hover) 50%, var(--seg-vazio) 70%) 200% 0 / 200% 100%; animation: skeleton-entra 150ms ease 150ms backwards, skeleton-brilho 1.4s linear infinite;}
 }
 
 /* ---------- Busca global (paleta) ---------- */
@@ -1406,3 +1448,36 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
 .aviso-filtro {display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e2) var(--e3); margin: 0 0 var(--e3); padding: var(--e2) var(--e3); border: 1px solid var(--linha-forte); border-radius: var(--raio-md); background: var(--superficie-elevada); color: var(--texto-2); font-size: 0.875rem;}
 .aviso-filtro strong {color: var(--texto);}
 @media print {.aviso-filtro {display: none;}}
+
+/* ---------- Microinterações: clique nos botões e destaque da linha sob o ponteiro ----------
+   Estados finais (sem movimento) valem sempre; as transições só com movimento permitido. */
+@media (min-width: 720px) and (hover: hover) and (pointer: fine) {
+  .dados tbody tr.linha-link:hover td:first-child, .dados tbody tr.linha-link:focus-within td:first-child {box-shadow: inset 3px 0 0 var(--foco);}
+}
+.btn-primario:active {background: var(--btn-hover); border-color: var(--btn-hover);}
+.chip:active {transform: scale(.97);}
+.kpi-link:active {transform: scale(.99);}
+@media (prefers-reduced-motion: reduce) {.chip:active, .kpi-link:active, .btn:active, .btn-icone:active {transform: none;}}
+@media (prefers-reduced-motion: no-preference) {
+  .dados tbody tr.linha-link td:first-child {transition: box-shadow 150ms ease;}
+  .btn:active, .btn-icone:active, .chip:active {transition-duration: 60ms;}
+  .btn-icone[data-alternar-tema] .i {transition: transform 300ms cubic-bezier(.2, .8, .2, 1);}
+  .btn-icone[data-alternar-tema]:active .i {transform: rotate(25deg) scale(.9);}
+}
+
+/* ---------- Transição entre páginas (View Transitions entre documentos) ----------
+   Só navegadores com suporte (Chrome/Edge 126+, Safari 18.2+); nos demais a navegação segue normal, com a entrada curta dos blocos.
+   O menu lateral e as barras ficam parados (cada um com nome próprio) e só o conteúdo faz um fade rápido. Sem isso com movimento reduzido.
+   Foco, histórico e leitores de tela não mudam: a página nova é a mesma de sempre, só aparece com um fade. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {navigation: auto;}
+  .lateral {view-transition-name: lateral;}
+  .topo-desktop {view-transition-name: topo-desktop;}
+  .topo-movel {view-transition-name: topo-movel;}
+  .barra-inferior {view-transition-name: barra-inferior;}
+  ::view-transition-group(*) {animation-duration: 0s;}
+  ::view-transition-old(root) {animation: 110ms ease-in both transicao-sai;}
+  ::view-transition-new(root) {animation: 170ms ease-out both transicao-entra;}
+  @keyframes transicao-sai {to {opacity: 0;}}
+  @keyframes transicao-entra {from {opacity: 0;}}
+}

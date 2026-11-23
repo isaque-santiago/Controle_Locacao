@@ -41,6 +41,6 @@
 {% endif %}
 {% if d.pagina.total > d.pagina.por_pagina %}{{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, pag_anterior, pag_proxima, alvo="#painel-aba", troca="outerHTML", parcial_anterior=parcial_anterior, parcial_proxima=parcial_proxima) }}{% endif %}
 {% else %}
-{% if busca %}{{ estado_vazio("Nenhuma cobrança encontrada", "Nenhuma cobrança desta aba combina com “" ~ busca ~ "”.", "0") }}{% else %}{{ estado_vazio(vazio, "Quando houver cobranças nesta situação, elas aparecem aqui.", "0") }}{% endif %}
+{% if busca %}{{ estado_vazio("Nenhuma cobrança encontrada", "Nenhuma cobrança desta aba combina com “" ~ busca ~ "”.", icone_nome="busca") }}{% else %}{{ estado_vazio(vazio, "Quando houver cobranças nesta situação, elas aparecem aqui.", icone_nome="busca") }}{% endif %}
 {% endif %}
 </div>

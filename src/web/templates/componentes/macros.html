@@ -130,12 +130,13 @@
 {%- endmacro %}
 
 {# Estado vazio; a ação (botão) vai no bloco {% call %}. #}
-{% macro estado_vazio(titulo, texto, simbolo="0") -%}
+{# Estado vazio: ícone, título, texto e, se houver, a ação sugerida (botões no bloco {% call %}, dentro de .vazio-acoes). #}
+{% macro estado_vazio(titulo, texto, icone_nome="info") -%}
 <div class="cartao vazio">
-  <span class="adesivo" aria-hidden="true">{{ simbolo }}</span>
+  <span class="vazio-icone" aria-hidden="true">{{ icone(icone_nome) }}</span>
   <h2>{{ titulo }}</h2>
   <p>{{ texto }}</p>
-  {% if caller is defined %}{{ caller() }}{% endif %}
+  {% if caller is defined %}{% set acoes = caller() %}{% if acoes|trim %}<div class="vazio-acoes">{{ acoes }}</div>{% endif %}{% endif %}
 </div>
 {%- endmacro %}
 
@@ -143,7 +144,7 @@
    `icone_nome` põe o ícone num círculo suave ao lado do rótulo; `texto=True` é para valor em palavras/datas (menor, sem quebrar a palavra). href (opcional) faz o cartão inteiro levar a outra página.
    variacao (opcional, de `painel.descrever_variacao`): linha com a variação em relação ao mês anterior, tom bom/ruim/neutro. #}
 {% macro kpi(rotulo, valor, detalhe=None, atencao=False, href=None, variacao=None, progresso=None, variacao_neutra=False, extra=None, visual=None, tom="", icone_nome=None, texto=False) -%}
-<div class="kpi{{ ' atencao' if (atencao or tom == "critico") else '' }}{{ ' aviso' if (tom == "aviso" and not atencao) else '' }}{{ ' kpi-link' if href else '' }}{{ ' kpi-texto' if texto else '' }}"><dt>{% if icone_nome %}<span class="kpi-icone">{{ icone(icone_nome) }}</span>{% endif %}<span>{% if href %}<a href="{{ href }}">{{ rotulo }}</a>{% else %}{{ rotulo }}{% endif %}</span></dt><dd>{{ valor }}{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}{% if extra %}<small class="kpi-extra">{{ extra }}</small>{% endif %}{% if visual %}<span class="kpi-visual">{{ visual }}</span>{% endif %}{% if progresso is not none %}<span class="kpi-barra" role="progressbar" aria-label="{{ rotulo }}: {{ progresso }}% do previsto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progresso }}"><svg viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect class="kpi-barra-cheia" width="{{ progresso }}" height="6"/></svg></span>{% endif %}{% if variacao %}<small class="kpi-variacao {{ 'neutro' if variacao_neutra else variacao.tom }}">{% if variacao.seta %}<span aria-hidden="true">{{ variacao.seta }}</span> {% endif %}{{ variacao.texto }}</small>{% endif %}</dd></div>
+<div class="kpi{{ ' atencao' if (atencao or tom == "critico") else '' }}{{ ' aviso' if (tom == "aviso" and not atencao) else '' }}{{ ' kpi-link' if href else '' }}{{ ' kpi-texto' if texto else '' }}"><dt>{% if icone_nome %}<span class="kpi-icone">{{ icone(icone_nome) }}</span>{% endif %}<span>{% if href %}<a href="{{ href }}">{{ rotulo }}</a>{% else %}{{ rotulo }}{% endif %}</span></dt><dd><span data-contar>{{ valor }}</span>{% if detalhe %}<small>{{ detalhe }}</small>{% endif %}{% if extra %}<small class="kpi-extra">{{ extra }}</small>{% endif %}{% if visual %}<span class="kpi-visual">{{ visual }}</span>{% endif %}{% if progresso is not none %}<span class="kpi-barra" role="progressbar" aria-label="{{ rotulo }}: {{ progresso }}% do previsto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progresso }}"><svg viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect class="kpi-barra-cheia" width="{{ progresso }}" height="6"/></svg></span>{% endif %}{% if variacao %}<small class="kpi-variacao {{ 'neutro' if variacao_neutra else variacao.tom }}">{% if variacao.seta %}<span aria-hidden="true">{{ variacao.seta }}</span> {% endif %}{{ variacao.texto }}</small>{% endif %}</dd></div>
 {%- endmacro %}
 
 {# Tabela que vira cartões no celular. colunas: lista de (rotulo, classe_do_th).

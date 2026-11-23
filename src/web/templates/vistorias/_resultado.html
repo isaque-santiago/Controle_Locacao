@@ -17,5 +17,5 @@
 {% endcall %}
 {{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}
 {% if d.pagina.total > opcoes_por_pagina[0] %}<div class="campo por-pagina"><label for="por_pagina">Vistorias por página</label><select class="entrada" id="por_pagina" name="por_pagina" hx-get="/vistorias" hx-include="#filtros" hx-target="#resultado" hx-push-url="true" hx-trigger="change">{% for n in opcoes_por_pagina %}<option value="{{ n }}"{% if n == por_pagina %} selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>{% endif %}
-{% elif filtrando %}{% call estado_vazio("Nenhuma vistoria encontrada", "Nenhuma vistoria atende à busca ou ao filtro escolhido.", "0") %}{{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}{% endcall %}
-{% else %}{{ estado_vazio("Nenhuma vistoria registrada", "As vistorias de entrega e de devolução aparecem aqui assim que forem registradas.", "0") }}{% endif %}
+{% elif filtrando %}{% call estado_vazio("Nenhuma vistoria encontrada", "Nenhuma vistoria atende à busca ou ao filtro escolhido.", icone_nome="busca") %}{{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma vistoria registrada", "As vistorias de entrega e de devolução aparecem aqui assim que forem registradas.", icone_nome="vistoria") }}{% endif %}

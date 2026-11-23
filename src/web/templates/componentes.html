@@ -46,7 +46,7 @@
     {% call cartao("Dados do veículo") %}<p>Modelo, ano, cor e quilometragem aparecem aqui.</p>{% endcall %}
   {% endcall %}
   {% call painel_aba("vistorias") %}
-    {% call estado_vazio("Nenhuma vistoria registrada", "As vistorias de entrega e de devolução aparecem aqui, com as fotos de cada uma.") %}
+    {% call estado_vazio("Nenhuma vistoria registrada", "As vistorias de entrega e de devolução aparecem aqui, com as fotos de cada uma.", icone_nome="vistoria") %}
       {{ botao("Registrar vistoria", variante="primario") }}
     {% endcall %}
   {% endcall %}

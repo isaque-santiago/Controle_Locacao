@@ -11,7 +11,7 @@
 <td class="c-acao"><form method="post" action="{{ base }}/cliente"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="cliente_id" value="{{ c.id }}"><input type="hidden" name="q" value="{{ busca }}"><button class="btn{{ ' btn-primario' if escolhido else '' }}" type="submit"{% if escolhido %} aria-pressed="true"{% endif %}{% if not item.elegivel %} disabled{% endif %} aria-label="{{ 'Cliente selecionado: ' if escolhido else 'Escolher ' }}{{ c.nome }}">{{ "Selecionado" if escolhido else "Selecionar" }}</button></form></td></tr>{% endfor %}
 {% endcall %}
 </div>
-{% else %}{{ estado_vazio("Nenhum cliente encontrado", "Confira a busca ou cadastre o cliente na página Clientes.", "0") }}{% endif %}
+{% else %}{{ estado_vazio("Nenhum cliente encontrado", "Confira a busca ou cadastre o cliente na página Clientes.", icone_nome="busca") }}{% endif %}
 {% else %}
 {% if candidatas %}
 <div class="contrato-linhas">
@@ -25,5 +25,5 @@
 {% if rascunho_tem_moto and not escolhida %}{% set vinculada = m.id in extras_ids %}<form method="post" action="{{ base }}/moto-extra"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="moto_id" value="{{ m.id }}"><input type="hidden" name="q" value="{{ busca }}"><input type="hidden" name="acao" value="{{ 'remover' if vinculada else 'vincular' }}"><button class="btn btn-compacto" type="submit"{% if vinculada %} aria-pressed="true"{% endif %} aria-label="{{ 'Tirar do contrato o veículo ' if vinculada else 'Vincular ao mesmo contrato o veículo ' }}{{ m.placa|placa_br }}">{{ "Vinculada · tirar" if vinculada else "Vincular ao contrato" }}</button></form>{% endif %}</td></tr>{% endfor %}
 {% endcall %}
 </div>
-{% else %}{{ estado_vazio("Nenhum veículo disponível encontrada", "Só veículos com situação Disponível podem ser alugadas.", "0") }}{% endif %}
+{% else %}{{ estado_vazio("Nenhum veículo disponível encontrada", "Só veículos com situação Disponível podem ser alugadas.", icone_nome="busca") }}{% endif %}
 {% endif %}
