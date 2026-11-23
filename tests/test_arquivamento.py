@@ -78,3 +78,19 @@ def test_motivo_desconhecido_vira_o_padrao():
     assert a.motivo_valido("outro") == "outro"
     assert a.motivo_valido("xyz") == a.MOTIVO_PADRAO
     assert a.motivo_valido(None) == a.MOTIVO_PADRAO
+
+
+def test_lista_de_clientes_esconde_arquivados_fora_do_filtro_proprio():
+    from src.domain import clientes_lista as cl
+
+    registros = [
+        {"id": "1", "nome": "Ana", "status": "ativo"},
+        {"id": "2", "nome": "Beto", "status": "inativo", "arquivado_em": "2026-11-10T10:00:00+00:00"},
+        {"id": "3", "nome": "Caio", "status": "inativo"},
+    ]
+    assert [c["id"] for c in cl.filtrar(registros, "todos", "")] == ["1", "3"]
+    assert [c["id"] for c in cl.filtrar(registros, "inativo", "")] == ["3"]
+    assert [c["id"] for c in cl.filtrar(registros, "arquivados", "")] == ["2"]
+    assert cl.status_valido("arquivados") == "arquivados"
+    _, _, contagem = cl.montar_pagina(registros, "todos", "", 1, 10)
+    assert contagem == {"ativo": 1, "bloqueado": 0, "inativo": 1, "arquivados": 1}

@@ -66,7 +66,7 @@ def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, orde
         "itens": itens,
         "pagina": recorte,
         "contagem": motos_lista.contagem_por_status(registros),
-        "total_cadastradas": len(registros),
+        "total_cadastradas": motos_lista.contagem_por_status(registros)[motos_lista.TODAS],
     }
 
 
@@ -74,6 +74,11 @@ def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, orde
 
 def obter_moto(moto_id: str) -> dict | None:
     return motos.obter(moto_id)
+
+
+def pendencias_para_arquivar(moto_id: str):
+    """Contrato ativo, manutenção aberta e cobrança em aberto que impedem arquivar o veículo."""
+    return motos.pendencias_para_arquivar(moto_id)
 
 
 def _contrato_ativo(moto_id: str) -> dict | None:

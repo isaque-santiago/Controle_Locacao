@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from datetime import date
 
+from src.domain.arquivamento import ARQUIVADOS, esta_arquivado
 from src.domain.ordenacao import ordenar
 
 STATUS_ROTULO = {
@@ -28,7 +29,7 @@ ABA_PADRAO = ABAS_FICHA[0][0]
 def situacao_valida(valor: str | None) -> str:
     """Valor do filtro vindo da URL: um status conhecido ou `todas`."""
     valor = (valor or "").strip().lower()
-    return valor if valor in STATUS_ORDEM else TODAS
+    return valor if valor in (*STATUS_ORDEM, ARQUIVADOS) else TODAS
 
 
 def aba_valida(valor: str | None) -> str:
@@ -36,10 +37,12 @@ def aba_valida(valor: str | None) -> str:
 
 
 def contagem_por_status(motos: list[dict]) -> dict[str, int]:
-    """Total de motos e quantas há em cada status (chave `todas` para o total)."""
-    contagem = {TODAS: len(motos), **dict.fromkeys(STATUS_ORDEM, 0)}
+    """Quantas motos há em cada status (chave `todas` para o total). As arquivadas ficam fora de
+    `todas` e dos status, e têm a sua própria chave."""
+    arquivadas = [m for m in motos if esta_arquivado(m)]
+    contagem = {TODAS: len(motos) - len(arquivadas), **dict.fromkeys(STATUS_ORDEM, 0), ARQUIVADOS: len(arquivadas)}
     for moto in motos:
-        if moto["status"] in contagem:
+        if not esta_arquivado(moto) and moto["status"] in contagem:
             contagem[moto["status"]] += 1
     return contagem
 
@@ -56,14 +59,16 @@ def filtrar_motos(
 ) -> list[dict]:
     """Filtra por status e por texto em placa (com ou sem hífen), marca, modelo e locatário.
 
-    `locatarios` mapeia o id da moto ao nome do cliente do contrato ativo."""
+    As arquivadas só aparecem no filtro `arquivados`. `locatarios` mapeia o id da moto ao nome do cliente do contrato ativo."""
     locatarios = locatarios or {}
     termo = (busca or "").strip()
     termo_texto = termo.casefold()
     termo_placa = _sem_hifen(termo)
     resultado = []
     for moto in motos:
-        if situacao != TODAS and moto["status"] != situacao:
+        if esta_arquivado(moto) != (situacao == ARQUIVADOS):
+            continue
+        if situacao not in (TODAS, ARQUIVADOS) and moto["status"] != situacao:
             continue
         if termo:
             texto = f"{moto['marca']} {moto['modelo']} {locatarios.get(moto['id'], '')}".casefold()

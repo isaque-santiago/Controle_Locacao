@@ -26,8 +26,20 @@ def test_aba_valida_cai_na_primeira():
 
 def test_contagem_por_status():
     assert ml.contagem_por_status(MOTOS) == {
-        "todas": 3, "disponivel": 1, "alugada": 1, "manutencao": 0, "inativa": 1,
+        "todas": 3, "disponivel": 1, "alugada": 1, "manutencao": 0, "inativa": 1, "arquivados": 0,
     }
+
+
+def test_arquivadas_saem_de_todas_e_dos_status_e_aparecem_so_em_arquivados():
+    arquivada = {**MOTOS[2], "id": "9", "arquivada_em": "2026-11-19T10:00:00+00:00"}
+    motos = [*MOTOS, arquivada]
+    assert ml.contagem_por_status(motos)["todas"] == 3
+    assert ml.contagem_por_status(motos)["inativa"] == 1
+    assert ml.contagem_por_status(motos)["arquivados"] == 1
+    assert [m["id"] for m in ml.filtrar_motos(motos, "todas")] == ["1", "2", "3"]
+    assert [m["id"] for m in ml.filtrar_motos(motos, "inativa")] == ["3"]
+    assert [m["id"] for m in ml.filtrar_motos(motos, "arquivados")] == ["9"]
+    assert ml.situacao_valida("arquivados") == "arquivados"
 
 
 def test_filtra_por_situacao():
