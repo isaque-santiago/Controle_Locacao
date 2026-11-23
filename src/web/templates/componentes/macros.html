@@ -100,6 +100,11 @@
 <span title="{{ texto }}" class="selo {{ tipo }}">{{ texto }}</span>
 {%- endmacro %}
 
+{# Campo sem valor: traço apagado (o leitor de tela ouve "não informado"). Use como `{{ valor or sem_dado() }}`. #}
+{% macro sem_dado() -%}
+<span class="sem-dado"><span aria-hidden="true">—</span><span class="so-leitor">não informado</span></span>
+{%- endmacro %}
+
 {% macro placa(texto) -%}
 <span class="placa">{{ texto }}</span>
 {%- endmacro %}
