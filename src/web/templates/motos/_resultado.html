@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import filtro_colapsavel, icone_veiculo, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome, botao_previa %}
+{% from "componentes/macros.html" import filtro_colapsavel, icone_veiculo, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome, botao_previa, aviso_filtro %}
 {# Trecho trocado pelo HTMX: filtros em chips, lista e paginação. O campo oculto mantém a situação nos envios do formulário. #}
 <input type="hidden" name="situacao" value="{{ situacao }}">
 <input type="hidden" name="ordem" value="{{ ordem }}">
@@ -6,6 +6,7 @@
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao, oob=True) }}{% endif %}
 
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+{% if filtrando and d.itens %}{{ aviso_filtro(d.pagina.total, d.total_cadastradas, "veículos", url_limpar) }}{% endif %}
 
 {% if d.itens %}
 {% call tabela([("Placa", ""), ("Veículo", ""), ("Situação", "")] + ([("Km", "num")] if d.mostrar_km else []) + [("Locatário", ""), ("Próxima manutenção", ""), ("", "c-previa")], "Veículos cadastrados", recolhivel=True, ordenacao=ordenacao) %}

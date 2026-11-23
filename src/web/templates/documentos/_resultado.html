@@ -1,7 +1,8 @@
-{% from "componentes/macros.html" import filtro_colapsavel, placa, selo, tabela, paginacao, estado_vazio, botao, rc_titulo %}
+{% from "componentes/macros.html" import filtro_colapsavel, placa, selo, tabela, paginacao, estado_vazio, botao, rc_titulo, aviso_filtro %}
 <input type="hidden" name="situacao" value="{{ situacao }}">
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, situacao, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+{% if filtrando and d.itens %}{{ aviso_filtro(d.pagina.total, d.total_cadastrados, "documentos", url_limpar) }}{% endif %}
 {% if d.itens %}
 {% call tabela([("Veículo", ""), ("Tipo", ""), ("Referência", ""), ("Vencimento", ""), ("Valor", "num"), ("Situação", ""), ("Ações", "col-acoes")], "Documentos da frota", recolhivel=True) %}
 {% for item in d.itens %}{% set doc = item.documento %}{% set tipo = tipos.get(doc.tipo, doc.tipo) %}<tr data-recolhivel>

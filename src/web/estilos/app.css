@@ -1401,3 +1401,8 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   @keyframes aba-marca {from {border-bottom-color: transparent; background: linear-gradient(to top, var(--marca-a14), transparent 70%);}}
 }
 @media (prefers-reduced-motion: reduce) {.abas button, .abas a {transition: none;}}
+
+/* Indicador de filtro ativo (as listas lembram busca e filtro na aba): texto + "Limpar filtros" */
+.aviso-filtro {display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e2) var(--e3); margin: 0 0 var(--e3); padding: var(--e2) var(--e3); border: 1px solid var(--linha-forte); border-radius: var(--raio-md); background: var(--superficie-elevada); color: var(--texto-2); font-size: 0.875rem;}
+.aviso-filtro strong {color: var(--texto);}
+@media print {.aviso-filtro {display: none;}}
