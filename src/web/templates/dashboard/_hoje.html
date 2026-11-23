@@ -3,6 +3,7 @@
 {% set areas = {"manutencao": "/manutencao", "documentos": "/documentos", "clientes": "/clientes", "dividas": "/dividas", "mensagens": "/mensagens?filtro=problemas", "configuracoes": "/configuracoes#cfg-whatsapp"} %}
 {% set h = d.hoje %}
 {% set comp = d.compacto %}
+{% set tons = h.get("tons", {}) %}
 
 {% if h.indisponivel %}
 {{ indisponivel("Cobrança de hoje") }}
@@ -10,13 +11,13 @@
 {% set cb = h.cobranca %}
 {% set n_atraso = cb.contratos_em_atraso + cb.contratos_inadimplentes %}
 <dl class="grade kpis">
-  {{ kpi("A cobrar", dinc(cb.a_cobrar), (dinc(cb.vencem_hoje) ~ " vencem hoje · " ~ dinc(cb.em_atraso) ~ " em atraso"), atencao=(cb.a_cobrar > 0), href="/cobrancas?aba=atrasadas") }}
+  {{ kpi("A cobrar", dinc(cb.a_cobrar), (dinc(cb.vencem_hoje) ~ " vencem hoje · " ~ dinc(cb.em_atraso) ~ " em atraso"), icone_nome="cobranca", href="/cobrancas?aba=atrasadas") }}
   {% set visual_atraso %}{{ barra_segmentos(cb.faixas_atraso, "Atraso por faixa: " ~ cb.faixas_atraso|map(attribute="rotulo")|join(", ")) }}{{ legenda_faixas(cb.faixas_atraso) }}{% endset %}
-  {{ kpi("Em atraso", dinc(cb.em_atraso), (n_atraso ~ (" contrato" if n_atraso == 1 else " contratos") ~ " · " ~ cb.contratos_inadimplentes ~ (" inadimplente" if cb.contratos_inadimplentes == 1 else " inadimplentes")), atencao=(cb.contratos_inadimplentes > 0), extra=("+ " ~ dinc(cb.encargos) ~ " de encargos" if cb.encargos > 0 else None), visual=visual_atraso if cb.em_atraso > 0 else None, href="/cobrancas?aba=atrasadas") }}
+  {{ kpi("Em atraso", dinc(cb.em_atraso), (n_atraso ~ (" contrato" if n_atraso == 1 else " contratos") ~ " · " ~ cb.contratos_inadimplentes ~ (" inadimplente" if cb.contratos_inadimplentes == 1 else " inadimplentes")), tom=tons.get("em_atraso", ""), icone_nome="alerta", extra=("+ " ~ dinc(cb.encargos) ~ " de encargos" if cb.encargos > 0 else None), visual=visual_atraso if cb.em_atraso > 0 else None, href="/cobrancas?aba=atrasadas") }}
   {% set fr = h.frota %}
-  {{ kpi("Frota", fr.ocupacao ~ "% ocupada", fr.contagem.alugada ~ " de " ~ fr.ativas ~ " veículos ativos alugados", extra=(fr.contagem.disponivel ~ " livres · " ~ fr.contagem.manutencao ~ " em manutenção"), visual=barra_segmentos(fr.segmentos, fr.descricao), href="/?aba=frota") }}
+  {{ kpi("Frota", fr.ocupacao ~ "% ocupada", fr.contagem.alugada ~ " de " ~ fr.ativas ~ " veículos ativos alugados", icone_nome="moto", extra=(fr.contagem.disponivel ~ " livres · " ~ fr.contagem.manutencao ~ " em manutenção"), visual=barra_segmentos(fr.segmentos, fr.descricao), href="/?aba=frota") }}
   {% if h.caixa %}
-  {{ kpi("Caixa do mês", din(h.caixa.valor), ("inclui " ~ dinc(h.caixa.investimento) ~ " de investimento em veículos") if h.caixa.investimento > 0 else "após dívidas e retiradas", atencao=(h.caixa.valor < 0), visual=sparkline(h.caixa.serie, "Caixa dos últimos 6 meses, de " ~ (h.caixa.serie.primeiro|moeda) ~ " a " ~ (h.caixa.serie.final|moeda)) if h.caixa.serie and not d.ocultar else None, href="/?aba=dinheiro") }}
+  {{ kpi("Caixa do mês", din(h.caixa.valor), ("inclui " ~ dinc(h.caixa.investimento) ~ " de investimento em veículos") if h.caixa.investimento > 0 else "após dívidas e retiradas", tom=tons.get("caixa", ""), icone_nome="divida", visual=sparkline(h.caixa.serie, "Caixa dos últimos 6 meses, de " ~ (h.caixa.serie.primeiro|moeda) ~ " a " ~ (h.caixa.serie.final|moeda)) if h.caixa.serie and not d.ocultar else None, href="/?aba=dinheiro") }}
   {% else %}
   {{ kpi("Caixa do mês", "—", "indisponível agora") }}
   {% endif %}

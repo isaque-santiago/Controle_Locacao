@@ -39,7 +39,7 @@ def _hoje(hoje: date) -> dict:
         tons = {}
     else:
         caixa = dados["caixa"]["valor"] if dados.get("caixa") else None
-        tons = painel.tons_kpis_hoje(dados["cobranca"]["contratos_inadimplentes"], caixa)
+        tons = painel.tons_kpis_hoje(dados["cobranca"].get("contratos_inadimplentes", 0), caixa)
     return {"hoje": {**dados, "tons": tons, "atencao": ordenar_atencao(itens)}, "mes": None, "mes_anterior": None, "mes_seguinte": None}
 
 
