@@ -2,8 +2,10 @@
 
 from postgrest.exceptions import APIError
 
+from src.domain import arquivamento
+from src.domain.arquivamento import Pendencias
 from src.domain.validadores import validar_cpf, validar_telefone
-from src.repositories import clientes
+from src.repositories import clientes, cobrancas, contratos
 
 _CODIGO_VIOLACAO_UNICIDADE = "23505"
 
@@ -60,3 +62,25 @@ def atualizar(cliente_id: str, dados: dict) -> dict:
         if erro.code == _CODIGO_VIOLACAO_UNICIDADE:
             raise ValueError("Já existe um cliente cadastrado com esse CPF.") from erro
         raise
+
+
+def pendencias_para_arquivar(cliente_id: str) -> Pendencias:
+    """O que impede arquivar o cliente (contrato ativo, cobrança em aberto, inclusive de contrato encerrado)."""
+    return arquivamento.pendencias_do_cliente(cliente_id, contratos.listar(), cobrancas.listar())
+
+
+def arquivar(cliente_id: str) -> dict:
+    """Arquiva o ex-locatário se não houver pendências. O banco confere de novo na RPC."""
+    cliente = clientes.obter(cliente_id)
+    if cliente is None:
+        raise ValueError("Cliente não encontrado.")
+    if arquivamento.esta_arquivado(cliente):
+        raise ValueError("Este cliente já está arquivado.")
+    pendencias = pendencias_para_arquivar(cliente_id)
+    if not pendencias.pode_arquivar:
+        raise ValueError(arquivamento.texto_recusa(pendencias, "o cliente"))
+    return clientes.arquivar_via_rpc(cliente_id)
+
+
+def desarquivar(cliente_id: str) -> dict:
+    return clientes.desarquivar_via_rpc(cliente_id)

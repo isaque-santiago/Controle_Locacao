@@ -24,6 +24,14 @@ def alterar_situacao(moto_id: str, inativar: bool) -> dict:
     return motos.atualizar(moto_id, {"status": "inativa" if inativar else "disponivel"})
 
 
+def arquivar_moto(moto_id: str, motivo: str, vendida_em: date | None) -> dict:
+    return motos.arquivar(moto_id, motivo, vendida_em)
+
+
+def desarquivar_moto(moto_id: str) -> dict:
+    return motos.desarquivar(moto_id)
+
+
 def obter_documento(documento_id: str) -> dict | None:
     return documentos.obter(documento_id)
 

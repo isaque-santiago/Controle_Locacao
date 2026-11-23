@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.domain import motos_lista
+from src.domain import arquivamento, motos_lista
 from src.domain.ordenacao import cabecalhos, interpretar, valor_da_url
 from src.domain.paginacao import OPCOES_POR_PAGINA
 from src.web import dados_motos
@@ -87,6 +87,7 @@ def lista(
             for chave, rotulo in (
                 (motos_lista.TODAS, "Todas"),
                 *((c, motos_lista.STATUS_ROTULO[c]) for c in motos_lista.STATUS_ORDEM),
+                (arquivamento.ARQUIVADOS, "Arquivados"),
             )
         ],
         "url_anterior": _url_lista(situacao, busca, tamanho, p.pagina - 1, ordem) if p.tem_anterior else None,

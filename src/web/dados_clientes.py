@@ -3,7 +3,7 @@
 import logging
 from decimal import Decimal
 
-from src.domain import clientes_lista
+from src.domain import arquivamento, clientes_lista
 from src.domain.ordenacao import interpretar
 from src.domain.paginacao import OPCOES_POR_PAGINA, calcular_pagina
 from src.domain.cnh_regras import situacao_cnh
@@ -35,11 +35,17 @@ def carregar_lista(status, busca, pagina, por_pagina, ordem=""):
             "placa": placas.get(contrato["moto_id"]) if contrato else None,
             "moto_id": contrato["moto_id"] if contrato else None,
         })
-    return {"itens": saida, "pagina": recorte, "contagem": contagem, "total_cadastrados": len(registros)}
+    return {"itens": saida, "pagina": recorte, "contagem": contagem,
+            "total_cadastrados": len(registros) - contagem[arquivamento.ARQUIVADOS]}
 
 
 def obter_cliente(cliente_id):
     return clientes.obter(cliente_id)
+
+
+def pendencias_para_arquivar(cliente_id):
+    """Contrato ativo e cobrança em aberto (inclusive de contrato encerrado) que impedem arquivar o cliente."""
+    return clientes.pendencias_para_arquivar(cliente_id)
 
 
 def listar_trocas(cliente_id):

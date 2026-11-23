@@ -5,13 +5,14 @@ com erro devolve o mesmo formulário com a mensagem ao lado do campo (e o diálo
 com sucesso guarda um aviso na sessão e manda o navegador para a página (HX-Redirect)."""
 
 import logging
+from datetime import date
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, Response
 from starlette.concurrency import run_in_threadpool
 
-from src.domain import erros, mensagens
+from src.domain import arquivamento, erros, mensagens
 from src.domain.entradas import texto_moeda, texto_placa
 from src.domain.formulario_moto import ErroDeCampos, ler_km, ler_moto, ler_regularizacao
 from src.domain.valores import hoje_br
@@ -195,6 +196,8 @@ def alterar_situacao(request: Request, moto_id: str, sessao: Sessao = Depends(ex
     """Inativa a moto disponível ou reativa a inativa (botão da ficha, sem diálogo)."""
     moto = _moto_ou_404(moto_id)
     destino = f"/motos/{moto_id}"
+    if arquivamento.esta_arquivado(moto):
+        return _concluir(request, sessao, destino, tipo="erro", texto="Este veículo está arquivado. Desarquive-o antes de reativá-lo.")
     if moto["status"] not in ("disponivel", "inativa"):
         return _concluir(
             request, sessao, destino, tipo="erro",
@@ -210,6 +213,66 @@ def alterar_situacao(request: Request, moto_id: str, sessao: Sessao = Depends(ex
         logger.exception("Falha ao alterar a situação do veículo %s", moto_id)
         return _concluir(request, sessao, destino, tipo="erro", texto=falha.mensagem)
     return _concluir(request, sessao, destino, mensagens.moto_status_alterado(formatar_placa(moto["placa"]), inativando))
+
+
+# ------------------------------------------------------------ arquivar --
+
+def _contexto_arquivar(moto: dict, valores: dict) -> dict:
+    return {
+        "moto": moto,
+        "acao": f"/motos/{moto['id']}/arquivar",
+        "valores": valores,
+        "motivos": list(arquivamento.MOTIVOS_ARQUIVAMENTO.items()),
+        "impedimentos": dados_motos.pendencias_para_arquivar(moto["id"]).impedimentos(),
+        "erros": {},
+    }
+
+
+@router.get("/motos/{moto_id}/arquivar")
+def formulario_arquivar(request: Request, moto_id: str, _: Sessao = Depends(exigir_dono)):
+    moto = _moto_ou_404(moto_id)
+    valores = {"motivo": arquivamento.MOTIVO_PADRAO, "vendida_em": hoje_br().isoformat()}
+    return renderizar(request, "motos/_form_arquivar.html", _contexto_arquivar(moto, valores))
+
+
+@router.post("/motos/{moto_id}/arquivar", dependencies=[Depends(validar_csrf)])
+async def arquivar(request: Request, moto_id: str, sessao: Sessao = Depends(exigir_dono)):
+    entrada = await _entrada(request)
+    return await run_in_threadpool(_arquivar, request, sessao, moto_id, entrada)
+
+
+def _arquivar(request: Request, sessao: Sessao, moto_id: str, entrada: dict):
+    moto = _moto_ou_404(moto_id)
+    contexto = _contexto_arquivar(moto, entrada)
+
+    def acao():
+        motivo = arquivamento.motivo_valido(entrada.get("motivo"))
+        vendida_em = None
+        if motivo == "vendida":
+            try:
+                vendida_em = date.fromisoformat((entrada.get("vendida_em") or "").strip())
+            except ValueError:
+                raise ErroDeCampos({"vendida_em": "Informe a data da venda."})
+        acoes_motos.arquivar_moto(moto_id, motivo, vendida_em)
+        aviso = mensagens.moto_arquivada(formatar_placa(moto["placa"]), motivo == "vendida")
+        return _concluir(request, sessao, "/motos", aviso)
+
+    return _devolver_formulario(request, "motos/_form_arquivar.html", contexto, acao)
+
+
+@router.post("/motos/{moto_id}/desarquivar", dependencies=[Depends(validar_csrf)])
+def desarquivar(request: Request, moto_id: str, sessao: Sessao = Depends(exigir_dono)):
+    moto = _moto_ou_404(moto_id)
+    destino = f"/motos/{moto_id}"
+    try:
+        acoes_motos.desarquivar_moto(moto_id)
+    except Exception as erro:
+        falha = erros.classificar_erro(erro)
+        if falha.categoria == erros.SESSAO_EXPIRADA:
+            raise
+        logger.exception("Falha ao desarquivar o veículo %s", moto_id)
+        return _concluir(request, sessao, destino, tipo="erro", texto=falha.mensagem)
+    return _concluir(request, sessao, destino, mensagens.moto_desarquivada(formatar_placa(moto["placa"])))
 
 
 # ----------------------------------------------------------- documentos --

@@ -2,6 +2,7 @@
 
 import re
 
+from src.domain.arquivamento import ARQUIVADOS, esta_arquivado
 from src.domain.ordenacao import ordenar
 from src.domain.paginacao import calcular_pagina
 
@@ -12,7 +13,7 @@ ABAS_FICHA = (("resumo", "Resumo"), ("contratos", "Contratos"), ("pagamentos", "
 
 
 def status_valido(valor: str | None) -> str:
-    return valor if valor in (TODOS, *STATUS_ORDEM) else TODOS
+    return valor if valor in (TODOS, *STATUS_ORDEM, ARQUIVADOS) else TODOS
 
 
 def aba_valida(valor: str | None) -> str:
@@ -24,7 +25,8 @@ def filtrar(registros: list[dict], status: str, busca: str) -> list[dict]:
     digitos = re.sub(r"\D", "", termo)
     return [
         cliente for cliente in registros
-        if (status == TODOS or cliente.get("status") == status)
+        if esta_arquivado(cliente) == (status == ARQUIVADOS)
+        and status in (TODOS, ARQUIVADOS, cliente.get("status"))
         and (
             not termo
             or termo in (cliente.get("nome") or "").casefold()
@@ -50,5 +52,7 @@ def ordenar_clientes(registros, campo, decrescente):
 def montar_pagina(registros, status, busca, pagina, por_pagina, campo=None, decrescente=False):
     filtrados = ordenar_clientes(filtrar(registros, status, busca), campo, decrescente)
     recorte = calcular_pagina(len(filtrados), pagina, por_pagina)
-    contagem = {chave: sum(c.get("status") == chave for c in registros) for chave in STATUS_ORDEM}
+    ativos = [c for c in registros if not esta_arquivado(c)]
+    contagem = {chave: sum(c.get("status") == chave for c in ativos) for chave in STATUS_ORDEM}
+    contagem[ARQUIVADOS] = len(registros) - len(ativos)
     return filtrados[recorte.inicio:recorte.fim], recorte, contagem

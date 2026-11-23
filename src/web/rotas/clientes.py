@@ -5,7 +5,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from src.domain import clientes_lista
+from src.domain import arquivamento, clientes_lista
 from src.domain.ordenacao import cabecalhos, interpretar, valor_da_url
 from src.domain.paginacao import OPCOES_POR_PAGINA
 from src.web import dados_clientes
@@ -59,7 +59,7 @@ def lista(request: Request, status: str | None = None, q: str | None = None, pag
         "ordenacao": cabecalhos(clientes_lista.COLUNAS_ORDENAVEIS, campo, decrescente, lambda nova: _url_lista(status, busca, tamanho, ordem=nova)),
         "opcoes_por_pagina": OPCOES_POR_PAGINA, "status_rotulo": clientes_lista.STATUS_ROTULO,
         "chips": [(chave, rotulo, dados["total_cadastrados"] if chave == clientes_lista.TODOS else dados["contagem"][chave], _url_lista(chave, busca, tamanho, ordem=ordem))
-                  for chave, rotulo in ((clientes_lista.TODOS, "Todos"), *((x, clientes_lista.STATUS_ROTULO[x]) for x in clientes_lista.STATUS_ORDEM))],
+                  for chave, rotulo in ((clientes_lista.TODOS, "Todos"), *((x, clientes_lista.STATUS_ROTULO[x]) for x in clientes_lista.STATUS_ORDEM), (arquivamento.ARQUIVADOS, "Arquivados"))],
         "url_anterior": _url_lista(status, busca, tamanho, p.pagina - 1, ordem) if p.tem_anterior else None,
         "url_proxima": _url_lista(status, busca, tamanho, p.pagina + 1, ordem) if p.tem_proxima else None,
         "url_limpar": _url_lista(clientes_lista.TODOS, "", tamanho), "filtrando": status != clientes_lista.TODOS or bool(busca),

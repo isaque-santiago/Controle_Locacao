@@ -2,8 +2,12 @@
 
 from postgrest.exceptions import APIError
 
+from datetime import date
+
+from src.domain import arquivamento
+from src.domain.arquivamento import Pendencias
 from src.domain.validadores import validar_placa
-from src.repositories import historico_km, motos
+from src.repositories import cobrancas, contratos, historico_km, manutencoes, motos
 
 _CODIGO_VIOLACAO_UNICIDADE = "23505"
 
@@ -82,3 +86,30 @@ def atualizar_km(
 
 def historico(moto_id):
     return historico_km.listar_por_moto(moto_id)
+
+
+def pendencias_para_arquivar(moto_id: str) -> Pendencias:
+    """O que impede arquivar o veículo (contrato ativo, manutenção aberta, cobrança em aberto)."""
+    return arquivamento.pendencias_da_moto(
+        moto_id, contratos.listar(), contratos.listar_vinculos(), manutencoes.listar(moto_id), cobrancas.listar()
+    )
+
+
+def arquivar(moto_id: str, motivo: str, vendida_em: date | None = None) -> dict:
+    """Arquiva o veículo (ex.: vendido) se não houver pendências. O banco confere de novo na RPC."""
+    moto = motos.obter(moto_id)
+    if moto is None:
+        raise ValueError("Veículo não encontrado.")
+    if arquivamento.esta_arquivado(moto):
+        raise ValueError("Este veículo já está arquivado.")
+    if moto["status"] not in ("disponivel", "inativa"):
+        raise ValueError("Só é possível arquivar veículos disponíveis ou inativos; este veículo está em uso.")
+    pendencias = pendencias_para_arquivar(moto_id)
+    if not pendencias.pode_arquivar:
+        raise ValueError(arquivamento.texto_recusa(pendencias, "o veículo"))
+    motivo = arquivamento.motivo_valido(motivo)
+    return motos.arquivar_via_rpc(moto_id, motivo, vendida_em.isoformat() if motivo == "vendida" and vendida_em else None)
+
+
+def desarquivar(moto_id: str) -> dict:
+    return motos.desarquivar_via_rpc(moto_id)

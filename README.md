@@ -749,6 +749,12 @@ Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-
 
 Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/Roteiro_Homologacao_Manual.md`).
 
+### Arquivamento de veículos vendidos e ex-locatários (item 10 da seção 23, 19/11/2026)
+
+Nada é apagado: o dono **arquiva** pela ficha, e só quando não há pendências (contrato ativo, manutenção aberta ou cobrança em aberto, inclusive o débito de contratos encerrados). O veículo pede o motivo («Vendido», com a data, ou «Outro motivo») e fica inativo. Arquivados saem de «Todos» nas listas e ficam no filtro «Arquivados»; dá para desarquivar (o veículo continua inativo até ser reativado). Contrato novo não aceita veículo nem cliente arquivado. Banco: migration `20261119120000_arquivamento.sql` (RPCs `rpc_arquivar_*` e `rpc_desarquivar_*`); regra em `src/domain/arquivamento.py`.
+
+Atualização de uma instalação existente: aplicar a migration; rodar `supabase/verificar_arquivamento.sql` no **dev** (desfaz tudo no fim); `supabase/consultar_candidatos_arquivamento.sql` (somente leitura) lista quem já pode ser arquivado.
+
 ### Administradores (mais de um usuário com acesso total)
 
 `is_dono()` consulta a tabela `administradores (user_id)`: quem está nela tem o mesmo acesso do dono (migration `20261105120000_administradores.sql`, que também move o dono atual para a tabela, lendo o UUID da função antiga, então vale para dev e produção). A tabela só é alterada pelo SQL Editor; o app não escreve nela e cada usuário vê só a própria linha.

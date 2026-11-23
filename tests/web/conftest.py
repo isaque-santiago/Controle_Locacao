@@ -10,6 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.domain.acesso_locatario import identificador_para_email
+from src.domain.arquivamento import Pendencias
 from src.services.autenticacao import (
     CredenciaisInvalidas,
     SessaoSupabaseInvalida,
@@ -278,6 +279,7 @@ class BaseMotos:
     """Dados fictícios que os serviços de motos devolvem nos testes das rotas."""
 
     def __init__(self):
+        self.pendencias = Pendencias()  # o que impede arquivar (nenhuma por padrão)
         self.motos = [
             _moto(1, "alugada"),
             _moto(2, "disponivel", marca="Yamaha", modelo="Factor"),
@@ -342,6 +344,7 @@ def base_motos(monkeypatch):
             listar=lambda: base.motos,
             obter=lambda id_: next((m for m in base.motos if m["id"] == id_), None),
             historico=lambda id_: base.leituras,
+            pendencias_para_arquivar=lambda id_: base.pendencias,
         ),
     )
     monkeypatch.setattr(
@@ -395,6 +398,14 @@ class AcoesMotosFalsas:
         self._gravar("alterar_situacao", moto_id, inativar)
         return {}
 
+    def arquivar_moto(self, moto_id, motivo, vendida_em):
+        self._gravar("arquivar_moto", moto_id, motivo, vendida_em)
+        return {}
+
+    def desarquivar_moto(self, moto_id):
+        self._gravar("desarquivar_moto", moto_id)
+        return {}
+
     def obter_documento(self, documento_id):
         return next(
             ({**d, "moto_id": self.base.motos[0]["id"]} for d in self.base.documentos if d["id"] == documento_id),
@@ -413,7 +424,7 @@ def acoes_motos_falsas(monkeypatch, base_motos):
     falsas = AcoesMotosFalsas(base_motos)
     for nome in (
         "criar_moto", "atualizar_moto", "registrar_km", "alterar_situacao",
-        "obter_documento", "regularizar_documento",
+        "arquivar_moto", "desarquivar_moto", "obter_documento", "regularizar_documento",
     ):
         monkeypatch.setattr(acoes_motos, nome, getattr(falsas, nome))
     return falsas
@@ -434,6 +445,8 @@ class BaseClientes:
                             "saldo": Decimal("100"), "situacao": "atrasada"},
                            {"id": "b2", "vencimento": "2026-10-08", "tipo": "locacao", "valor": Decimal("300"),
                             "saldo": Decimal("300"), "situacao": "aberta"}]
+        self.pendencias = Pendencias()
+        self.recusa_arquivar = None  # texto de ValueError que `arquivar_cliente` levanta (pendência)
         self.pedido_senha = None  # {"pedido_em": "..."} quando o locatário pediu senha nova e o dono ainda não atendeu
         self.troca_id = "00000000-0000-0000-0000-0000000000f1"
         self.trocas = [{"id": self.troca_id, "criado_em": "2026-09-20T10:00:00+00:00", "km": 12500, "km_excedente": 300,
@@ -444,7 +457,7 @@ class BaseClientes:
 def base_clientes(monkeypatch):
     from src.web import dados_clientes
     base = BaseClientes()
-    monkeypatch.setattr(dados_clientes, "clientes", SimpleNamespace(listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None)))
+    monkeypatch.setattr(dados_clientes, "clientes", SimpleNamespace(listar=lambda: base.clientes, obter=lambda id_: next((c for c in base.clientes if c["id"] == id_), None), pendencias_para_arquivar=lambda id_: base.pendencias))
     monkeypatch.setattr(dados_clientes, "contratos", SimpleNamespace(listar=lambda: base.contratos))
     monkeypatch.setattr(dados_clientes, "motos", SimpleNamespace(listar=lambda: base.motos))
     monkeypatch.setattr(dados_clientes, "configuracoes", SimpleNamespace(obter=lambda: {"alerta_cnh_dias": 30}))
@@ -474,6 +487,12 @@ def acoes_clientes_falsas(monkeypatch, base_clientes):
         chamadas.append(("remover_acesso", cliente_id))
     monkeypatch.setattr(acoes_clientes, "criar_cliente", criar)
     monkeypatch.setattr(acoes_clientes, "atualizar_cliente", atualizar)
+    def arquivar(cliente_id):
+        if base_clientes.recusa_arquivar:
+            raise ValueError(base_clientes.recusa_arquivar)
+        chamadas.append(("arquivar_cliente", cliente_id))
+    monkeypatch.setattr(acoes_clientes, "arquivar_cliente", arquivar)
+    monkeypatch.setattr(acoes_clientes, "desarquivar_cliente", lambda cliente_id: chamadas.append(("desarquivar_cliente", cliente_id)))
     monkeypatch.setattr(acoes_clientes, "criar_acesso_portal", acesso("criar_acesso"))
     monkeypatch.setattr(acoes_clientes, "redefinir_senha_portal", acesso("redefinir_senha"))
     monkeypatch.setattr(acoes_clientes, "remover_acesso_portal", remover)
