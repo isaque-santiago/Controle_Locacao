@@ -1216,13 +1216,13 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 /* ---------- Animações no padrão do sistema de celulares (cell-pag) ----------
    Microinterações curtas, sem movimento contínuo. Só rodam com movimento permitido. */
 @media (prefers-reduced-motion: no-preference) {
-  @keyframes pagina-entra {from {opacity: 0; transform: translateY(4px);} to {opacity: 1; transform: none;}}
-  @keyframes bloco-entra {from {opacity: 0; transform: translateY(.45rem);} to {opacity: 1; transform: none;}}
+  @keyframes bloco-entra {from {opacity: 0; transform: translateY(.35rem);} to {opacity: 1; transform: none;}}
   @keyframes painel-entra {from {opacity: 0; transform: translateY(-.5rem) scale(.97);} to {opacity: 1; transform: none;}}
   @keyframes aviso-entra {from {opacity: 0; transform: translateY(.7rem);} to {opacity: 1; transform: none;}}
   /* "backwards" (não "both"): o transform final não pode ficar ativo, senão cada bloco vira contexto de empilhamento. */
-  main {animation: pagina-entra 220ms ease-out;}
-  #conteudo > :not(#avisos) {animation: bloco-entra 280ms ease-out backwards;}
+  /* Entrada curta: cada camada anima por conta própria (a opacidade se multiplica entre pai e filho), então o conjunto
+     inteiro tem de caber em ~400 ms. Ver o bloco "Entrada em sequência" mais abaixo. */
+  #conteudo > :not(#avisos) {animation: bloco-entra 200ms ease-out backwards;}
   .aviso {animation: aviso-entra 180ms ease-out;}
   .conta[open] > .conta-menu {transform-origin: bottom left; animation: painel-entra 200ms cubic-bezier(.2, .8, .2, 1) both;}
   .conta-movel[open] > .conta-menu {transform-origin: top right;}
@@ -1277,28 +1277,29 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   @keyframes coluna-cresce {from {transform: scaleY(0);} to {transform: scaleY(1);}}
   @keyframes barra-cresce {from {transform: scaleX(0);} to {transform: scaleX(1);}}
   @keyframes arco-aparece {from {opacity: 0;} to {opacity: 1;}}
-  /* Os blocos da página entram um após o outro (cabeçalho, filtros, KPIs, tabela...). */
-  #conteudo > :nth-child(3) {animation-delay: 60ms;}
-  #conteudo > :nth-child(4) {animation-delay: 120ms;}
-  #conteudo > :nth-child(5) {animation-delay: 180ms;}
-  #conteudo > :nth-child(n+6) {animation-delay: 240ms;}
-  /* Cartões de KPI e colunas lado a lado entram em escada; linhas de tabela, nas primeiras dez. */
-  .kpis > *, .cols-2 > * {animation: bloco-entra 320ms ease-out backwards;}
-  .kpis > :nth-child(2), .cols-2 > :nth-child(2) {animation-delay: 60ms;}
-  .kpis > :nth-child(3) {animation-delay: 120ms;}
-  .kpis > :nth-child(4) {animation-delay: 180ms;}
-  .kpis > :nth-child(n+5) {animation-delay: 240ms;}
-  .dados tbody tr {animation: linha-entra 240ms ease-out backwards;}
-  .dados tbody tr:nth-child(2) {animation-delay: 30ms;} .dados tbody tr:nth-child(3) {animation-delay: 60ms;}
-  .dados tbody tr:nth-child(4) {animation-delay: 90ms;} .dados tbody tr:nth-child(5) {animation-delay: 120ms;}
-  .dados tbody tr:nth-child(6) {animation-delay: 150ms;} .dados tbody tr:nth-child(7) {animation-delay: 180ms;}
-  .dados tbody tr:nth-child(8) {animation-delay: 210ms;} .dados tbody tr:nth-child(9) {animation-delay: 240ms;}
-  .dados tbody tr:nth-child(n+10) {animation-delay: 270ms;}
+  /* Os blocos da página entram um após o outro (cabeçalho, filtros, KPIs, tabela...): atraso pequeno e limitado (máx. 120 ms). */
+  #conteudo > :nth-child(3) {animation-delay: 30ms;}
+  #conteudo > :nth-child(4) {animation-delay: 60ms;}
+  #conteudo > :nth-child(5) {animation-delay: 90ms;}
+  #conteudo > :nth-child(n+6) {animation-delay: 120ms;}
+  /* Grades de KPI e de colunas: quem entra são os cartões (em escada), não a grade, para a opacidade não se multiplicar. */
+  #conteudo > .kpis, #conteudo > .cols-2 {animation: none;}
+  .kpis > *, .cols-2 > * {animation: bloco-entra 200ms ease-out backwards;}
+  .kpis > :nth-child(2), .cols-2 > :nth-child(2) {animation-delay: 40ms;}
+  .kpis > :nth-child(3) {animation-delay: 80ms;}
+  .kpis > :nth-child(4) {animation-delay: 120ms;}
+  .kpis > :nth-child(n+5) {animation-delay: 160ms;}
+  /* Linhas de tabela: as oito primeiras em escada de 25 ms; as demais entram junto com a oitava. */
+  .dados tbody tr {animation: linha-entra 180ms ease-out backwards;}
+  .dados tbody tr:nth-child(2) {animation-delay: 25ms;} .dados tbody tr:nth-child(3) {animation-delay: 50ms;}
+  .dados tbody tr:nth-child(4) {animation-delay: 75ms;} .dados tbody tr:nth-child(5) {animation-delay: 100ms;}
+  .dados tbody tr:nth-child(6) {animation-delay: 125ms;} .dados tbody tr:nth-child(7) {animation-delay: 150ms;}
+  .dados tbody tr:nth-child(n+8) {animation-delay: 175ms;}
   /* Gráficos: colunas sobem, barras avançam e o anel da frota aparece. */
-  .grafico-colunas rect {transform-box: fill-box; transform-origin: 50% 100%; animation: coluna-cresce 600ms cubic-bezier(.2, .8, .2, 1) 150ms backwards;}
-  .grafico-colunas rect:nth-of-type(2n) {animation-delay: 190ms;} .grafico-colunas rect:nth-of-type(4n+3), .grafico-colunas rect:nth-of-type(4n+4) {animation-delay: 230ms;}
-  .barras-lista .barra-cheia, .kpi-barra-cheia {transform-box: fill-box; transform-origin: 0 50%; animation: barra-cresce 700ms cubic-bezier(.2, .8, .2, 1) 200ms backwards;}
-  .rosca .arco {animation: arco-aparece 700ms ease-out 200ms backwards;}
+  .grafico-colunas rect {transform-box: fill-box; transform-origin: 50% 100%; animation: coluna-cresce 500ms cubic-bezier(.2, .8, .2, 1) 100ms backwards;}
+  .grafico-colunas rect:nth-of-type(2n) {animation-delay: 130ms;} .grafico-colunas rect:nth-of-type(4n+3), .grafico-colunas rect:nth-of-type(4n+4) {animation-delay: 160ms;}
+  .barras-lista .barra-cheia, .kpi-barra-cheia {transform-box: fill-box; transform-origin: 0 50%; animation: barra-cresce 550ms cubic-bezier(.2, .8, .2, 1) 120ms backwards;}
+  .rosca .arco {animation: arco-aparece 500ms ease-out 120ms backwards;}
 }
 
 /* ---------- Diálogos e painéis que abrem e fecham com suavidade ----------
@@ -1324,8 +1325,8 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 
 /* ---------- Troca de conteúdo via HTMX: o trecho novo entra com fade em vez de piscar ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  #resultado > :not(input), #painel-aba > * {animation: bloco-entra 240ms ease-out backwards;}
-  #painel-aba > :nth-child(2) {animation-delay: 50ms;} #painel-aba > :nth-child(n+3) {animation-delay: 100ms;}
+  #resultado > :not(input), #painel-aba > * {animation: bloco-entra 180ms ease-out backwards;}
+  #painel-aba > :nth-child(2) {animation-delay: 30ms;} #painel-aba > :nth-child(n+3) {animation-delay: 60ms;}
   /* Enviando um formulário: o botão esmaece suavemente enquanto espera. */
   form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {transition: opacity 150ms ease;}
 }
