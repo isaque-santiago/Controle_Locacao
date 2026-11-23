@@ -518,6 +518,12 @@
       if (salvo) location.replace(location.pathname + salvo);
     } catch (erro) { /* idem */ }
   })();
+  // "Limpar filtros" (no indicador ou no estado vazio) também esvazia o campo de busca, que fica fora do #resultado trocado pelo HTMX
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest && e.target.closest('.aviso-filtro a, .vazio a');
+    var busca = document.getElementById('busca');
+    if (botao && busca && botao.textContent.trim() === 'Limpar filtros') busca.value = '';
+  });
   document.body.addEventListener('htmx:pushedIntoHistory', lembrarFiltros);
   document.body.addEventListener('htmx:historyRestore', lembrarFiltros);
   document.addEventListener('submit', function (e) {
