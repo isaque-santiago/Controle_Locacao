@@ -142,3 +142,41 @@ def test_atributos_do_botao_pagar_nao_saem_escapados(cliente, base_cobrancas):
     entrar(cliente)
     html = cliente.get("/cobrancas?aba=atrasadas").text
     assert "&#34;" not in html.split("<main")[1] and 'hx-target="#dlg-form-conteudo"' in html
+
+
+# --------------------------------------------------- ação em linha: a lista se atualiza no lugar --
+
+NA_LISTA = {**HX, "HX-Current-URL": "http://testserver/cobrancas?aba=atrasadas&q=bruno"}
+
+
+def test_pagar_a_partir_da_lista_atualiza_no_lugar_sem_redirecionar(cliente, base_cobrancas, acoes_cobrancas_falsas):
+    entrar(cliente)
+    resposta = cliente.post("/cobrancas/a2/pagar", data=_dados(csrf_da_sessao(cliente), principal="100,00", extras="134,00"), headers=NA_LISTA)
+    assert resposta.status_code == 200 and "HX-Redirect" not in resposta.headers
+    assert resposta.headers["HX-Reswap"] == "none" and resposta.headers["HX-Trigger"] == "dialogo-concluido"
+    assert len(acoes_cobrancas_falsas.pagamentos) == 1  # a regra de negócio e o RPC são os mesmos
+    html = resposta.text
+    assert 'id="avisos"' in html and "Pagamento de R$ 100,00 registrado" in html
+    assert 'id="painel-aba"' in html and 'id="cabecalho-cobrancas"' in html and html.count('hx-swap-oob="true"') >= 4
+    assert "Bruno Lima" in html and "Ana" not in html  # painel da aba e da busca em que o dono estava
+
+
+def test_pagar_fora_da_lista_continua_redirecionando(cliente, base_cobrancas, acoes_cobrancas_falsas):
+    entrar(cliente)
+    resposta = cliente.post("/cobrancas/h1/pagar", data=_dados(csrf_da_sessao(cliente)), headers={**HX, "HX-Current-URL": "http://testserver/"})
+    assert resposta.headers["HX-Redirect"] == "/cobrancas?aba=hoje" and "HX-Reswap" not in resposta.headers
+
+
+def test_cancelar_a_partir_da_lista_atualiza_no_lugar(cliente, base_cobrancas, acoes_cobrancas_falsas):
+    entrar(cliente)
+    resposta = cliente.post("/cobrancas/a1/cancelar", data=_dados(csrf_da_sessao(cliente), motivo="Multa indevida"), headers=NA_LISTA)
+    assert resposta.status_code == 200 and "HX-Redirect" not in resposta.headers and resposta.headers["HX-Trigger"] == "dialogo-concluido"
+    assert acoes_cobrancas_falsas.cancelamentos == [("a1", "Multa indevida")]
+    assert "cancelada" in resposta.text and 'id="painel-aba"' in resposta.text
+
+
+def test_erro_de_validacao_na_lista_mantem_o_dialogo_aberto(cliente, base_cobrancas, acoes_cobrancas_falsas):
+    entrar(cliente)
+    resposta = cliente.post("/cobrancas/a2/pagar", data=_dados(csrf_da_sessao(cliente), principal=""), headers=NA_LISTA)
+    assert resposta.status_code == 422 and 'id="form-dialogo"' in resposta.text and "HX-Trigger" not in resposta.headers
+    assert acoes_cobrancas_falsas.pagamentos == []

@@ -1,0 +1,6 @@
+{% from "componentes/macros.html" import abas_remotas, aviso %}
+{# Resposta de pagar/cancelar feita a partir da lista: tudo fora de banda, a lista se atualiza no lugar (ver rotas/cobrancas_na_lista.py). #}
+<div id="avisos" aria-live="polite" hx-swap-oob="true">{{ aviso(aviso_tipo, aviso_texto) }}</div>
+{% include "cobrancas/_cabecalho.html" %}
+{{ abas_remotas("Situação das cobranças", abas_da_lista, aba, oob=True) }}
+{% include "cobrancas/_painel.html" %}

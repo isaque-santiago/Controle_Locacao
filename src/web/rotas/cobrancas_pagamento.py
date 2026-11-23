@@ -14,7 +14,8 @@ from src.domain import cobrancas_lista, formulario_pagamento as formulario, mens
 from src.domain.valores import hoje_br
 from src.web import acoes_cobrancas, dados_cobrancas
 from src.web.dependencias import exigir_dono, validar_csrf
-from src.web.rotas.motos_formularios import _concluir, _devolver_formulario, _entrada
+from src.web.rotas.cobrancas_na_lista import concluir_na_lista
+from src.web.rotas.motos_formularios import _devolver_formulario, _entrada
 from src.web.sessao import Sessao
 from src.web.templates import renderizar
 
@@ -85,7 +86,7 @@ def _pagar(request, sessao, cobranca_id, entrada):
         )
         aba = formulario.aba_da_cobranca(c["situacao"], c["vencimento"], hoje_br())
         aviso = mensagens.pagamento_registrado(dados["principal"], dados["extras"], dados["quitada"])
-        return _concluir(request, sessao, f"/cobrancas?aba={aba}", aviso)
+        return concluir_na_lista(request, sessao, f"/cobrancas?aba={aba}", aviso)
 
     return _devolver_formulario(request, _DIALOGO if _htmx(request) else _PAGINA, contexto, pagar)
 

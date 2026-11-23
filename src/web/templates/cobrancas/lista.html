@@ -1,7 +1,7 @@
 {% extends "layout_painel.html" %}
-{% from "componentes/macros.html" import cabecalho_pagina, abas_remotas, icone %}
+{% from "componentes/macros.html" import abas_remotas, icone %}
 {% block conteudo %}
-{{ cabecalho_pagina("Cobranças", (d.total_atraso|moeda ~ " em atraso · " ~ d.clientes_atrasados ~ (" cliente" if d.clientes_atrasados == 1 else " clientes")) if d.clientes_atrasados else "Nenhuma cobrança em atraso") }}
+{% include "cobrancas/_cabecalho.html" %}
 {{ abas_remotas("Situação das cobranças", abas_da_lista, aba) }}
 {# Busca instantânea: digitar troca só o painel da aba (o `aba` oculto vem dentro do painel e acompanha a aba aberta). Sem JS, o Enter envia o formulário. #}
 <form id="filtros" role="search" action="/cobrancas" method="get" hx-get="/cobrancas" hx-target="#painel-aba" hx-swap="outerHTML" hx-push-url="true" hx-trigger="input from:#busca delay:300ms, submit">

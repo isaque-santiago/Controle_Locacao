@@ -123,4 +123,14 @@
     var gaveta = document.getElementById('dlg-gaveta');
     if (gaveta && gaveta.open) gaveta.close();
   });
+
+  // ---- Ação em linha concluída (ex.: pagar a cobrança): o servidor já atualizou a lista fora de banda e manda fechar o diálogo ----
+  document.body.addEventListener('dialogo-concluido', function () {
+    var dialogo = document.getElementById('dlg-form');
+    if (!dialogo) return;
+    dialogo.removeAttribute('data-alterado');  // concluiu: não há o que "descartar"
+    if (dialogo.open) dialogo.close();
+    var avisos = document.getElementById('avisos');
+    if (avisos && avisos.scrollIntoView) avisos.scrollIntoView({ block: 'nearest' });
+  });
 })();
