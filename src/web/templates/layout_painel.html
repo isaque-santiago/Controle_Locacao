@@ -47,6 +47,7 @@
   <div class="coluna">
     <div class="topo-desktop">
       <div class="topo-titulo" aria-hidden="true">{% if ativo %}<strong>{{ ativo.rotulo }}</strong>{% if titulo and titulo != ativo.rotulo %}<span class="topo-sep">/</span><span class="topo-sub">{{ titulo }}</span>{% endif %}{% elif titulo %}<strong>{{ titulo }}</strong>{% endif %}</div>
+      <button class="btn busca-gatilho" type="button" data-abrir="dlg-busca" aria-keyshortcuts="Control+K /" aria-label="Buscar (Ctrl+K)">{{ icone('busca') }}<span>Buscar</span><kbd aria-hidden="true">Ctrl K</kbd></button>
       <nav class="topo-atalhos" aria-label="Atalhos">
         <a class="btn" href="/contratos/novo/iniciar">{{ icone('novo') }}Novo contrato</a>
       </nav>
@@ -54,6 +55,7 @@
     </div>
     <header class="topo-movel">
       <div class="marca"><a class="marca-simbolo" href="/" aria-label="LA Locadora: ir para o Dashboard">LA</a><div><strong>LA Locadora</strong></div></div>
+      <button class="btn-icone" type="button" data-abrir="dlg-busca" aria-label="Buscar">{{ icone('busca') }}</button>
       <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema">{{ icone('tema', 'ic-lua') }}{{ icone('sol', 'ic-sol') }}</button>
       <details class="conta conta-movel" data-conta>
         <summary class="avatar" aria-label="Menu da conta">{{ inicial }}</summary>
@@ -92,6 +94,18 @@
     </details>
   </nav>
 </div>
+
+{# Busca global (paleta): Ctrl+K ou "/" abre; o app.js cuida das setas, do Enter e do foco. Sem JS, o botão não aparece útil e /busca funciona como página. #}
+<dialog class="paleta" id="dlg-busca" aria-label="Busca global">
+  <form role="search" action="/busca" method="get" hx-get="/busca" hx-target="#busca-resultados" hx-swap="outerHTML" hx-trigger="input from:#busca-global delay:200ms, submit" hx-sync="this:replace">
+    <div class="paleta-campo">{{ icone('busca') }}<label class="so-leitor" for="busca-global">Buscar veículo, cliente ou contrato</label>
+      <input class="paleta-entrada" id="busca-global" name="q" type="search" maxlength="80" autocomplete="off" placeholder="Placa, modelo, nome ou CPF" role="combobox" aria-expanded="true" aria-controls="busca-resultados" aria-autocomplete="list">
+      <input type="hidden" name="ocultar" value="1" disabled data-busca-ocultar>
+      <button class="btn-icone" type="button" data-fechar aria-label="Fechar a busca">{{ icone('fechar') }}</button></div>
+  </form>
+  <div id="busca-resultados" data-busca-resultados><p class="busca-dica">Digite ao menos 2 letras: placa, modelo, nome, CPF.</p></div>
+  <p class="paleta-rodape" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> navegar <kbd>Enter</kbd> abrir <kbd>Esc</kbd> fechar</p>
+</dialog>
 
 {# Diálogo de formulários carregados sob demanda pelo HTMX (conteúdo vem de /.../nova, /.../editar etc.) #}
 <dialog class="cheio" id="dlg-form" aria-labelledby="dlg-form-titulo"><div id="dlg-form-conteudo"></div></dialog>

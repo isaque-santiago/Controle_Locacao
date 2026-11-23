@@ -1,0 +1,21 @@
+{% from "componentes/macros.html" import icone, icone_veiculo, selo, placa %}
+{# Resultados da busca global. Cada item é um link (role=option dentro do listbox, no JS) para a ficha. Dados pessoais respeitam `ocultar`. #}
+<div id="busca-resultados" data-busca-resultados>
+{% if not digitou %}
+  <p class="busca-dica">Digite ao menos {{ 2 }} letras: placa, modelo, nome, CPF.</p>
+{% elif curto %}
+  <p class="busca-dica">Digite mais um pouco para buscar.</p>
+{% elif r.total == 0 %}
+  <p class="busca-dica" role="status">Nada encontrado para “{{ q }}”.</p>
+{% else %}
+  <p class="so-leitor" role="status">{{ r.total }} {{ "resultado" if r.total == 1 else "resultados" }}.</p>
+  <ul class="busca-lista" role="listbox" aria-label="Resultados da busca">
+  {% if r.veiculos %}<li role="presentation" class="busca-grupo">Veículos</li>
+  {% for m in r.veiculos %}<li role="presentation"><a class="busca-item" role="option" href="/motos/{{ m.id }}" data-busca-item>{{ icone_veiculo(m.tipo) }}<span class="busca-texto"><strong>{% if ocultar %}•••-••••{% else %}{{ m.placa|placa_br }}{% endif %}</strong><small>{{ m.marca }} {{ m.modelo }}</small></span></a></li>{% endfor %}{% endif %}
+  {% if r.clientes %}<li role="presentation" class="busca-grupo">Clientes</li>
+  {% for c in r.clientes %}<li role="presentation"><a class="busca-item" role="option" href="/clientes/{{ c.id }}" data-busca-item>{{ icone("cliente") }}<span class="busca-texto"><strong>{% if ocultar %}Cliente ••••{% else %}{{ c.nome }}{% endif %}</strong><small>{% if ocultar or not c.cpf %}CPF ***{% else %}CPF {{ c.cpf|cpf_mascarado }}{% endif %}</small></span></a></li>{% endfor %}{% endif %}
+  {% if r.contratos %}<li role="presentation" class="busca-grupo">Contratos</li>
+  {% for i in r.contratos %}<li role="presentation"><a class="busca-item" role="option" href="/contratos/{{ i.contrato.id }}" data-busca-item>{{ icone("contrato") }}<span class="busca-texto"><strong>{% if ocultar %}Contrato ••••{% else %}Contrato de {{ i.cliente.nome if i.cliente else "—" }}{% endif %}</strong><small>{% if i.moto and not ocultar %}{{ i.moto.placa|placa_br }} · {% endif %}{{ "Ativo" if i.contrato.status == "ativo" else "Encerrado" if i.contrato.status == "encerrado" else "Cancelado" }}</small></span></a></li>{% endfor %}{% endif %}
+  </ul>
+{% endif %}
+</div>
