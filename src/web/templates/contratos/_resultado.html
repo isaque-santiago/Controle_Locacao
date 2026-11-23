@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import filtro_colapsavel, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome %}
+{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome %}
 <input type="hidden" name="status" value="{{ status }}">
 <input type="hidden" name="ordem" value="{{ ordem }}">
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status, oob=True) }}{% endif %}
@@ -6,10 +6,10 @@
 {% if d.itens %}
 {% call tabela([("Cliente", ""), ("Situação", ""), ("Veículo", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num")], "Contratos", recolhivel=True, ordenacao=ordenacao) %}
 {% for item in d.itens %}{% set c = item.contrato %}<tr data-recolhivel class="linha-link">
-{% call rc_titulo("modelo" ~ (" text-texto-3" if c.status != "ativo" else ""), href="/contratos/" ~ c.id) %}{{ item.cliente_nome }}{% endcall %}
+{% call rc_titulo("modelo" ~ (" text-texto-3" if c.status != "ativo" else ""), href="/clientes/" ~ c.cliente_id, estica=False) %}{{ item.cliente_nome }}{% endcall %}
 <td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else ("perigo" if c.status == "cancelado" else "neutro")) }}</td>
-<td data-rotulo="Veículo"><span class="selos">{% if item.placa %}{% call link_nome("/motos/" ~ c.moto_id) %}{{ placa(item.placa|placa_br) }}{% endcall %}{% else %}—{% endif %}{% if item.vinculadas %} {{ selo("+" ~ item.vinculadas ~ (" veículo" if item.vinculadas == 1 else " veículos"), "neutro") }}{% endif %}{% if c.tipo_contrato == "promessa_compra" %} {{ selo("Promessa de compra", "atencao") }}{% endif %}</span></td>
-<td class="mono" data-rotulo="Início">{{ c.data_inicio|data_br }}</td>
+<td data-rotulo="Veículo"><span class="selos">{% if item.placa %}{% call link_nome("/motos/" ~ c.moto_id) %}{{ placa(item.placa|placa_br) }}{% endcall %}{% else %}{{ sem_dado() }}{% endif %}{% if item.vinculadas %} {{ selo("+" ~ item.vinculadas ~ (" veículo" if item.vinculadas == 1 else " veículos"), "neutro") }}{% endif %}{% if c.tipo_contrato == "promessa_compra" %} {{ selo("Promessa de compra", "atencao") }}{% endif %}</span></td>
+<td class="mono" data-rotulo="Início"><a class="link-linha" href="/contratos/{{ c.id }}" aria-label="Abrir o contrato de {{ item.cliente_nome }}, início em {{ c.data_inicio|data_br }}">{{ c.data_inicio|data_br }}</a></td>
 <td data-rotulo="Periodicidade">{{ periodos_rotulo.get(c.periodicidade, c.periodicidade) }}</td>
 <td class="num mono" data-rotulo="Valor / período">{{ c.valor_periodo|moeda }}</td>
 <td class="c-acao c-acao-cel"><a class="btn" href="/contratos/{{ c.id }}" aria-label="Abrir o contrato de {{ item.cliente_nome }}">Abrir ficha</a></td></tr>{% endfor %}
