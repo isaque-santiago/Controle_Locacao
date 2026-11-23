@@ -4,6 +4,8 @@
 {% set ativo = item_ativo(caminho_atual) %}
 {% set inicial = (usuario_nome or "?")[0]|upper %}
 
+{% block scripts_extras %}<script src="{{ url_estatico('js/interativo.js') }}" defer></script>{% endblock %}
+
 {% block corpo %}
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 <div class="app">

@@ -1,0 +1,102 @@
+/* Interatividade do painel: busca global (paleta), gaveta de pré-visualização e atalhos de teclado.
+   Sem dependências; usa delegação de eventos, então vale também para o que o HTMX troca na página.
+   Tudo é melhoria progressiva: sem este arquivo, /busca e as fichas continuam funcionando como páginas. */
+(function () {
+  'use strict';
+
+  function emCampoDeTexto(alvo) {
+    var tag = alvo && alvo.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || !!(alvo && alvo.isContentEditable);
+  }
+
+  // ---- Busca global (paleta): Ctrl+K abre sempre; "/" abre quando a página não tem campo de busca próprio ----
+  var dlgBusca = function () { return document.getElementById('dlg-busca'); };
+  var campoBusca = function () { return document.getElementById('busca-global'); };
+  var itensBusca = function () { return Array.prototype.slice.call(document.querySelectorAll('#busca-resultados [data-busca-item]')); };
+
+  function prepararBusca() {
+    var dialogo = dlgBusca(), campo = campoBusca();
+    if (!dialogo || !campo) return;
+    // Modo "ocultar dados pessoais" (?ocultar=1 no Dashboard): a paleta herda e o servidor mascara os resultados
+    var oculto = dialogo.querySelector('[data-busca-ocultar]');
+    if (oculto) oculto.disabled = new URLSearchParams(location.search).get('ocultar') !== '1';
+    campo.focus();
+    campo.select();
+  }
+  function abrirBusca() {
+    var dialogo = dlgBusca();
+    if (!dialogo || !dialogo.showModal) return false;
+    if (!dialogo.open) dialogo.showModal();
+    prepararBusca();
+    return true;
+  }
+  function marcarItemBusca(indice) {
+    var itens = itensBusca();
+    var campo = campoBusca();
+    itens.forEach(function (el, i) {
+      var ativo = i === indice;
+      el.classList.toggle('ativo', ativo);
+      el.setAttribute('aria-selected', ativo ? 'true' : 'false');
+      if (ativo) {
+        if (campo) campo.setAttribute('aria-activedescendant', el.id);
+        if (el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+      }
+    });
+    if (!itens.length && campo) campo.removeAttribute('aria-activedescendant');
+  }
+  function indiceAtivoBusca() {
+    var itens = itensBusca();
+    for (var i = 0; i < itens.length; i++) if (itens[i].classList.contains('ativo')) return i;
+    return -1;
+  }
+  // Resultados novos: dá id a cada item (o campo aponta para o ativo por aria-activedescendant) e ativa o primeiro
+  function prepararResultadosBusca() {
+    itensBusca().forEach(function (el, i) { el.id = 'busca-item-' + i; });
+    marcarItemBusca(itensBusca().length ? 0 : -1);
+  }
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    var alvo = e.detail.target;
+    if (alvo && (alvo.id === 'busca-resultados' || (alvo.closest && alvo.closest('#busca-resultados')))) prepararResultadosBusca();
+  });
+  document.addEventListener('click', function (e) {
+    var gatilho = e.target.closest('[data-abrir="dlg-busca"]');
+    if (gatilho) window.setTimeout(prepararBusca, 0);  // o app.js já abriu o diálogo; aqui só se prepara o campo
+  });
+  document.addEventListener('keydown', function (e) {
+    // Dentro da paleta: setas, Home/End e Enter
+    var campo = campoBusca();
+    if (campo && e.target === campo) {
+      var itens = itensBusca();
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (!itens.length) return;
+        e.preventDefault();
+        var atual = indiceAtivoBusca();
+        var proximo = e.key === 'ArrowDown' ? atual + 1 : atual - 1;
+        marcarItemBusca((proximo + itens.length) % itens.length);
+        return;
+      }
+      if (e.key === 'Enter' && !e.isComposing) {
+        var i = indiceAtivoBusca();
+        if (i >= 0) {  // há resultado: Enter abre a ficha do item marcado em vez de buscar de novo
+          e.preventDefault();
+          location.assign(itens[i].getAttribute('href'));
+        }
+      }
+      return;
+    }
+    if (e.defaultPrevented || e.isComposing || e.altKey) return;
+    // Ctrl+K (ou Cmd+K): abre a paleta de qualquer lugar, até de dentro de um campo
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'k') {
+      if (document.querySelector('dialog[open]:not(#dlg-busca)')) return;
+      e.preventDefault();
+      abrirBusca();
+      return;
+    }
+    // "/": o app.js leva ao campo de busca da página, se houver; sem ele, abre a paleta
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !emCampoDeTexto(e.target) && !document.querySelector('dialog[open]')) {
+      if (document.querySelector('main input[type="search"]')) return;
+      e.preventDefault();
+      abrirBusca();
+    }
+  });
+})();

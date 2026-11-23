@@ -1329,3 +1329,28 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   /* Enviando um formulário: o botão esmaece suavemente enquanto espera. */
   form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {transition: opacity 150ms ease;}
 }
+
+/* ---------- Busca global (paleta) ---------- */
+.busca-gatilho {gap: var(--e2); color: var(--texto-2); font-weight: 500;}
+.busca-gatilho kbd, .paleta-rodape kbd, .atalhos-lista kbd {font: 600 11px/1 var(--fonte-mono); padding: 3px 6px; border: 1px solid var(--linha-forte); border-bottom-width: 2px; border-radius: var(--raio-sm); background: var(--superficie-hover); color: var(--texto-2);}
+dialog.paleta {width: min(40rem, calc(100vw - 24px)); margin: 12vh auto auto; overflow: hidden; display: none;}
+dialog.paleta[open] {display: block;}
+.paleta form {max-height: none;}
+.paleta-campo {display: flex; align-items: center; gap: var(--e3); padding: 0 var(--e4); border-bottom: 1px solid var(--linha);}
+.paleta-campo > .i {color: var(--texto-3); flex: none;}
+.paleta-entrada {flex: 1; min-width: 0; height: 56px; background: transparent; border: 0; color: var(--texto); font: inherit; font-size: 17px; outline: none;}
+.paleta-campo:focus-within {box-shadow: inset 0 -2px 0 var(--foco);}
+#busca-resultados {max-height: min(55vh, 26rem); overflow-y: auto; padding: var(--e2);}
+.busca-dica {padding: var(--e5) var(--e4); color: var(--texto-3); text-align: center;}
+.busca-lista {list-style: none; margin: 0; padding: 0;}
+.busca-grupo {padding: var(--e3) var(--e3) var(--e1); color: var(--texto-3); font-size: 11.5px; font-weight: 600; letter-spacing: .025em; text-transform: uppercase;}
+.busca-item {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e3); min-height: var(--alvo); border-radius: var(--raio-md); color: var(--texto); text-decoration: none;}
+.busca-item .i {color: var(--texto-3); flex: none;}
+.busca-texto {display: grid; min-width: 0;}
+.busca-texto strong, .busca-texto small {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.busca-texto small {color: var(--texto-2);}
+.busca-item:hover, .busca-item.ativo {background: var(--superficie-hover); box-shadow: inset 3px 0 0 var(--foco);}
+.busca-item:focus-visible {outline: 2px solid var(--foco); outline-offset: -2px;}
+.paleta-rodape {display: flex; gap: var(--e2); align-items: center; padding: var(--e2) var(--e4); border-top: 1px solid var(--linha); color: var(--texto-3); font-size: 12px;}
+@media (max-width: 1023px) {.busca-gatilho {display: none;} .paleta-rodape {display: none;} dialog.paleta {margin-top: 8vh;}}
+@media (prefers-reduced-motion: no-preference) {dialog.paleta[open] {animation: paleta-entra 160ms cubic-bezier(.2, .8, .2, 1) both;} @keyframes paleta-entra {from {opacity: 0; transform: translateY(-8px) scale(.98);}}}
