@@ -1464,3 +1464,20 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   .btn-icone[data-alternar-tema] .i {transition: transform 300ms cubic-bezier(.2, .8, .2, 1);}
   .btn-icone[data-alternar-tema]:active .i {transform: rotate(25deg) scale(.9);}
 }
+
+/* ---------- Transição entre páginas (View Transitions entre documentos) ----------
+   Só navegadores com suporte (Chrome/Edge 126+, Safari 18.2+); nos demais a navegação segue normal, com a entrada curta dos blocos.
+   O menu lateral e as barras ficam parados (cada um com nome próprio) e só o conteúdo faz um fade rápido. Sem isso com movimento reduzido.
+   Foco, histórico e leitores de tela não mudam: a página nova é a mesma de sempre, só aparece com um fade. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {navigation: auto;}
+  .lateral {view-transition-name: lateral;}
+  .topo-desktop {view-transition-name: topo-desktop;}
+  .topo-movel {view-transition-name: topo-movel;}
+  .barra-inferior {view-transition-name: barra-inferior;}
+  ::view-transition-group(*) {animation-duration: 0s;}
+  ::view-transition-old(root) {animation: 110ms ease-in both transicao-sai;}
+  ::view-transition-new(root) {animation: 170ms ease-out both transicao-entra;}
+  @keyframes transicao-sai {to {opacity: 0;}}
+  @keyframes transicao-entra {from {opacity: 0;}}
+}

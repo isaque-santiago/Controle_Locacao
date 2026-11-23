@@ -79,3 +79,16 @@ def test_skeleton_so_aparece_depois_de_150ms_e_respeita_movimento_reduzido():
     assert "animation: skeleton-entra 150ms ease 150ms backwards" in bloco
     animado = bloco.split("prefers-reduced-motion: no-preference")[1]
     assert "skeleton-brilho" in animado and "skeleton-brilho" not in bloco.split("prefers-reduced-motion: no-preference")[0].replace("@keyframes", "")
+
+
+def test_transicao_entre_paginas_so_com_movimento_permitido_e_mantem_o_menu_parado():
+    bloco = CSS.split("/* ---------- Transição entre páginas")[1]
+    assert bloco.index("prefers-reduced-motion: no-preference") < bloco.index("@view-transition {navigation: auto;}")
+    for nome in ("lateral", "topo-desktop", "topo-movel", "barra-inferior"):
+        assert f"view-transition-name: {nome}" in bloco
+
+
+def test_toda_animacao_com_atraso_ou_duracao_longa_esta_sob_movimento_permitido():
+    # Regra do projeto: nenhuma animação (propriedade animation:) fora de um bloco que a desliga com prefers-reduced-motion.
+    # O CSS tem uma regra global que zera animações no reduce; aqui só se confere que ela continua lá.
+    assert "@media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}" in CSS
