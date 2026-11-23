@@ -1393,3 +1393,11 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
 .atalhos-lista a:hover {background: var(--superficie-hover);}
 .atalhos-lista a:focus-visible {outline: 2px solid var(--foco); outline-offset: -2px;}
 .atalhos-lista kbd {margin-left: 2px;}
+
+/* ---------- Abas: o traço da aba aberta aparece suave (a resposta do servidor troca as abas, então é uma entrada, não uma transição de cor) ---------- */
+.abas button, .abas a {transition: color 160ms ease, background-color 160ms ease;}
+@media (prefers-reduced-motion: no-preference) {
+  .abas button[aria-selected="true"], .abas a[aria-current="page"] {animation: aba-marca 220ms ease-out both;}
+  @keyframes aba-marca {from {border-bottom-color: transparent; background: linear-gradient(to top, var(--marca-a14), transparent 70%);}}
+}
+@media (prefers-reduced-motion: reduce) {.abas button, .abas a {transition: none;}}
