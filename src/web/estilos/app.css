@@ -492,10 +492,17 @@ table.dados {width: 100%; border-collapse: collapse;}
 .dl dt {color: var(--texto-3); font-size: 12.5px;} .dl dd {margin: 2px 0 0; font-weight: 500;}
 .progresso {height: 10px; border-radius: 99px; background: var(--seg-vazio); overflow: hidden; margin: var(--e3) 0 var(--e2);}
 .progresso span {display: block; height: 100%; background: var(--alerta); border-radius: 99px;}
+/* Estado vazio: ícone em placa suave, título, texto e a ação sugerida (botões em .vazio-acoes). */
 .vazio {text-align: center; padding: var(--e7) var(--e4); display: grid; justify-items: center; gap: var(--e3);}
-.vazio .adesivo {width: 56px; height: 56px; color: var(--texto-3);}
+.vazio-icone {display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--neutro-fundo); color: var(--texto-2); box-shadow: 0 0 0 8px color-mix(in srgb, var(--neutro-fundo) 45%, transparent);}
+.vazio-icone .i {width: 28px; height: 28px;}
 .vazio p {max-width: 40ch; color: var(--texto-2);}
 .vazio h2 {font-size: 18px;}
+.vazio-acoes {display: flex; flex-wrap: wrap; justify-content: center; gap: var(--e2); margin-top: var(--e2);}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes icone-vazio-entra {from {opacity: 0; transform: scale(.85);} to {opacity: 1; transform: none;}}
+  .vazio-icone {animation: icone-vazio-entra 260ms cubic-bezier(.2, .8, .2, 1) 80ms backwards;}
+}
 
 /* ---------- Assistente de contrato ---------- */
 .passos {list-style: none; margin: 0 0 var(--e5); padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e2);}

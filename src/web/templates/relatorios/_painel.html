@@ -21,7 +21,7 @@
 <td class="num mono k-larga" data-rotulo="Valor + encargos">{{ l.total_com_encargos|moeda }}</td>
 </tr>{% endfor %}
 {% endcall %}
-{% else %}{{ estado_vazio("Nenhuma cobrança em atraso", "Quando houver parcelas vencidas e não pagas, elas aparecem aqui.", "0") }}{% endif %}
+{% else %}{{ estado_vazio("Nenhuma cobrança em atraso", "Quando houver parcelas vencidas e não pagas, elas aparecem aqui.", icone_nome="relatorio") }}{% endif %}
 {% elif d.linhas %}
 {{ resumo(d.resumo) }}
 {% if aba == "resultado" %}
@@ -69,7 +69,7 @@
 {% endcall %}
 {% endif %}
 {% else %}
-{{ estado_vazio("Nada neste período", "Não há dados para o período escolhido. Ajuste as datas e aplique de novo.", "0") }}
+{{ estado_vazio("Nada neste período", "Não há dados para o período escolhido. Ajuste as datas e aplique de novo.", icone_nome="relatorio") }}
 {% endif %}
 <p class="text-texto-2 text-[13px] mt-4">Cauções não compõem receita, exceto a parte retida para cobrir danos, contada no encerramento do contrato. Manutenções são contabilizadas pela entrada, documentos pela regularização. Custo/km usa as leituras disponíveis no período; sem distância registrada, fica em branco.</p>
 {% endif %}

@@ -33,7 +33,7 @@
   <div class="rodape-acoes"><button class="btn btn-perigo" type="submit">Recusar comprovante</button></div>
 </form>
 {% else %}
-{{ estado_vazio("Nenhum comprovante aguardando conferência", "Quando o locatário enviar um comprovante deste documento pelo portal, ele aparece aqui.") }}
+{{ estado_vazio("Nenhum comprovante aguardando conferência", "Quando o locatário enviar um comprovante deste documento pelo portal, ele aparece aqui.", icone_nome="documento") }}
 {% endif %}
 {% if historico %}
 {% call cartao("Histórico de comprovantes deste documento") %}

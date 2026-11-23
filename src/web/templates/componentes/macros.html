@@ -130,12 +130,13 @@
 {%- endmacro %}
 
 {# Estado vazio; a ação (botão) vai no bloco {% call %}. #}
-{% macro estado_vazio(titulo, texto, simbolo="0") -%}
+{# Estado vazio: ícone, título, texto e, se houver, a ação sugerida (botões no bloco {% call %}, dentro de .vazio-acoes). #}
+{% macro estado_vazio(titulo, texto, icone_nome="info") -%}
 <div class="cartao vazio">
-  <span class="adesivo" aria-hidden="true">{{ simbolo }}</span>
+  <span class="vazio-icone" aria-hidden="true">{{ icone(icone_nome) }}</span>
   <h2>{{ titulo }}</h2>
   <p>{{ texto }}</p>
-  {% if caller is defined %}{{ caller() }}{% endif %}
+  {% if caller is defined %}{% set acoes = caller() %}{% if acoes|trim %}<div class="vazio-acoes">{{ acoes }}</div>{% endif %}{% endif %}
 </div>
 {%- endmacro %}
 

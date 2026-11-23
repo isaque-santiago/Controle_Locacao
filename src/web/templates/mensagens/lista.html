@@ -21,7 +21,7 @@
 </tr>{% endfor %}
 {% endcall %}
 {{ paginacao(pagina.inicio + 1, pagina.fim, pagina.total, url_anterior, url_proxima) }}
-{% elif filtro != "todas" and contagem.todas %}{% call estado_vazio("Nada nesta situação", "Nenhuma mensagem se encaixa neste filtro. Veja todas para conferir o histórico.", "0") %}{{ botao("Ver todas", href="/mensagens?filtro=todas") }}{% endcall %}
-{% else %}{{ estado_vazio("Nenhuma mensagem ainda", "Quando o envio automático estiver ligado, as mensagens aos locatários aparecem aqui.", "0") }}
+{% elif filtro != "todas" and contagem.todas %}{% call estado_vazio("Nada nesta situação", "Nenhuma mensagem se encaixa neste filtro. Veja todas para conferir o histórico.", icone_nome="busca") %}{{ botao("Ver todas", href="/mensagens?filtro=todas") }}{% endcall %}
+{% else %}{{ estado_vazio("Nenhuma mensagem ainda", "Quando o envio automático estiver ligado, as mensagens aos locatários aparecem aqui.", icone_nome="mensagem") }}
 {% endif %}
 {% endblock %}

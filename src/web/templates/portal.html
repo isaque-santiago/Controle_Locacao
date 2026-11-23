@@ -17,7 +17,7 @@
   {{ cabecalho_pagina("Olá, " ~ d.primeiro_nome, "Troca de óleo e documentos do seu veículo.") }}
 
   {% if not d.contratos %}
-  {{ estado_vazio("Você não tem contrato ativo no momento", "Quando houver um contrato ativo no seu nome, o seu veículo aparece aqui.", "0") }}
+  {{ estado_vazio("Você não tem contrato ativo no momento", "Quando houver um contrato ativo no seu nome, o seu veículo aparece aqui.", icone_nome="contrato") }}
   {% endif %}
 
   {% for c in d.contratos %}
