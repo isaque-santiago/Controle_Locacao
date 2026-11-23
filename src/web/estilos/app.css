@@ -1358,6 +1358,20 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   form.htmx-request button[type="submit"], form[data-enviando] button[type="submit"] {transition: opacity 150ms ease;}
 }
 
+/* ---------- Skeleton: enquanto o HTMX troca a lista, as células viram barras cinzas (depois de 150 ms, para respostas rápidas não piscarem) ----------
+   Só em tela larga: no celular a tabela vira cartões e vale apenas o esmaecer do #resultado. Sem movimento: barras paradas. */
+@media (min-width: 720px) {
+  #resultado[aria-busy="true"] .dados tbody td, #painel-aba[aria-busy="true"] .dados tbody td {position: relative; color: transparent; transition: color 0s 150ms;}
+  #resultado[aria-busy="true"] .dados tbody td > *, #painel-aba[aria-busy="true"] .dados tbody td > * {visibility: hidden; transition: visibility 0s 150ms;}
+  #resultado[aria-busy="true"] .dados tbody td::after, #painel-aba[aria-busy="true"] .dados tbody td::after {content: ""; position: absolute; inset: 50% var(--e3) auto; height: 12px; margin-top: -6px; border-radius: 6px; background: var(--seg-vazio);}
+  #resultado[aria-busy="true"] .dados tbody td:nth-child(3n+1)::after {right: 38%;} #resultado[aria-busy="true"] .dados tbody td:nth-child(3n+2)::after {right: 18%;}
+}
+@media (min-width: 720px) and (prefers-reduced-motion: no-preference) {
+  @keyframes skeleton-brilho {from {background-position: 200% 0;} to {background-position: -200% 0;}}
+  @keyframes skeleton-entra {from {opacity: 0;}}
+  #resultado[aria-busy="true"] .dados tbody td::after, #painel-aba[aria-busy="true"] .dados tbody td::after {background: linear-gradient(90deg, var(--seg-vazio) 30%, var(--superficie-hover) 50%, var(--seg-vazio) 70%) 200% 0 / 200% 100%; animation: skeleton-entra 150ms ease 150ms backwards, skeleton-brilho 1.4s linear infinite;}
+}
+
 /* ---------- Busca global (paleta) ---------- */
 .busca-gatilho {gap: var(--e2); color: var(--texto-2); font-weight: 500;}
 .busca-gatilho kbd, .paleta-rodape kbd, .atalhos-lista kbd {font: 600 11px/1 var(--fonte-mono); padding: 3px 6px; border: 1px solid var(--linha-forte); border-bottom-width: 2px; border-radius: var(--raio-sm); background: var(--superficie-hover); color: var(--texto-2);}

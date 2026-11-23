@@ -47,3 +47,35 @@ def test_toasts_tem_aria_live_fechamento_manual_e_automatico_e_empilham():
 def test_erro_htmx_acrescenta_o_aviso_em_vez_de_substituir():
     erros = (RAIZ / "src" / "web" / "erros.py").read_text(encoding="utf-8")
     assert '"HX-Reswap": "beforeend"' in erros
+
+
+def test_estado_vazio_tem_icone_titulo_texto_e_acao_sugerida():
+    from jinja2 import Environment, FileSystemLoader
+
+    ambiente = Environment(loader=FileSystemLoader(RAIZ / "src" / "web" / "templates"), autoescape=True)
+    modelo = ambiente.from_string(
+        '{% from "componentes/macros.html" import estado_vazio, botao %}'
+        '{% call estado_vazio("Nenhum cliente cadastrado", "Os clientes aparecem aqui.", icone_nome="cliente") %}'
+        '{{ botao("Novo cliente", variante="primario") }}{% endcall %}'
+        '{{ estado_vazio("Sem ação", "Só texto.") }}'
+    )
+    html = modelo.render()
+    assert '<span class="vazio-icone" aria-hidden="true">' in html and "#i-cliente" in html
+    assert "<h2>Nenhum cliente cadastrado</h2>" in html and "Os clientes aparecem aqui." in html
+    assert '<div class="vazio-acoes">' in html and "Novo cliente" in html
+    assert html.count('class="vazio-acoes"') == 1  # sem botões, não sobra um contêiner vazio
+
+
+def test_nenhum_estado_vazio_usa_mais_o_adesivo_com_zero():
+    for arquivo in (RAIZ / "src" / "web" / "templates").rglob("*.html"):
+        for linha in arquivo.read_text(encoding="utf-8").splitlines():
+            if "estado_vazio(" in linha and "import" not in linha:
+                assert ', "0")' not in linha, arquivo
+
+
+def test_skeleton_so_aparece_depois_de_150ms_e_respeita_movimento_reduzido():
+    bloco = CSS.split("/* ---------- Skeleton")[1].split("/* ---------- Busca global")[0]
+    assert "transition: color 0s 150ms" in bloco and "visibility 0s 150ms" in bloco  # respostas rápidas não piscam
+    assert "animation: skeleton-entra 150ms ease 150ms backwards" in bloco
+    animado = bloco.split("prefers-reduced-motion: no-preference")[1]
+    assert "skeleton-brilho" in animado and "skeleton-brilho" not in bloco.split("prefers-reduced-motion: no-preference")[0].replace("@keyframes", "")
