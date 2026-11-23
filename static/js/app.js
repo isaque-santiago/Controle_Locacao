@@ -464,7 +464,8 @@
     aviso.innerHTML = '<svg class="i" aria-hidden="true" focusable="false"><use href="#i-alerta"/></svg><div></div>';
     aviso.lastChild.textContent = texto;
     area.appendChild(aviso);
-    area.scrollIntoView({ block: 'nearest' });
+    if (!dialogo) prepararToasts();  // na página, vira toast; dentro de diálogo continua inline
+    else area.scrollIntoView({ block: 'nearest' });
   }
   document.body.addEventListener('htmx:sendError', function () {
     avisarFalhaDeRede('Sem conexão com o servidor. Verifique a internet e tente de novo.');
@@ -666,6 +667,60 @@
   }
   document.addEventListener('DOMContentLoaded', iniciarContagens);
   document.addEventListener('htmx:afterSettle', iniciarContagens);
+
+  // ---- Toasts: os .aviso dentro de #avisos (pilha fixa no canto) ganham botão de fechar e somem sozinhos ----
+  // Sem JS o aviso continua na tela. Passar o mouse ou focar dentro pausa a contagem (WCAG 2.2.1); erros ficam mais tempo.
+  var TEMPO_TOAST = { sucesso: 5000, info: 6000, atencao: 9000, erro: 12000 };
+  var MAXIMO_TOASTS = 4;
+  function tempoDoToast(aviso) {
+    for (var tipo in TEMPO_TOAST) if (aviso.classList.contains(tipo)) return TEMPO_TOAST[tipo];
+    return TEMPO_TOAST.info;
+  }
+  function fecharToast(aviso) {
+    if (!aviso.isConnected || aviso._saindo) return;
+    aviso._saindo = true;
+    window.clearTimeout(aviso._relogio);
+    if (movimentoReduzido.matches) { aviso.remove(); return; }
+    aviso.classList.add('saindo');
+    var remover = function () { if (aviso.isConnected) aviso.remove(); };
+    aviso.addEventListener('animationend', remover);
+    window.setTimeout(remover, 400);
+  }
+  function agendarToast(aviso) {
+    window.clearTimeout(aviso._relogio);
+    aviso._relogio = window.setTimeout(function () { fecharToast(aviso); }, tempoDoToast(aviso));
+  }
+  function prepararToasts() {
+    var area = document.getElementById('avisos');
+    if (!area) return;
+    area.querySelectorAll('.aviso:not([data-toast])').forEach(function (aviso) {
+      aviso.setAttribute('data-toast', '');
+      aviso.insertAdjacentHTML('beforeend', '<button type="button" class="aviso-fechar" aria-label="Fechar aviso"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-fechar"/></svg></button>');
+      aviso.addEventListener('mouseenter', function () { window.clearTimeout(aviso._relogio); });
+      aviso.addEventListener('focusin', function () { window.clearTimeout(aviso._relogio); });
+      aviso.addEventListener('mouseleave', function () { if (!aviso.contains(document.activeElement)) agendarToast(aviso); });
+      aviso.addEventListener('focusout', function () { agendarToast(aviso); });
+      agendarToast(aviso);
+    });
+    var ativos = area.querySelectorAll('.aviso:not(.saindo)');
+    for (var i = 0; i < ativos.length - MAXIMO_TOASTS; i++) fecharToast(ativos[i]);  // mais de 4: some o mais antigo
+  }
+  document.addEventListener('click', function (e) {
+    var botao = e.target.closest('.aviso-fechar');
+    if (botao) fecharToast(botao.closest('.aviso'));
+  });
+  // Resposta fora de banda que troca o #avisos inteiro: os toasts que ainda estão na tela passam para o novo, em vez de sumirem
+  document.body.addEventListener('htmx:oobBeforeSwap', function (e) {
+    var alvo = e.detail.target;
+    if (!alvo || alvo.id !== 'avisos' || !e.detail.fragment) return;
+    var novo = e.detail.fragment.querySelector ? e.detail.fragment.querySelector('#avisos') : null;
+    if (!novo) return;
+    var antigos = Array.prototype.slice.call(alvo.querySelectorAll('.aviso[data-toast]:not(.saindo)'));
+    antigos.reverse().forEach(function (a) { novo.insertBefore(a, novo.firstChild); });
+  });
+  document.addEventListener('DOMContentLoaded', prepararToasts);
+  document.addEventListener('htmx:afterSettle', prepararToasts);
+  document.addEventListener('htmx:oobAfterSwap', prepararToasts);
 
   // ---- Menu lateral: o traço do item ativo desliza, ao abrir a página, do item da página anterior até o item tocado ----
   (function () {

@@ -58,7 +58,7 @@ def _resposta_de_erro(request: Request, status: int, mensagem: str | None = None
         return HTMLResponse(
             corpo,
             status_code=status,
-            headers={"HX-Retarget": "#avisos", "HX-Reswap": "innerHTML"},
+            headers={"HX-Retarget": "#avisos", "HX-Reswap": "beforeend"},
         )
     return renderizar(
         request,

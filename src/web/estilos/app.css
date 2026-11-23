@@ -754,8 +754,28 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .aviso.sucesso {background: var(--sucesso-fundo); color: var(--sucesso-texto);}
 .aviso.atencao {background: var(--alerta-fundo); color: var(--alerta-texto);}
 .aviso.info {background: var(--info-fundo); color: var(--info-texto);}
+
+/* Toasts: #avisos vira uma pilha fixa no canto (sem JS ela já funciona; o app.js acrescenta o botão de fechar e o fechamento automático). */
 #avisos:empty {display: none;}
-#avisos {display: grid; gap: var(--e2); margin-bottom: var(--e4);}
+#avisos {position: fixed; z-index: 60; top: calc(60px + var(--e3)); right: var(--e4); width: min(26rem, calc(100vw - 2 * var(--e4))); display: flex; flex-direction: column; gap: var(--e2); margin: 0; pointer-events: none;}
+#avisos .aviso {position: relative; pointer-events: auto; align-items: center; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); box-shadow: var(--sombra-menu); overflow-wrap: anywhere;}
+#avisos .aviso > div {flex: 1; min-width: 0;}
+#avisos .aviso .i {flex: none; margin-top: 0;}
+.aviso-fechar {flex: none; display: inline-grid; place-items: center; width: 32px; min-height: 32px; margin: -4px -8px -4px 0; padding: 0; border: 0; border-radius: var(--raio-campo); background: transparent; color: inherit; cursor: pointer; opacity: .75;}
+.aviso-fechar:hover, .aviso-fechar:focus-visible {opacity: 1; background: color-mix(in srgb, currentColor 14%, transparent);}
+.aviso-fechar:focus-visible {outline: 2px solid var(--foco); outline-offset: 1px;}
+@media (max-width: 1023px) {#avisos {top: calc(56px + var(--e2)); left: var(--e3); right: var(--e3); width: auto;}}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes toast-entra {from {opacity: 0; transform: translateX(1.5rem);} to {opacity: 1; transform: none;}}
+  @keyframes toast-sai {to {opacity: 0; transform: translateX(1.5rem);}}
+  @media (max-width: 1023px) {
+    @keyframes toast-entra {from {opacity: 0; transform: translateY(-.75rem);} to {opacity: 1; transform: none;}}
+    @keyframes toast-sai {to {opacity: 0; transform: translateY(-.75rem);}}
+  }
+  #avisos .aviso {animation: toast-entra 220ms cubic-bezier(.2, .8, .2, 1) both;}
+  #avisos .aviso.saindo {animation: toast-sai 180ms ease-in forwards;}
+}
+@media print {#avisos {display: none;}}
 
 /* ---------- Acesso (login, erros) e portal ---------- */
 .acesso {min-height: 100dvh; display: grid; place-items: center; padding: var(--pad);}
