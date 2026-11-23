@@ -65,6 +65,7 @@ def carregar_lista(situacao: str, busca: str, pagina: int, por_pagina: int, orde
     return {
         "itens": itens,
         "pagina": recorte,
+        "mostrar_km": motos_lista.mostrar_coluna_km(filtradas),
         "contagem": motos_lista.contagem_por_status(registros),
         "total_cadastradas": motos_lista.contagem_por_status(registros)[motos_lista.TODAS],
     }
