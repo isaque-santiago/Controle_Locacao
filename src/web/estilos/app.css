@@ -35,22 +35,34 @@
    O tema vem de color-scheme: sem data-tema segue o sistema; data-tema="claro"/"escuro" (botão de tema) força um dos lados. */
 :root {
   color-scheme: light dark;
-  --marca: #F2B705; --marca-hover: #FFC933; --grafite: #111827; --grafite-700: #1F2937;
+  --marca: var(--marca-500); --marca-hover: var(--marca-400); --grafite: #111827; --grafite-700: #1F2937;
+  /* Escalas de tons (iguais nos dois temas): a marca e as quatro cores de status, do mais claro (50) ao mais escuro (900).
+     500 é a cor base; 700 é o tom de texto no claro; 300 é o tom de texto no escuro; 950 é o fundo tingido no escuro. */
+  --marca-50: #FFF9E5; --marca-100: #FFF0BF; --marca-200: #FFE285; --marca-300: #FFD24D; --marca-400: #FFC933; --marca-500: #F2B705; --marca-600: #C99400; --marca-700: #9C7000; --marca-800: #6E4F00; --marca-900: #453200;
+  --sucesso-50: #F0F9F5; --sucesso-100: #E1F3EA; --sucesso-200: #A6E6C8; --sucesso-300: #5FD3A0; --sucesso-400: #3DB886; --sucesso-500: #2F9E6E; --sucesso-600: #25805A; --sucesso-700: #1B6F4D; --sucesso-800: #155A3E; --sucesso-900: #0F3F2B; --sucesso-950: #192F2B;
+  --alerta-50: #FFF9E5; --alerta-100: #FEF1C4; --alerta-200: #FDE48B; --alerta-300: #F2C94C; --alerta-400: #F5BE1F; --alerta-500: #F2B705; --alerta-600: #B88A00; --alerta-700: #7A5A00; --alerta-800: #5C4300; --alerta-900: #3D2D00; --alerta-950: #383118;
+  --perigo-50: #FEF4F4; --perigo-100: #FBE9E9; --perigo-200: #F8C3C3; --perigo-300: #FF8A8A; --perigo-400: #EB6464; --perigo-500: #D64545; --perigo-600: #C53D3D; --perigo-700: #B83232; --perigo-800: #8B2D2D; --perigo-900: #651919; --perigo-950: #371F23;
+  --info-50: #F0F5FA; --info-100: #E3ECF5; --info-200: #BCD3E8; --info-300: #8DB7E0; --info-400: #6296C8; --info-500: #3F6E9C; --info-600: #3A6794; --info-700: #2F5F8A; --info-800: #244A6D; --info-900: #19344D; --info-950: #1E2A38;
+  /* Faixas de atraso (do amarelo ao vinho) e véus translúcidos usados por cima de fundos escuros */
+  --faixa-1: var(--alerta-500); --faixa-2: #E37836; --faixa-3: var(--perigo-500); --faixa-4: var(--perigo-800);
+  --veu: rgba(21,24,28,.55); --sombra-hover: 0 4px 14px -8px rgba(0,0,0,.28);
+  --branco-07: rgba(255,255,255,.07); --branco-10: rgba(255,255,255,.10); --branco-70: rgba(255,255,255,.7);
+  --marca-a10: rgba(242,183,5,.10); --marca-a14: rgba(242,183,5,.14);
   --fundo: light-dark(#F6F7F9, #0B0D10); --superficie: light-dark(#FFFFFF, #14171C); --superficie-elevada: light-dark(#FFFFFF, #1A1E24); --superficie-hover: light-dark(#F3F4F6, #20252C);
   --linha: light-dark(#E5E7EB, #262B33); --linha-sutil: light-dark(#F0F1F3, #1D2128); --linha-forte: light-dark(#D1D5DB, #3A414C);
   --borda-campo: light-dark(#8B929C, #7C858D); /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
   --texto: light-dark(#111827, #ECEEEE); --texto-2: light-dark(#4B5563, #AEB4BA); --texto-3: light-dark(#6B7280, #9BA2A9); --texto-invertido: light-dark(#FFFFFF, #1E2227);
-  --sucesso: #2F9E6E; --sucesso-texto: light-dark(#1B6F4D, #5FD3A0); --sucesso-fundo: light-dark(rgba(47,158,110,.12), rgba(47,158,110,.18));
-  --alerta: #F2B705;  --alerta-texto: light-dark(#7A5A00, #F2C94C);  --alerta-fundo: light-dark(rgba(242,183,5,.18), rgba(242,183,5,.16));
-  --perigo: #D64545;  --perigo-texto: light-dark(#B83232, #FF8A8A);  --perigo-fundo: light-dark(rgba(214,69,69,.10), rgba(214,69,69,.18));
-  --info: #3F6E9C;    --info-texto: light-dark(#2F5F8A, #8DB7E0);    --info-fundo: light-dark(rgba(63,110,156,.12), rgba(63,110,156,.22));
-  --neutro: #9CA3AF;  --neutro-texto: light-dark(#4B5563, #C0C5CA);  --neutro-fundo: light-dark(#F3F4F6, rgba(255,255,255,.08));
-  --btn: light-dark(#111827, #F2B705); --btn-hover: light-dark(#1F2937, #FFC933); --btn-texto: light-dark(#FFFFFF, #1E2227);
-  --foco: light-dark(#B88A00, #F2B705); --foco-halo: light-dark(rgba(184,138,0,.22), rgba(242,183,5,.25));
+  --sucesso: var(--sucesso-500); --sucesso-texto: light-dark(var(--sucesso-700), var(--sucesso-300)); --sucesso-fundo: light-dark(var(--sucesso-100), var(--sucesso-950));
+  --alerta: var(--alerta-500); --alerta-texto: light-dark(var(--alerta-700), var(--alerta-300)); --alerta-fundo: light-dark(var(--alerta-100), var(--alerta-950));
+  --perigo: var(--perigo-500); --perigo-texto: light-dark(var(--perigo-700), var(--perigo-300)); --perigo-fundo: light-dark(var(--perigo-100), var(--perigo-950)); --perigo-borda: light-dark(#DE9EA0, #75373B);
+  --info: var(--info-500); --info-texto: light-dark(var(--info-700), var(--info-300)); --info-fundo: light-dark(var(--info-100), var(--info-950));
+  --neutro: #9CA3AF;  --neutro-texto: light-dark(#4B5563, #C0C5CA);  --neutro-fundo: light-dark(#F3F4F6, #23262B);
+  --btn: light-dark(var(--grafite), var(--marca-500)); --btn-hover: light-dark(var(--grafite-700), var(--marca-400)); --btn-texto: light-dark(#FFFFFF, #1E2227);
+  --foco: light-dark(var(--alerta-600), var(--marca-500)); --foco-halo: light-dark(rgba(184,138,0,.22), rgba(242,183,5,.25));
   --lateral-fundo: light-dark(#FFFFFF, #0F1216); --lateral-texto: light-dark(#4B5563, #B4BAC5); --lateral-ativo: light-dark(#F3F4F6, #1D2128);
   --lateral-forte: light-dark(#111827, #FFFFFF); --lateral-sub: light-dark(#6B7280, #9AA0A6); --lateral-linha: light-dark(#E5E7EB, #262B33); --lateral-avatar: light-dark(#EEF0F3, var(--grafite-700));
   --chip-fundo: light-dark(#111827, #ECEEEE); --chip-texto: light-dark(#FFFFFF, #1E2227);
-  --seg-cheio: light-dark(#111827, #F2B705); --seg-vazio: light-dark(#E5E7EB, rgba(255,255,255,.12));
+  --seg-cheio: light-dark(var(--grafite), var(--marca-500)); --seg-vazio: light-dark(#E5E7EB, rgba(255,255,255,.12));
   --sombra-modal: 0 24px 60px light-dark(rgba(17,24,39,.28), rgba(0,0,0,.6)), 0 0 0 1px light-dark(rgba(17,24,39,.06), rgba(255,255,255,.08));
   --sombra-1: 0 1px 2px light-dark(rgba(17,24,39,.05), rgba(0,0,0,.4));
   --sombra-2: 0 4px 14px light-dark(rgba(17,24,39,.08), rgba(0,0,0,.45));
@@ -163,7 +175,7 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
   .topo-movel .marca {padding: 0; flex: 1; min-width: 0;}
   .topo-movel .marca-simbolo {width: 32px; height: 32px; font-size: 13px;}
   .topo-movel .btn-icone {color: var(--lateral-forte); border-color: var(--lateral-linha);}
-  .topo-movel .btn-icone:hover {background: rgba(255,255,255,.12); border-color: var(--lateral-linha);}
+  .topo-movel .btn-icone:hover {background: var(--lateral-ativo); border-color: var(--lateral-linha);}
   main {padding-bottom: calc(var(--barra-inferior) + 32px + env(safe-area-inset-bottom));}
   .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: color-mix(in srgb, var(--superficie-elevada) 88%, transparent); backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom);}
   .barra-inferior a, .barra-inferior summary {position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--barra-inferior); padding: var(--e2) 2px; border: 0; background: none; color: var(--texto-2); text-decoration: none; font-size: 12px; font-weight: 500; cursor: pointer;}
@@ -254,7 +266,7 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .grade {display: grid; gap: var(--e4);}
 .kpis {grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: var(--e4);}
 .kpi {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); padding: var(--e4) var(--e5) var(--e4); box-shadow: var(--sombra-1);}
-.kpi.atencao {border-color: color-mix(in srgb, var(--perigo) 45%, var(--linha)); background: linear-gradient(180deg, var(--perigo-fundo), transparent 38%), var(--superficie);}
+.kpi.atencao {border-color: var(--perigo-borda); background: linear-gradient(180deg, var(--perigo-fundo), transparent 38%), var(--superficie);}
 .kpi dt {color: var(--texto-2); font-size: 13px; font-weight: 500;}
 .kpi dd {margin: var(--e2) 0 0; font: 600 clamp(22px, 2.2vw, 26px)/1.1 var(--fonte-num); letter-spacing: -.02em; overflow-wrap: anywhere;}
 .kpi {min-width: 0;}
@@ -484,7 +496,7 @@ table.dados {width: 100%; border-collapse: collapse;}
 
 /* ---------- Diálogos ---------- */
 dialog {margin: auto; border: 0; padding: 0; background: var(--superficie-elevada); color: var(--texto); border-radius: var(--raio-lg); box-shadow: var(--sombra-modal); width: min(46rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px);}
-dialog::backdrop {background: rgba(17,24,39,.5); backdrop-filter: blur(3px);}
+dialog::backdrop {background: var(--veu); backdrop-filter: blur(3px);}
 .dialogo-cab {display: flex; align-items: center; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
 .dialogo-cab h2 {font-size: 20px;}
 .dialogo-corpo {padding: var(--e5); overflow-y: auto;}
@@ -715,7 +727,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
 .portal-topo {display: flex; align-items: center; gap: var(--e3); min-height: 56px; padding: 0 var(--pad); background: var(--lateral-fundo); color: var(--lateral-forte); border-bottom: 1px solid var(--lateral-linha);}
 .portal-topo .marca {padding: 0; flex: 1; min-width: 0;}
 .portal-topo .btn-icone, .portal-topo .btn-texto {color: var(--lateral-forte); border: 1px solid var(--lateral-linha); background: transparent;}
-.portal-topo .btn-icone:hover, .portal-topo .btn-texto:hover {background: rgba(255,255,255,.12); border-color: var(--lateral-linha);}
+.portal-topo .btn-icone:hover, .portal-topo .btn-texto:hover {background: var(--lateral-ativo); border-color: var(--lateral-linha);}
 .portal-topo .btn-texto {display: inline-flex; align-items: center; gap: var(--e2); min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); cursor: pointer;}
 .entrada.area {padding: var(--e2) var(--e3); resize: vertical; min-height: 88px;}
 .campo.caixa label {display: flex; align-items: center; gap: var(--e2); min-height: var(--alvo); font-weight: 500;}
@@ -903,23 +915,23 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 /* ---------- Tela de login (painel de apresentação + formulário) ---------- */
 .entrada-tela {max-width: none; margin: 0; padding: 0; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); background: var(--fundo);}
 .entrada-vitrine {position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; gap: var(--e6); padding: clamp(28px, 4vw, 56px); padding-left: clamp(28px, 12vw, 240px); padding-right: max(22%, clamp(28px, 4vw, 56px)); color: #ECEEEE; background: linear-gradient(90deg, transparent 52%, color-mix(in srgb, var(--fundo) 10%, transparent) 64%, color-mix(in srgb, var(--fundo) 35%, transparent) 76%, color-mix(in srgb, var(--fundo) 68%, transparent) 87%, color-mix(in srgb, var(--fundo) 90%, transparent) 95%, var(--fundo) 100%), radial-gradient(120% 80% at 0% 0%, #2B3036 0%, #1E2227 45%, #121518 100%);}
-.entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid rgba(242,183,5,.10); pointer-events: none; mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%); -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%);}
-.entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); mask-composite: intersect; -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-composite: source-in; pointer-events: none;}
+.entrada-vitrine::before {content: ""; position: absolute; width: 520px; height: 520px; right: -200px; top: -160px; border-radius: 50%; border: 70px solid var(--marca-a10); pointer-events: none; mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%); -webkit-mask-image: linear-gradient(90deg, #000 0%, rgba(0,0,0,.6) 30%, transparent 62%);}
+.entrada-vitrine::after {content: ""; position: absolute; inset: 0; background-image: radial-gradient(var(--branco-07) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); mask-composite: intersect; -webkit-mask-image: linear-gradient(160deg, transparent 30%, #000 100%), linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-composite: source-in; pointer-events: none;}
 .entrada-vitrine > * {position: relative; z-index: 1;}
 .entrada-vitrine .marca {padding: 0; min-height: var(--alvo);}
 .entrada-vitrine .marca {width: auto; justify-content: flex-start;}
 .entrada-vitrine .marca, .entrada-vitrine .marca strong {color: #fff;}
-.entrada-vitrine .marca span.sub {color: rgba(255,255,255,.7);}
+.entrada-vitrine .marca span.sub {color: var(--branco-70);}
 .entrada-vitrine .marca > div {position: static; width: auto; height: auto; overflow: visible; clip: auto; white-space: normal;}
 .vitrine-texto {display: grid; gap: var(--e5); max-width: 34rem;}
-.vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: rgba(242,183,5,.14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
+.vitrine-selo {display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px; background: var(--marca-a14); color: var(--marca); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;}
 .entrada-vitrine h2 {font-size: clamp(30px, 3.4vw, 46px); line-height: 1.08; color: #fff;}
 .entrada-vitrine h2 em {font-style: normal; color: var(--marca);}
 .vitrine-lista {list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e4);}
 .vitrine-lista li {display: flex; align-items: flex-start; gap: var(--e3);}
 .vitrine-lista strong {display: block; font-weight: 600; color: #fff;}
 .vitrine-lista li span:not(.vitrine-icone) {display: block; font-size: 13px; color: #AEB4BA;}
-.vitrine-icone {flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--raio-md); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.10); color: var(--marca);}
+.vitrine-icone {flex: none; width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--raio-md); background: var(--branco-07); border: 1px solid var(--branco-10); color: var(--marca);}
 .vitrine-faixa {height: 6px; border-radius: 3px; background: repeating-linear-gradient(90deg, var(--marca) 0 28px, transparent 28px 48px); opacity: .85; mask-image: linear-gradient(90deg, #000 40%, transparent 100%); -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 100%);}
 .entrada-painel {display: grid; place-items: center; padding: var(--pad);}
 .entrada-conteudo {width: min(24rem, 100%); display: grid; gap: var(--e5);}
@@ -1067,10 +1079,10 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .barra-seg-fundo {fill: var(--seg-vazio);}
 .barra-seg .seg {stroke: var(--superficie); stroke-width: .5;}
 .seg.cheio {fill: var(--seg-cheio);} .seg.oficina {fill: var(--alerta);} .seg.livre {fill: var(--neutro);}
-.seg.f1, .seg-ponto.f1 {fill: var(--alerta); background: var(--alerta);}
-.seg.f2, .seg-ponto.f2 {fill: color-mix(in srgb, var(--alerta) 45%, var(--perigo)); background: color-mix(in srgb, var(--alerta) 45%, var(--perigo));}
-.seg.f3, .seg-ponto.f3 {fill: var(--perigo); background: var(--perigo);}
-.seg.f4, .seg-ponto.f4 {fill: color-mix(in srgb, var(--perigo) 65%, #000); background: color-mix(in srgb, var(--perigo) 65%, #000);}
+.seg.f1, .seg-ponto.f1 {fill: var(--faixa-1); background: var(--faixa-1);}
+.seg.f2, .seg-ponto.f2 {fill: var(--faixa-2); background: var(--faixa-2);}
+.seg.f3, .seg-ponto.f3 {fill: var(--faixa-3); background: var(--faixa-3);}
+.seg.f4, .seg-ponto.f4 {fill: var(--faixa-4); background: var(--faixa-4);}
 .faixas-legenda {display: grid; gap: var(--e1); margin: var(--e2) 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--texto-2);}
 .faixas-legenda li {display: flex; align-items: baseline; gap: var(--e2);}
 .seg-ponto {display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 2px; align-self: center;}
@@ -1198,7 +1210,7 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
   .nav-item .i {transition: stroke-width 160ms ease, transform 160ms ease;}
   @media (hover: hover) and (pointer: fine) {
     .chip:not([aria-pressed="true"]):not([aria-current="true"]):hover {transform: translateY(-1px); border-color: var(--texto-3);}
-    .cartao:hover, .kpi:hover {border-color: var(--linha-forte); box-shadow: 0 4px 14px -8px rgba(0, 0, 0, .28);}
+    .cartao:hover, .kpi:hover {border-color: var(--linha-forte); box-shadow: var(--sombra-hover);}
     .nav-item:hover .i {transform: scale(1.08);}
   }
 }
@@ -1238,11 +1250,11 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 @media (prefers-reduced-motion: no-preference) {
   dialog {opacity: 0; transform: translateY(10px) scale(.98); transition: opacity 180ms ease, transform 200ms cubic-bezier(.2, .8, .2, 1), overlay 200ms allow-discrete, display 200ms allow-discrete;}
   dialog[open] {opacity: 1; transform: none;}
-  dialog::backdrop {background: rgba(21,24,28,0); transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;}
-  dialog[open]::backdrop {background: rgba(21,24,28,.55);}
+  dialog::backdrop {background: transparent; transition: background-color 200ms ease, overlay 200ms allow-discrete, display 200ms allow-discrete;}
+  dialog[open]::backdrop {background: var(--veu);}
   @starting-style {
     dialog[open] {opacity: 0; transform: translateY(10px) scale(.98);}
-    dialog[open]::backdrop {background: rgba(21,24,28,0);}
+    dialog[open]::backdrop {background: transparent;}
   }
   @media (max-width: 719px) {
     dialog.cheio, dialog.folha {transform: translateY(24px);}
