@@ -31,25 +31,30 @@
 }
 
 @layer base {
+/* Tokens de cor: cada um é definido UMA vez só, como light-dark(claro, escuro).
+   O tema vem de color-scheme: sem data-tema segue o sistema; data-tema="claro"/"escuro" (botão de tema) força um dos lados. */
 :root {
+  color-scheme: light dark;
   --marca: #F2B705; --marca-hover: #FFC933; --grafite: #111827; --grafite-700: #1F2937;
-  --fundo: #F6F7F9; --superficie: #FFFFFF; --superficie-elevada: #FFFFFF; --superficie-hover: #F3F4F6;
-  --linha: #E5E7EB; --linha-sutil: #F0F1F3; --linha-forte: #D1D5DB;
-  --borda-campo: #8B929C; /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
-  --texto: #111827; --texto-2: #4B5563; --texto-3: #6B7280; --texto-invertido: #FFFFFF;
-  --sucesso: #2F9E6E; --sucesso-texto: #1B6F4D; --sucesso-fundo: rgba(47,158,110,.12);
-  --alerta: #F2B705;  --alerta-texto: #7A5A00;  --alerta-fundo: rgba(242,183,5,.18);
-  --perigo: #D64545;  --perigo-texto: #B83232;  --perigo-fundo: rgba(214,69,69,.10);
-  --info: #3F6E9C;    --info-texto: #2F5F8A;    --info-fundo: rgba(63,110,156,.12);
-  --neutro: #9CA3AF;  --neutro-texto: #4B5563;  --neutro-fundo: #F3F4F6;
-  --btn: #111827; --btn-hover: #1F2937; --btn-texto: #FFFFFF;
-  --foco: #B88A00; --foco-halo: rgba(184,138,0,.22);
-  --lateral-fundo: #FFFFFF; --lateral-texto: #4B5563; --lateral-ativo: #F3F4F6;
-  --lateral-forte: #111827; --lateral-sub: #6B7280; --lateral-linha: #E5E7EB; --lateral-avatar: #EEF0F3;
-  --chip-fundo: #111827; --chip-texto: #FFFFFF;
-  --seg-cheio: #111827; --seg-vazio: #E5E7EB;
-  --sombra-modal: 0 24px 60px rgba(17,24,39,.28), 0 0 0 1px rgba(17,24,39,.06);
-  --sombra-1: 0 1px 2px rgba(17,24,39,.05); --sombra-2: 0 4px 14px rgba(17,24,39,.08); --sombra-menu: 0 10px 30px rgba(17,24,39,.14), 0 0 0 1px rgba(17,24,39,.05);
+  --fundo: light-dark(#F6F7F9, #0B0D10); --superficie: light-dark(#FFFFFF, #14171C); --superficie-elevada: light-dark(#FFFFFF, #1A1E24); --superficie-hover: light-dark(#F3F4F6, #20252C);
+  --linha: light-dark(#E5E7EB, #262B33); --linha-sutil: light-dark(#F0F1F3, #1D2128); --linha-forte: light-dark(#D1D5DB, #3A414C);
+  --borda-campo: light-dark(#8B929C, #7C858D); /* contorno de campos: 3:1 contra o fundo (WCAG 1.4.11) */
+  --texto: light-dark(#111827, #ECEEEE); --texto-2: light-dark(#4B5563, #AEB4BA); --texto-3: light-dark(#6B7280, #9BA2A9); --texto-invertido: light-dark(#FFFFFF, #1E2227);
+  --sucesso: #2F9E6E; --sucesso-texto: light-dark(#1B6F4D, #5FD3A0); --sucesso-fundo: light-dark(rgba(47,158,110,.12), rgba(47,158,110,.18));
+  --alerta: #F2B705;  --alerta-texto: light-dark(#7A5A00, #F2C94C);  --alerta-fundo: light-dark(rgba(242,183,5,.18), rgba(242,183,5,.16));
+  --perigo: #D64545;  --perigo-texto: light-dark(#B83232, #FF8A8A);  --perigo-fundo: light-dark(rgba(214,69,69,.10), rgba(214,69,69,.18));
+  --info: #3F6E9C;    --info-texto: light-dark(#2F5F8A, #8DB7E0);    --info-fundo: light-dark(rgba(63,110,156,.12), rgba(63,110,156,.22));
+  --neutro: #9CA3AF;  --neutro-texto: light-dark(#4B5563, #C0C5CA);  --neutro-fundo: light-dark(#F3F4F6, rgba(255,255,255,.08));
+  --btn: light-dark(#111827, #F2B705); --btn-hover: light-dark(#1F2937, #FFC933); --btn-texto: light-dark(#FFFFFF, #1E2227);
+  --foco: light-dark(#B88A00, #F2B705); --foco-halo: light-dark(rgba(184,138,0,.22), rgba(242,183,5,.25));
+  --lateral-fundo: light-dark(#FFFFFF, #0F1216); --lateral-texto: light-dark(#4B5563, #B4BAC5); --lateral-ativo: light-dark(#F3F4F6, #1D2128);
+  --lateral-forte: light-dark(#111827, #FFFFFF); --lateral-sub: light-dark(#6B7280, #9AA0A6); --lateral-linha: light-dark(#E5E7EB, #262B33); --lateral-avatar: light-dark(#EEF0F3, var(--grafite-700));
+  --chip-fundo: light-dark(#111827, #ECEEEE); --chip-texto: light-dark(#FFFFFF, #1E2227);
+  --seg-cheio: light-dark(#111827, #F2B705); --seg-vazio: light-dark(#E5E7EB, rgba(255,255,255,.12));
+  --sombra-modal: 0 24px 60px light-dark(rgba(17,24,39,.28), rgba(0,0,0,.6)), 0 0 0 1px light-dark(rgba(17,24,39,.06), rgba(255,255,255,.08));
+  --sombra-1: 0 1px 2px light-dark(rgba(17,24,39,.05), rgba(0,0,0,.4));
+  --sombra-2: 0 4px 14px light-dark(rgba(17,24,39,.08), rgba(0,0,0,.45));
+  --sombra-menu: 0 10px 30px light-dark(rgba(17,24,39,.14), rgba(0,0,0,.55)), 0 0 0 1px light-dark(rgba(17,24,39,.05), rgba(255,255,255,.06));
 
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 40px;
   --alvo: 44px;
@@ -61,52 +66,9 @@
   --fonte-num: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --lateral-larg: 232px;
   --barra-inferior: 64px;
-  color-scheme: light;
 }
-
-/* Modo escuro: só redefine tokens. Automático pelo sistema, ou forçado pelo botão. */
-:root[data-tema="escuro"] {
-  --fundo: #0B0D10; --superficie: #14171C; --superficie-elevada: #1A1E24; --superficie-hover: #20252C;
-  --linha: #262B33; --linha-sutil: #1D2128; --linha-forte: #3A414C;
-  --borda-campo: #7C858D;
-  --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
-  --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
-  --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
-  --perigo-texto: #FF8A8A; --perigo-fundo: rgba(214,69,69,.18);
-  --info-texto: #8DB7E0; --info-fundo: rgba(63,110,156,.22);
-  --neutro-texto: #C0C5CA; --neutro-fundo: rgba(255,255,255,.08);
-  --btn: #F2B705; --btn-hover: #FFC933; --btn-texto: #1E2227;
-  --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
-  --lateral-fundo: #0F1216; --lateral-texto: #B4BAC5; --lateral-ativo: #1D2128;
-  --lateral-forte: #fff; --lateral-sub: #9AA0A6; --lateral-linha: #262B33; --lateral-avatar: var(--grafite-700);
-  --chip-fundo: #ECEEEE; --chip-texto: #1E2227;
-  --seg-cheio: #F2B705; --seg-vazio: rgba(255,255,255,.12);
-  --sombra-1: 0 1px 2px rgba(0,0,0,.4); --sombra-2: 0 4px 14px rgba(0,0,0,.45); --sombra-menu: 0 10px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
-  --sombra-modal: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
-  color-scheme: dark;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-tema="claro"]) {
-    --fundo: #0B0D10; --superficie: #14171C; --superficie-elevada: #1A1E24; --superficie-hover: #20252C;
-    --linha: #262B33; --linha-sutil: #1D2128; --linha-forte: #3A414C;
-    --borda-campo: #7C858D;
-    --texto: #ECEEEE; --texto-2: #AEB4BA; --texto-3: #9BA2A9; --texto-invertido: #1E2227;
-    --sucesso-texto: #5FD3A0; --sucesso-fundo: rgba(47,158,110,.18);
-    --alerta-texto: #F2C94C; --alerta-fundo: rgba(242,183,5,.16);
-    --perigo-texto: #FF8A8A; --perigo-fundo: rgba(214,69,69,.18);
-    --info-texto: #8DB7E0; --info-fundo: rgba(63,110,156,.22);
-    --neutro-texto: #C0C5CA; --neutro-fundo: rgba(255,255,255,.08);
-    --btn: #F2B705; --btn-hover: #FFC933; --btn-texto: #1E2227;
-    --foco: #F2B705; --foco-halo: rgba(242,183,5,.25);
-    --lateral-fundo: #0F1216; --lateral-texto: #B4BAC5; --lateral-ativo: #1D2128;
-  --lateral-forte: #fff; --lateral-sub: #9AA0A6; --lateral-linha: #262B33; --lateral-avatar: var(--grafite-700);
-  --chip-fundo: #ECEEEE; --chip-texto: #1E2227;
-    --seg-cheio: #F2B705; --seg-vazio: rgba(255,255,255,.12);
-    --sombra-1: 0 1px 2px rgba(0,0,0,.4); --sombra-2: 0 4px 14px rgba(0,0,0,.45); --sombra-menu: 0 10px 30px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06);
-    --sombra-modal: 0 24px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.08);
-    color-scheme: dark;
-  }
-}
+:root[data-tema="claro"] {color-scheme: light;}
+:root[data-tema="escuro"] {color-scheme: dark;}
 
 /* ---------- Base ---------- */
 *, *::before, *::after {box-sizing: border-box;}
