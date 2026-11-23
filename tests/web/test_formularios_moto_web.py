@@ -290,3 +290,89 @@ def test_formulario_em_dialogo_bloqueia_envio_duplo(cliente):
     _logado(cliente)
     html = cliente.get(f"/motos/{DISPONIVEL}/editar", headers=HX).text
     assert 'hx-sync="this:drop"' in html and 'hx-disabled-elt="find button[type=submit]"' in html
+
+
+# -------------------------------------------------------------- arquivar --
+
+def test_formulario_arquivar_mostra_motivo_e_data(cliente):
+    _logado(cliente)
+    texto = cliente.get(f"/motos/{DISPONIVEL}/arquivar").text
+    assert 'name="motivo"' in texto and 'name="vendida_em"' in texto
+    assert "pendências que impedem" not in texto
+
+
+def test_formulario_arquivar_lista_as_pendencias(cliente, base_motos):
+    from src.domain.arquivamento import Pendencias
+
+    base_motos.pendencias = Pendencias(contratos_ativos=1, cobrancas_abertas=2)
+    _logado(cliente)
+    texto = cliente.get(f"/motos/{DISPONIVEL}/arquivar").text
+    assert "1 contrato ativo, 2 cobranças em aberto" in texto
+
+
+def test_arquivar_moto_vendida_grava_motivo_e_data(cliente, acoes_motos_falsas):
+    token = _logado(cliente)
+    dados = {"csrf_token": token, "motivo": "vendida", "vendida_em": "2026-11-10"}
+    resposta = _post(cliente, f"/motos/{DISPONIVEL}/arquivar", dados)
+    assert resposta.status_code == 200 and resposta.headers["HX-Redirect"] == "/motos"
+    assert acoes_motos_falsas.chamadas == [("arquivar_moto", DISPONIVEL, "vendida", date(2026, 11, 10))]
+    assert "arquivado como vendido" in cliente.get("/motos").text
+
+
+def test_arquivar_vendida_exige_data_valida(cliente, acoes_motos_falsas):
+    token = _logado(cliente)
+    resposta = _post(cliente, f"/motos/{DISPONIVEL}/arquivar", {"csrf_token": token, "motivo": "vendida", "vendida_em": ""})
+    assert resposta.status_code == 422
+    assert "Informe a data da venda." in resposta.text
+    assert acoes_motos_falsas.chamadas == []
+
+
+def test_arquivar_por_outro_motivo_nao_pede_data(cliente, acoes_motos_falsas):
+    token = _logado(cliente)
+    _post(cliente, f"/motos/{DISPONIVEL}/arquivar", {"csrf_token": token, "motivo": "outro", "vendida_em": ""})
+    assert acoes_motos_falsas.chamadas == [("arquivar_moto", DISPONIVEL, "outro", None)]
+
+
+def test_arquivar_recusado_pelo_servico_devolve_o_formulario(cliente, acoes_motos_falsas):
+    acoes_motos_falsas.falhar_com = ValueError("Não é possível arquivar o veículo: 1 contrato ativo.")
+    token = _logado(cliente)
+    resposta = _post(cliente, f"/motos/{DISPONIVEL}/arquivar", {"csrf_token": token, "motivo": "outro"})
+    assert resposta.status_code == 422
+    assert "Não é possível arquivar o veículo: 1 contrato ativo." in resposta.text
+
+
+def test_arquivar_exige_csrf(cliente, acoes_motos_falsas):
+    _logado(cliente)
+    assert _post(cliente, f"/motos/{DISPONIVEL}/arquivar", {"motivo": "outro"}).status_code == 403
+    assert _post(cliente, f"/motos/{DISPONIVEL}/desarquivar", {}).status_code == 403
+    assert acoes_motos_falsas.chamadas == []
+
+
+def test_desarquivar_moto(cliente, acoes_motos_falsas):
+    token = _logado(cliente)
+    resposta = cliente.post(f"/motos/{INATIVA}/desarquivar", data={"csrf_token": token})
+    assert resposta.status_code == 303 and resposta.headers["location"] == f"/motos/{INATIVA}"
+    assert acoes_motos_falsas.chamadas == [("desarquivar_moto", INATIVA)]
+    assert "desarquivado" in cliente.get(f"/motos/{INATIVA}").text
+
+
+def test_moto_arquivada_nao_reativa_e_mostra_desarquivar(cliente, base_motos, acoes_motos_falsas):
+    base_motos.motos[2]["arquivada_em"] = "2026-11-10T10:00:00+00:00"
+    base_motos.motos[2]["vendida_em"] = "2026-11-10"
+    token = _logado(cliente)
+    ficha = cliente.get(f"/motos/{INATIVA}").text
+    assert "Desarquivar" in ficha and "Vendido em 10/11/2026" in ficha
+    assert f"/motos/{INATIVA}/arquivar" not in ficha
+    cliente.post(f"/motos/{INATIVA}/situacao", data={"csrf_token": token})
+    assert acoes_motos_falsas.chamadas == []
+    assert "Desarquive-o antes de reativá-lo." in cliente.get(f"/motos/{INATIVA}").text
+
+
+def test_lista_de_motos_separa_os_arquivados(cliente, base_motos):
+    base_motos.motos[2]["arquivada_em"] = "2026-11-10T10:00:00+00:00"
+    _logado(cliente)
+    assert "Arquivados" in cliente.get("/motos").text
+    em_todas = cliente.get("/motos").text
+    arquivadas = cliente.get("/motos?situacao=arquivados").text
+    placa = "ABC-3D03"
+    assert placa not in em_todas and placa in arquivadas

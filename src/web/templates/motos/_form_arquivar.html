@@ -1,0 +1,12 @@
+{% from "componentes/macros.html" import campo, campo_lista, form_dialogo, placa %}
+{% set v = valores %}
+{% call form_dialogo("Arquivar veículo", acao, "Arquivar", csrf_token, erro_geral) %}
+  <div class="largo flex items-center gap-3">{{ placa(moto.placa|placa_br) }}<span class="text-texto-2">{{ moto.marca }} {{ moto.modelo }}</span></div>
+  {% if impedimentos %}
+  <p class="largo msg-erro" role="alert">Há pendências que impedem o arquivamento: {{ impedimentos|join(", ") }}. Resolva antes de arquivar.</p>
+  {% else %}
+  <p class="largo text-texto-2">O veículo sai das listas (fica em “Arquivados”), continua inativo e o histórico financeiro é mantido. Dá para desarquivar depois.</p>
+  {% endif %}
+  {{ campo_lista("f-motivo", "Motivo", motivos, nome="motivo", selecionado=v.motivo, largo=True) }}
+  {{ campo("f-vendida-em", "Data da venda", nome="vendida_em", valor=v.vendida_em, tipo="date", erro=erros.vendida_em, ajuda="Só para veículo vendido.", largo=True) }}
+{% endcall %}

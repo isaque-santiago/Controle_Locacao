@@ -43,6 +43,22 @@ def moto_salva(placa, nova):
     return _toast(f"Veículo {placa} cadastrado." if nova else f"Dados do veículo {placa} atualizados.")
 
 
+def moto_arquivada(placa, vendida):
+    return _toast(f"Veículo {placa} arquivado como vendido." if vendida else f"Veículo {placa} arquivado.")
+
+
+def moto_desarquivada(placa):
+    return _toast(f"Veículo {placa} desarquivado. Ele continua inativo até ser reativado.")
+
+
+def cliente_arquivado(nome):
+    return _toast(f"Cliente {nome} arquivado.")
+
+
+def cliente_desarquivado(nome):
+    return _toast(f"Cliente {nome} desarquivado.")
+
+
 def moto_status_alterado(placa, inativada):
     return _toast(f"Veículo {placa} inativado." if inativada else f"Veículo {placa} reativado.")
 

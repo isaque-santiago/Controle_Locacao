@@ -11,6 +11,14 @@ def atualizar_cliente(cliente_id, dados):
     return clientes.atualizar(cliente_id, dados)
 
 
+def arquivar_cliente(cliente_id):
+    return clientes.arquivar(cliente_id)
+
+
+def desarquivar_cliente(cliente_id):
+    return clientes.desarquivar(cliente_id)
+
+
 def criar_acesso_portal(cliente_id):
     """Devolve {"email", "senha"}; a senha só existe nesta resposta."""
     return portal_locatario.criar_acesso(cliente_id)

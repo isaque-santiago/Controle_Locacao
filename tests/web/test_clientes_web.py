@@ -183,3 +183,52 @@ def test_ficha_do_cliente_leva_ao_veiculo_nas_abas_resumo_e_contratos(cliente, b
     assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in resumo
     contratos = cliente.get(f"/clientes/{base_clientes.id}?aba=contratos").text
     assert 'class="link-nome rc-so-larga" href="/motos/m1"><span class="placa">BRA-2E19</span>' in contratos
+
+
+# -------------------------------------------------------------- arquivar --
+
+def test_arquivar_cliente_sem_pendencia(cliente, base_clientes, acoes_clientes_falsas):
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    resposta = cliente.post(f"/clientes/{base_clientes.id}/arquivar", data={"csrf_token": token})
+    assert resposta.status_code == 303 and resposta.headers["location"] == "/clientes"
+    assert acoes_clientes_falsas == [("arquivar_cliente", base_clientes.id)]
+    assert "arquivado." in cliente.get("/clientes").text
+
+
+def test_arquivar_cliente_com_pendencia_mostra_o_motivo_e_nao_arquiva(cliente, base_clientes, acoes_clientes_falsas):
+    base_clientes.recusa_arquivar = "Não é possível arquivar o cliente: 2 cobranças em aberto."
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    resposta = cliente.post(f"/clientes/{base_clientes.id}/arquivar", data={"csrf_token": token})
+    assert resposta.headers["location"] == f"/clientes/{base_clientes.id}"
+    assert acoes_clientes_falsas == []
+    assert "2 cobranças em aberto." in cliente.get(f"/clientes/{base_clientes.id}").text
+
+
+def test_arquivar_cliente_exige_csrf(cliente, base_clientes, acoes_clientes_falsas):
+    entrar(cliente)
+    assert cliente.post(f"/clientes/{base_clientes.id}/arquivar", data={}).status_code == 403
+    assert cliente.post(f"/clientes/{base_clientes.id}/desarquivar", data={}).status_code == 403
+    assert acoes_clientes_falsas == []
+
+
+def test_cliente_arquivado_sai_da_lista_e_pode_ser_desarquivado(cliente, base_clientes, acoes_clientes_falsas):
+    base_clientes.clientes[0]["arquivado_em"] = "2026-11-10T10:00:00+00:00"
+    base_clientes.clientes[0]["status"] = "inativo"
+    entrar(cliente)
+    assert "Maria" not in cliente.get("/clientes").text
+    assert "Maria" not in cliente.get("/clientes?status=inativo").text
+    assert "Maria" in cliente.get("/clientes?status=arquivados").text
+    assert "Desarquivar" in cliente.get(f"/clientes/{base_clientes.id}").text
+    token = csrf_da_sessao(cliente)
+    cliente.post(f"/clientes/{base_clientes.id}/desarquivar", data={"csrf_token": token})
+    assert acoes_clientes_falsas == [("desarquivar_cliente", base_clientes.id)]
+
+
+def test_desarquivar_cliente_que_nao_esta_arquivado_e_recusado(cliente, base_clientes, acoes_clientes_falsas):
+    entrar(cliente)
+    token = csrf_da_sessao(cliente)
+    cliente.post(f"/clientes/{base_clientes.id}/desarquivar", data={"csrf_token": token})
+    assert acoes_clientes_falsas == []
+    assert "não está arquivado" in cliente.get(f"/clientes/{base_clientes.id}").text
