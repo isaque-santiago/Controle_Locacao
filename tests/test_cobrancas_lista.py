@@ -48,3 +48,16 @@ def test_montar_pagina_limita_ao_intervalo_valido():
     itens, recorte = regras.montar_pagina(linhas, 99)
     assert recorte.pagina == 3 and itens[0]["id"] == 20
     assert regras.montar_pagina([], 1)[1].total == 0
+
+
+def test_filtrar_por_busca_acha_cliente_e_placa_com_ou_sem_hifen():
+    linhas = [
+        {"cliente": "Ana Souza", "placa": "BRA2E19"},
+        {"cliente": "Bruno Lima", "placa": "QRS4T21"},
+        {"cliente": None, "placa": None},
+    ]
+    assert regras.filtrar_por_busca(linhas, "bruno") == [linhas[1]]
+    assert regras.filtrar_por_busca(linhas, "bra-2e") == [linhas[0]]
+    assert regras.filtrar_por_busca(linhas, "  ") == linhas
+    assert regras.filtrar_por_busca(linhas, None) == linhas
+    assert regras.filtrar_por_busca(linhas, "nada") == []

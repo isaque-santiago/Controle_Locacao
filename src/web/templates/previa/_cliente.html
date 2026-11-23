@@ -1,0 +1,12 @@
+{% from "previa/_gaveta.html" import moldura %}
+{% from "componentes/macros.html" import selo, sem_dado %}
+{% call moldura(cliente.nome, "/clientes/" ~ cliente.id) %}
+<dl class="ficha-campos gaveta-campos">
+  <div class="ficha-campo"><dt>Situação</dt><dd>{{ selo(status_rotulo[cliente.status], "ok" if cliente.status == "ativo" else "neutro") }}{% if cliente.arquivado_em %} {{ selo("Arquivado", "neutro") }}{% endif %}</dd></div>
+  <div class="ficha-campo"><dt>CPF</dt><dd class="mono">{{ cliente.cpf|cpf_mascarado }}</dd></div>
+  <div class="ficha-campo"><dt>Telefone</dt><dd>{% if cliente.telefone %}{{ cliente.telefone|telefone_br }}{% else %}{{ sem_dado() }}{% endif %}</dd></div>
+  <div class="ficha-campo"><dt>WhatsApp</dt><dd>{% if cliente.whatsapp %}{{ cliente.whatsapp|telefone_br }}{% else %}{{ sem_dado() }}{% endif %}</dd></div>
+  <div class="ficha-campo"><dt>Validade da CNH</dt><dd>{{ cliente.cnh_validade|data_br }}</dd></div>
+  <div class="ficha-campo ficha-larga"><dt>E-mail</dt><dd>{{ cliente.email or sem_dado() }}</dd></div>
+</dl>
+{% endcall %}

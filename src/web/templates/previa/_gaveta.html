@@ -1,0 +1,7 @@
+{% from "componentes/macros.html" import icone, botao %}
+{# Moldura da gaveta de pré-visualização. Quem inclui define `titulo_gaveta`, `ficha` (endereço da ficha) e o bloco {% call %} com os campos. #}
+{% macro moldura(titulo, ficha, subtitulo=None) -%}
+<div class="gaveta-cab"><div><h2 id="gaveta-titulo" tabindex="-1">{{ titulo }}</h2>{% if subtitulo %}<p>{{ subtitulo }}</p>{% endif %}</div><button class="btn-icone" type="button" data-fechar aria-label="Fechar a pré-visualização">{{ icone('fechar') }}</button></div>
+<div class="gaveta-corpo">{{ caller() }}</div>
+<div class="gaveta-rodape"><a class="btn btn-primario" href="{{ ficha }}">Abrir ficha completa{{ icone('seta') }}</a></div>
+{%- endmacro %}

@@ -55,3 +55,10 @@ def mais_esta_ativo(caminho_atual: str) -> bool:
     """O botão 'Mais' fica ativo quando a página atual só existe na folha."""
     ativo = item_ativo(caminho_atual)
     return ativo in FOLHA_MAIS
+
+
+# Atalhos "g" + letra (ir para a página): letra -> item do menu. Aparecem na janela de atalhos (`?`) e o app.js navega por eles.
+ATALHOS_IR: tuple[tuple[str, ItemNavegacao], ...] = (
+    ("i", DASHBOARD), ("o", CONTRATOS), ("b", COBRANCAS), ("v", MOTOS), ("c", CLIENTES),
+    ("m", MANUTENCAO), ("d", DOCUMENTOS), ("r", RELATORIOS),
+)

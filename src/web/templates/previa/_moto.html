@@ -1,0 +1,12 @@
+{% from "previa/_gaveta.html" import moldura %}
+{% from "componentes/macros.html" import selo, sem_dado, icone_veiculo %}
+{% call moldura(moto.placa|placa_br, "/motos/" ~ moto.id, moto.marca ~ " " ~ moto.modelo) %}
+<dl class="ficha-campos gaveta-campos">
+  <div class="ficha-campo"><dt>Situação</dt><dd>{{ selo(status_rotulo[moto.status], "ok" if moto.status == "disponivel" else "neutro") }}{% if moto.arquivado_em %} {{ selo("Arquivado", "neutro") }}{% endif %}</dd></div>
+  <div class="ficha-campo"><dt>Tipo</dt><dd>{{ icone_veiculo(moto.tipo) }}{{ "Carro" if moto.tipo == "carro" else "Moto" }}</dd></div>
+  <div class="ficha-campo"><dt>Ano</dt><dd>{{ moto.ano_modelo or moto.ano_fabricacao or sem_dado() }}</dd></div>
+  <div class="ficha-campo"><dt>Cor</dt><dd>{{ moto.cor or sem_dado() }}</dd></div>
+  <div class="ficha-campo"><dt>Km atual</dt><dd class="mono">{{ moto.km_atual|milhar }}</dd></div>
+  <div class="ficha-campo ficha-larga"><dt>Locatário</dt><dd>{% if cabecalho.locatario %}{{ cabecalho.locatario }}{% if cabecalho.desde %} <small>desde {{ cabecalho.desde|data_br }}</small>{% endif %}{% else %}<span class="text-texto-3">Sem locatário</span>{% endif %}</dd></div>
+</dl>
+{% endcall %}

@@ -1,15 +1,16 @@
-{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome %}
+{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome, botao_previa %}
 <input type="hidden" name="status" value="{{ status }}">
 <input type="hidden" name="ordem" value="{{ ordem }}">
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 {% if d.itens %}
-{% call tabela([("Cliente", ""), ("Situação", ""), ("CPF", ""), ("WhatsApp", ""), ("CNH", ""), ("Veículo atual", "")], "Clientes cadastrados", recolhivel=True, ordenacao=ordenacao) %}
+{% call tabela([("Cliente", ""), ("Situação", ""), ("CPF", ""), ("WhatsApp", ""), ("CNH", ""), ("Veículo atual", ""), ("", "c-previa")], "Clientes cadastrados", recolhivel=True, ordenacao=ordenacao) %}
 {% for item in d.itens %}{% set c = item.cliente %}<tr data-recolhivel class="linha-link">
 {% call rc_titulo("modelo", href="/clientes/" ~ c.id) %}{{ c.nome }}{% endcall %}<td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else "neutro") }}</td>
 <td class="mono" data-rotulo="CPF">{{ c.cpf|cpf_mascarado }}</td><td class="mono" data-rotulo="WhatsApp">{% if c.whatsapp or c.telefone %}{{ (c.whatsapp or c.telefone)|telefone_br }}{% else %}{{ sem_dado() }}{% endif %}</td>
 <td data-rotulo="CNH">{% if c.cnh_validade %}{{ selo(c.cnh_validade|data_br, "perigo" if item.cnh_situacao == "vencida" else ("atencao" if item.cnh_situacao == "a_vencer" else "ok")) }}{% else %}{{ sem_dado() }}{% endif %}</td>
 <td data-rotulo="Veículo atual">{% if item.placa %}{% call link_nome("/motos/" ~ item.moto_id) %}{{ placa(item.placa|placa_br) }}{% endcall %}{% else %}{{ sem_dado() }}{% endif %}</td>
+<td class="c-previa">{{ botao_previa("/clientes/" ~ c.id ~ "/previa", "o cliente " ~ c.nome) }}</td>
 <td class="c-acao c-acao-cel"><a class="btn" href="/clientes/{{ c.id }}" aria-label="Abrir a ficha de {{ c.nome }}">Abrir ficha</a></td></tr>{% endfor %}
 {% endcall %}
 {{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}

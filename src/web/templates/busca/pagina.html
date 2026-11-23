@@ -1,0 +1,11 @@
+{% extends "layout_painel.html" %}
+{% from "componentes/macros.html" import cabecalho_pagina, icone %}
+{# Versão sem JavaScript da busca global. Com JavaScript, a paleta (Ctrl+K ou "/") usa a mesma rota. #}
+{% block conteudo %}
+{{ cabecalho_pagina("Buscar", "Veículos, clientes e contratos") }}
+<form role="search" action="/busca" method="get" class="barra-filtros">
+  <div class="entrada-icone">{{ icone("busca") }}<label class="so-leitor" for="busca-pagina">Buscar</label><input class="entrada" id="busca-pagina" name="q" type="search" value="{{ q }}" maxlength="80" placeholder="Placa, modelo, nome ou CPF" autocomplete="off" autofocus></div>
+  {% if ocultar %}<input type="hidden" name="ocultar" value="1">{% endif %}
+</form>
+{% include "busca/_resultados.html" %}
+{% endblock %}
