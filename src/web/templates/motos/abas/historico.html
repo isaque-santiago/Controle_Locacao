@@ -1,4 +1,4 @@
-{% from "componentes/macros.html" import tabela, estado_vazio, rc_titulo %}
+{% from "componentes/macros.html" import tabela, estado_vazio, rc_titulo, sem_dado %}
 {% if a.manutencoes %}
 {% call tabela([("Data", ""), ("Tipo", ""), ("Descrição", ""), ("Km", "num"), ("Oficina", ""), ("Custo", "num")], "Histórico de manutenção do veículo", recolhivel=True) %}
   {% for m in a.manutencoes %}
@@ -7,7 +7,7 @@
     <td data-rotulo="Tipo">{{ m.tipo|capitalize }}</td>
     <td class="rc-quebra" data-rotulo="Descrição">{{ m.descricao }}</td>
     <td class="num mono" data-rotulo="Km">{{ m.km|milhar }} km</td>
-    <td class="rc-quebra" data-rotulo="Oficina">{{ m.oficina or "—" }}</td>
+    <td class="rc-quebra" data-rotulo="Oficina">{{ m.oficina or sem_dado() }}</td>
     <td class="num mono rc-cab" data-rotulo="Custo">{{ m.custo_total|moeda }}</td>
   </tr>
   {% endfor %}

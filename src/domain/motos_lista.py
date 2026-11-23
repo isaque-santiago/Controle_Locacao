@@ -95,6 +95,11 @@ def ordenar_motos(motos: list[dict], campo: str | None, decrescente: bool, locat
     return ordenar(motos, campo, decrescente, chaves)
 
 
+def mostrar_coluna_km(motos: list[dict]) -> bool:
+    """A coluna Km só aparece se algum veículo listado tem km maior que 0 (zero em todos é só ruído)."""
+    return any((moto.get("km_atual") or 0) > 0 for moto in motos)
+
+
 @dataclass(frozen=True)
 class ProximaManutencao:
     texto: str

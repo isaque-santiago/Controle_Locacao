@@ -148,3 +148,13 @@ def test_item_do_plano_sem_dados_usa_travessao():
     vazio = _linha(intervalo_km_efetivo=None, intervalo_dias_efetivo=None, ultima_km=None, proxima_km=None)
     r = ml.descrever_item_plano(vazio, 0, "em_dia", date(2026, 10, 6))
     assert (r.intervalo, r.ultima, r.proxima, r.restante) == ("—", "—", "—", "—")
+
+
+def test_mostrar_coluna_km_some_quando_todos_tem_km_zero():
+    zerados = [{"km_atual": 0}, {"km_atual": None}, {}]
+    assert ml.mostrar_coluna_km(zerados) is False
+    assert ml.mostrar_coluna_km([]) is False
+
+
+def test_mostrar_coluna_km_aparece_se_algum_tem_km():
+    assert ml.mostrar_coluna_km([{"km_atual": 0}, {"km_atual": 1200}]) is True

@@ -79,7 +79,12 @@ def _lista_busca_filtro_ficha(c: Contexto, titulo: str) -> None:
         aguardar_app(c.page)
         c.medir(f"{titulo} (página 2)", f"{titulo}-pagina-2")
 
-    if not c.clicar("link", re.compile(r"^Abrir (a )?ficha", re.I), titulo):
+    # Desktop: a linha inteira é o link (link esticado do título, sem botão); celular: "Abrir ficha" dentro do cartão aberto
+    linha = c.page.locator("tbody a.link-linha").locator("visible=true")
+    if linha.count():
+        linha.first.click()
+        aguardar_app(c.page)
+    elif not c.clicar("link", re.compile(r"^Abrir (a )?ficha", re.I), titulo):
         return
     c.medir(f"{titulo} (ficha)", f"{titulo}-ficha")
     c.page.go_back()
