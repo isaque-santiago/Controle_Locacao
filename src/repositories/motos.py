@@ -32,3 +32,14 @@ def criar(dados: dict):
 def atualizar(moto_id: str, dados: dict):
     resposta = get_client().table(TABELA).update(dados).eq("id", moto_id).execute()
     return resposta.data[0]
+
+
+@invalida_cache
+def arquivar_via_rpc(moto_id: str, motivo: str, vendida_em: str | None) -> dict:
+    parametros = {"p_moto": moto_id, "p_motivo": motivo, "p_vendida_em": vendida_em}
+    return get_client().rpc("rpc_arquivar_moto", parametros).execute().data
+
+
+@invalida_cache
+def desarquivar_via_rpc(moto_id: str) -> dict:
+    return get_client().rpc("rpc_desarquivar_moto", {"p_moto": moto_id}).execute().data
