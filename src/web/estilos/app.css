@@ -45,7 +45,7 @@
   --info-50: #F0F5FA; --info-100: #E3ECF5; --info-200: #BCD3E8; --info-300: #8DB7E0; --info-400: #6296C8; --info-500: #3F6E9C; --info-600: #3A6794; --info-700: #2F5F8A; --info-800: #244A6D; --info-900: #19344D; --info-950: #1E2A38;
   /* Faixas de atraso (do amarelo ao vinho) e véus translúcidos usados por cima de fundos escuros */
   --faixa-1: var(--alerta-500); --faixa-2: #E37836; --faixa-3: var(--perigo-500); --faixa-4: var(--perigo-800);
-  --veu: rgba(21,24,28,.55); --sombra-hover: 0 4px 14px -8px rgba(0,0,0,.28);
+  --veu: rgba(21,24,28,.55);
   --branco-07: rgba(255,255,255,.07); --branco-10: rgba(255,255,255,.10); --branco-70: rgba(255,255,255,.7);
   --marca-a10: rgba(242,183,5,.10); --marca-a14: rgba(242,183,5,.14);
   --fundo: light-dark(#F6F7F9, #0B0D10); --superficie: light-dark(#FFFFFF, #14171C); --superficie-elevada: light-dark(#FFFFFF, #1A1E24); --superficie-hover: light-dark(#F3F4F6, #20252C);
@@ -63,15 +63,23 @@
   --lateral-forte: light-dark(#111827, #FFFFFF); --lateral-sub: light-dark(#6B7280, #9AA0A6); --lateral-linha: light-dark(#E5E7EB, #262B33); --lateral-avatar: light-dark(#EEF0F3, var(--grafite-700));
   --chip-fundo: light-dark(#111827, #ECEEEE); --chip-texto: light-dark(#FFFFFF, #1E2227);
   --seg-cheio: light-dark(var(--grafite), var(--marca-500)); --seg-vazio: light-dark(#E5E7EB, rgba(255,255,255,.12));
-  --sombra-modal: 0 24px 60px light-dark(rgba(17,24,39,.28), rgba(0,0,0,.6)), 0 0 0 1px light-dark(rgba(17,24,39,.06), rgba(255,255,255,.08));
-  --sombra-1: 0 1px 2px light-dark(rgba(17,24,39,.05), rgba(0,0,0,.4));
-  --sombra-2: 0 4px 14px light-dark(rgba(17,24,39,.08), rgba(0,0,0,.45));
-  --sombra-menu: 0 10px 30px light-dark(rgba(17,24,39,.14), rgba(0,0,0,.55)), 0 0 0 1px light-dark(rgba(17,24,39,.05), rgba(255,255,255,.06));
+  /* Sombras em duas camadas: uma curta e nítida (contato) e uma longa e suave (ambiente), mais o anel de 1 px nos elevados. */
+  --sombra-cor-a: light-dark(rgba(17,24,39,.07), rgba(0,0,0,.45)); --sombra-cor-b: light-dark(rgba(17,24,39,.07), rgba(0,0,0,.35));
+  --sombra-cor-c: light-dark(rgba(17,24,39,.16), rgba(0,0,0,.55)); --sombra-anel: light-dark(rgba(17,24,39,.06), rgba(255,255,255,.07));
+  --sombra-1: 0 1px 2px var(--sombra-cor-a), 0 2px 8px -2px var(--sombra-cor-b);
+  --sombra-2: 0 2px 4px var(--sombra-cor-a), 0 10px 24px -6px var(--sombra-cor-c);
+  --sombra-hover: 0 2px 4px var(--sombra-cor-a), 0 12px 24px -10px var(--sombra-cor-c);
+  --sombra-menu: 0 4px 8px var(--sombra-cor-a), 0 16px 36px -8px var(--sombra-cor-c), 0 0 0 1px var(--sombra-anel);
+  --sombra-modal: 0 8px 16px var(--sombra-cor-a), 0 32px 72px -12px var(--sombra-cor-c), 0 0 0 1px var(--sombra-anel);
+  --realce: inset 0 1px 0 rgba(255,255,255,.14); /* filete de luz no topo dos botões cheios */
+  /* Fundos em camadas: fundo da página (com um brilho da marca no topo), cartão e elevado (menus, diálogos, campos). */
+  --fundo-topo: light-dark(#FBF7E8, #17150C);
+  --cabecalho-tabela: light-dark(#F7F8FA, #1A1E24);
 
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 40px;
   --alvo: 44px;
   --pad: clamp(16px, 4vw, 32px);
-  --raio-sm: 6px; --raio-campo: 8px; --raio-md: 10px; --raio-lg: 14px; --raio-pill: 999px;
+  --raio-sm: 6px; --raio-campo: 10px; --raio-md: 12px; --raio-lg: 16px; --raio-pill: 999px; /* campos e botões 10, cartões 16 */
   --fonte-titulo: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --fonte-ui: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --fonte-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
@@ -87,7 +95,7 @@
 html {-webkit-text-size-adjust: 100%;}
 /* No celular a barra inferior é fixa: o que recebe foco por teclado não pode ficar atrás dela. */
 @media (max-width: 1023px) {html {scroll-padding-bottom: calc(var(--alvo) + 40px + env(safe-area-inset-bottom, 0px));}}
-body {margin: 0; background: var(--fundo); color: var(--texto); font: 400 15px/1.55 var(--fonte-ui); -webkit-font-smoothing: antialiased; font-optical-sizing: auto;}
+body {margin: 0; background: linear-gradient(180deg, var(--fundo-topo), var(--fundo) 420px) no-repeat, var(--fundo); color: var(--texto); font: 400 15px/1.55 var(--fonte-ui); -webkit-font-smoothing: antialiased; font-optical-sizing: auto;}
 h1, h2, h3, p {margin: 0;}
 h1, h2, h3 {font-family: var(--fonte-titulo); font-weight: 650; letter-spacing: -.015em; line-height: 1.25; font-size: revert;}
 button, input, select, textarea {font: inherit; color: inherit;}
@@ -219,8 +227,8 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .btn:disabled, .btn[aria-disabled="true"] {opacity: .5; cursor: not-allowed; transform: none; box-shadow: none;}
 .btn:disabled:hover, .btn[aria-disabled="true"]:hover {background: var(--superficie-elevada); border-color: var(--linha-forte); box-shadow: none;}
 .btn .i {transition: transform 150ms ease;}
-.btn-primario {background: var(--btn); border-color: var(--btn); color: var(--btn-texto); box-shadow: var(--sombra-1), inset 0 1px 0 rgba(255,255,255,.14);}
-.btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover); box-shadow: var(--sombra-2), inset 0 1px 0 rgba(255,255,255,.14);}
+.btn-primario {background: var(--btn); border-color: var(--btn); color: var(--btn-texto); box-shadow: var(--sombra-1), var(--realce);}
+.btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover); box-shadow: var(--sombra-2), var(--realce);}
 .btn-perigo {border-color: var(--perigo); color: var(--perigo-texto); background: var(--superficie-elevada);}
 .btn-perigo:hover {background: var(--perigo-fundo); border-color: var(--perigo); box-shadow: none;}
 .btn-primario:disabled:hover, .btn-primario[aria-disabled="true"]:hover {background: var(--btn); border-color: var(--btn);}
@@ -383,7 +391,7 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .chip b {font: 600 12.5px var(--fonte-num);}
 .tabela-caixa {background: var(--superficie); border: 1px solid var(--linha); border-radius: var(--raio-lg); box-shadow: var(--sombra-1); overflow-x: auto; overflow-y: hidden; container-type: inline-size;}
 table.dados {width: 100%; border-collapse: collapse;}
-.dados th {text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--texto-3); padding: 10px var(--e4); background: color-mix(in srgb, var(--superficie-hover) 60%, var(--superficie)); border-bottom: 1px solid var(--linha);}
+.dados th {text-align: left; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--texto-3); padding: 10px var(--e4); background: var(--cabecalho-tabela); border-bottom: 1px solid var(--linha);}
 .dados td {padding: var(--e3) var(--e4); border-top: 1px solid var(--linha-sutil); vertical-align: middle;}
 /* Cabeçalho ordenável (só aparece na tabela; em cartões o thead some) */
 .dados th a.ordenar {display: inline-flex; align-items: center; gap: var(--e1); min-height: var(--alvo); margin-block: calc(var(--e3) * -1); color: inherit; text-decoration: none; border-radius: var(--raio-campo);}
@@ -828,7 +836,7 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 .colapsavel-visao .seta {width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform .15s;}
 .colapsavel-visao[open] .seta {transform: translateY(2px) rotate(-135deg);}
 .colapsavel-visao .opcoes {position: absolute; z-index: 10; top: calc(100% + var(--e2)); left: 0; display: grid; gap: var(--e1); min-width: max(100%, 170px); padding: var(--e2); border: 1px solid var(--linha-forte); border-radius: 14px; background: var(--superficie-elevada); box-shadow: 0 8px 24px rgb(0 0 0 / .25);}
-.colapsavel-visao .opcoes .chip {white-space: nowrap; width: 100%; justify-content: flex-start; border: 0; border-radius: 10px; background: transparent; padding: 0 var(--e4);}
+.colapsavel-visao .opcoes .chip {white-space: nowrap; width: 100%; justify-content: flex-start; border: 0; border-radius: var(--raio-campo); background: transparent; padding: 0 var(--e4);}
 .colapsavel-visao .opcoes .chip:hover {background: var(--superficie-hover);}
 .colapsavel-visao .opcoes .chip[aria-current="true"] {background: var(--superficie-hover); color: inherit; font-weight: 600;}
 .exportar-rel {display: flex; flex-wrap: wrap; gap: var(--e2);}
