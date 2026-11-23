@@ -36,12 +36,14 @@ def _com_pagamento(pagas):
     return pagas
 
 
-def carregar(aba, pagina):
-    """Contagem de cada aba, resumo de atraso e a página pedida da aba `aba`."""
+def carregar(aba, pagina, busca=""):
+    """Contagem de cada aba, resumo de atraso e a página pedida da aba `aba`.
+
+    `busca` (cliente ou placa) filtra as abas e as contagens; o resumo de atraso do cabeçalho segue sobre tudo."""
     hoje = hoje_br()
     linhas = _linhas(hoje)
-    por_aba = cobrancas_lista.classificar(linhas, hoje)
     total_atraso, clientes_atrasados = resumo_atraso(linhas)
+    por_aba = cobrancas_lista.classificar(cobrancas_lista.filtrar_por_busca(linhas, busca), hoje)
     selecionadas = _com_pagamento(por_aba[aba]) if aba == "pagas" else por_aba[aba]
     itens, recorte = cobrancas_lista.montar_pagina(cobrancas_lista.ordenar(aba, selecionadas), pagina)
     return {

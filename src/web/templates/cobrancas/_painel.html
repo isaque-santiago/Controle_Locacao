@@ -2,6 +2,7 @@
 {% macro cancelar(c) %}{% if c.pode_cancelar %}{{ botao("Cancelar", variante="discreto", href="/cobrancas/" ~ c.id ~ "/cancelar", aria="Cancelar a cobrança de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/cancelar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{% endif %}{% endmacro %}
 {% macro pagar(c) %}<td class="c-acao"><div class="flex flex-wrap gap-2">{{ botao("Pagar", variante="primario", href="/cobrancas/" ~ c.id ~ "/pagar", aria="Registrar pagamento de " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/pagar" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ botao("Mensagem", href="/cobrancas/" ~ c.id ~ "/mensagem", aria="Mensagem de cobrança para " ~ (c.cliente or "cliente"), extra='hx-get="/cobrancas/' ~ c.id ~ '/mensagem" hx-target="#dlg-form-conteudo" hx-swap="innerHTML"') }}{{ cancelar(c) }}</div></td>{% endmacro %}
 <div id="painel-aba" class="painel" role="tabpanel" aria-labelledby="aba-{{ aba }}">
+<input type="hidden" name="aba" value="{{ aba }}">
 {% if d.itens %}
 {% if aba == "atrasadas" %}
 {% call tabela([("Cliente", ""), ("Veículo", ""), ("Vencimento", ""), ("Atraso", ""), ("Original", "num"), ("Encargos", "num"), ("Total", "num"), ("Ações", "col-acoes")], "Cobranças atrasadas", recolhivel=True) %}
@@ -40,6 +41,6 @@
 {% endif %}
 {% if d.pagina.total > d.pagina.por_pagina %}{{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, pag_anterior, pag_proxima, alvo="#painel-aba", troca="outerHTML", parcial_anterior=parcial_anterior, parcial_proxima=parcial_proxima) }}{% endif %}
 {% else %}
-{{ estado_vazio(vazio, "Quando houver cobranças nesta situação, elas aparecem aqui.", "0") }}
+{% if busca %}{{ estado_vazio("Nenhuma cobrança encontrada", "Nenhuma cobrança desta aba combina com “" ~ busca ~ "”.", "0") }}{% else %}{{ estado_vazio(vazio, "Quando houver cobranças nesta situação, elas aparecem aqui.", "0") }}{% endif %}
 {% endif %}
 </div>

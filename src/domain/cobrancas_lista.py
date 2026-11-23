@@ -48,6 +48,18 @@ def classificar(linhas: list[dict], hoje: date) -> dict[str, list[dict]]:
     }
 
 
+def filtrar_por_busca(linhas: list[dict], busca: str | None) -> list[dict]:
+    """Mantém as cobranças cujo cliente ou placa (com ou sem hífen) contém o texto; sem texto, devolve tudo."""
+    termo = " ".join((busca or "").split()).casefold()
+    if not termo:
+        return linhas
+    placa = termo.replace("-", "").replace(" ", "")
+    return [
+        c for c in linhas
+        if termo in (c.get("cliente") or "").casefold() or (placa and placa in (c.get("placa") or "").casefold())
+    ]
+
+
 def ordenar(aba: str, linhas: list[dict]) -> list[dict]:
     """Pagas: pagamento mais recente primeiro. Demais abas: o vencimento mais antigo primeiro."""
     if aba == "pagas":

@@ -100,3 +100,42 @@ def test_nome_leva_a_ficha_do_cliente_e_placa_a_do_veiculo(cliente, base_cobranc
         html = cliente.get(f"/cobrancas?aba={aba}").text
         assert 'class="link-nome rc-so-larga" href="/clientes/cl1">' in html, aba
         assert '<a class="link-nome" href="/motos/m1"><span class="placa">BRA-2E19</span></a>' in html, aba
+
+
+# ---------------------------------------------------------------- busca instantânea --
+
+BUSCA = {"HX-Request": "true", "HX-Target": "painel-aba"}
+
+
+def test_busca_por_cliente_filtra_a_aba_e_as_contagens(cliente, base_cobrancas):
+    entrar(cliente)
+    html = cliente.get("/cobrancas?aba=atrasadas&q=bruno", headers=BUSCA).text
+    assert "<html" not in html and 'id="painel-aba"' in html and 'hx-swap-oob="true"' in html
+    assert "Bruno Lima" in html and "Ana" not in html
+    assert "Atrasadas · 1" in html and "Hoje · 0" in html
+
+
+def test_busca_por_placa_com_ou_sem_hifen(cliente, base_cobrancas):
+    entrar(cliente)
+    for termo in ("qrs-4t21", "QRS4T"):
+        html = cliente.get(f"/cobrancas?aba=atrasadas&q={termo}", headers=BUSCA).text
+        assert "Bruno Lima" in html and "Ana" not in html
+
+
+def test_busca_sem_resultado_mostra_estado_vazio_com_o_termo(cliente, base_cobrancas):
+    entrar(cliente)
+    html = cliente.get("/cobrancas?aba=hoje&q=zzz", headers=BUSCA).text
+    assert "Nenhuma cobrança encontrada" in html and "zzz" in html
+
+
+def test_busca_mantem_a_aba_e_o_termo_nas_abas_e_na_pagina_inteira(cliente, base_cobrancas):
+    entrar(cliente)
+    pagina = cliente.get("/cobrancas?aba=atrasadas&q=bruno").text
+    assert "<html" in pagina and 'value="bruno"' in pagina and 'name="aba" value="atrasadas"' in pagina
+    assert 'hx-push-url="/cobrancas?aba=hoje&amp;q=bruno"' in pagina
+    assert 'hx-get="/cobrancas/abas/hoje?q=bruno"' in pagina
+
+
+def test_busca_e_o_resumo_de_atraso_do_cabecalho_independem_do_filtro(cliente, base_cobrancas):
+    entrar(cliente)
+    assert "2 clientes" in cliente.get("/cobrancas?q=bruno").text
