@@ -117,6 +117,11 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   (o tamanho acompanha a largura do cartão, `cqi`), ícone em círculo suave (`icone_nome`) e `texto=True` para valores em palavras ou datas. O tom vem de
   `src/domain/painel.py` (`tons_kpis_hoje`, `tons_kpis_dinheiro`, `tom_tempo_parado`): `critico` (vermelho) só para o que pede ação e no máximo um por linha;
   `aviso` (âmbar) para o que preocupa sem pedir ação. Colunas de dinheiro das tabelas usam `num mono` (alinhadas à direita, `tabular-nums`).
+- **Listas e fichas** (redesign, Fase 3): nas listas de Veículos, Contratos e Clientes a linha inteira leva à ficha (link esticado, acessível por teclado; o botão
+  "Abrir ficha" só aparece no cartão do celular). Em Cobranças, "Pagar" é o botão primário, "Mensagem" o secundário e "Cancelar" usa a variante `discreto` do macro
+  `botao`. Selos de status maiores, com ponto colorido e texto. A coluna Km de Veículos some quando todos os veículos listados têm km 0
+  (`motos_lista.mostrar_coluna_km`). Campo vazio usa o macro `sem_dado()` (traço apagado; leitor de tela ouve "não informado") e grupos inteiros vazios da ficha do
+  cliente viram uma linha só. A barra superior do desktop mostra seção / página atual e o atalho "Novo contrato". Nomes longos na tabela ficam em até duas linhas.
 - **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
   filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
 - **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com
