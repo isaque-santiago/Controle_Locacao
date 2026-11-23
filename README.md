@@ -103,9 +103,24 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Filtros lembrados** (Motos, Clientes, Contratos, Vistorias e Documentos; `<form id="filtros" data-lembrar-filtros>`): o `app.js`
   guarda na aba (`sessionStorage`) a query da URL (busca, filtro, ordem, "por página"). Voltar da ficha pelo "Voltar" ou pelo menu
   para o endereço puro da lista reabre com ela. "Limpar filtros" apaga o guardado; sair da conta apaga tudo.
-- **Atalhos de teclado** (`static/js/app.js`): `/` foca a busca da página e `n` aciona o botão marcado com `data-atalho-novo`
-  (o "Novo ..." de Motos, Clientes, Contratos, Documentos e do catálogo de Manutenção; `aria-keyshortcuts="n"`). Só valem sem
-  Ctrl/Alt/Cmd, fora de campos de texto e com nenhum diálogo aberto.
+- **Atalhos de teclado** (`static/js/app.js` e `static/js/interativo.js`): `/` foca a busca da página (e, em páginas sem busca própria, abre a busca global),
+  `n` aciona o botão marcado com `data-atalho-novo` (o "Novo ..." das listas; `aria-keyshortcuts="n"`), `Ctrl+K` abre a busca global, `g` e depois uma letra
+  vai a uma página (`g i` Dashboard, `g o` Contratos, `g b` Cobranças, `g v` Veículos, `g c` Clientes, `g m` Manutenção, `g d` Documentos, `g r` Relatórios; a lista
+  fica em `navegacao.ATALHOS_IR` e é lida da própria janela de atalhos) e `?` abre essa janela (também no menu da conta). Só valem sem Ctrl/Alt/Cmd, fora de
+  campos de texto e com nenhum diálogo aberto (exceto `Ctrl+K`, que funciona até dentro de um campo).
+- **Interatividade** (redesign, Fase 4; JS novo em `static/js/interativo.js`, carregado só no layout do painel; tudo é melhoria progressiva):
+  - **Busca global** (`Ctrl+K`, `/` ou o botão "Buscar"): paleta em `<dialog id="dlg-busca">` que consulta `GET /busca?q=` (rota -> `dados_busca` -> serviços;
+    regra pura em `src/domain/busca_global.py`: placa com ou sem hífen, modelo, nome e CPF; arquivados ficam de fora; até 5 por grupo; mínimo 2 letras).
+    Setas navegam (combobox com `aria-activedescendant`), Enter abre a ficha, Esc fecha e o foco volta ao que estava. Com `?ocultar=1` na URL (modo "ocultar dados
+    pessoais" do Dashboard) os resultados saem mascarados. Sem JavaScript, `/busca` abre como página.
+  - **Filtros instantâneos**: Veículos, Clientes e Contratos já trocavam só `#resultado` (debounce de 300 ms, `hx-push-url`); **Cobranças** ganhou a busca por cliente ou
+    placa, que troca só o painel da aba, mantém `aba` e `q` na URL e filtra as contagens das abas (o resumo de atraso do cabeçalho segue sobre tudo).
+  - **Gaveta de pré-visualização**: o botão do olho em cada linha de Veículos, Clientes e Contratos (`GET /motos|clientes|contratos/{id}/previa`, rotas em
+    `src/web/rotas/previa.py`) carrega os dados principais num diálogo que desliza da direita (`#dlg-gaveta`), com link para a ficha. O foco vai ao título e volta ao botão ao fechar.
+  - **Abas e ordenação**: continuam trocando só o painel; o traço da aba aberta entra suave. Tudo com `prefers-reduced-motion`.
+  - **Ações em linha**: pagar e cancelar uma cobrança a partir de `/cobrancas` atualizam a lista no lugar (`rotas/cobrancas_na_lista.py`): a resposta traz fora de banda o
+    aviso, o resumo, as abas e o painel e fecha o diálogo (`HX-Trigger: dialogo-concluido`). Vindo de outra tela (Dashboard) ou sem JS, segue o redirecionamento de antes.
+    Regras e RPCs não mudaram. "Mensagem" já abre num diálogo sem sair da lista (é só texto para copiar/enviar).
 - **App instalável (PWA básico)**: `static/manifest.webmanifest` (modo `standalone`, `start_url` `/`), ícones em `static/icones/`
   (gerados por `python scripts/gerar_icones_pwa.py`, com Pillow; versionados) e, no `<head>` de `base.html`, `manifest`,
   `apple-touch-icon`, `theme-color` claro/escuro e as metas do iPhone (`apple-mobile-web-app-capable`, `-title` "LA Locadora" e `-status-bar-style`; 16/11/2026). **Nome do app: "LA Locadora"** (manifest, `<title>`, marca do login/menu/portal, monograma "LA" no favicon e nos ícones; 16/11/2026). **Sem service worker**: a sessão fica na memória do servidor, então o app não
