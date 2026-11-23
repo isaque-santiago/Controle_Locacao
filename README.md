@@ -103,6 +103,8 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Filtros lembrados** (Motos, Clientes, Contratos, Vistorias e Documentos; `<form id="filtros" data-lembrar-filtros>`): o `app.js`
   guarda na aba (`sessionStorage`) a query da URL (busca, filtro, ordem, "por página"). Voltar da ficha pelo "Voltar" ou pelo menu
   para o endereço puro da lista reabre com ela. "Limpar filtros" apaga o guardado; sair da conta apaga tudo.
+  Quando a lista está filtrada, o resultado mostra o indicador **Filtro ativo: N de total** com o botão "Limpar filtros" (macro `aviso_filtro`); o
+  cabeçalho "N cadastrados" continua sendo o total geral. O servidor não guarda filtro: só o endereço com `?q=` aparece filtrado.
 - **Atalhos de teclado** (`static/js/app.js` e `static/js/interativo.js`): `/` foca a busca da página (e, em páginas sem busca própria, abre a busca global),
   `n` aciona o botão marcado com `data-atalho-novo` (o "Novo ..." das listas; `aria-keyshortcuts="n"`), `Ctrl+K` abre a busca global, `g` e depois uma letra
   vai a uma página (`g i` Dashboard, `g o` Contratos, `g b` Cobranças, `g v` Veículos, `g c` Clientes, `g m` Manutenção, `g d` Documentos, `g r` Relatórios; a lista
@@ -116,7 +118,7 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   - **Filtros instantâneos**: Veículos, Clientes e Contratos já trocavam só `#resultado` (debounce de 300 ms, `hx-push-url`); **Cobranças** ganhou a busca por cliente ou
     placa, que troca só o painel da aba, mantém `aba` e `q` na URL e filtra as contagens das abas (o resumo de atraso do cabeçalho segue sobre tudo).
   - **Gaveta de pré-visualização**: o botão do olho em cada linha de Veículos, Clientes e Contratos (`GET /motos|clientes|contratos/{id}/previa`, rotas em
-    `src/web/rotas/previa.py`) carrega os dados principais num diálogo que desliza da direita (`#dlg-gaveta`), com link para a ficha. O foco vai ao título e volta ao botão ao fechar.
+    `src/web/rotas/previa.py`; o botão usa `hx-push-url="false"` porque o `#resultado` fica dentro do `<form hx-push-url="true">` e o HTMX herda o atributo; aberta direto, sem `HX-Request`, a rota redireciona para a ficha) carrega os dados principais num diálogo que desliza da direita (`#dlg-gaveta`), com link para a ficha. O foco vai ao título e volta ao botão ao fechar.
   - **Abas e ordenação**: continuam trocando só o painel; o traço da aba aberta entra suave. Tudo com `prefers-reduced-motion`.
   - **Ações em linha**: pagar e cancelar uma cobrança a partir de `/cobrancas` atualizam a lista no lugar (`rotas/cobrancas_na_lista.py`): a resposta traz fora de banda o
     aviso, o resumo, as abas e o painel e fecha o diálogo (`HX-Trigger: dialogo-concluido`). Vindo de outra tela (Dashboard) ou sem JS, segue o redirecionamento de antes.
