@@ -753,7 +753,7 @@ Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibi
 
 Nada é apagado: o dono **arquiva** pela ficha, e só quando não há pendências (contrato ativo, manutenção aberta ou cobrança em aberto, inclusive o débito de contratos encerrados). O veículo pede o motivo («Vendido», com a data, ou «Outro motivo») e fica inativo. Arquivados saem de «Todos» nas listas e ficam no filtro «Arquivados»; dá para desarquivar (o veículo continua inativo até ser reativado). Contrato novo não aceita veículo nem cliente arquivado. Banco: migration `20261119120000_arquivamento.sql` (RPCs `rpc_arquivar_*` e `rpc_desarquivar_*`); regra em `src/domain/arquivamento.py`.
 
-Atualização de uma instalação existente: aplicar a migration; rodar `supabase/verificar_arquivamento.sql` no **dev** (desfaz tudo no fim); `supabase/consultar_candidatos_arquivamento.sql` (somente leitura) lista quem já pode ser arquivado.
+Atualização de uma instalação existente: aplicar a migration; rodar `supabase/verificar_arquivamento.sql` no **dev** (desfaz tudo no fim); `supabase/consultar_candidatos_arquivamento.sql` (somente leitura) lista quem já pode ser arquivado. No SQL Editor do Supabase só o resultado da **última** consulta aparece: rode as duas consultas do arquivo uma de cada vez. Em produção (23/11/2026) estão arquivados os veículos `NVE8D78` e `OIH0D80` (vendidos, data da venda vazia) e 3 ex-locatários sem pendência; quem ainda deve continua inativo. Detalhes na seção 23, item 10, do plano.
 
 ### Administradores (mais de um usuário com acesso total)
 
