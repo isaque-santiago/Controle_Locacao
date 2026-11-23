@@ -1,0 +1,11 @@
+{% from "previa/_gaveta.html" import moldura %}
+{% from "componentes/macros.html" import selo %}
+{% call moldura("Contrato de " ~ cliente.nome, "/contratos/" ~ contrato.id, moto.marca ~ " " ~ moto.modelo ~ " · " ~ moto.placa|placa_br) %}
+<dl class="ficha-campos gaveta-campos">
+  <div class="ficha-campo"><dt>Situação</dt><dd>{{ selo(status_rotulo[contrato.status], "ok" if contrato.status == "ativo" else ("perigo" if contrato.status == "cancelado" else "neutro")) }}</dd></div>
+  <div class="ficha-campo"><dt>Início</dt><dd class="mono">{{ contrato.data_inicio|data_br }}</dd></div>
+  <div class="ficha-campo"><dt>Periodicidade</dt><dd>{{ periodos_rotulo.get(contrato.periodicidade, contrato.periodicidade) }}</dd></div>
+  <div class="ficha-campo"><dt>Valor / período</dt><dd class="mono">{{ contrato.valor_periodo|moeda }}</dd></div>
+  <div class="ficha-campo ficha-larga"><dt>Cliente</dt><dd><a class="link-nome" href="/clientes/{{ cliente.id }}">{{ cliente.nome }}</a></dd></div>
+</dl>
+{% endcall %}

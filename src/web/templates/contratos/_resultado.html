@@ -1,10 +1,10 @@
-{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome %}
+{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome, botao_previa %}
 <input type="hidden" name="status" value="{{ status }}">
 <input type="hidden" name="ordem" value="{{ ordem }}">
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
 {% if d.itens %}
-{% call tabela([("Cliente", ""), ("Situação", ""), ("Veículo", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num")], "Contratos", recolhivel=True, ordenacao=ordenacao) %}
+{% call tabela([("Cliente", ""), ("Situação", ""), ("Veículo", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num"), ("", "c-previa")], "Contratos", recolhivel=True, ordenacao=ordenacao) %}
 {% for item in d.itens %}{% set c = item.contrato %}<tr data-recolhivel class="linha-link">
 {% call rc_titulo("modelo" ~ (" text-texto-3" if c.status != "ativo" else ""), href="/clientes/" ~ c.cliente_id, estica=False) %}{{ item.cliente_nome }}{% endcall %}
 <td class="rc-cab" data-rotulo="Situação">{{ selo(status_rotulo[c.status], "ok" if c.status == "ativo" else ("perigo" if c.status == "cancelado" else "neutro")) }}</td>
@@ -12,6 +12,7 @@
 <td class="mono" data-rotulo="Início"><a class="link-linha" href="/contratos/{{ c.id }}" aria-label="Abrir o contrato de {{ item.cliente_nome }}, início em {{ c.data_inicio|data_br }}">{{ c.data_inicio|data_br }}</a></td>
 <td data-rotulo="Periodicidade">{{ periodos_rotulo.get(c.periodicidade, c.periodicidade) }}</td>
 <td class="num mono" data-rotulo="Valor / período">{{ c.valor_periodo|moeda }}</td>
+<td class="c-previa">{{ botao_previa("/contratos/" ~ c.id ~ "/previa", "o contrato de " ~ item.cliente_nome) }}</td>
 <td class="c-acao c-acao-cel"><a class="btn" href="/contratos/{{ c.id }}" aria-label="Abrir o contrato de {{ item.cliente_nome }}">Abrir ficha</a></td></tr>{% endfor %}
 {% endcall %}
 {{ paginacao(d.pagina.inicio + 1, d.pagina.fim, d.pagina.total, url_anterior, url_proxima, alvo="#resultado") }}

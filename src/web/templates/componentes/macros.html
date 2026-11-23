@@ -155,7 +155,7 @@
 <div class="tabela-caixa{{ ' lista-cartoes' if (cartoes or recolhivel) else '' }}">
   <table class="dados">
     <caption class="so-leitor">{{ descricao }}</caption>
-    <thead><tr>{% for rotulo, classe in colunas %}{% set ord = ordenacao[rotulo] if ordenacao and rotulo in ordenacao else None %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}{% if ord %} aria-sort="{{ ord.estado }}"{% endif %}>{% if ord %}<a class="ordenar" id="ord-{{ ord.campo }}" href="{{ ord.url }}" hx-get="{{ ord.url }}" hx-target="#resultado" hx-push-url="true">{{ rotulo }}{{ icone('chevron', 'ordenar-seta') }}</a>{% elif rotulo %}{{ rotulo }}{% else %}<span class="so-leitor">Proporção</span>{% endif %}</th>{% endfor %}</tr></thead>
+    <thead><tr>{% for rotulo, classe in colunas %}{% set ord = ordenacao[rotulo] if ordenacao and rotulo in ordenacao else None %}<th scope="col"{% if classe %} class="{{ classe }}"{% endif %}{% if ord %} aria-sort="{{ ord.estado }}"{% endif %}>{% if ord %}<a class="ordenar" id="ord-{{ ord.campo }}" href="{{ ord.url }}" hx-get="{{ ord.url }}" hx-target="#resultado" hx-push-url="true">{{ rotulo }}{{ icone('chevron', 'ordenar-seta') }}</a>{% elif rotulo %}{{ rotulo }}{% elif classe == "c-previa" %}<span class="so-leitor">Pré-visualizar</span>{% else %}<span class="so-leitor">Proporção</span>{% endif %}</th>{% endfor %}</tr></thead>
     <tbody>{{ caller() }}</tbody>
   </table>
 </div>
@@ -173,6 +173,11 @@
 {%- else -%}
 <td class="rc-titulo {{ classe }}"><button type="button" class="recolhe-gatilho" data-recolher aria-expanded="false">{{ caller() }}{{ icone("chevron", "recolhe-seta") }}</button></td>
 {%- endif %}
+{%- endmacro %}
+
+{# Botão da gaveta de pré-visualização (ícone do olho): carrega o fragmento em #gaveta-conteudo, que abre a gaveta. Vai numa <td class="c-previa">. #}
+{% macro botao_previa(url, rotulo) -%}
+<button class="btn-icone previa-gatilho" type="button" hx-get="{{ url }}" hx-target="#gaveta-conteudo" hx-swap="innerHTML" aria-haspopup="dialog" aria-label="Pré-visualizar {{ rotulo }}" title="Pré-visualizar">{{ icone("olho") }}</button>
 {%- endmacro %}
 
 {# Link de nome (cliente, placa, contrato) numa célula comum de tabela ou texto: herda a cor e sublinha ao passar o mouse. #}

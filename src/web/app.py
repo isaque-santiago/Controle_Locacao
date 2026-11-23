@@ -24,6 +24,7 @@ from src.web.rotas import conector as rotas_conector
 from src.web.rotas import esqueci_senha as rotas_esqueci_senha
 from src.web.rotas import componentes as rotas_componentes
 from src.web.rotas import busca as rotas_busca
+from src.web.rotas import previa as rotas_previa
 from src.web.rotas import clientes as rotas_clientes
 from src.web.rotas import cobrancas as rotas_cobrancas
 from src.web.rotas import cobrancas_cancelamento as rotas_cobrancas_cancelamento
@@ -115,6 +116,7 @@ def criar_app(
 
     app.include_router(rotas_paginas.router)
     app.include_router(rotas_busca.router)
+    app.include_router(rotas_previa.router)
     app.include_router(rotas_clientes_formularios.router)
     app.include_router(rotas_clientes_portal.router)
     app.include_router(rotas_clientes_whatsapp.router)

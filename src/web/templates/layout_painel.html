@@ -109,6 +109,9 @@
   <p class="paleta-rodape" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> navegar <kbd>Enter</kbd> abrir <kbd>Esc</kbd> fechar</p>
 </dialog>
 
+{# Gaveta de pré-visualização (desliza da direita): o HTMX põe o fragmento de /.../previa em #gaveta-conteudo e o app.js abre o diálogo #}
+<dialog class="gaveta" id="dlg-gaveta" aria-labelledby="gaveta-titulo"><div id="gaveta-conteudo"></div></dialog>
+
 {# Diálogo de formulários carregados sob demanda pelo HTMX (conteúdo vem de /.../nova, /.../editar etc.) #}
 <dialog class="cheio" id="dlg-form" aria-labelledby="dlg-form-titulo"><div id="dlg-form-conteudo"></div></dialog>
 
