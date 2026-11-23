@@ -1354,3 +1354,28 @@ dialog.paleta[open] {display: block;}
 .paleta-rodape {display: flex; gap: var(--e2); align-items: center; padding: var(--e2) var(--e4); border-top: 1px solid var(--linha); color: var(--texto-3); font-size: 12px;}
 @media (max-width: 1023px) {.busca-gatilho {display: none;} .paleta-rodape {display: none;} dialog.paleta {margin-top: 8vh;}}
 @media (prefers-reduced-motion: no-preference) {dialog.paleta[open] {animation: paleta-entra 160ms cubic-bezier(.2, .8, .2, 1) both;} @keyframes paleta-entra {from {opacity: 0; transform: translateY(-8px) scale(.98);}}}
+
+/* ---------- Gaveta de pré-visualização ---------- */
+.dados td.c-previa {width: 1%; white-space: nowrap; text-align: right;}
+.dados th.c-previa {width: 1%;}
+@media (max-width: 719px) {.dados td.c-previa {display: none !important;}}
+.previa-gatilho {width: 36px; min-height: 36px; color: var(--texto-2);}
+.linha-link .previa-gatilho {opacity: .55;}
+.linha-link:hover .previa-gatilho, .linha-link:focus-within .previa-gatilho, .previa-gatilho:focus-visible {opacity: 1;}
+dialog.gaveta {margin: 0 0 0 auto; width: min(26rem, 100vw); height: 100dvh; max-height: none; border-radius: var(--raio-lg) 0 0 var(--raio-lg); display: none; flex-direction: column;}
+dialog.gaveta[open] {display: flex;}
+#gaveta-conteudo {display: flex; flex-direction: column; flex: 1; min-height: 0;}
+.gaveta-cab {display: flex; align-items: flex-start; justify-content: space-between; gap: var(--e3); padding: var(--e4) var(--e5); border-bottom: 1px solid var(--linha);}
+.gaveta-cab h2 {font-size: 20px; overflow-wrap: anywhere;} .gaveta-cab h2:focus {outline: none;}
+.gaveta-cab p {color: var(--texto-2); margin-top: 2px;}
+.gaveta-corpo {flex: 1; overflow-y: auto; padding: var(--e5);}
+.gaveta-campos {grid-template-columns: repeat(2, minmax(0, 1fr));}
+.gaveta-rodape {padding: var(--e4) var(--e5) calc(var(--e4) + env(safe-area-inset-bottom)); border-top: 1px solid var(--linha);}
+.gaveta-rodape .btn {width: 100%;}
+dialog.gaveta::backdrop {background: var(--veu);}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.gaveta[open] {animation: gaveta-entra 220ms cubic-bezier(.2, .8, .2, 1) both;}
+  dialog.gaveta[open]::backdrop {animation: gaveta-fundo 220ms ease-out both;}
+  @keyframes gaveta-entra {from {transform: translateX(32px); opacity: 0;}}
+  @keyframes gaveta-fundo {from {opacity: 0;}}
+}

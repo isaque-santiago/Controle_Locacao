@@ -99,4 +99,28 @@
       abrirBusca();
     }
   });
+
+  // ---- Gaveta de pré-visualização: o app.js abre o diálogo quando o HTMX troca #gaveta-conteudo; aqui cuida-se do foco ----
+  // Ao abrir, o foco vai ao título (leitor de tela anuncia o conteúdo); ao fechar, o conteúdo é esvaziado e o foco volta ao botão de origem.
+  var origemGaveta = null;
+  document.body.addEventListener('htmx:beforeRequest', function (e) {
+    if (e.detail.target && e.detail.target.id === 'gaveta-conteudo') origemGaveta = e.detail.elt;
+  });
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (!e.detail.target || e.detail.target.id !== 'gaveta-conteudo') return;
+    var titulo = document.getElementById('gaveta-titulo');
+    if (titulo) titulo.focus({ preventScroll: true });
+  });
+  document.addEventListener('close', function (e) {
+    if (!e.target || e.target.id !== 'dlg-gaveta') return;
+    var conteudo = document.getElementById('gaveta-conteudo');
+    if (conteudo) conteudo.innerHTML = '';
+    if (origemGaveta && origemGaveta.isConnected) origemGaveta.focus({ preventScroll: true });
+    origemGaveta = null;
+  }, true);
+  // Navegar pela gaveta (link "Abrir ficha completa") não deve deixar o diálogo aberto no histórico
+  window.addEventListener('pagehide', function () {
+    var gaveta = document.getElementById('dlg-gaveta');
+    if (gaveta && gaveta.open) gaveta.close();
+  });
 })();
