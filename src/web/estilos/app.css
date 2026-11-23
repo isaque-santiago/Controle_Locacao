@@ -235,6 +235,9 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .btn-primario:hover {background: var(--btn-hover); border-color: var(--btn-hover); box-shadow: var(--sombra-2), var(--realce);}
 .btn-perigo {border-color: var(--perigo); color: var(--perigo-texto); background: var(--superficie-elevada);}
 .btn-perigo:hover {background: var(--perigo-fundo); border-color: var(--perigo); box-shadow: none;}
+/* Ação destrutiva que não compete com a principal: sem borda nem fundo até o hover (continua com texto, não só cor) */
+.btn-discreto {border-color: transparent; background: transparent; box-shadow: none; color: var(--perigo-texto);}
+.btn-discreto:hover {background: var(--perigo-fundo); border-color: transparent; box-shadow: none;}
 .btn-primario:disabled:hover, .btn-primario[aria-disabled="true"]:hover {background: var(--btn); border-color: var(--btn);}
 .btn-perigo:disabled:hover, .btn-perigo[aria-disabled="true"]:hover {background: var(--superficie-elevada); border-color: var(--perigo);}
 @media (prefers-reduced-motion: reduce) {.btn, .btn .i {transition: none;} .btn:hover {transform: none;}}
@@ -717,6 +720,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .linha-link:has(.link-linha:focus-visible) {outline: 2px solid var(--foco); outline-offset: -2px;}
   .linha-link .link-linha:focus-visible:not(.btn) {outline: none;}
 }
+
+/* "Abrir ficha" só existe no cartão do celular (a linha inteira já é o link em telas largas): a regra do cartão recolhível, mais específica, o mostra de volta */
+.dados td.c-acao-cel {display: none;}
 
 /* Motos na oficina: hachura (não depende só da cor, nem se confunde com "alugada" no modo escuro) */
 .medidor span.oficina, .legenda i.oficina {background: repeating-linear-gradient(135deg, var(--alerta) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1.5px var(--alerta);}
