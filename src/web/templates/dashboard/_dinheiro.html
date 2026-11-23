@@ -36,11 +36,11 @@
     {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", tom=tons.get("caixa", ""), icone_nome="divida", variacao=v.caixa if v else None) }}
   </dl>
   <dl class="grade kpis kpis-5">
-    {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado") }}
-    {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês") }}
-    {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ din(f.atual.aportes)) }}
-    {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos") }}
-    {{ kpi("Dívidas em aberto", din(f.dividas.total), "veículos fiado: " ~ din(f.dividas.moto_fiado), href="/dividas") }}
+    {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado", icone_nome="moto") }}
+    {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês", icone_nome="divida") }}
+    {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ din(f.atual.aportes), icone_nome="cobranca") }}
+    {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos", icone_nome="contrato") }}
+    {{ kpi("Dívidas em aberto", din(f.dividas.total), "veículos fiado: " ~ din(f.dividas.moto_fiado), icone_nome="divida", href="/dividas") }}
   </dl>
 
   {% if not comp %}
