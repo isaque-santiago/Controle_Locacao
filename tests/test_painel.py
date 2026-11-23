@@ -219,3 +219,33 @@ def test_alertas_levam_direto_ao_problema():
     assert destinos["Documento vencido"] == "/documentos?situacao=vencido"
     assert destinos["Documento a vencer"] == "/documentos?situacao=a_vencer"
     assert destinos["CNH vencida"] == "/clientes?q=Jo%C3%A3o+%26+Cia"
+
+
+def test_tons_hoje_so_inadimplente_e_critico():
+    assert painel.tons_kpis_hoje(2, Decimal("100")) == {"em_atraso": "critico", "caixa": ""}
+    assert painel.tons_kpis_hoje(0, Decimal("100")) == {"em_atraso": "", "caixa": ""}
+
+
+def test_tons_hoje_caixa_negativo_avisa_sem_competir_com_a_cobranca():
+    assert painel.tons_kpis_hoje(3, Decimal("-1")) == {"em_atraso": "critico", "caixa": "aviso"}
+    assert painel.tons_kpis_hoje(0, Decimal("-1"))["caixa"] == "aviso"
+    assert painel.tons_kpis_hoje(0, None)["caixa"] == ""
+
+
+def test_tons_dinheiro_nunca_tem_dois_criticos():
+    for resultado in (Decimal("-5"), Decimal("0"), Decimal("5")):
+        for caixa in (Decimal("-5"), Decimal("0"), Decimal("5")):
+            tons = painel.tons_kpis_dinheiro(resultado, caixa)
+            assert list(tons.values()).count("critico") <= 1
+
+
+def test_tons_dinheiro_casos():
+    assert painel.tons_kpis_dinheiro(Decimal("-5"), Decimal("-5")) == {"resultado": "critico", "caixa": "aviso"}
+    assert painel.tons_kpis_dinheiro(Decimal("5"), Decimal("-5")) == {"resultado": "", "caixa": "critico"}
+    assert painel.tons_kpis_dinheiro(Decimal("5"), Decimal("5")) == {"resultado": "", "caixa": ""}
+
+
+def test_tom_tempo_parado_acima_de_5_avisa():
+    assert painel.tom_tempo_parado(6) == "aviso"
+    assert painel.tom_tempo_parado(5) == ""
+    assert painel.tom_tempo_parado(None) == ""

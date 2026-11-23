@@ -5,9 +5,9 @@
 {% set ab = fr.manutencao_aberta %}
 
 <dl class="grade kpis{% if not fr.indisponivel %} kpis-6{% endif %}">
-  {{ kpi("Frota", fr.total ~ (" veículo" if fr.total == 1 else " veículos"), fr.ativas ~ " ativas"~ ((" · " ~ fr.contagem.inativa ~ " inativas") if fr.contagem.inativa else "")) }}
-  {{ kpi("Ocupação", fr.ocupacao ~ "%", fr.contagem.alugada ~ " alugadas de " ~ fr.ativas ~ " ativas", extra=(fr.contagem.disponivel ~ " livres")) }}
-  {{ kpi("Em manutenção", fr.contagem.manutencao ~ (" veículo" if fr.contagem.manutencao == 1 else " veículos"), fr.ordens_concluidas ~ (" ordem concluída no mês" if fr.ordens_concluidas == 1 else " ordens concluídas no mês"), atencao=(fr.contagem.manutencao > 0), href="/manutencao") }}
+  {{ kpi("Frota", fr.total ~ (" veículo" if fr.total == 1 else " veículos"), fr.ativas ~ " ativas"~ ((" · " ~ fr.contagem.inativa ~ " inativas") if fr.contagem.inativa else ""), icone_nome="moto") }}
+  {{ kpi("Ocupação", fr.ocupacao ~ "%", fr.contagem.alugada ~ " alugadas de " ~ fr.ativas ~ " ativas", extra=(fr.contagem.disponivel ~ " livres"), icone_nome="painel") }}
+  {{ kpi("Em manutenção", fr.contagem.manutencao ~ (" veículo" if fr.contagem.manutencao == 1 else " veículos"), fr.ordens_concluidas ~ (" ordem concluída no mês" if fr.ordens_concluidas == 1 else " ordens concluídas no mês"), icone_nome="manutencao", href="/manutencao") }}
   {% if fr.indisponivel %}
   {{ kpi("Gasto com manutenção no mês", "—", "indisponível agora") }}
   {% else %}
@@ -15,7 +15,7 @@
   {% endif %}
   {% if not fr.indisponivel %}
   {{ kpi("Receita por veículo", din(fr.receita_por_moto) if fr.receita_por_moto is not none else "—", "receita do mês ÷ " ~ fr.ativas ~ " veículos ativos") }}
-  {{ kpi("Tempo parado no mês", ((fr.tempo_parado.percentual ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de veículo na oficina", atencao=(fr.tempo_parado.percentual is not none and fr.tempo_parado.percentual > 5)) }}
+  {{ kpi("Tempo parado no mês", ((fr.tempo_parado.percentual ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de veículo na oficina", tom=fr.get("tom_tempo_parado", ""), icone_nome="alerta") }}
   {% endif %}
 </dl>
 

@@ -443,14 +443,17 @@ def test_frota_tem_receita_por_moto_e_tempo_parado(cliente):
     assert "Tempo parado no mês" in html and "8.0%" in html and "12 dias de veículo na oficina" in html
 
 
-def test_tempo_parado_acima_de_5_por_cento_pede_atencao(cliente, monkeypatch):
+def test_tempo_parado_acima_do_limite_vira_aviso_ambar(cliente, monkeypatch):
+    """O tom vem de `painel.tom_tempo_parado` (testado em test_painel.py); a tela só aplica a classe, e nunca o vermelho."""
     def classe_do_cartao(html):
-        return re.search(r'<div class="(kpi[^"]*)"><dt>Tempo parado no mês', html).group(1)
+        return re.search(r'<div class="(kpi[^"]*)"><dt>(?:<span class="kpi-icone">.*?</span>)?<span>Tempo parado no mês', html).group(1)
 
     entrar(cliente)
-    assert "atencao" in classe_do_cartao(cliente.get("/?aba=frota").text)  # 8,0% na fixture
-    _com(monkeypatch, ajustes={"frota": {"tempo_parado": {"dias": 1, "percentual": Decimal("2.0")}}})
-    assert "atencao" not in classe_do_cartao(cliente.get("/?aba=frota").text)
+    _com(monkeypatch, ajustes={"frota": {"tom_tempo_parado": "aviso"}})
+    classe = classe_do_cartao(cliente.get("/?aba=frota").text)
+    assert "aviso" in classe and "atencao" not in classe
+    _com(monkeypatch, ajustes={"frota": {"tom_tempo_parado": ""}})
+    assert classe_do_cartao(cliente.get("/?aba=frota").text) == "kpi"
 
 
 def test_motos_paradas_lista_motivo_desde_e_dias(cliente):
@@ -529,3 +532,21 @@ def test_nome_e_placa_levam_as_fichas_mas_nao_com_os_dados_ocultos(cliente, monk
     assert '<a class="link-nome" href="/motos/m1"><span class="placa">POU-7015</span></a>' in frota
     oculto = cliente.get("/?ocultar=1").text + cliente.get("/?aba=frota&ocultar=1").text
     assert 'href="/clientes/c1"' not in oculto and 'href="/motos/m' not in oculto
+
+
+# ------------------------------------------------------------------------------------- tom dos indicadores --
+
+
+def test_so_o_indicador_com_tom_critico_fica_vermelho_e_o_aviso_fica_ambar(cliente, monkeypatch):
+    _com(monkeypatch, ajustes={"hoje": {"tons": {"em_atraso": "critico", "caixa": "aviso"}}})
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert html.count('<div class="kpi atencao') == 1 and html.count('<div class="kpi aviso') == 1
+    assert re.search(r'<div class="kpi atencao[^"]*"><dt><span class="kpi-icone">.*?Em atraso', html)
+
+
+def test_sem_tom_nenhum_indicador_e_destacado(cliente, monkeypatch):
+    _com(monkeypatch)
+    entrar(cliente)
+    html = cliente.get("/").text
+    assert '<div class="kpi atencao' not in html and '<div class="kpi aviso' not in html

@@ -3,6 +3,7 @@
 {% set f = d.dinheiro %}
 {% set comp = d.compacto %}
 {% set oc = d.ocultar %}
+{% set tons = f.get("tons", {}) %}
 
 <section aria-labelledby="t-financeiro">
   <div class="cartao-cab">
@@ -29,17 +30,17 @@
   <dl class="grade kpis kpis-receita">
     {% set v = f.variacoes if (f.variacoes and not oc) else None %}
     {% set visual_receita %}{{ bullet(f.percentual_previsto, f.percentual_esperado, "Receita de " ~ f.percentual_previsto ~ "% do previsto; esperado até hoje: " ~ f.percentual_esperado ~ "%") }}{% endset %}
-    {{ kpi("Receita", din(f.atual.receita), "de " ~ dinc(f.previsto) ~ " previstos (" ~ f.percentual_previsto ~ "%) · esperado até hoje: " ~ f.percentual_esperado ~ "%", extra=(("Semana: " ~ din(f.receita_semana) ~ (" · mês anterior: " ~ din(f.anterior.receita) if f.anterior else "")) if f.e_mes_atual else None), visual=visual_receita, variacao=v.receita if v else None) }}
-    {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)", variacao=v.despesas if v else None) }}
-    {{ kpi("Resultado", din(f.atual.resultado), ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), atencao=(f.atual.resultado < 0), variacao=v.resultado if v else None) }}
-    {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", atencao=(f.atual.caixa < 0), variacao=v.caixa if v else None) }}
+    {{ kpi("Receita", din(f.atual.receita), "de " ~ dinc(f.previsto) ~ " previstos (" ~ f.percentual_previsto ~ "%) · esperado até hoje: " ~ f.percentual_esperado ~ "%", extra=(("Semana: " ~ din(f.receita_semana) ~ (" · mês anterior: " ~ din(f.anterior.receita) if f.anterior else "")) if f.e_mes_atual else None), icone_nome="cobranca", visual=visual_receita, variacao=v.receita if v else None) }}
+    {{ kpi("Despesas", din(f.atual.despesas), "custo operacional (sem investimento)", icone_nome="manutencao", variacao=v.despesas if v else None) }}
+    {{ kpi("Resultado", din(f.atual.resultado), ((f.atual.margem ~ "% de margem") if f.atual.margem is not none else "sem receita no mês"), tom=tons.get("resultado", ""), icone_nome="relatorio", variacao=v.resultado if v else None) }}
+    {{ kpi("Caixa", din(f.atual.caixa), "após investimento, dívidas e retiradas", tom=tons.get("caixa", ""), icone_nome="divida", variacao=v.caixa if v else None) }}
   </dl>
   <dl class="grade kpis kpis-5">
-    {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado") }}
-    {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês") }}
-    {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ din(f.atual.aportes)) }}
-    {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos") }}
-    {{ kpi("Dívidas em aberto", din(f.dividas.total), "veículos fiado: " ~ din(f.dividas.moto_fiado), href="/dividas") }}
+    {{ kpi("Investimento em veículos", din(f.atual.investimento), "fora do resultado", icone_nome="moto") }}
+    {{ kpi("Parcelas de dívida", din(f.atual.parcelas_divida), "pagas no mês", icone_nome="divida") }}
+    {{ kpi("Retiradas", din(f.atual.retiradas), "aportes: " ~ din(f.atual.aportes), icone_nome="cobranca") }}
+    {{ kpi("Receita mensal estimada", din(f.receita_estimada), "contratos ativos", icone_nome="contrato") }}
+    {{ kpi("Dívidas em aberto", din(f.dividas.total), "veículos fiado: " ~ din(f.dividas.moto_fiado), icone_nome="divida", href="/dividas") }}
   </dl>
 
   {% if not comp %}

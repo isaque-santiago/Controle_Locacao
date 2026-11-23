@@ -113,6 +113,10 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
 - **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes do fim do prazo (só para prazos de até 1 dia; com a sessão de 90 dias o aviso fica desligado) abre o diálogo de
   confirmação com "Continuar conectado" (`POST /sessao/renovar`, 204, exige CSRF); passado o prazo, avisa que expirou e leva ao login.
   Requisições do HTMX bem-sucedidas reiniciam a contagem.
+- **Indicadores (KPIs)** (macro `kpi` em `componentes/macros.html`; redesign, Fase 2): rótulo pequeno e cinza, valor grande com números tabulares
+  (o tamanho acompanha a largura do cartão, `cqi`), ícone em círculo suave (`icone_nome`) e `texto=True` para valores em palavras ou datas. O tom vem de
+  `src/domain/painel.py` (`tons_kpis_hoje`, `tons_kpis_dinheiro`, `tom_tempo_parado`): `critico` (vermelho) só para o que pede ação e no máximo um por linha;
+  `aviso` (âmbar) para o que preocupa sem pedir ação. Colunas de dinheiro das tabelas usam `num mono` (alinhadas à direita, `tabular-nums`).
 - **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
   filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
 - **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com

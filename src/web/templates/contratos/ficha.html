@@ -15,8 +15,8 @@
   {{ kpi("Valor / período", contrato.valor_periodo|moeda) }}
   {{ kpi("Caução", contrato.caucao_valor|moeda) }}
   {{ kpi("Km inicial", (contrato.km_inicial|milhar) ~ " km") }}
-  {{ kpi("Prazo", (a.prazo|data_br) if a.prazo else "Indeterminado") }}
-  {{ kpi("Próxima cobrança", a.proxima_cobranca|data_br) }}
+  {{ kpi("Prazo", (a.prazo|data_br) if a.prazo else "Indeterminado", texto=True) }}
+  {{ kpi("Próxima cobrança", a.proxima_cobranca|data_br, texto=True) }}
 </dl>
 {% if a.promessa %}<dl class="grade kpis">
   {{ kpi("Total da promessa", a.promessa.valor_total|moeda) }}
