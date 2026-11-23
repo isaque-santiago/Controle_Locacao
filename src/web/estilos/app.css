@@ -1448,3 +1448,19 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
 .aviso-filtro {display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e2) var(--e3); margin: 0 0 var(--e3); padding: var(--e2) var(--e3); border: 1px solid var(--linha-forte); border-radius: var(--raio-md); background: var(--superficie-elevada); color: var(--texto-2); font-size: 0.875rem;}
 .aviso-filtro strong {color: var(--texto);}
 @media print {.aviso-filtro {display: none;}}
+
+/* ---------- Microinterações: clique nos botões e destaque da linha sob o ponteiro ----------
+   Estados finais (sem movimento) valem sempre; as transições só com movimento permitido. */
+@media (min-width: 720px) and (hover: hover) and (pointer: fine) {
+  .dados tbody tr.linha-link:hover td:first-child, .dados tbody tr.linha-link:focus-within td:first-child {box-shadow: inset 3px 0 0 var(--foco);}
+}
+.btn-primario:active {background: var(--btn-hover); border-color: var(--btn-hover);}
+.chip:active {transform: scale(.97);}
+.kpi-link:active {transform: scale(.99);}
+@media (prefers-reduced-motion: reduce) {.chip:active, .kpi-link:active, .btn:active, .btn-icone:active {transform: none;}}
+@media (prefers-reduced-motion: no-preference) {
+  .dados tbody tr.linha-link td:first-child {transition: box-shadow 150ms ease;}
+  .btn:active, .btn-icone:active, .chip:active {transition-duration: 60ms;}
+  .btn-icone[data-alternar-tema] .i {transition: transform 300ms cubic-bezier(.2, .8, .2, 1);}
+  .btn-icone[data-alternar-tema]:active .i {transform: rotate(25deg) scale(.9);}
+}
