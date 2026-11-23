@@ -74,6 +74,8 @@
   --realce: inset 0 1px 0 rgba(255,255,255,.14); /* filete de luz no topo dos botões cheios */
   /* Fundos em camadas: fundo da página (com um brilho da marca no topo), cartão e elevado (menus, diálogos, campos). */
   --fundo-topo: light-dark(#FBF7E8, #17150C);
+  /* Vidro fosco (barras fixas): fundo translúcido sobre blur; sem backdrop-filter o fundo fica sólido (veja @supports adiante). */
+  --vidro: light-dark(rgba(255,255,255,.82), rgba(15,18,22,.8)); --vidro-borda: light-dark(rgba(17,24,39,.08), rgba(255,255,255,.08));
   --cabecalho-tabela: light-dark(#F7F8FA, #1A1E24);
 
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px; --e7: 40px;
@@ -120,9 +122,9 @@ main {width: 100%; max-width: 1600px; margin: 0 auto; overflow-wrap: break-word;
 @media (min-width: 1024px) {main {padding-top: 32px; padding-bottom: 64px;}}
 
 /* Barra lateral (computador, a partir de 1024 px) */
-.lateral {position: sticky; top: 0; height: 100dvh; background: var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--lateral-linha);}
+.lateral {position: sticky; top: 0; height: 100dvh; background: linear-gradient(180deg, var(--marca-a10), transparent 180px), var(--lateral-fundo); color: var(--lateral-texto); display: flex; flex-direction: column; padding: var(--e4) var(--e3); overflow-y: auto; scrollbar-width: none; border-right: 1px solid var(--lateral-linha);}
 .marca {display: flex; align-items: center; gap: var(--e3); padding: var(--e2) var(--e2) var(--e5); text-decoration: none; color: var(--lateral-forte);}
-.marca-simbolo {width: 36px; height: 36px; border-radius: var(--raio-md); background: var(--marca); color: var(--grafite); display: grid; place-items: center; font: 600 15px var(--fonte-titulo); letter-spacing: .02em; flex: none;}
+.marca-simbolo {width: 36px; height: 36px; border-radius: var(--raio-md); background: linear-gradient(135deg, var(--marca-400), var(--marca-500)); box-shadow: 0 4px 12px -4px var(--marca-600), var(--realce); color: var(--grafite); display: grid; place-items: center; font: 600 15px var(--fonte-titulo); letter-spacing: .02em; flex: none;}
 .marca strong {display: block; font: 600 17px/1.1 var(--fonte-titulo); color: var(--lateral-forte);}
 .marca span.sub {display: block; font-size: 12px; color: var(--lateral-sub);}
 .nav-grupo {margin-bottom: var(--e4);}
@@ -150,6 +152,8 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .ficha-titulo .icone-veiculo {width: 26px; height: 26px; margin-right: 0;}
 .lateral-rodape {margin-top: auto; padding-top: var(--e4); border-top: 1px solid var(--lateral-linha); display: grid; gap: var(--e2);}
 .topo-desktop {position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: flex-end; gap: var(--e2); height: 60px; padding: 0 var(--pad); background: var(--lateral-fundo); border-bottom: 1px solid var(--lateral-linha);}
+/* Filete da marca sob a barra superior: o amarelo como detalhe de identidade */
+.topo-desktop::after, .topo-movel::after {content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, var(--marca) 0, var(--marca-a14) 38%, transparent 70%); pointer-events: none;}
 .conta {position: relative;}
 .conta summary {list-style: none; cursor: pointer;}
 .conta summary::-webkit-details-marker {display: none;}
@@ -185,7 +189,7 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
   .topo-movel .btn-icone {color: var(--lateral-forte); border-color: var(--lateral-linha);}
   .topo-movel .btn-icone:hover {background: var(--lateral-ativo); border-color: var(--lateral-linha);}
   main {padding-bottom: calc(var(--barra-inferior) + 32px + env(safe-area-inset-bottom));}
-  .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: color-mix(in srgb, var(--superficie-elevada) 88%, transparent); backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--linha); padding-bottom: env(safe-area-inset-bottom);}
+  .barra-inferior {position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--vidro); backdrop-filter: saturate(1.4) blur(14px); border-top: 1px solid var(--vidro-borda); padding-bottom: env(safe-area-inset-bottom);}
   .barra-inferior a, .barra-inferior summary {position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: var(--barra-inferior); padding: var(--e2) 2px; border: 0; background: none; color: var(--texto-2); text-decoration: none; font-size: 12px; font-weight: 500; cursor: pointer;}
   .barra-inferior [aria-current="page"] {color: var(--texto); font-weight: 600;}
   .barra-inferior [aria-current="page"]::before {content: ""; position: absolute; top: 0; left: 25%; right: 25%; height: 3px; border-radius: 0 0 3px 3px; background: var(--marca);}
@@ -1205,6 +1209,18 @@ a.marca-simbolo:focus-visible {outline: 3px solid var(--foco-halo); outline-offs
 .btn-icone[data-alternar-tema]:hover {background: var(--superficie-hover); border-color: transparent; color: var(--texto); box-shadow: none;}
 .topo-movel .btn-icone[data-alternar-tema] {color: var(--lateral-texto);}
 .topo-movel .btn-icone[data-alternar-tema]:hover {background: var(--lateral-ativo); color: var(--lateral-forte);}
+
+/* ---------- Vidro fosco: barra superior (desktop e celular), barra lateral e barra inferior ----------
+   Só onde há backdrop-filter; sem ele valem os fundos sólidos de cima. Texto e bordas seguem os mesmos tokens (contraste mantido). */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topo-desktop, .topo-movel {background: var(--vidro); border-bottom-color: var(--vidro-borda); -webkit-backdrop-filter: saturate(1.5) blur(16px); backdrop-filter: saturate(1.5) blur(16px);}
+  .lateral {background: linear-gradient(180deg, var(--marca-a10), transparent 180px), var(--vidro); border-right-color: var(--vidro-borda); -webkit-backdrop-filter: saturate(1.5) blur(18px); backdrop-filter: saturate(1.5) blur(18px);}
+}
+/* Modo de alto contraste do sistema: cores e transparências ficam por conta do sistema */
+@media (forced-colors: active) {
+  .topo-desktop, .topo-movel, .lateral, .barra-inferior {-webkit-backdrop-filter: none; backdrop-filter: none;}
+  .topo-desktop::after, .topo-movel::after {display: none;}
+}
 
 /* ---------- Hover e foco suaves (padrão do cell-pag) ---------- */
 @media (prefers-reduced-motion: no-preference) {
