@@ -1,8 +1,9 @@
-{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome, botao_previa %}
+{% from "componentes/macros.html" import filtro_colapsavel, sem_dado, selo, placa, tabela, paginacao, estado_vazio, botao, rc_titulo, link_nome, botao_previa, aviso_filtro %}
 <input type="hidden" name="status" value="{{ status }}">
 <input type="hidden" name="ordem" value="{{ ordem }}">
 {% if not na_pagina %}{{ filtro_colapsavel("Situação", "Filtrar por situação", chips, status, oob=True) }}{% endif %}
 <p class="so-leitor" role="status" aria-live="polite">{{ d.pagina.resumo() }}</p>
+{% if filtrando and d.itens %}{{ aviso_filtro(d.pagina.total, d.total_cadastrados, "contratos", url_limpar) }}{% endif %}
 {% if d.itens %}
 {% call tabela([("Cliente", ""), ("Situação", ""), ("Veículo", ""), ("Início", ""), ("Periodicidade", ""), ("Valor / período", "num"), ("", "c-previa")], "Contratos", recolhivel=True, ordenacao=ordenacao) %}
 {% for item in d.itens %}{% set c = item.contrato %}<tr data-recolhivel class="linha-link">

@@ -52,3 +52,23 @@ def test_listas_tem_o_botao_de_previa_e_o_layout_a_gaveta(cliente, base_motos, b
         html = cliente.get(caminho).text
         assert trecho in html and 'hx-target="#gaveta-conteudo"' in html and 'id="dlg-gaveta"' in html
         assert 'aria-label="Pré-visualizar ' in html
+    assert html.count('hx-push-url="false"') >= 1
+
+
+def test_botao_da_gaveta_nao_empurra_a_url_no_historico(cliente, base_motos, base_clientes, base_contratos):
+    """O #resultado fica dentro do <form hx-push-url="true">; sem hx-push-url="false" no botão o HTMX herdava o push."""
+    entrar(cliente)
+    for caminho, url in (("/motos", f"/motos/{MOTO}/previa"), ("/clientes", f"/clientes/{CLIENTE}/previa"),
+                         ("/contratos", f"/contratos/{CONTRATO}/previa")):
+        html = cliente.get(caminho).text
+        botao = next(b for b in html.split("<button") if f'hx-get="{url}"' in b).split(">")[0]
+        assert 'hx-push-url="false"' in botao
+
+
+def test_previa_aberta_direto_redireciona_para_a_ficha(cliente, base_motos, base_clientes, base_contratos):
+    """Sem HX-Request (endereço digitado, recarregado ou compartilhado) não devolve o fragmento cru: vai para a ficha."""
+    entrar(cliente)
+    for tipo, id_ in (("motos", MOTO), ("clientes", CLIENTE), ("contratos", CONTRATO)):
+        resposta = cliente.get(f"/{tipo}/{id_}/previa", follow_redirects=False)
+        assert resposta.status_code == 303 and resposta.headers["location"] == f"/{tipo}/{id_}"
+        assert cliente.get(f"/{tipo}/{id_}/previa", headers=GAVETA, follow_redirects=False).status_code == 200

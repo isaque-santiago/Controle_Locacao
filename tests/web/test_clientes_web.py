@@ -232,3 +232,20 @@ def test_desarquivar_cliente_que_nao_esta_arquivado_e_recusado(cliente, base_cli
     cliente.post(f"/clientes/{base_clientes.id}/desarquivar", data={"csrf_token": token})
     assert acoes_clientes_falsas == []
     assert "não está arquivado" in cliente.get(f"/clientes/{base_clientes.id}").text
+
+
+def test_lista_sem_parametros_mostra_tudo_e_sem_indicador_de_filtro(cliente, base_clientes):
+    """O servidor não guarda filtro: o endereço puro mostra todos. Quem lembra a busca é o app.js (sessionStorage)."""
+    entrar(cliente)
+    cliente.get("/clientes?q=maria")
+    html = cliente.get("/clientes").text
+    assert "Maria" in html and 'id="aviso-filtro"' not in html and "Cookie" not in cliente.headers.get("set-cookie", "")
+
+
+def test_lista_filtrada_mostra_indicador_com_total_e_limpar(cliente, base_clientes):
+    """Como as listas lembram o filtro na aba, a tela avisa que está filtrada, com o total geral e o botão de limpar."""
+    entrar(cliente)
+    html = cliente.get("/clientes?q=maria").text
+    assert 'id="aviso-filtro"' in html and "Filtro ativo:" in html and "<strong>1</strong> de 1 clientes" in html
+    assert 'href="/clientes"' in html and "Limpar filtros" in html
+    assert 'id="aviso-filtro"' in cliente.get("/clientes?q=maria", headers=HX).text

@@ -175,9 +175,16 @@
 {%- endif %}
 {%- endmacro %}
 
-{# Botão da gaveta de pré-visualização (ícone do olho): carrega o fragmento em #gaveta-conteudo, que abre a gaveta. Vai numa <td class="c-previa">. #}
+{# Botão da gaveta de pré-visualização (ícone do olho): carrega o fragmento em #gaveta-conteudo, que abre a gaveta. Vai numa <td class="c-previa">.
+   hx-push-url="false" é obrigatório: #resultado fica dentro do <form hx-push-url="true"> e o HTMX herda o atributo, o que deixava a URL em /.../previa. #}
 {% macro botao_previa(url, rotulo) -%}
-<button class="btn-icone previa-gatilho" type="button" hx-get="{{ url }}" hx-target="#gaveta-conteudo" hx-swap="innerHTML" aria-haspopup="dialog" aria-label="Pré-visualizar {{ rotulo }}" title="Pré-visualizar">{{ icone("olho") }}</button>
+<button class="btn-icone previa-gatilho" type="button" hx-get="{{ url }}" hx-target="#gaveta-conteudo" hx-swap="innerHTML" hx-push-url="false" aria-haspopup="dialog" aria-label="Pré-visualizar {{ rotulo }}" title="Pré-visualizar">{{ icone("olho") }}</button>
+{%- endmacro %}
+
+{# Indicador de filtro ativo no alto do resultado: as listas lembram busca e filtro na aba (app.js), então a tela diz quando a lista
+   está filtrada, quantos itens aparecem frente ao total geral (quando conhecido) e oferece "Limpar filtros". #}
+{% macro aviso_filtro(encontrados, geral, plural, url_limpar) -%}
+<p class="aviso-filtro" id="aviso-filtro"><span>Filtro ativo: <strong>{{ encontrados }}</strong>{% if geral is not none and encontrados <= geral %} de {{ geral }}{% endif %} {{ plural }}</span> {{ botao("Limpar filtros", href=url_limpar, extra='hx-get="' ~ url_limpar ~ '" hx-target="#resultado" hx-push-url="true"') }}</p>
 {%- endmacro %}
 
 {# Link de nome (cliente, placa, contrato) numa célula comum de tabela ou texto: herda a cor e sublinha ao passar o mouse. #}
