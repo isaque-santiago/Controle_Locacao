@@ -46,6 +46,10 @@
 
   <div class="coluna">
     <div class="topo-desktop">
+      <div class="topo-titulo" aria-hidden="true">{% if ativo %}<strong>{{ ativo.rotulo }}</strong>{% if titulo and titulo != ativo.rotulo %}<span class="topo-sep">/</span><span class="topo-sub">{{ titulo }}</span>{% endif %}{% elif titulo %}<strong>{{ titulo }}</strong>{% endif %}</div>
+      <nav class="topo-atalhos" aria-label="Atalhos">
+        <a class="btn" href="/contratos/novo/iniciar">{{ icone('novo') }}Novo contrato</a>
+      </nav>
       <button class="btn-icone" type="button" data-alternar-tema aria-label="Alternar tema" title="Alternar tema">{{ icone('tema', 'ic-lua') }}{{ icone('sol', 'ic-sol') }}</button>
     </div>
     <header class="topo-movel">
