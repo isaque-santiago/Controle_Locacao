@@ -44,6 +44,12 @@ _MESES = (
 TOM_PERIGO = "perigo"
 TOM_ATENCAO = "atencao"
 
+# Tom dos indicadores (KPIs). "critico" (vermelho) é só para o que exige ação agora e aparece no máximo uma vez por linha de
+# indicadores; o que preocupa mas não pede ação imediata usa "aviso" (âmbar). Vazio = neutro.
+TOM_KPI_CRITICO = "critico"
+TOM_KPI_AVISO = "aviso"
+LIMITE_TEMPO_PARADO_PERCENTUAL = 5
+
 
 def data_por_extenso(data: date) -> str:
     """Ex.: `terça-feira, 6 de outubro de 2026`."""
@@ -314,3 +320,25 @@ def agrupar_alertas(
             itens.append(ItemAlerta(len(lista), titulo, descricao, tom, "clientes", destino))
 
     return itens
+
+
+def tons_kpis_hoje(contratos_inadimplentes: int, caixa: Decimal | None) -> dict[str, str]:
+    """Tom dos indicadores da aba Hoje. Só "Em atraso" (há inadimplente) é crítico: é a cobrança que pede ação.
+    "A cobrar" soma o que vence hoje e fica neutro; caixa negativo avisa, mas não compete com a cobrança."""
+    return {
+        "em_atraso": TOM_KPI_CRITICO if contratos_inadimplentes > 0 else "",
+        "caixa": TOM_KPI_AVISO if caixa is not None and caixa < 0 else "",
+    }
+
+
+def tons_kpis_dinheiro(resultado: Decimal, caixa: Decimal) -> dict[str, str]:
+    """Tom de Resultado e Caixa na aba Dinheiro: no máximo um crítico. Resultado negativo é o crítico;
+    o caixa negativo só é crítico quando o resultado está bom (senão, aviso)."""
+    if resultado < 0:
+        return {"resultado": TOM_KPI_CRITICO, "caixa": TOM_KPI_AVISO if caixa < 0 else ""}
+    return {"resultado": "", "caixa": TOM_KPI_CRITICO if caixa < 0 else ""}
+
+
+def tom_tempo_parado(percentual: int | Decimal | None) -> str:
+    """Tempo parado na oficina acima do limite avisa (âmbar); nunca é crítico."""
+    return TOM_KPI_AVISO if percentual is not None and percentual > LIMITE_TEMPO_PARADO_PERCENTUAL else ""

@@ -35,11 +35,18 @@ def _hoje(hoje: date) -> dict:
     itens = painel.agrupar_alertas(
         config, alertas.listar_manutencao(), alertas.listar_documentos(), alertas.listar_cnh()
     ) + documentos.alertas_de_comprovantes() + pedidos_senha.alertas() + whatsapp_painel.alertas(config) + atencao
-    return {"hoje": {**dados, "atencao": ordenar_atencao(itens)}, "mes": None, "mes_anterior": None, "mes_seguinte": None}
+    if dados.get("indisponivel"):
+        tons = {}
+    else:
+        caixa = dados["caixa"]["valor"] if dados.get("caixa") else None
+        tons = painel.tons_kpis_hoje(dados["cobranca"]["contratos_inadimplentes"], caixa)
+    return {"hoje": {**dados, "tons": tons, "atencao": ordenar_atencao(itens)}, "mes": None, "mes_anterior": None, "mes_seguinte": None}
 
 
 def _dinheiro(hoje: date, mes: str | None) -> dict:
     dados = financeiro_servico.painel_dinheiro_seguro(mes, hoje)
+    if not dados.get("indisponivel") and dados.get("atual"):
+        dados = {**dados, "tons": painel.tons_kpis_dinheiro(dados["atual"]["resultado"], dados["atual"]["caixa"])}
     return {"dinheiro": dados, "mes": dados["mes_texto"], "mes_anterior": dados["mes_anterior"], "mes_seguinte": dados["mes_seguinte"]}
 
 
@@ -59,6 +66,9 @@ def _frota(hoje: date) -> dict:
         "manutencao_aberta": painel.manutencao_em_andamento(ordens),
         **financeiro_servico.painel_frota_seguro(hoje),
     }
+    parado = dados.get("tempo_parado")
+    if parado:
+        dados["tom_tempo_parado"] = painel.tom_tempo_parado(parado["percentual"])
     return {"frota": dados, "mes": None, "mes_anterior": None, "mes_seguinte": None}
 
 
