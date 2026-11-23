@@ -44,6 +44,7 @@ templates.env.globals.update(
     url_estatico=url_estatico,
     grupos_nav=navegacao.GRUPOS,
     barra_inferior=navegacao.BARRA_INFERIOR,
+    atalhos_ir=navegacao.ATALHOS_IR,
     folha_mais=navegacao.FOLHA_MAIS,
     item_ativo=navegacao.item_ativo,
     mais_esta_ativo=navegacao.mais_esta_ativo,

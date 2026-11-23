@@ -32,6 +32,7 @@
           {{ icone('chevron', 'conta-seta') }}
         </summary>
         <div class="conta-menu">
+          <button type="button" data-abrir="dlg-atalhos">{{ icone('info') }}Atalhos de teclado</button>
           <a class="conta-item" href="/termos">{{ icone('documento') }}Termos e privacidade</a>
           <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -63,6 +64,7 @@
         <summary class="avatar" aria-label="Menu da conta">{{ inicial }}</summary>
         <div class="conta-menu">
           <div class="conta-id"><strong>{{ usuario_nome }}</strong>{% if usuario_email %}<span>{{ usuario_email }}</span>{% endif %}</div>
+          <button type="button" data-abrir="dlg-atalhos">{{ icone('info') }}Atalhos de teclado</button>
           <a class="conta-item" href="/termos">{{ icone('documento') }}Termos e privacidade</a>
           <form method="post" action="/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -107,6 +109,26 @@
   </form>
   <div id="busca-resultados" data-busca-resultados><p class="busca-dica">Digite ao menos 2 letras: placa, modelo, nome, CPF.</p></div>
   <p class="paleta-rodape" aria-hidden="true"><kbd>↑</kbd><kbd>↓</kbd> navegar <kbd>Enter</kbd> abrir <kbd>Esc</kbd> fechar</p>
+</dialog>
+
+{# Janela de atalhos de teclado: abre com "?"; as teclas "g" + letra são lidas daqui pelo app (data-atalho-ir) #}
+<dialog class="atalhos" id="dlg-atalhos" aria-labelledby="dlg-atalhos-titulo">
+  <div class="dialogo-cab"><h2 id="dlg-atalhos-titulo">Atalhos de teclado</h2><button class="btn-icone" type="button" data-fechar aria-label="Fechar">{{ icone('fechar') }}</button></div>
+  <div class="dialogo-corpo">
+    <p class="atalhos-aviso">Os atalhos não funcionam enquanto você digita em um campo.</p>
+    <h3>Ir para</h3>
+    <ul class="atalhos-lista">
+      {% for letra, item in atalhos_ir %}<li><a href="{{ item.caminho }}" data-atalho-ir="{{ letra }}"><span>{{ item.rotulo }}</span><span><kbd>g</kbd> <kbd>{{ letra }}</kbd></span></a></li>{% endfor %}
+    </ul>
+    <h3>Em qualquer página</h3>
+    <ul class="atalhos-lista">
+      <li><span>Buscar veículo, cliente ou contrato</span><span><kbd>Ctrl</kbd> <kbd>K</kbd></span></li>
+      <li><span>Ir para a busca da página (ou abrir a busca global)</span><span><kbd>/</kbd></span></li>
+      <li><span>Novo cadastro da lista aberta</span><span><kbd>n</kbd></span></li>
+      <li><span>Mostrar esta janela</span><span><kbd>?</kbd></span></li>
+      <li><span>Fechar janela ou gaveta</span><span><kbd>Esc</kbd></span></li>
+    </ul>
+  </div>
 </dialog>
 
 {# Gaveta de pré-visualização (desliza da direita): o HTMX põe o fragmento de /.../previa em #gaveta-conteudo e o app.js abre o diálogo #}

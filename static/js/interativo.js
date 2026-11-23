@@ -133,4 +133,29 @@
     var avisos = document.getElementById('avisos');
     if (avisos && avisos.scrollIntoView) avisos.scrollIntoView({ block: 'nearest' });
   });
+
+  // ---- Atalhos de teclado: "g" e depois uma letra vai a uma página ("g v" Veículos, "g c" Clientes, "g o" Contratos...); "?" lista os atalhos ----
+  // Os destinos vêm da janela de atalhos (links com data-atalho-ir), a mesma lista que o dono lê: uma fonte só.
+  // Só sem modificadores, fora de campos de texto e sem diálogo aberto. A segunda tecla tem 1,5 s para chegar.
+  var esperandoG = null;
+  function cancelarG() { window.clearTimeout(esperandoG); esperandoG = null; }
+  document.addEventListener('keydown', function (e) {
+    if (e.defaultPrevented || e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (emCampoDeTexto(e.target) || document.querySelector('dialog[open]')) { cancelarG(); return; }
+    if (esperandoG !== null) {
+      cancelarG();
+      var destino = document.querySelector('[data-atalho-ir="' + e.key.toLowerCase().replace(/"/g, '') + '"]');
+      if (destino && e.key.length === 1) {
+        e.preventDefault();
+        location.assign(destino.getAttribute('href'));
+      }
+      return;
+    }
+    if (e.key === 'g') {
+      esperandoG = window.setTimeout(cancelarG, 1500);
+    } else if (e.key === '?') {
+      var janela = document.getElementById('dlg-atalhos');
+      if (janela && janela.showModal) { e.preventDefault(); janela.showModal(); }
+    }
+  });
 })();

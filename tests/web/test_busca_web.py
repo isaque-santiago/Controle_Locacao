@@ -71,3 +71,19 @@ def test_layout_tem_a_paleta_acessivel(cliente, base_busca):
     entrar(cliente)
     html = cliente.get("/motos").text
     assert 'id="dlg-busca"' in html and 'role="combobox"' in html and 'data-abrir="dlg-busca"' in html
+
+
+def test_layout_tem_a_janela_de_atalhos_com_os_destinos_do_g(cliente, base_busca):
+    entrar(cliente)
+    html = cliente.get("/motos").text
+    assert 'id="dlg-atalhos"' in html and 'data-abrir="dlg-atalhos"' in html
+    for letra, caminho in (("v", "/motos"), ("c", "/clientes"), ("o", "/contratos"), ("b", "/cobrancas"), ("i", "/")):
+        assert f'href="{caminho}" data-atalho-ir="{letra}"' in html
+
+
+def test_cada_letra_de_atalho_e_unica_e_leva_a_uma_pagina_do_menu():
+    from src.web import navegacao
+
+    letras = [letra for letra, _ in navegacao.ATALHOS_IR]
+    assert len(letras) == len(set(letras)) and all(len(l) == 1 and l != "g" for l in letras)
+    assert all(item in navegacao.TODOS for _, item in navegacao.ATALHOS_IR)
