@@ -1,6 +1,8 @@
-"""Pendências de lançamento propostas pelo conector do claude.ai (seção 24 do plano).
+"""Lançamentos do conector do claude.ai (seção 24 do plano).
 
-O chat só **propõe**; o dono (ou o financeiro) aprova no app. Estas regras puras normalizam e validam a proposta, calculam os
+Modelo de 24/11/2026: o chat **grava direto** o que está limpo (cadastro de cliente e de veículo; pagamento e despesa sem aviso e
+abaixo do teto) e, na dúvida, **não grava** e devolve o motivo para o Claude perguntar ao usuário na conversa. A tabela de pendências
+guarda o histórico (e as propostas manuais, que o dono aprova). Estas regras puras normalizam e validam a proposta, calculam os
 avisos de divergência e identificam o cliente/veículo citado. O banco repete as mesmas conferências nas RPCs
 (`rpc_pendencia_criar`, `rpc_pendencia_aprovar`), que são a palavra final: aqui ficam o que a tela e as ferramentas do conector
 usam antes de chegar lá. Dinheiro sempre em Decimal."""
@@ -12,19 +14,26 @@ import unicodedata
 from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
+from src.domain.entradas import apenas_digitos, formatar_telefone, normalizar_placa
 from src.domain.formatadores import formatar_data, formatar_moeda
-from src.domain.valores import decimal_br
+from src.domain.validadores import validar_cpf, validar_placa, validar_telefone
+from src.domain.valores import decimal_br, hoje_br
 
 TIPOS = ("pagamento", "despesa")
+TIPOS_DE_HISTORICO = TIPOS + ("cliente", "veiculo")  # o histórico também registra os cadastros feitos pelo chat
 ORIGENS_DO_CONECTOR = ("chat_financeiro", "chat_contratos")
 ORIGENS = ORIGENS_DO_CONECTOR + ("comprovante_grupo", "manual")
-STATUS = ("pendente", "aprovada", "recusada")
+STATUS = ("pendente", "aprovada", "recusada", "desfeita")
 # O chat não propõe «abatimento» (desconto sem dinheiro): isso é decisão do dono.
 FORMAS_PAGAMENTO = ("pix", "dinheiro", "cartao", "transferencia", "outro")
 CATEGORIAS_DESPESA = ("manutencao", "documentacao", "seguro_rastreador", "multas", "combustivel", "outros")
 
 LIMITE_PAGAMENTO = Decimal("20000.00")
 LIMITE_DESPESA = Decimal("50000.00")
+# Acima destes valores a ferramenta não grava direto (decisão do dono em 24/11/2026); ficam dentro dos limites absolutos acima.
+TETO_PAGAMENTO_DIRETO = Decimal("10000.00")
+TETO_DESPESA_DIRETA = Decimal("5000.00")
+JANELA_DESFAZER_DIAS = 7  # só dá para desfazer um lançamento automático nesse prazo
 LIMITE_PENDENTES_ABERTAS = 200  # trava contra enxurrada de propostas
 DIAS_DE_FUTURO_TOLERADOS = 1  # fuso e virada do dia
 TAMANHO_OBSERVACAO = 500
@@ -227,3 +236,104 @@ def escolher_unico(busca: str, candidatos: list[dict]) -> tuple[dict | None, str
     if len(pontuados) > 1 and pontuados[0][0] - pontuados[1][0] < MARGEM_PARA_ESCOLHER:
         return None, "Mais de um cliente combina com a busca: informe o CPF parcial ou a placa."
     return pontuados[0][2], ""
+
+
+# ---------------------------------------------------------------- gravar direto ou devolver a dúvida --
+
+class Decisao(dict):
+    """{"gravar": bool, "motivo": str, "mensagem": str}: o que a ferramenta faz com a proposta."""
+
+
+def decidir_gravacao_direta(tipo: str, dados: dict, avisos: list[dict]) -> Decisao:
+    """Grava direto só a proposta **limpa** (nenhum aviso) e abaixo do teto. Com aviso, não grava e devolve o que está em dúvida,
+    para o Claude perguntar ao usuário; acima do teto, não grava e orienta a registrar pelo app."""
+    teto = TETO_PAGAMENTO_DIRETO if tipo == "pagamento" else TETO_DESPESA_DIRETA
+    if Decimal(dados["valor"]) > teto:
+        return Decisao(gravar=False, motivo="acima_do_teto",
+                       mensagem=f"O valor passa de {formatar_moeda(teto)}, o máximo que o chat grava sozinho. Registre pelo app.")
+    if avisos:
+        return Decisao(gravar=False, motivo="duvida", mensagem=" ".join(a["texto"] for a in avisos))
+    return Decisao(gravar=True, motivo="", mensagem="")
+
+
+# ---------------------------------------------------------------- cadastro de cliente e de veículo --
+
+PREFIXO_CPF_PROVISORIO = "[CPF PROVISÓRIO]"
+_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def cpf_final(cpf: str) -> str:
+    """Os 4 últimos dígitos (é só o que o chat vê do CPF)."""
+    return apenas_digitos(cpf)[-4:]
+
+
+def proximo_cpf_provisorio(existentes: list[str]) -> str:
+    """Próximo CPF provisório: 11 dígitos 0000000000N (N = 1, 2, 3...) com dígito verificador inválido e ainda não usado."""
+    usados = {apenas_digitos(c) for c in existentes}
+    numero = 1
+    while True:
+        candidato = str(numero).zfill(11)
+        if candidato not in usados and not validar_cpf(candidato):
+            return candidato
+        numero += 1
+
+
+def normalizar_cliente(entrada: dict) -> dict:
+    """Cadastro de cliente pelo chat. Sem CPF válido só entra com `cpf_provisorio` verdadeiro (o CPF real é completado depois).
+    Levanta ValueError em português. O CPF provisório em si é gerado depois, na hora de gravar."""
+    nome = " ".join(str(entrada.get("nome") or "").split())
+    if len(nome) < 3 or len(nome.split()) < 2:
+        raise ValueError("Informe o nome completo do cliente (nome e sobrenome).")
+    if len(nome) > 160:
+        raise ValueError("O nome passa de 160 caracteres.")
+    provisorio = bool(entrada.get("cpf_provisorio"))
+    cpf = apenas_digitos(entrada.get("cpf"))
+    if not provisorio and not validar_cpf(cpf):
+        raise ValueError("Informe um CPF válido; sem CPF, marque cpf_provisorio e complete depois.")
+    if provisorio and cpf:
+        raise ValueError("Com cpf_provisorio não se informa CPF.")
+    dados = {"nome": nome, "cpf": None if provisorio else cpf, "cpf_provisorio": provisorio}
+    for campo, rotulo in (("telefone", "telefone"), ("whatsapp", "WhatsApp")):
+        bruto = apenas_digitos(entrada.get(campo))
+        if bruto and not validar_telefone(bruto):
+            raise ValueError(f"Informe o {rotulo} com DDD e número válidos.")
+        dados[campo] = formatar_telefone(bruto) if bruto else None
+    email = str(entrada.get("email") or "").strip()
+    if email and not _EMAIL.match(email):
+        raise ValueError("Informe um e-mail válido.")
+    dados["email"] = email or None
+    for campo, limite in (("endereco", 300), ("observacoes", TAMANHO_OBSERVACAO)):
+        texto = " ".join(str(entrada.get(campo) or "").split())
+        if len(texto) > limite:
+            raise ValueError(f"O campo {campo} passa de {limite} caracteres.")
+        dados[campo] = texto or None
+    dados["confirmar_homonimo"] = bool(entrada.get("confirmar_homonimo"))
+    return dados
+
+
+def normalizar_veiculo(entrada: dict) -> dict:
+    placa = normalizar_placa(entrada.get("placa"))
+    if not validar_placa(placa):
+        raise ValueError("Placa: use ABC1234 ou ABC1D23.")
+    marca = " ".join(str(entrada.get("marca") or "").split())
+    modelo = " ".join(str(entrada.get("modelo") or "").split())
+    if not marca or not modelo:
+        raise ValueError("Informe a marca e o modelo do veículo.")
+    tipo = _simplificar(entrada.get("tipo") or "moto")
+    if tipo not in ("moto", "carro"):
+        raise ValueError("O tipo precisa ser moto ou carro.")
+    try:
+        km = int(str(entrada.get("km_atual") or 0).replace(".", ""))
+        anos = [int(entrada[c]) if entrada.get(c) not in (None, "") else None for c in ("ano_fabricacao", "ano_modelo")]
+    except (TypeError, ValueError):
+        raise ValueError("Quilometragem e anos precisam ser números inteiros.") from None
+    if km < 0 or km > 2_000_000:
+        raise ValueError("A quilometragem precisa estar entre 0 e 2.000.000.")
+    if any(a is not None and not 1950 <= a <= hoje_br().year + 1 for a in anos):
+        raise ValueError("Informe anos entre 1950 e o ano que vem.")
+    cor = " ".join(str(entrada.get("cor") or "").split())[:40] or None
+    obs = " ".join(str(entrada.get("observacoes") or "").split())
+    if len(obs) > TAMANHO_OBSERVACAO:
+        raise ValueError(f"O campo observações passa de {TAMANHO_OBSERVACAO} caracteres.")
+    return {"placa": placa, "marca": marca[:60], "modelo": modelo[:80], "tipo": tipo, "km_atual": km,
+            "ano_fabricacao": anos[0], "ano_modelo": anos[1], "cor": cor, "observacoes": obs or None}

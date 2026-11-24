@@ -202,3 +202,110 @@ class TestIdentificar:
 
     def test_sem_candidatos(self):
         assert escolher_unico("Jhonatan", [])[0] is None
+
+
+# ---------------------------------------------------------------- escrita direta (etapa 3) --
+
+from src.domain.pendencias import (  # noqa: E402
+    TETO_DESPESA_DIRETA,
+    TETO_PAGAMENTO_DIRETO,
+    cpf_final,
+    decidir_gravacao_direta,
+    normalizar_cliente,
+    normalizar_veiculo,
+    proximo_cpf_provisorio,
+)
+
+
+class TestGravarDireto:
+    def test_tetos_decididos_pelo_dono(self):
+        assert TETO_PAGAMENTO_DIRETO == Decimal("10000.00") and TETO_DESPESA_DIRETA == Decimal("5000.00")
+
+    def test_limpo_e_abaixo_do_teto_grava(self):
+        d = normalizar_pagamento({"valor": "275"}, HOJE)
+        assert decidir_gravacao_direta("pagamento", d, [])["gravar"] is True
+
+    def test_valor_igual_ao_teto_ainda_grava_e_acima_nao(self):
+        assert decidir_gravacao_direta("pagamento", normalizar_pagamento({"valor": "10000"}, HOJE), [])["gravar"]
+        r = decidir_gravacao_direta("pagamento", normalizar_pagamento({"valor": "10000.01"}, HOJE), [])
+        assert r["gravar"] is False and r["motivo"] == "acima_do_teto" and "R$ 10.000,00" in r["mensagem"]
+
+    def test_despesa_tem_teto_proprio(self):
+        d = normalizar_despesa({"valor": "5000.01", "descricao": "x", "descricao_veiculo": "Biz"}, HOJE)
+        r = decidir_gravacao_direta("despesa", d, [])
+        assert r["gravar"] is False and r["motivo"] == "acima_do_teto" and "R$ 5.000,00" in r["mensagem"]
+        assert decidir_gravacao_direta("despesa", normalizar_despesa({"valor": "5000", "descricao": "x", "descricao_veiculo": "Biz"}, HOJE), [])["gravar"]
+
+    def test_qualquer_aviso_vira_duvida_com_o_motivo_no_texto(self):
+        d = normalizar_pagamento({"valor": "100"}, HOJE)
+        avisos = avisos_pagamento(d, {"status": "aberta", "saldo": "275"})
+        r = decidir_gravacao_direta("pagamento", d, avisos)
+        assert r["gravar"] is False and r["motivo"] == "duvida" and "Pagamento parcial" in r["mensagem"]
+
+    def test_varios_avisos_aparecem_juntos(self):
+        d = normalizar_pagamento({"valor": "100"}, HOJE)
+        avisos = avisos_pagamento(d, {"status": "aberta", "saldo": "275"}, iguais=1)
+        assert "parcial" in decidir_gravacao_direta("pagamento", d, avisos)["mensagem"] and "igual" in decidir_gravacao_direta("pagamento", d, avisos)["mensagem"]
+
+
+class TestCpfProvisorio:
+    def test_primeiro_e_proximos(self):
+        assert proximo_cpf_provisorio([]) == "00000000001"
+        assert proximo_cpf_provisorio(["00000000001", "00000000002", "52998224725"]) == "00000000003"
+
+    def test_pula_numero_usado_com_ou_sem_mascara(self):
+        assert proximo_cpf_provisorio(["000.000.000-01"]) == "00000000002"
+
+    def test_passa_de_nove(self):
+        usados = [str(n).zfill(11) for n in range(1, 11)]
+        assert proximo_cpf_provisorio(usados) == "00000000011"
+
+    def test_nunca_devolve_cpf_valido(self):
+        from src.domain.validadores import validar_cpf
+        assert not any(validar_cpf(proximo_cpf_provisorio([str(n).zfill(11) for n in range(1, k)])) for k in range(2, 40))
+
+    def test_cpf_final(self):
+        assert cpf_final("529.982.247-25") == "4725" and cpf_final("") == ""
+
+
+class TestNormalizarCliente:
+    def test_cliente_completo(self):
+        r = normalizar_cliente({"nome": "  Maria   da Silva ", "cpf": "529.982.247-25", "telefone": "11912345678", "whatsapp": "(11) 91234-5678",
+                                "email": "maria@exemplo.com", "endereco": "Rua A, 10", "observacoes": "indicada"})
+        assert r["nome"] == "Maria da Silva" and r["cpf"] == "52998224725" and r["cpf_provisorio"] is False
+        assert r["telefone"] == "(11) 91234-5678" and r["email"] == "maria@exemplo.com" and r["confirmar_homonimo"] is False
+
+    @pytest.mark.parametrize("entrada", [{"nome": "Maria"}, {"nome": ""}, {"nome": "Maria Silva"}, {"nome": "Maria Silva", "cpf": "11111111111"},
+                                         {"nome": "Maria Silva", "cpf": "52998224726"}, {"nome": "Maria Silva", "cpf": "52998224725", "telefone": "123"},
+                                         {"nome": "Maria Silva", "cpf": "52998224725", "email": "sem-arroba"},
+                                         {"nome": "Maria Silva", "cpf": "52998224725", "observacoes": "x" * 501},
+                                         {"nome": "M" * 161 + " Silva", "cpf": "52998224725"}])
+    def test_recusa(self, entrada):
+        with pytest.raises(ValueError):
+            normalizar_cliente(entrada)
+
+    def test_provisorio_nao_leva_cpf(self):
+        r = normalizar_cliente({"nome": "Wagner Souza", "cpf_provisorio": True})
+        assert r["cpf"] is None and r["cpf_provisorio"] is True
+        with pytest.raises(ValueError, match="não se informa CPF"):
+            normalizar_cliente({"nome": "Wagner Souza", "cpf_provisorio": True, "cpf": "52998224725"})
+
+    def test_confirmar_homonimo(self):
+        assert normalizar_cliente({"nome": "Maria Silva", "cpf": "52998224725", "confirmar_homonimo": True})["confirmar_homonimo"] is True
+
+
+class TestNormalizarVeiculo:
+    def test_veiculo(self):
+        r = normalizar_veiculo({"placa": "abc-1d23", "marca": " Honda ", "modelo": "CG 160", "tipo": "Moto", "km_atual": "12.500", "ano_modelo": 2024})
+        assert r["placa"] == "ABC1D23" and r["marca"] == "Honda" and r["tipo"] == "moto" and r["km_atual"] == 12500
+        assert r["ano_modelo"] == 2024 and r["ano_fabricacao"] is None
+
+    def test_padroes(self):
+        r = normalizar_veiculo({"placa": "ABC1234", "marca": "Fiat", "modelo": "Uno", "tipo": "carro"})
+        assert r["km_atual"] == 0 and r["tipo"] == "carro" and r["cor"] is None
+
+    @pytest.mark.parametrize("campos", [{"placa": "123"}, {"marca": ""}, {"modelo": ""}, {"tipo": "barco"}, {"km_atual": "-1"}, {"km_atual": "abc"},
+                                        {"ano_modelo": 1900}, {"ano_fabricacao": "xx"}, {"km_atual": 3_000_000}])
+    def test_recusa(self, campos):
+        with pytest.raises(ValueError):
+            normalizar_veiculo({"placa": "ABC1D23", "marca": "Honda", "modelo": "CG", **campos})
