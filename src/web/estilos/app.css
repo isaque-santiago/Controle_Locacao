@@ -1521,6 +1521,9 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   .kpis, .kpis.kpis-3, .kpis.kpis-5 {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3);}
   .kpis > .kpi:last-child:nth-child(odd), .kpis > .kpi.kpi-texto {grid-column: 1 / -1;}
   .kpis .kpi {padding: var(--e3);}
+  /* KPI com legenda de faixas (Em atraso) precisa da linha inteira; os vizinhos preenchem o vazio */
+  .kpis {grid-auto-flow: dense;}
+  .kpis > .kpi:has(.faixas-legenda) {grid-column: 1 / -1;}
   .kpis .kpi dd small {font-size: 12px;}
   /* Ações do cabeçalho (ficha, listas): botões compactos lado a lado em vez de uma pilha de botões de largura total */
   .cabecalho .acoes {display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--e2); width: 100%;}
