@@ -88,3 +88,12 @@ def test_css_celular_kpis_em_duas_colunas_e_seletor_de_mes_sem_corte():
 def test_css_gerado_esta_em_dia_com_a_fonte():
     # a classe nova do formulário precisa ter ido para o CSS publicado (rodar scripts/construir_css.py)
     assert ".form-secao" in CSS_GERADO and ".form-nav" in CSS_GERADO
+
+
+def test_link_do_titulo_escondido_no_celular_nao_e_reexibido_pela_regra_de_alvo_de_toque():
+    """Regressão: `.tabela-caixa .dados td a:not(.btn)...` (display: inline-flex) tinha mais especificidade que a regra que
+    esconde `.rc-so-larga` no celular, então o nome aparecia duplicado (link + botão) nos cartões das listas."""
+    regra = re.search(r"\.tabela-caixa \.dados td a:not\(\.btn\)[^{]*\{[^}]*inline-flex", CSS)
+    assert regra, "regra de alvo de toque dos links de tabela não encontrada"
+    assert ":not(.rc-so-larga)" in regra.group(0)
+    assert ":not(.rc-so-larga)" in CSS_GERADO

@@ -1545,8 +1545,9 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   dialog.cheio .dialogo-cab, dialog.cheio .dialogo-corpo, dialog.cheio .dialogo-rodape, dialog.cheio .form-nav {padding-left: max(var(--e4), env(safe-area-inset-left)); padding-right: max(var(--e4), env(safe-area-inset-right));}
   dialog.cheio .dialogo-cab {padding-top: calc(var(--e3) + env(safe-area-inset-top));}
   /* Alvos de toque de 44 px: título do cartão recolhível, links dentro das linhas e botões compactos */
+  /* O link do título (.rc-so-larga) é escondido no celular, onde o título é o botão do cartão; fica fora desta regra para não reaparecer duplicado. */
   .recolhe-gatilho {min-height: var(--alvo);}
-  .tabela-caixa .dados td a:not(.btn):not(.ordenar) {display: inline-flex; align-items: center; min-height: var(--alvo);}
+  .tabela-caixa .dados td a:not(.btn):not(.ordenar):not(.rc-so-larga) {display: inline-flex; align-items: center; min-height: var(--alvo);}
   .btn-compacto, .acoes-linha .btn {min-height: var(--alvo);}
   /* Nada de rolagem horizontal na página */
   html, body {overflow-x: clip;}
