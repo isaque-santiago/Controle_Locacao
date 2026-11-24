@@ -159,3 +159,21 @@ def test_locatario_e_cliente_sem_login_nao_agem(cliente, base_clientes, base_wha
     entrar(cliente, identificador="123.456.789-09", senha="senha-locatario")
     r = cliente.post(f"/clientes/{base_clientes.id}/whatsapp/liberar", headers={"HX-Request": "true"})
     assert r.status_code in (302, 303, 400, 403) and base_whatsapp.bloqueios == [] and base_whatsapp.desbloqueios == []
+
+
+def test_ha_caixa_de_busca_ligada_a_lista_de_grupos(cliente, base_clientes):
+    entrar(cliente)
+    html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
+    assert 'id="wa-grupo-busca"' in html and "Buscar grupo (nome ou placa)" in html
+    assert 'data-filtrar-opcoes="wa-grupo-escolhido"' in html and 'data-filtrar-aviso="wa-grupo-contagem"' in html
+    assert 'id="wa-grupo-escolhido"' in html and 'id="wa-grupo-contagem"' in html and 'aria-live="polite"' in html
+    # o campo de busca não tem name: não vai no formulário nem sobrescreve o grupo escolhido
+    trecho = html[html.index('id="wa-grupo-busca"'):]
+    assert "name=" not in trecho[:trecho.index(">")]
+
+
+def test_o_javascript_traz_o_filtro_de_opcoes():
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[2] / "static" / "js" / "app.js").read_text(encoding="utf-8")
+    assert "data-filtrar-opcoes" in js and "filtrarOpcoes" in js and "normalize('NFD')" in js
+    assert "e.key === 'Enter'" in js or "ev.key === 'Enter'" in js or "key === 'Enter' && e.target.matches" in js

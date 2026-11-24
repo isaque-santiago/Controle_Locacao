@@ -871,7 +871,7 @@ grupo de WhatsApp (ele, o dono, o financeiro e o número do envio automático). 
   CNH, óleo, documentos e portal ficam fora por enquanto (não são enfileirados).
 - Cliente sem grupo: a mensagem fica `ignorada`, com o motivo «Cliente sem grupo de WhatsApp cadastrado.». O envio ao grupo não confere se o número tem WhatsApp.
 - Cada rodada, com a instância conectada, grava a lista de grupos da Evolution (`whatsapp_grupos`, `GET /group/fetchAllGroups`). Na ficha do cliente (aba WhatsApp)
-  o dono escolhe o grupo na lista ou cola o ID. O site não fala com a Evolution (a chave dela fica só na tarefa agendada).
+  o dono escolhe o grupo na lista ou cola o ID. Como a lista pode ter dezenas de grupos (a instância é compartilhada com o negócio de celulares), há uma **caixa de busca** (nome ou placa, sem diferenciar maiúsculas nem acentos; `data-filtrar-opcoes` em `static/js/app.js`): ela filtra a lista, mantém o grupo atual do cliente e seleciona sozinha quando sobra uma só opção. O site não fala com a Evolution (a chave dela fica só na tarefa agendada).
 - Em modo teste tudo continua indo só para o número de teste, com o aviso «iria para o grupo do cliente».
 
 ### Aviso de senha do portal alterada (WhatsApp)
