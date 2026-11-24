@@ -293,14 +293,14 @@ def test_mcp_initialize_listar_e_chamar_a_ferramenta(cli, tokens):
     assert ini["result"]["protocolVersion"] == "2025-06-18" and ini["result"]["serverInfo"]["name"] == "LA Locadora"
     assert _mcp(cli, {"jsonrpc": "2.0", "method": "notifications/initialized"}, t).status_code == 202
     lista = _mcp(cli, {"jsonrpc": "2.0", "id": 2, "method": "tools/list"}, t).json()["result"]["tools"]
-    assert [f["name"] for f in lista] == ["ping"] and lista[0]["annotations"]["readOnlyHint"] is True
+    assert lista[0]["name"] == "ping" and lista[0]["annotations"]["readOnlyHint"] is True and "registrar_pagamento" in [f["name"] for f in lista]
     chamada = _mcp(cli, {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "ping", "arguments": {}}}, t).json()
     assert "pong" in chamada["result"]["content"][0]["text"]
 
 
-def test_mcp_nao_tem_ferramenta_que_grave_ou_aprove(cli, tokens):
+def test_mcp_nao_tem_ferramenta_que_apague_edite_ou_aprove(cli, tokens):
     t = tokens["access_token"]
-    for nome in ("aprovar_pendencia", "registrar_pagamento", "apagar", "ler_tabela"):
+    for nome in ("aprovar_pendencia", "apagar_pagamento", "editar_cliente", "desfazer_lancamento", "ler_tabela"):
         r = _mcp(cli, {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": nome, "arguments": {}}}, t).json()
         assert r["error"]["code"] == -32602, nome
 
