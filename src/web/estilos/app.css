@@ -1544,6 +1544,10 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   /* Áreas seguras (entalhe e barra do sistema) também nas laterais, em formulário de tela cheia e na barra inferior */
   dialog.cheio .dialogo-cab, dialog.cheio .dialogo-corpo, dialog.cheio .dialogo-rodape, dialog.cheio .form-nav {padding-left: max(var(--e4), env(safe-area-inset-left)); padding-right: max(var(--e4), env(safe-area-inset-right));}
   dialog.cheio .dialogo-cab {padding-top: calc(var(--e3) + env(safe-area-inset-top));}
+  /* Alvos de toque de 44 px: título do cartão recolhível, links dentro das linhas e botões compactos */
+  .recolhe-gatilho {min-height: var(--alvo);}
+  .tabela-caixa .dados td a:not(.btn):not(.ordenar) {display: inline-flex; align-items: center; min-height: var(--alvo);}
+  .btn-compacto, .acoes-linha .btn {min-height: var(--alvo);}
   /* Nada de rolagem horizontal na página */
   html, body {overflow-x: clip;}
   /* Formulário: rótulo e campo com folga para o toque; entrada em 16px evita o zoom automático do iOS */
