@@ -25,9 +25,36 @@ def _app(servico, relogio, chave=CHAVE, loopback=False):
     return criar_app(servico=servico, relogio=relogio, desenvolvimento=False, conector=conector)
 
 
+class ExecutorFalso:
+    """Imita o serviço do conector: guarda as chamadas e devolve o que o teste mandar."""
+
+    def __init__(self):
+        self.chamadas = []
+        self.resposta = {"texto": "Gravado: teste.", "erro": False}
+        self.levantar = None
+
+    def executar(self, nome, argumentos):
+        self.chamadas.append((nome, argumentos))
+        if self.levantar:
+            raise self.levantar
+        return self.resposta
+
+
+@pytest.fixture
+def executor():
+    return ExecutorFalso()
+
+
 @pytest.fixture
 def cli(servico, relogio):
     return TestClient(_app(servico, relogio), follow_redirects=False, raise_server_exceptions=False)
+
+
+@pytest.fixture
+def cli_com_banco(servico, relogio, executor):
+    """O mesmo app, com as ferramentas do chat ligadas a um executor falso (no lugar do usuário de serviço do Supabase)."""
+    app = criar_app(servico=servico, relogio=relogio, desenvolvimento=False, conector=Conector(CHAVE, relogio, BASE, False), servico_conector=executor)
+    return TestClient(app, follow_redirects=False, raise_server_exceptions=False)
 
 
 def _registrar(cli, redirect=CALLBACK):
@@ -335,3 +362,76 @@ def test_nada_do_conector_exige_cookie_de_sessao(servico, relogio, tokens):
     sem_cookie = TestClient(_app(servico, relogio), follow_redirects=False)
     # outra instância de app tem a mesma chave? não: cada _app() gera o Conector com a CHAVE do módulo, então os tokens valem.
     assert _mcp(sem_cookie, {"jsonrpc": "2.0", "id": 1, "method": "ping"}, tokens["access_token"]).status_code == 200
+
+
+# ---------- ferramentas do chat (etapa 4) ----------
+
+def _tokens_de(cliente):
+    entrar(cliente)
+    client_id = _registrar(cliente)
+    codigo = _codigo(_autorizar(cliente, client_id))["code"][0]
+    return _trocar(cliente, client_id, codigo).json()
+
+
+def _chamar_ferramenta(cliente, token, nome, argumentos, id_=1):
+    return _mcp(cliente, {"jsonrpc": "2.0", "id": id_, "method": "tools/call", "params": {"name": nome, "arguments": argumentos}}, token).json()
+
+
+def test_ferramenta_executa_pelo_servico_depois_do_login(cli_com_banco, executor):
+    token = _tokens_de(cli_com_banco)["access_token"]
+    r = _chamar_ferramenta(cli_com_banco, token, "registrar_pagamento", {"cobranca_id": "c", "valor": 275})["result"]
+    assert r == {"content": [{"type": "text", "text": "Gravado: teste."}], "isError": False}
+    assert executor.chamadas == [("registrar_pagamento", {"cobranca_id": "c", "valor": 275})]
+
+
+def test_erro_do_servico_chega_como_isError(cli_com_banco, executor):
+    executor.resposta = {"texto": "NÃO GRAVADO (duvida): Pagamento parcial.", "erro": True}
+    token = _tokens_de(cli_com_banco)["access_token"]
+    r = _chamar_ferramenta(cli_com_banco, token, "registrar_pagamento", {"cobranca_id": "c", "valor": 100})["result"]
+    assert r["isError"] is True and r["content"][0]["text"].startswith("NÃO GRAVADO")
+
+
+def test_sem_token_nenhuma_ferramenta_executa(cli_com_banco, executor):
+    r = _mcp(cli_com_banco, {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "registrar_pagamento", "arguments": {"cobranca_id": "c", "valor": 1}}})
+    assert r.status_code == 401 and executor.chamadas == []
+    r = _mcp(cli_com_banco, {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "cadastrar_cliente", "arguments": {"nome": "A B"}}}, "lixo")
+    assert r.status_code == 401 and executor.chamadas == []
+
+
+def test_argumentos_errados_nao_chegam_ao_servico(cli_com_banco, executor):
+    token = _tokens_de(cli_com_banco)["access_token"]
+    r = _chamar_ferramenta(cli_com_banco, token, "registrar_pagamento", {"valor": 1})["result"]
+    assert r["isError"] and "Faltam argumentos obrigatórios: cobranca_id" in r["content"][0]["text"]
+    r = _chamar_ferramenta(cli_com_banco, token, "registrar_pagamento", {"cobranca_id": "c", "valor": 1, "status": "paga"})["result"]
+    assert r["isError"] and "Argumento desconhecido: status" in r["content"][0]["text"]
+    assert executor.chamadas == []
+
+
+def test_falha_inesperada_do_servico_vira_erro_generico_sem_detalhe(cli_com_banco, executor):
+    executor.levantar = RuntimeError("senha-do-banco-123")
+    token = _tokens_de(cli_com_banco)["access_token"]
+    resposta = _mcp(cli_com_banco, {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "buscar_veiculos", "arguments": {"busca": "ABC"}}}, token)
+    assert resposta.status_code == 200 and "senha-do-banco-123" not in resposta.text
+    assert resposta.json()["result"]["isError"] is True and "Nada foi gravado" in resposta.json()["result"]["content"][0]["text"]
+
+
+def test_lote_com_varias_ferramentas(cli_com_banco, executor):
+    token = _tokens_de(cli_com_banco)["access_token"]
+    lote = [{"jsonrpc": "2.0", "id": i, "method": "tools/call", "params": {"name": "buscar_veiculos", "arguments": {"busca": f"ABC{i}"}}} for i in (1, 2)]
+    respostas = _mcp(cli_com_banco, lote, token).json()
+    assert [r["id"] for r in respostas] == [1, 2] and [c[1]["busca"] for c in executor.chamadas] == ["ABC1", "ABC2"]
+
+
+def test_sem_servico_do_banco_so_o_ping_funciona(cli, tokens):
+    t = tokens["access_token"]
+    r = _chamar_ferramenta(cli, t, "registrar_pagamento", {"cobranca_id": "c", "valor": 1})["result"]
+    assert r["isError"] and "não está ligado ao banco" in r["content"][0]["text"]
+    assert "pong" in _chamar_ferramenta(cli, t, "ping", {})["result"]["content"][0]["text"]
+
+
+def test_todas_as_ferramentas_aparecem_no_tools_list(cli_com_banco):
+    token = _tokens_de(cli_com_banco)["access_token"]
+    lista = _mcp(cli_com_banco, {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, token).json()["result"]["tools"]
+    nomes = {f["name"] for f in lista}
+    assert {"registrar_pagamento", "registrar_despesa", "cadastrar_cliente", "cadastrar_veiculo", "consultar_cobrancas_abertas",
+            "buscar_veiculos", "listar_ultimos_lancamentos", "ping"} == nomes

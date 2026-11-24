@@ -78,6 +78,7 @@ Marque **todas** como *Runtime only* (não entram no build) e não marque *Is Bu
 | `SUPABASE_ANON_KEY` | chave anon (`sb_publishable_…` ou JWT anon) de produção | Sim |
 | `SESSAO_CHAVE` | chave Fernet que cifra o cookie `lembrar` (sessão de 90 dias sobrevive a deploys). Gere com `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Sem ela, deploy derruba o login de todos | Sim (recomendada) |
 | `CONECTOR_CHAVE` | chave Fernet dos tokens do conector do claude.ai (gere como a `SESSAO_CHAVE`, **outra** chave). Sem ela o conector fica desligado (rotas `/mcp` e `/oauth/*` dão 404). Trocar revoga todos os tokens | Só para usar o conector |
+| `SERVICO_CONECTOR_EMAIL` e `SERVICO_CONECTOR_SENHA` | usuário de serviço do conector (criado em Authentication > Users com "Auto Confirm User" e registrado em `servico_conector`). Sem eles, só o `ping` do conector funciona. **Nunca** use a `service_role` | Para o chat gravar |
 | `CONECTOR_URL_BASE` | endereço público do app, sem barra final (ex.: `https://SEU-SUBDOMINIO.duckdns.org`) | Com o conector |
 | `FORWARDED_ALLOW_IPS` | IP do Traefik (ver "Restringir o proxy confiável"). Sem ela, a imagem usa `10.0.0.0/8,172.16.0.0/12,192.168.0.0/16` (provisório) | Sim, após o 1º deploy |
 

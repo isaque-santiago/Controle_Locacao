@@ -2,10 +2,11 @@
 
 Faz duas coisas, as que o claude.ai exige de um conector personalizado (ver `Arquivos/Projeto_Locação.md`, seção 24):
 - **OAuth 2.1** com registro dinâmico de cliente (DCR) e PKCE S256: o dono entra com o login normal do app e autoriza o Claude;
-- **MCP sobre HTTP** (`POST /mcp`, JSON-RPC) com uma única ferramenta de teste (`ping`).
+- **MCP sobre HTTP** (`POST /mcp`, JSON-RPC) com as ferramentas do chat (`src/domain/conector_mcp.py`).
 
-Nada aqui lê ou grava o banco. Sem `CONECTOR_CHAVE`, todas as rotas respondem 404 (conector desligado). O chat do Claude **só vai
-propor** lançamentos nas etapas seguintes; aprovar, editar e apagar nunca serão ferramentas do conector."""
+As ferramentas que falam com o banco rodam em `app.state.conector_servico` (`src/services/conector.py`), que entra no Supabase como o usuário
+de serviço do conector; sem ele só o `ping` funciona. Sem `CONECTOR_CHAVE`, todas as rotas respondem 404 (conector desligado). O chat grava
+cadastros e lançamentos limpos e, na dúvida, recebe o motivo; editar, apagar e aprovar nunca serão ferramentas do conector."""
 
 import json
 import logging
@@ -13,6 +14,7 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
+from starlette.concurrency import run_in_threadpool
 
 from src.domain.conector_mcp import PROTOCOLOS_SUPORTADOS, responder
 from src.domain.conector_oauth import (
@@ -277,6 +279,21 @@ def _nao_autenticado(request: Request, conector, invalido: bool) -> Response:
     return Response(status_code=401, headers={"WWW-Authenticate": desafio, **_SEM_CACHE})
 
 
+def _executor_seguro(servico):
+    """O executor das ferramentas, que nunca deixa uma falha inesperada virar erro HTTP nem vazar detalhe para o chat."""
+    if servico is None:
+        return None
+
+    def executar(nome, argumentos):
+        try:
+            return servico.executar(nome, argumentos)
+        except Exception:
+            logger.exception("Conector: falha inesperada na ferramenta %s", nome)
+            return {"texto": "Não foi possível falar com o sistema agora. Nada foi gravado; tente de novo em instantes.", "erro": True}
+
+    return executar
+
+
 @router.get("/mcp")
 @router.delete("/mcp")
 async def mcp_metodo_nao_permitido(request: Request):
@@ -309,7 +326,12 @@ async def mcp(request: Request):
     mensagens = corpo if isinstance(corpo, list) else [corpo]
     if not mensagens or len(mensagens) > 20:
         return JSONResponse({"jsonrpc": "2.0", "id": None, "error": {"code": -32600, "message": "Lote inválido."}}, status_code=400)
-    respostas = [r for r in (responder(m) for m in mensagens) if r is not None]
+    executar = _executor_seguro(request.app.state.conector_servico)
+    respostas = []
+    for m in mensagens:
+        resposta = await run_in_threadpool(responder, m, executar)  # as ferramentas falam com o banco (chamadas síncronas)
+        if resposta is not None:
+            respostas.append(resposta)
     logger.info("Conector MCP: %s", ",".join(str(m.get("method")) for m in mensagens if isinstance(m, dict)))
     if not respostas:
         return Response(status_code=202)
