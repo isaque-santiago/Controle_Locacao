@@ -1288,7 +1288,7 @@ Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acess
 ### 24.7 Etapas (um PR por etapa; não avançar sem os critérios de aceite)
 
 1. **Viabilidade (ENTREGUE: PR 194; `CONECTOR_CHAVE` e `CONECTOR_URL_BASE` definidas no Coolify e `ping` chamado com sucesso pelo claude.ai em 24/11/2026):** conector MCP mínimo com OAuth, adicionado ao claude.ai e chamado pelo chat (sem banco). *Aceite:* o dono vê o conector ativo e o chat recebe a resposta de uma ferramenta de teste.
-2. **Banco e regras:** migration, RPCs, `src/domain/pendencias.py`, roteiro SQL. *Aceite:* roteiro passa no dev; testes verdes.
+2. **Banco e regras (código entregue em 24/11/2026 na branch `feat/pendencias-banco`; migration `20261124120000` aplicada em produção e conferida; falta rodar `verificar_pendencias.sql` no banco de desenvolvimento):** migration, RPCs, `src/domain/pendencias.py`, roteiro SQL. *Aceite:* roteiro passa no dev; testes verdes. O roteiro já passou num Postgres descartável (com o Supabase simulado), em banco vazio, com cliente parecido já cadastrado e com pendências reais em aberto, e detectou quebras de propósito. Rode-o só no desenvolvimento.
 3. **Tela Pendências:** listar, aprovar e recusar (com cadastro de teste no dev). *Aceite:* aprovar um pagamento cria o mesmo registro que o fluxo atual e é idempotente.
 4. **Ferramentas de pagamento e despesa no conector.** *Aceite:* "Fulano pagou R$ X" no chat vira uma pendência, sem gravar no financeiro.
 5. **Contratos pelo chat.**

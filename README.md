@@ -299,6 +299,18 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   do app, ex.: `https://SEU-SUBDOMINIO.duckdns.org`; evita depender do cabeçalho Host); `CONECTOR_PERMITE_LOOPBACK=1` só para testes
   locais. Como conectar: Claude > Personalizar > Conectores > Adicionar conector personalizado, URL `https://SEU-SUBDOMINIO.duckdns.org/mcp`,
   deixar a autenticação como detectada (registro automático).
+- **Caixa de pendências de lançamento (etapa 2 da seção 24 do plano; 24/11/2026; só banco e regras, ainda sem tela nem ferramentas no
+  conector).** O chat do claude.ai nunca grava no financeiro: ele **propõe** um pagamento ou uma despesa (`rpc_pendencia_criar`) e um usuário
+  dono aprova, edita-e-aprova ou recusa (`rpc_pendencia_aprovar`, `rpc_pendencia_recusar`). Só na aprovação o registro é gravado, numa
+  transação única e pelos gatilhos de sempre (a cobrança fica paga). Migration `20261124120000_pendencias_lancamento.sql`
+  (roteiro `supabase/verificar_pendencias.sql`, só em dev, termina em ROLLBACK): tabela `pendencias_lancamento` (só o dono lê; ninguém
+  grava direto), usuário de serviço `servico_conector` (mesmo padrão do WhatsApp: não lê tabela nenhuma, só chama as RPCs), idempotência por
+  `chave_operacao`, trava de 200 pendências em aberto e consultas mínimas para o chat (`rpc_conector_cobrancas_abertas` por nome, CPF parcial
+  ou placa, devolvendo só os 4 últimos dígitos do CPF; `rpc_conector_veiculos`; `rpc_conector_minhas_pendencias`). Avisos de divergência:
+  cobrança não identificada, paga, cancelada, valor acima do saldo e veículo não encontrado **bloqueiam** a aprovação; pagamento parcial,
+  duplicada, sem veículo e data no futuro só avisam. Regras puras (normalização, avisos, identificar o cliente por nome, CPF parcial e placa)
+  em `src/domain/pendencias.py`, espelhadas no SQL. Para ligar o conector ao banco (etapa 4), crie o usuário em Authentication > Users e rode
+  `insert into servico_conector (user_id) select id from auth.users where email = 'conector@exemplo.com';`.
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.
