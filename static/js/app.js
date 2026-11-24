@@ -533,6 +533,7 @@
       if (!formularioValidado(form)) return;
       form.noValidate = true;
       montarNavegacao(form);
+      atualizarNavegacao(form);
     });
   }
   document.addEventListener('focusout', function (e) {
