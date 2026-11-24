@@ -276,6 +276,8 @@ def proximo_cpf_provisorio(existentes: list[str]) -> str:
         if candidato not in usados and not validar_cpf(candidato):
             return candidato
         numero += 1
+        if numero > 100_000:  # nunca fica em laço, mesmo que a validação do CPF falhe
+            raise ValueError("Não foi possível gerar um CPF provisório livre.")
 
 
 def normalizar_cliente(entrada: dict) -> dict:

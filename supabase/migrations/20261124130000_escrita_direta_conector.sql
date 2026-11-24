@@ -278,6 +278,7 @@ begin
       v_cpf := lpad(v_n::text, 11, '0');
       exit when not fn_cpf_valido(v_cpf) and not exists (select 1 from clientes where cpf = v_cpf);
       v_n := v_n + 1;
+      if v_n > 100000 then raise exception 'Não foi possível gerar um CPF provisório livre.'; end if;  -- nunca fica em laço
     end loop;
     v_obs := '[CPF PROVISÓRIO]' || coalesce(' ' || v_obs, '');
   end if;
