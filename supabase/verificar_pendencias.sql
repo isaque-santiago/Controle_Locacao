@@ -8,6 +8,8 @@
 --   corrige; recusar exige motivo; pendência decidida não muda mais; as consultas do chat não expõem o CPF inteiro; trava de 200
 --   pendências em aberto.
 -- Precisa existir pelo menos um administrador (dono). Todas as alterações deste roteiro são desfeitas ao final (ROLLBACK).
+-- Use os nomes e a placa de teste (Zeferino/Zuleica Testepend, PEN1A11, PEN2B22) para que dados reais do banco não interfiram nas buscas.
+-- Rode só no DESENVOLVIMENTO: ele cria dados de teste e, se algum assert falhar, a transação é abortada.
 begin;
 do $$
 declare
@@ -36,10 +38,10 @@ begin
   select user_id into dono from administradores order by criado_em limit 1;
   assert dono is not null, 'Precisa existir um administrador (dono)';
 
-  insert into clientes (nome, cpf) values ('Jhonatan Silva Souza', '90000000061') returning id into cli1;
-  insert into clientes (nome, cpf) values ('Joana Prado', '90000000062') returning id into cli2;
+  insert into clientes (nome, cpf) values ('Zeferino Testepend Silva', '90000000061') returning id into cli1;
+  insert into clientes (nome, cpf) values ('Zuleica Testepend Prado', '90000000062') returning id into cli2;
   insert into motos (placa, marca, modelo, km_atual) values ('PEN1A11', 'Honda', 'CG 160', 100) returning id into moto1;
-  insert into motos (placa, marca, modelo, km_atual) values ('PEN2B22', 'Yamaha', 'Fazer 250', 100) returning id into moto2;
+  insert into motos (placa, marca, modelo, km_atual) values ('PEN2B22', 'Yamaha', 'Testepend 250', 100) returning id into moto2;
   insert into contratos (moto_id, cliente_id, data_inicio, periodicidade, valor_periodo, km_inicial)
     values (moto1, cli1, hoje_br() - 10, 'semanal', 275, 100) returning id into ct1;
   insert into contratos (moto_id, cliente_id, data_inicio, periodicidade, valor_periodo, km_inicial)
@@ -61,9 +63,9 @@ begin
   exception when insufficient_privilege then null; end;
   begin perform rpc_pendencia_recusar(gen_random_uuid(), 'x'); raise exception 'Estranho não deveria recusar';
   exception when insufficient_privilege then null; end;
-  begin perform rpc_conector_cobrancas_abertas('Jhonatan'); raise exception 'Estranho não deveria consultar cobranças';
+  begin perform rpc_conector_cobrancas_abertas('Zeferino'); raise exception 'Estranho não deveria consultar cobranças';
   exception when insufficient_privilege then null; end;
-  begin perform rpc_conector_veiculos('PEN1'); raise exception 'Estranho não deveria consultar veículos';
+  begin perform rpc_conector_veiculos('PEN1A11'); raise exception 'Estranho não deveria consultar veículos';
   exception when insufficient_privilege then null; end;
   begin perform rpc_conector_minhas_pendencias(); raise exception 'Estranho não deveria listar pendências';
   exception when insufficient_privilege then null; end;
@@ -88,27 +90,27 @@ begin
   exception when insufficient_privilege then null; end;
 
   -- consultas do chat: por nome, CPF parcial e placa; o CPF sai só com os 4 últimos dígitos; cobrança paga não aparece
-  lista := rpc_conector_cobrancas_abertas('Jhonatan');
-  assert jsonb_array_length(lista) = 2, 'Jhonatan tem 2 cobranças em aberto: ' || lista::text;
-  assert lista->0->>'cliente_nome' = 'Jhonatan Silva Souza' and lista->0->>'placa' = 'PEN1A11', 'Cliente e placa: ' || lista::text;
+  lista := rpc_conector_cobrancas_abertas('Zeferino');
+  assert jsonb_array_length(lista) = 2, 'Zeferino tem 2 cobranças em aberto: ' || lista::text;
+  assert lista->0->>'cliente_nome' = 'Zeferino Testepend Silva' and lista->0->>'placa' = 'PEN1A11', 'Cliente e placa: ' || lista::text;
   assert lista->0->>'cpf_final' = '0061' and position('90000000061' in lista::text) = 0, 'O CPF inteiro não pode sair';
   assert lista->0->>'cobranca_id' = cob_a::text and (lista->0->>'saldo')::numeric = 275, 'Primeira por vencimento, com o saldo';
-  assert jsonb_array_length(rpc_conector_cobrancas_abertas('jhon sil')) = 2, 'Prefixos de palavras do nome';
-  assert jsonb_array_length(rpc_conector_cobrancas_abertas('CPF ***.000.006-**')) >= 1, 'CPF parcial (0000006)';
+  assert jsonb_array_length(rpc_conector_cobrancas_abertas('zefer test')) = 2, 'Prefixos de palavras do nome';
+  assert jsonb_array_length(rpc_conector_cobrancas_abertas('CPF ***.000.000.61-**')) = 2, 'CPF parcial (00000061): só o Zeferino';
   assert (rpc_conector_cobrancas_abertas('placa pen-2b22')->0->>'cobranca_id') = cob_b::text, 'Placa com hífen e minúscula';
-  assert jsonb_array_length(rpc_conector_cobrancas_abertas('Joana')) = 1, 'A cobrança paga de Joana não aparece';
-  assert jsonb_array_length(rpc_conector_cobrancas_abertas('Fulano Inexistente')) = 0, 'Sem resultado';
+  assert jsonb_array_length(rpc_conector_cobrancas_abertas('Zuleica')) = 1, 'A cobrança paga de Zuleica não aparece';
+  assert jsonb_array_length(rpc_conector_cobrancas_abertas('Zzfulano Inexistente')) = 0, 'Sem resultado';
   begin perform rpc_conector_cobrancas_abertas('ab'); raise exception 'Busca curta deveria ser recusada';
   exception when others then if sqlerrm like 'Busca curta%' then raise; end if; assert sqlerrm like 'Informe ao menos 3%', 'Mensagem: ' || sqlerrm; end;
-  assert rpc_conector_veiculos('PEN1')->0->>'moto_id' = moto1::text and rpc_conector_veiculos('fazer')->0->>'placa' = 'PEN2B22', 'Veículos por placa e modelo';
+  assert rpc_conector_veiculos('PEN1A11')->0->>'moto_id' = moto1::text and rpc_conector_veiculos('testepend')->0->>'placa' = 'PEN2B22', 'Veículos por placa e modelo';
 
   -- ---------- propor pagamento ----------
   r := rpc_pendencia_criar(jsonb_build_object('tipo', 'pagamento', 'origem', 'chat_financeiro', 'chave_operacao', 'chat-1',
-         'trecho_origem', 'Jhonatan pagou 275 hoje',
+         'trecho_origem', 'Zeferino pagou 275 hoje',
          'dados', jsonb_build_object('cobranca_id', cob_a, 'valor', '275', 'forma', 'PIX')));
   p1 := (r->>'id')::uuid;
   assert r->>'status' = 'pendente' and (r->>'repetida')::boolean = false, 'Pendência nova: ' || r::text;
-  assert r->>'resumo' = 'Pagamento de Jhonatan Silva Souza (PEN1A11): R$ 275,00 em ' || to_char(hoje_br(), 'DD/MM/YYYY') || ' por Pix', 'Resumo: ' || (r->>'resumo');
+  assert r->>'resumo' = 'Pagamento de Zeferino Testepend Silva (PEN1A11): R$ 275,00 em ' || to_char(hoje_br(), 'DD/MM/YYYY') || ' por Pix', 'Resumo: ' || (r->>'resumo');
   assert jsonb_array_length(r->'avisos') = 0, 'Valor igual ao saldo não tem aviso: ' || (r->'avisos')::text;
 
   -- repetir a mesma chave devolve a mesma pendência
@@ -220,7 +222,7 @@ begin
   exception when others then if sqlerrm like 'Sem cobrança deveria%' then raise; end if; assert sqlerrm like 'Não dá para aprovar: A cobrança não foi identificada%', 'Mensagem: ' || sqlerrm; end;
   r := rpc_pendencia_aprovar(p2, jsonb_build_object('cobranca_id', cob_b, 'valor', '50'));
   assert r->>'status' = 'aprovada', 'Editar e aprovar: ' || r::text;
-  assert (select resumo from pendencias_lancamento where id = p2) like 'Pagamento de Joana Prado (PEN2B22): R$ 50,00%', 'O resumo acompanha a correção';
+  assert (select resumo from pendencias_lancamento where id = p2) like 'Pagamento de Zuleica Testepend Prado (PEN2B22): R$ 50,00%', 'O resumo acompanha a correção';
   assert (select valor from pagamentos where cobranca_id = cob_b) = 50, 'Pagamento de 50 gravado';
 
   begin perform rpc_pendencia_aprovar(p3); raise exception 'Acima do saldo deveria bloquear';  -- o saldo de B agora é 50
@@ -274,8 +276,10 @@ begin
   exception when check_violation then null; end;
 
   -- ---------- trava contra enxurrada ----------
+  -- completa até 200 pendências em aberto, contando as que já existam (o roteiro vale também para um banco com dados reais)
   insert into pendencias_lancamento (tipo, origem, chave_operacao, dados, resumo)
-    select 'despesa', 'chat_financeiro', 'lote-' || g, '{"valor": "1.00"}'::jsonb, 'lote' from generate_series(1, 200) g;
+    select 'despesa', 'chat_financeiro', 'lote-' || g, '{"valor": "1.00"}'::jsonb, 'lote'
+      from generate_series(1, greatest(200 - (select count(*)::int from pendencias_lancamento where status = 'pendente'), 1)) g;
   perform set_config('request.jwt.claim.sub', robo::text, true);
   set local role authenticated;
   begin
