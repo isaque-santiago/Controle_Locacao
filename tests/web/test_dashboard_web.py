@@ -440,7 +440,7 @@ def test_frota_tem_receita_por_moto_e_tempo_parado(cliente):
     entrar(cliente)
     html = cliente.get("/?aba=frota").text
     assert "Receita por veículo" in html and "R$ 689,10" in html and "receita do mês ÷ 5 veículos ativos" in html
-    assert "Tempo parado no mês" in html and "8.0%" in html and "12 dias de veículo na oficina" in html
+    assert "Tempo parado no mês" in html and "8,0%" in html and "8.0%" not in html and "12 dias de veículo na oficina" in html
 
 
 def test_tempo_parado_acima_do_limite_vira_aviso_ambar(cliente, monkeypatch):
