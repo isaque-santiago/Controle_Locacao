@@ -1258,7 +1258,9 @@ Continuação do item 7 da seção 23. O protocolo de [Sincronizacao_Chats.md](S
 3. **Comprovantes Pix dos grupos de WhatsApp** (leitura de imagem por IA) ficam para depois, alimentando a **mesma caixa**. Isso exigiria conta e chave da API da Anthropic (cobrança à parte; estimativa de centavos por comprovante) e o envio de dados pessoais a ela.
 4. Custo extra do conector: nenhum conhecido (rota no app que já roda na VPS; cada chamada consome um pouco do limite do plano do claude.ai). A confirmar na conta do dono.
 
-### 24.2 Princípio: o chat só propõe, o dono confirma
+### 24.2 Princípio: o chat só propõe, o dono confirma (**revisto em 24/11/2026: modelo híbrido, ver 24.7b**)
+
+> **Revisão de 24/11/2026:** a fila para tudo foi trocada pelo modelo híbrido por risco da seção 24.7b (cadastros e lançamentos limpos entram direto; a dúvida vai para a fila). O que segue era o desenho original e vale para a **fila**.
 
 O chat **nunca grava no financeiro**. Ele cria uma **pendência**; o dono a aprova numa tela do app. Isso limita o estrago de um erro do modelo ou de um texto com instruções escondidas, porque nada vale sem a confirmação. O conector não tem ação de aprovar, editar nem apagar.
 
@@ -1299,6 +1301,33 @@ Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acess
 1. **Ordem dos tipos:** começam **pagamento e despesa**. Depois, na ordem que o dono decidir: dívidas, manutenções, contratos, locatários e o resto. O desenho de `pendencias_lancamento` já comporta novos `tipo`.
 2. **Identificar o cliente:** por **nome, CPF parcial e placa**, usados em conjunto; se a combinação não puder ser feita, só pelo **CPF parcial**. O conector devolve ao chat só esses campos (sem CPF completo).
 3. **Quem aprova:** **todo usuário dono**, ou seja, o dono e as duas pessoas do financeiro. Hoje só um é "dono" no sistema: as duas pessoas do financeiro precisam entrar na tabela `administradores` (migration `20261105120000`; README, "Administradores") antes de a tela de Pendências ser usada por elas. Como `is_dono()` vale para todos, os três veem e aprovam as mesmas pendências; o registro de **quem aprovou** (`decidido_por`) fica obrigatório.
+
+### 24.7b Decisão do dono (24/11/2026): modelo híbrido por risco
+
+O dono achou a fila para tudo trabalhosa (aprovar no chat e de novo no app) e propôs ferramentas próprias no conector, para cadastrar cliente, registrar pagamento e assim por diante. **Decisão: híbrido por risco**, no lugar de «tudo direto» ou «só a fila».
+
+**Por quê:** quem usa o conector já entrou como dono e autorizou, então a fila não protege contra pessoa não autorizada, só contra erro do modelo (cobrança ou cliente trocados, CPF digitado errado) e contra instrução escondida em texto colado no chat. Dinheiro gravado errado é difícil de desfazer (hoje só se cancela cobrança sem pagamento; não há estorno). O claude.ai também pede a confirmação do usuário a cada ação de um conector (a menos que ele clique em «Sempre permitir»), mas o servidor não pode impor isso.
+
+| Operação | Como entra |
+|---|---|
+| Cadastrar cliente e veículo | **Direto**. Não mexe em dinheiro e dá para corrigir depois; CPF e placa repetidos são barrados pelo banco |
+| Pagamento **limpo** | **Direto**, só se a cobrança foi identificada com certeza (`escolher_unico`), o valor é igual ao saldo, não é duplicado e está abaixo do teto |
+| Pagamento com **qualquer** aviso ou acima do teto | **Pendências** (a fila já feita), com o aviso do motivo |
+| Despesa | Direto se limpa e abaixo do teto; senão, Pendências |
+| Editar ou apagar | **Nunca** pelo conector |
+
+**Teto (proposta, a confirmar com o dono):** R$ 1.000,00 por pagamento e R$ 500,00 por despesa; acima disso vai para a fila mesmo sem aviso.
+
+**Como fica no banco e no conector (por fazer):**
+- Ferramentas de escrita no conector: `cadastrar_cliente`, `cadastrar_veiculo`, `registrar_pagamento`, `registrar_despesa`. As de pagamento e despesa **sempre criam a pendência** (o registro de auditoria) e a **aprovam sozinhas** quando está limpa; senão ela fica na fila.
+- Migration nova: `pendencias_lancamento.decisao_automatica` (quem decidiu passa a poder ser o usuário de serviço, marcado como automático), RPCs `rpc_conector_registrar_pagamento`, `rpc_conector_registrar_despesa`, `rpc_conector_cadastrar_cliente`, `rpc_conector_cadastrar_veiculo` (todas só do usuário de serviço ou de dono, com as mesmas validações; cadastro de cliente valida o CPF e aceita a convenção de CPF provisório).
+- **Desfazer:** como o conector passa a gravar sozinho, o dono precisa poder desfazer um lançamento automático (`rpc_pendencia_desfazer`, só dono, só os de decisão automática, com janela de tempo) pela tela de Pendências. Sem isso o modelo híbrido não é seguro.
+- O banco continua limitando o usuário de serviço a essas RPCs: ele nunca ganha acesso geral às tabelas.
+
+**Etapas revistas (substituem 3 a 5 da 24.7):**
+3. **Tela Pendências:** fila (aprovar, editar e aprovar, recusar) **e** histórico do que o chat gravou sozinho, com **desfazer**; alerta no Dashboard só para o que está na fila.
+4. **Escrita direta no conector:** migration das RPCs acima, ferramentas `cadastrar_cliente`, `cadastrar_veiculo`, `registrar_pagamento`, `registrar_despesa`, mais as de consulta (`consultar_cobrancas_abertas`, `buscar_veiculos`, `listar_pendencias`). *Aceite:* "Fulano pagou R$ X" no chat, com cobrança identificada e valor igual ao saldo, grava o pagamento e aparece no histórico; com dúvida, cai na fila.
+5. **Contratos pelo chat** (e as demais entidades: dívidas, manutenções, locatários), com o mesmo critério de risco.
 
 ### 24.8 Pendências de esclarecimento
 
