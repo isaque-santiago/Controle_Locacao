@@ -94,6 +94,17 @@ def get_servico_mensagens() -> tuple[str, str]:
     return email, senha
 
 
+def get_servico_conector() -> tuple[str, str]:
+    """E-mail e senha do usuário de serviço do conector do claude.ai (`SERVICO_CONECTOR_EMAIL` e `SERVICO_CONECTOR_SENHA`).
+
+    Ele só executa as RPCs `rpc_conector_*`; a `service_role` não é usada. Sem as duas variáveis, o conector responde só ao `ping`."""
+    email = (_ler("SERVICO_CONECTOR_EMAIL") or "").strip()
+    senha = _ler("SERVICO_CONECTOR_SENHA") or ""
+    if not email or not senha:
+        raise RuntimeError("Usuário de serviço do conector não configurado: faltam SERVICO_CONECTOR_EMAIL e SERVICO_CONECTOR_SENHA.")
+    return email, senha
+
+
 def get_textos_whatsapp() -> dict:
     """O que entra nos textos de WhatsApp: `WHATSAPP_EMPRESA` (saudação), `WHATSAPP_CONTATO` (como falar com o dono),
     `WHATSAPP_PIX` (chave Pix estática, opcional) e `PORTAL_URL` (link do portal do locatário, opcional).
