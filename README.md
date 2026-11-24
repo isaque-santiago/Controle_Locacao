@@ -323,6 +323,15 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   dado inválido levanta erro em português. Tudo o que o chat grava fica em `pendencias_lancamento` (histórico e auditoria, com
   `decisao_automatica`, quem pediu e o trecho do chat). Regras puras em `src/domain/pendencias.py` (tetos, o que é «limpo», normalização de
   cliente e veículo, CPF provisório).
+- **Ferramentas do chat no conector (etapa 4 da seção 24; 24/11/2026).** O claude.ai passa a usar 8 ferramentas (`src/domain/conector_mcp.py`):
+  `consultar_cobrancas_abertas`, `buscar_veiculos` e `listar_ultimos_lancamentos` (só leitura) e `registrar_pagamento`, `registrar_despesa`,
+  `cadastrar_cliente` e `cadastrar_veiculo` (gravam, nunca editam nem apagam), além do `ping`. Cada ferramenta valida os argumentos
+  (`src/domain/pendencias.py`), chama a RPC do banco (`src/services/conector.py`, `src/repositories/conector.py`) e devolve ao Claude um texto:
+  **«Gravado: ...»** ou **«NÃO GRAVADO (motivo): ... Pergunte ao usuário o que falta e tente de novo.»**, que o Claude resolve na conversa. O app
+  entra no Supabase como o **usuário de serviço do conector** (`SERVICO_CONECTOR_EMAIL` e `SERVICO_CONECTOR_SENHA`; ele só executa as RPCs `rpc_conector_*`
+  e fica registrado em `servico_conector`); sem essas variáveis só o `ping` funciona. Erros inesperados nunca vão em detalhe para o chat. As gravações
+  descartam o cache de leituras das telas. Criar o usuário: Supabase > Authentication > Users (com «Auto Confirm User»), depois
+  `insert into servico_conector (user_id) select id from auth.users where email = 'o-email-do-usuario';`.
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.

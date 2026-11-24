@@ -97,10 +97,13 @@ class TestMcp:
     def test_notificacao_nao_tem_resposta(self):
         assert responder({"jsonrpc": "2.0", "method": "notifications/initialized"}) is None
 
-    def test_ferramentas_so_de_leitura_nesta_etapa(self):
+    def test_ferramentas_do_chat_so_criam_e_consultam(self):
         r = responder(self._req("tools/list"))
         nomes = [f["name"] for f in r["result"]["tools"]]
-        assert nomes == ["ping"] and all(f["annotations"]["readOnlyHint"] for f in FERRAMENTAS)
+        assert nomes == ["ping", "consultar_cobrancas_abertas", "buscar_veiculos", "registrar_pagamento", "registrar_despesa",
+                         "cadastrar_cliente", "cadastrar_veiculo", "listar_ultimos_lancamentos"]
+        for nome in nomes:  # nenhuma ferramenta edita, apaga ou aprova
+            assert not any(p in nome for p in ("apagar", "excluir", "editar", "aprovar", "desfazer", "atualizar", "remover"))
 
     def test_chamar_ping(self):
         r = responder(self._req("tools/call", name="ping"))
@@ -120,3 +123,44 @@ class TestMcp:
 
     def test_ping_do_protocolo(self):
         assert responder(self._req("ping")) == {"jsonrpc": "2.0", "id": 1, "result": {}}
+
+
+class TestFerramentasDoChat:
+    def _chamar(self, nome, argumentos, executar=None):
+        return responder({"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": nome, "arguments": argumentos}}, executar)
+
+    def test_escrita_so_nas_ferramentas_que_gravam_e_todas_sem_destruir(self):
+        from src.domain.conector_mcp import FERRAMENTAS_QUE_GRAVAM
+        assert FERRAMENTAS_QUE_GRAVAM == ("registrar_pagamento", "registrar_despesa", "cadastrar_cliente", "cadastrar_veiculo")
+        assert all(f["annotations"]["destructiveHint"] is False and f["annotations"]["openWorldHint"] is False for f in FERRAMENTAS)
+
+    def test_todo_esquema_fecha_os_argumentos_e_descreve_a_ferramenta(self):
+        for f in FERRAMENTAS:
+            assert f["inputSchema"]["additionalProperties"] is False and f["description"] and f["title"]
+            assert set(f["inputSchema"]["required"]) <= set(f["inputSchema"]["properties"])
+
+    def test_ferramentas_que_gravam_orientam_o_claude_a_perguntar_na_duvida(self):
+        for nome in ("registrar_pagamento", "registrar_despesa", "cadastrar_cliente", "cadastrar_veiculo"):
+            descricao = next(f for f in FERRAMENTAS if f["name"] == nome)["description"]
+            assert "NÃO gravou" in descricao and "pergunte" in descricao
+
+    def test_sem_executor_so_o_ping_funciona(self):
+        r = self._chamar("registrar_pagamento", {"cobranca_id": "x", "valor": 1})["result"]
+        assert r["isError"] is True and "não está ligado ao banco" in r["content"][0]["text"]
+        assert self._chamar("ping", {})["result"]["isError"] is False
+
+    def test_argumentos_conferidos_antes_de_executar(self):
+        chamadas = []
+        executar = lambda n, a: chamadas.append((n, a)) or {"texto": "ok", "erro": False}  # noqa: E731
+        assert "Faltam argumentos obrigatórios: valor" in self._chamar("registrar_pagamento", {"cobranca_id": "x"}, executar)["result"]["content"][0]["text"]
+        desconhecido = self._chamar("registrar_pagamento", {"cobranca_id": "x", "valor": 1, "apagar": True}, executar)["result"]
+        assert desconhecido["isError"] and "Argumento desconhecido: apagar" in desconhecido["content"][0]["text"]
+        assert self._chamar("buscar_veiculos", "texto", executar)["result"]["isError"]
+        assert self._chamar("buscar_veiculos", {"busca": ""}, executar)["result"]["isError"]
+        assert chamadas == []
+
+    def test_executa_e_repassa_o_texto_e_o_erro(self):
+        executar = lambda n, a: {"texto": f"{n}:{a['busca']}", "erro": a["busca"] == "falha"}  # noqa: E731
+        ok = self._chamar("buscar_veiculos", {"busca": "ABC"}, executar)["result"]
+        assert ok == {"content": [{"type": "text", "text": "buscar_veiculos:ABC"}], "isError": False}
+        assert self._chamar("buscar_veiculos", {"busca": "falha"}, executar)["result"]["isError"] is True

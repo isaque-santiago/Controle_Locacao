@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.services.autenticacao import ServicoAutenticacao
+from src.services.conector import servico_do_ambiente
 from src.web.erros import registrar_tratadores
 from src.web.lacre import CookiesDaSessao, lacre_do_ambiente
 from src.web.selos_conector import conector_do_ambiente
@@ -85,6 +86,7 @@ def criar_app(
     desenvolvimento: bool | None = None,
     lacre=None,
     conector=None,
+    servico_conector=None,
 ) -> FastAPI:
     """Monta o app. Os parâmetros existem para os testes injetarem fakes e um relógio."""
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
@@ -95,6 +97,8 @@ def criar_app(
     app.state.armazem = armazem or ArmazemSessoes(relogio=relogio, arquivo=arquivo_de_sessoes(em_desenvolvimento))
     app.state.lacre = lacre or lacre_do_ambiente(relogio)
     app.state.conector = conector or conector_do_ambiente(relogio)
+    # As ferramentas do chat que falam com o banco; sem o usuário de serviço configurado (ou sem o conector ligado) só o ping funciona.
+    app.state.conector_servico = servico_conector or (servico_do_ambiente() if app.state.conector.ativo else None)
     app.state.limitador_conector = LimitadorTentativas(30, JANELA_LIMITE_SEGUNDOS, relogio)
     app.state.limitador_ip = LimitadorTentativas(
         FALHAS_POR_IP, JANELA_LIMITE_SEGUNDOS, relogio
