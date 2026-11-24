@@ -15,7 +15,7 @@
   {% endif %}
   {% if not fr.indisponivel %}
   {{ kpi("Receita por veículo", din(fr.receita_por_moto) if fr.receita_por_moto is not none else "—", "receita do mês ÷ " ~ fr.ativas ~ " veículos ativos") }}
-  {{ kpi("Tempo parado no mês", ((fr.tempo_parado.percentual ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de veículo na oficina", tom=fr.get("tom_tempo_parado", ""), icone_nome="alerta") }}
+  {{ kpi("Tempo parado no mês", (((fr.tempo_parado.percentual|string|replace(".", ",")) ~ "%") if fr.tempo_parado.percentual is not none else "—"), fr.tempo_parado.dias ~ " dias de veículo na oficina", tom=fr.get("tom_tempo_parado", ""), icone_nome="alerta") }}
   {% endif %}
 </dl>
 
