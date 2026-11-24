@@ -1327,7 +1327,7 @@ O dono achou a fila de aprovação trabalhosa (aprovar no chat e de novo no app)
 - Conector: ferramentas `cadastrar_cliente`, `cadastrar_veiculo`, `registrar_pagamento`, `registrar_despesa`, mais as de consulta (`consultar_cobrancas_abertas`, `buscar_veiculos`, `listar_ultimos_lancamentos`). O banco continua limitando o usuário de serviço a essas RPCs.
 
 **Etapas revistas (substituem 3 a 5 da 24.7):**
-3. **Banco da escrita direta:** migration e roteiro SQL das RPCs acima, com os tetos e a recusa explicada. *Aceite:* roteiro passa no dev; pagamento limpo grava e fica no histórico; dúvida não grava e devolve o motivo; acima do teto não grava.
+3. **Banco da escrita direta (código entregue em 24/11/2026 na branch `feat/escrita-direta-banco`; falta aplicar a migration `20261124130000` e rodar `verificar_escrita_direta.sql` no dev, depois em produção):** migration e roteiro SQL das RPCs acima, com os tetos e a recusa explicada. O roteiro passou num Postgres descartável (banco vazio, com dados reais parecidos e com pendências abertas) e detectou quebras de propósito; uma delas revelou um laço sem limite no CPF provisório, já corrigido. *Aceite:* roteiro passa no dev; pagamento limpo grava e fica no histórico; dúvida não grava e devolve o motivo; acima do teto não grava.
 4. **Ferramentas no conector.** *Aceite:* "Fulano pagou R$ X" no chat, com cobrança identificada e valor igual ao saldo, grava o pagamento; com dúvida, o Claude pergunta e só grava depois da resposta.
 5. **Tela «Lançamentos do chat»:** histórico com **desfazer** e o alerta do Dashboard. Sem fila de aprovação.
 6. **Contratos pelo chat** e as demais entidades (dívidas, manutenções, locatários), com o mesmo critério.

@@ -311,6 +311,18 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   duplicada, sem veículo e data no futuro só avisam. Regras puras (normalização, avisos, identificar o cliente por nome, CPF parcial e placa)
   em `src/domain/pendencias.py`, espelhadas no SQL. Para ligar o conector ao banco (etapa 4), crie o usuário em Authentication > Users e rode
   `insert into servico_conector (user_id) select id from auth.users where email = 'conector@exemplo.com';`.
+- **Escrita direta do conector (etapa 3 da seção 24; 24/11/2026; só banco e regras, ainda sem as ferramentas no conector).** Decisão do dono:
+  sem fila de aprovação; o chat **grava direto** o que está limpo e, na dúvida, **não grava** e devolve o motivo para o Claude perguntar na
+  conversa. Migration `20261124130000_escrita_direta_conector.sql` (roteiro `supabase/verificar_escrita_direta.sql`, só em dev, termina em
+  ROLLBACK): `rpc_conector_registrar_pagamento` (grava se a cobrança foi identificada, o valor é igual ao saldo, sem duplicidade nem data
+  futura e **até R$ 10.000,00**), `rpc_conector_registrar_despesa` (**até R$ 5.000,00**, exige o veículo ou a descrição dele),
+  `rpc_conector_cadastrar_cliente` (CPF válido, ou **CPF provisório** `0000000000N` com `[CPF PROVISÓRIO]` na observação; recusa CPF repetido e
+  homônimo não confirmado), `rpc_conector_cadastrar_veiculo` (placa válida e única) e `rpc_pendencia_desfazer` (só dono, só lançamentos
+  automáticos e só em **7 dias**; apaga o registro e reabre a cobrança; recusa se o registro já tem outros dados ligados). Cada RPC devolve
+  `{"gravado": true, ...}` ou `{"gravado": false, "motivo": "duvida" | "acima_do_teto" | "cpf_ja_cadastrado" | "homonimo" | "placa_ja_cadastrada", "mensagem"}`;
+  dado inválido levanta erro em português. Tudo o que o chat grava fica em `pendencias_lancamento` (histórico e auditoria, com
+  `decisao_automatica`, quem pediu e o trecho do chat). Regras puras em `src/domain/pendencias.py` (tetos, o que é «limpo», normalização de
+  cliente e veículo, CPF provisório).
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.
