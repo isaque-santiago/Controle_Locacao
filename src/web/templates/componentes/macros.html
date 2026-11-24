@@ -53,10 +53,11 @@
 {%- endmacro %}
 
 {# Lista suspensa. opcoes: lista de (valor, rotulo). #}
-{% macro campo_lista(id, rotulo, opcoes, nome=None, selecionado=None, largo=False, erro="") -%}
+{# `linhas`: mostra a lista aberta, com essa quantidade de linhas visíveis (em vez do menu que abre ao clicar). #}
+{% macro campo_lista(id, rotulo, opcoes, nome=None, selecionado=None, largo=False, erro="", linhas=None) -%}
 <div class="campo{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
   <label for="{{ id }}">{{ rotulo }}</label>
-  <select class="entrada" id="{{ id }}" name="{{ nome or id }}"{% if erro %} aria-invalid="true" aria-describedby="{{ id }}-erro"{% endif %}>
+  <select class="entrada{{ ' lista-aberta' if linhas else '' }}" id="{{ id }}" name="{{ nome or id }}"{% if linhas %} size="{{ linhas }}"{% endif %}{% if erro %} aria-invalid="true" aria-describedby="{{ id }}-erro"{% endif %}>
     {% for valor, texto in opcoes %}<option value="{{ valor }}"{{ ' selected' if valor == selecionado else '' }}>{{ texto }}</option>{% endfor %}
   </select>
   {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ icone('alerta') }}<span>{{ erro }}</span></small>{% endif %}
