@@ -1210,7 +1210,7 @@ Decisões do dono em 12/11/2026 para as três pendências que a Fase 7 deixou de
 
 ## 23. Feedback do Alisson (16/11/2026): ajustes pós-entrega
 
-Feedback do segundo responsável após ver o sistema "terminado". Cada item virou uma branch/PR própria. **Situação em 18/11/2026:** itens 1, 3, 4, 5 e 9 entregues; itens 2 e 6 entregues no código, com conferências pendentes (abaixo); item 7 com o desenho fechado (seção 24) e a etapa 1 do conector mergeada; itens 8 e 10 aguardam o dono.
+Feedback do segundo responsável após ver o sistema "terminado". Cada item virou uma branch/PR própria. **Situação em 24/11/2026:** itens 1, 3, 4, 5, 8, 9 e 10 entregues; itens 2 e 6 entregues no código, com conferências pendentes (abaixo); item 7 com a etapa 1 do conector entregue e testada no claude.ai e as etapas 2 a 6 por fazer (seção 24).
 
 ### 23.1 Prioridade agora
 
@@ -1243,11 +1243,11 @@ Feedback do segundo responsável após ver o sistema "terminado". Cada item viro
 
 - **Item 2:** testar no iPhone real (adicionar à tela inicial; nome «LA Locadora» e ícone).
 - **Item 6:** criar os grupos e cadastrar os IDs; testar em modo teste. Os textos das mensagens ainda tratam o locatário no singular («Olá, Maria»); revisar com o dono se o tom serve para um grupo com o financeiro. Os avisos de CNH, óleo, documentos e portal estão fora do envio até o dono decidir como entregá-los.
-- **Item 7 (seção 24):** variáveis do conector no Coolify e teste no claude.ai; incluir as duas pessoas do financeiro em `administradores`; confirmar que o conector não tem cobrança extra.
+- **Item 7 (seção 24):** etapa 1 concluída e testada (24/11/2026). Falta incluir as duas pessoas do financeiro em `administradores` e confirmar que o conector não tem cobrança extra; as etapas 2 a 6 seguem em ordem.
 - **Item 8:** a primeira sincronização foi feita em 19/11/2026. Para a próxima: link novo dos dois chats e backup novo. Decisões abertas listadas na seção 11 de `Sincronizacao_Chats.md`.
 - **Item 10:** arquivamento entregue em 23/11/2026. Falta: a data da venda de `NVE8D78` e `OIH0D80` (hoje vazia) e arquivar os 2 ex-locatários com débito quando quitarem ou quando o débito for decidido.
 
-## 24. Conector do claude.ai e caixa de pendências (desenho de 17/11/2026; nada implementado)
+## 24. Conector do claude.ai e caixa de pendências (desenho de 17/11/2026; etapa 1 entregue e testada em 24/11/2026; etapas 2 a 6 por fazer)
 
 Continuação do item 7 da seção 23. O protocolo de [Sincronizacao_Chats.md](Sincronizacao_Chats.md) serve para **conciliar o histórico**; este desenho cobre o que vem **daqui para frente**: quando o dono registra algo nos chats do Claude (um pagamento, uma despesa, um contrato), o sistema recebe o lançamento sem copiar e colar.
 
@@ -1287,8 +1287,8 @@ Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acess
 
 ### 24.7 Etapas (um PR por etapa; não avançar sem os critérios de aceite)
 
-1. **Viabilidade** (código implementado em 17/11/2026 na branch `feat/conector-viabilidade`; falta publicar, definir `CONECTOR_CHAVE` e `CONECTOR_URL_BASE` no Coolify e testar no claude.ai): conector MCP mínimo com OAuth, adicionado ao claude.ai e chamado pelo chat (sem banco). *Aceite:* o dono vê o conector ativo e o chat recebe a resposta de uma ferramenta de teste.
-2. **Banco e regras (código entregue em 24/11/2026 na branch `feat/pendencias-banco`; falta aplicar a migration `20261124120000` no dev e rodar `verificar_pendencias.sql` lá, depois em produção):** migration, RPCs, `src/domain/pendencias.py`, roteiro SQL. *Aceite:* roteiro passa no dev; testes verdes. O roteiro já passou num Postgres descartável (com o Supabase simulado) e detectou quebras de propósito.
+1. **Viabilidade (ENTREGUE: PR 194; `CONECTOR_CHAVE` e `CONECTOR_URL_BASE` definidas no Coolify e `ping` chamado com sucesso pelo claude.ai em 24/11/2026):** conector MCP mínimo com OAuth, adicionado ao claude.ai e chamado pelo chat (sem banco). *Aceite:* o dono vê o conector ativo e o chat recebe a resposta de uma ferramenta de teste.
+2. **Banco e regras (código entregue em 24/11/2026 na branch `feat/pendencias-banco`; migration `20261124120000` aplicada em produção e conferida; falta rodar `verificar_pendencias.sql` no banco de desenvolvimento):** migration, RPCs, `src/domain/pendencias.py`, roteiro SQL. *Aceite:* roteiro passa no dev; testes verdes. O roteiro já passou num Postgres descartável (com o Supabase simulado), em banco vazio, com cliente parecido já cadastrado e com pendências reais em aberto, e detectou quebras de propósito. Rode-o só no desenvolvimento.
 3. **Tela Pendências:** listar, aprovar e recusar (com cadastro de teste no dev). *Aceite:* aprovar um pagamento cria o mesmo registro que o fluxo atual e é idempotente.
 4. **Ferramentas de pagamento e despesa no conector.** *Aceite:* "Fulano pagou R$ X" no chat vira uma pendência, sem gravar no financeiro.
 5. **Contratos pelo chat.**
