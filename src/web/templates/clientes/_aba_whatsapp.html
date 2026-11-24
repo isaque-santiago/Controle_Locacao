@@ -12,11 +12,11 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <div class="formulario">
     <div class="campo largo">
-      <label for="wa-grupo-busca">Buscar grupo (nome ou placa)</label>
-      <input class="entrada" id="wa-grupo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Digite parte do nome ou a placa" data-filtrar-opcoes="wa-grupo-escolhido" data-filtrar-aviso="wa-grupo-contagem" aria-describedby="wa-grupo-contagem">
-      <small id="wa-grupo-contagem" role="status" aria-live="polite"></small>
+      <label for="wa-grupo-busca">Buscar grupo (nome, sobrenome ou placa)</label>
+      <input class="entrada" id="wa-grupo-busca" type="search" autocomplete="off" spellcheck="false" placeholder="Ex.: gabriel ou HYF1F47" data-filtrar-opcoes="wa-grupo-escolhido" data-filtrar-aviso="wa-grupo-contagem" aria-describedby="wa-grupo-contagem">
+      <small id="wa-grupo-contagem" role="status" aria-live="polite">{{ a.grupos|length }} grupos na lista. Digite o nome ou a placa para filtrar; clique no grupo certo e salve.</small>
     </div>
-    {{ campo_lista("wa-grupo-escolhido", "Grupo (da lista da instância)", [("", "— sem grupo —")] + (a.grupos|opcoes_de_grupos(grupo_atual)), nome="grupo_escolhido", selecionado=grupo_atual or "", largo=True) }}
+    {{ campo_lista("wa-grupo-escolhido", "Grupo (da lista da instância)", [("", "— sem grupo —")] + (a.grupos|opcoes_de_grupos(grupo_atual)), nome="grupo_escolhido", selecionado=grupo_atual or "", largo=True, linhas=8) }}
     {{ campo("wa-grupo-id", "Ou cole o ID do grupo", nome="grupo_id", valor=grupo_digitado or "", mono=True, erro=(erros_whatsapp or {}).get("grupo_id"), ajuda="Use só se o grupo não aparecer na lista (ela é atualizada a cada rodada do envio, a cada 15 a 30 minutos). O ID termina em @g.us.", autocomplete="off", largo=True, extra='spellcheck="false" autocapitalize="none"') }}
   </div>
   <p class="text-texto-2 mt-2">O grupo precisa ter o locatário, você e o financeiro, e o número do envio automático. Cada grupo serve a um cliente só. Escolher "— sem grupo —" e salvar remove o grupo.</p>

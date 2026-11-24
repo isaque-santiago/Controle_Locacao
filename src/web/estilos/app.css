@@ -266,6 +266,8 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
 .entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--borda-campo); background: var(--superficie-elevada);}
 .entrada:hover {border-color: var(--texto-2);}
+.entrada.lista-aberta {min-height: 0; padding: var(--e1) var(--e2); overflow-y: auto;}
+.entrada.lista-aberta option {padding: var(--e2) var(--e2); border-radius: 4px;}
 .entrada:focus {outline: 0; border-color: var(--foco); box-shadow: 0 0 0 4px var(--foco-halo);}
 .entrada-icone {position: relative;}
 .entrada-icone .i {position: absolute; left: var(--e3); top: 12px; color: var(--texto-3); pointer-events: none;}

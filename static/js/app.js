@@ -204,46 +204,69 @@
     }
   });
 
-  // ---- Busca numa lista suspensa: <input data-filtrar-opcoes="id-do-select" data-filtrar-aviso="id-do-texto-de-contagem"> ----
-  // Mostra só as opções que têm todas as palavras digitadas (sem diferenciar maiúsculas nem acentos). A opção vazia e a opção
-  // que veio selecionada do servidor ficam sempre, para o formulário não mudar de valor sem querer; o que a pessoa escolher à mão
-  // também fica. Com uma única opção encontrada, ela é selecionada. As opções saem do <select> e voltam (em vez de `hidden`,
-  // que o Safari do iPhone ignora).
+  // ---- Busca numa lista: <input data-filtrar-opcoes="id-do-select" data-filtrar-aviso="id-do-texto-de-contagem"> ----
+  // Cada palavra digitada vale um ponto para a opção que a tem (sem diferenciar maiúsculas nem acentos; pontuação e espaço dentro
+  // da placa não atrapalham: "hyf1f47" acha "HYF-1F47"). Aparecem as opções com ao menos um ponto, as que têm mais pontos primeiro;
+  // assim "Gabriel Santos HYF1F47" acha o grupo "Gabriel - [HYF-1F47]" mesmo sem o sobrenome. A opção vazia e a que veio selecionada
+  // do servidor ficam sempre no topo, para o formulário não mudar de valor sem querer; o que a pessoa escolher à mão também fica.
+  // Se só uma opção tem todas as palavras, ela é selecionada. As opções saem do <select> e voltam (em vez de `hidden`, que o Safari
+  // do iPhone ignora).
   var estadoBusca = new WeakMap();
+  var PALAVRAS_FRACAS = { de: 1, da: 1, do: 1, das: 1, dos: 1, e: 1, la: 1 };
   function semAcento(texto) { return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function palavrasDaBusca(texto) {
+    return semAcento(texto).split(/[^a-z0-9]+/).filter(function (p) { return p.length > 1 && !PALAVRAS_FRACAS[p]; });
+  }
   function filtrarOpcoes(campo) {
     var lista = document.getElementById(campo.getAttribute('data-filtrar-opcoes'));
     if (!lista) return;
+    var aviso = document.getElementById(campo.getAttribute('data-filtrar-aviso'));
     if (!estadoBusca.has(lista)) {
       var inicial = Array.prototype.filter.call(lista.options, function (o) { return o.defaultSelected; })[0];
-      estadoBusca.set(lista, { todas: Array.prototype.slice.call(lista.options), original: inicial ? inicial.value : '', auto: null });
+      var todas = Array.prototype.slice.call(lista.options).map(function (o, i) {
+        var texto = semAcento(o.text);
+        return { opcao: o, posicao: i, texto: texto, compacto: texto.replace(/[^a-z0-9]/g, '') };
+      });
+      estadoBusca.set(lista, { todas: todas, original: inicial ? inicial.value : '', auto: null, textoInicial: aviso ? aviso.textContent : '' });
     }
     var e = estadoBusca.get(lista);
     var atual = lista.value;
     var manual = (atual !== '' && atual !== e.original && atual !== e.auto) ? atual : null;  // escolhida pela pessoa
-    var palavras = semAcento(campo.value).split(/\s+/).filter(Boolean);
-    function casa(o) {
-      if (o.value === '') return false;
-      var texto = semAcento(o.text);
-      return palavras.every(function (p) { return texto.indexOf(p) !== -1; });
+    var palavras = palavrasDaBusca(campo.value);
+    for (var k = 0; k < e.todas.length; k++) {
+      var item = e.todas[k], pontos = 0;
+      if (item.opcao.value !== '') {
+        palavras.forEach(function (p) { if (item.texto.indexOf(p) !== -1 || item.compacto.indexOf(p) !== -1) pontos++; });
+      }
+      item.pontos = pontos;
     }
-    var encontradas = e.todas.filter(casa);
-    var visiveis = e.todas.filter(function (o) { return o.value === '' || o.value === e.original || o.value === manual || casa(o); });
+    var buscando = palavras.length > 0;
+    var casam = e.todas.filter(function (i) { return i.pontos > 0; });
+    var completos = e.todas.filter(function (i) { return buscando && i.pontos === palavras.length; });
+    var visiveis = e.todas.filter(function (i) {
+      return !buscando || i.opcao.value === '' || i.opcao.value === e.original || i.opcao.value === manual || i.pontos > 0;
+    });
+    visiveis.sort(function (a, b) {
+      function topo(i) { return i.opcao.value === '' ? 0 : (i.opcao.value === e.original ? 1 : 2); }
+      if (!buscando) return a.posicao - b.posicao;
+      return topo(a) - topo(b) || b.pontos - a.pontos || a.posicao - b.posicao;
+    });
     while (lista.options.length) lista.remove(0);
-    visiveis.forEach(function (o) { lista.add(o); });
+    visiveis.forEach(function (i) { lista.add(i.opcao); });
     if (manual) {
       lista.value = manual;
-    } else if (palavras.length && encontradas.length === 1) {
-      lista.value = encontradas[0].value;
+    } else if (completos.length === 1) {
+      lista.value = completos[0].opcao.value;
       e.auto = lista.value;
     } else {
       lista.value = e.original;
       e.auto = null;
     }
-    var aviso = document.getElementById(campo.getAttribute('data-filtrar-aviso'));
     if (aviso) {
-      var total = e.todas.filter(function (o) { return o.value !== ''; }).length;
-      aviso.textContent = palavras.length ? (encontradas.length + ' de ' + total + ' grupos encontrados.') : '';
+      if (!buscando) aviso.textContent = e.textoInicial;
+      else if (!casam.length) aviso.textContent = 'Nenhum grupo encontrado. Confira o nome ou a placa, ou cole o ID do grupo no campo abaixo.';
+      else aviso.textContent = casam.length + (casam.length === 1 ? ' grupo encontrado' : ' grupos encontrados') +
+        (completos.length && completos.length < casam.length ? ' (os que têm todas as palavras vêm primeiro)' : '') + '.';
     }
   }
   document.addEventListener('input', function (ev) {

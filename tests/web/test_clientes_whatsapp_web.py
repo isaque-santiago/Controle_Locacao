@@ -164,9 +164,11 @@ def test_locatario_e_cliente_sem_login_nao_agem(cliente, base_clientes, base_wha
 def test_ha_caixa_de_busca_ligada_a_lista_de_grupos(cliente, base_clientes):
     entrar(cliente)
     html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
-    assert 'id="wa-grupo-busca"' in html and "Buscar grupo (nome ou placa)" in html
+    assert 'id="wa-grupo-busca"' in html and "Buscar grupo (nome, sobrenome ou placa)" in html
     assert 'data-filtrar-opcoes="wa-grupo-escolhido"' in html and 'data-filtrar-aviso="wa-grupo-contagem"' in html
     assert 'id="wa-grupo-escolhido"' in html and 'id="wa-grupo-contagem"' in html and 'aria-live="polite"' in html
+    # a lista fica aberta (8 linhas) e a contagem já diz quantos grupos há
+    assert 'class="entrada lista-aberta"' in html and 'size="8"' in html and "2 grupos na lista" in html
     # o campo de busca não tem name: não vai no formulário nem sobrescreve o grupo escolhido
     trecho = html[html.index('id="wa-grupo-busca"'):]
     assert "name=" not in trecho[:trecho.index(">")]
@@ -176,4 +178,5 @@ def test_o_javascript_traz_o_filtro_de_opcoes():
     from pathlib import Path
     js = (Path(__file__).resolve().parents[2] / "static" / "js" / "app.js").read_text(encoding="utf-8")
     assert "data-filtrar-opcoes" in js and "filtrarOpcoes" in js and "normalize('NFD')" in js
+    assert "PALAVRAS_FRACAS" in js and "replace(/[^a-z0-9]/g, '')" in js  # placa sem hífen e palavras fracas ("de", "la") ignoradas
     assert "e.key === 'Enter'" in js or "ev.key === 'Enter'" in js or "key === 'Enter' && e.target.matches" in js
