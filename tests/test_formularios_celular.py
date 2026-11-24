@@ -74,7 +74,8 @@ def test_js_valida_no_blur_e_no_envio_com_aria_e_foco():
 
 def test_navegacao_por_secoes_respeita_movimento_reduzido():
     assert "prefers-reduced-motion: reduce" in JS and "form-nav" in JS
-    assert "reduzMovimento.matches ? 'auto' : 'smooth'" in JS
+    assert "!(reduzMovimento && reduzMovimento.matches) ? 'smooth' : 'auto'" in JS
+    assert "secao.scrollIntoView" not in JS and "rolarCorpo(corpo" in JS  # só o corpo rola, o diálogo não
 
 
 def test_css_celular_kpis_em_duas_colunas_e_seletor_de_mes_sem_corte():

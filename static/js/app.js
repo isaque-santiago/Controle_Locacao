@@ -563,10 +563,19 @@
     if (!primeiro) return;
     e.preventDefault();
     e.stopPropagation();
-    primeiro.focus();
-    var secao = primeiro.closest('[data-secao]');
-    if (secao && secao.scrollIntoView) secao.scrollIntoView({ block: 'nearest' });
+    var corpo = form.querySelector('.dialogo-corpo');
+    if (corpo) {
+      // Só o corpo do formulário rola (scrollIntoView também empurraria o diálogo inteiro e esconderia o cabeçalho)
+      primeiro.focus({ preventScroll: true });
+      var c = corpo.getBoundingClientRect(), r = primeiro.getBoundingClientRect();
+      if (r.top < c.top + 8 || r.bottom > c.bottom - 8) rolarCorpo(corpo, corpo.scrollTop + r.top - c.top - 72, false);
+    } else {
+      primeiro.focus();
+    }
   }, true);
+  function rolarCorpo(corpo, topo, suave) {
+    corpo.scrollTo({ top: Math.max(0, topo), behavior: suave && !(reduzMovimento && reduzMovimento.matches) ? 'smooth' : 'auto' });
+  }
 
   // Celular, formulário em tela cheia: faixa fixa no alto com "Seção X de Y", barra de progresso e um botão por seção.
   // As seções com campo inválido ganham um ponto de alerta. Em telas largas a faixa fica oculta (CSS).
@@ -638,7 +647,8 @@
     if (!b) return;
     var form = b.closest('form');
     var secao = form.querySelectorAll('[data-secao]')[Number(b.getAttribute('data-ir'))];
-    if (secao) secao.scrollIntoView({ behavior: reduzMovimento && reduzMovimento.matches ? 'auto' : 'smooth', block: 'start' });
+    var corpo = form.querySelector('.dialogo-corpo');
+    if (secao && corpo) rolarCorpo(corpo, corpo.scrollTop + secao.getBoundingClientRect().top - corpo.getBoundingClientRect().top - 8, true);
   });
   document.addEventListener('DOMContentLoaded', function () { prepararFormularios(); });
   document.body.addEventListener('htmx:afterSettle', function () { prepararFormularios(); });
