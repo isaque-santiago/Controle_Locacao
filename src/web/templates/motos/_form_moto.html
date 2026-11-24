@@ -2,7 +2,7 @@
 {# Formulário de cadastro/edição de moto, dentro do diálogo. `valores` é o texto de cada campo; `erros`, a mensagem por campo. #}
 {% set v = valores %}
 {% set e = erros %}
-{% call form_dialogo("Novo veículo" if nova else "Editar dados do veículo", acao, "Salvar moto", csrf_token, erro_geral) %}
+{% call form_dialogo("Novo veículo" if nova else "Editar dados do veículo", acao, "Salvar veículo", csrf_token, erro_geral) %}
   {% call secao("Identificação") %}
   {{ campo("f-placa", "Placa", nome="placa", valor=v.placa, obrigatorio=True, mono=True, erro=e.placa, autocomplete="off", extra='maxlength="8" placeholder="ABC-1D23" autocapitalize="characters" spellcheck="false"') }}
   {{ campo("f-renavam", "Renavam", nome="renavam", valor=v.renavam, mono=True, inputmode="numeric", erro=e.renavam, autocomplete="off") }}
