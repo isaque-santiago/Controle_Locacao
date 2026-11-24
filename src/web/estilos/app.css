@@ -467,10 +467,11 @@ table.dados {width: 100%; border-collapse: collapse;}
     .dados td {min-width: 0; overflow-wrap: anywhere;}
     .dados td .mono, .dados td.mono {white-space: normal;}
   }
+}
 
+/* Fora do @container da tabela: a barra de busca não é filha da caixa da tabela, então a regra aninhada nunca valia. */
 @media (max-width: 719px) {
   .barra-filtros {grid-template-columns: 1fr;}
-}
 }
 
 /* ---------- Abas ---------- */
