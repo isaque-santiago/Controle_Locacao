@@ -1,6 +1,7 @@
-{% from "componentes/macros.html" import campo, campo_lista, area_texto, placa %}
+{% from "componentes/macros.html" import campo, campo_lista, area_texto, placa, secao %}
 {# Campos do documento (diálogo e página). Contexto: v, erros, editando, registro, motos, tipos, tem_comprovante. #}
 <input type="hidden" name="chave_operacao" value="{{ v.chave_operacao }}">
+{% call secao("Documento") %}
 {% if editando %}
 <div class="largo flex flex-wrap items-center gap-3">{{ placa(registro.moto.placa|placa_br) }}<span>{{ registro.moto.marca }} {{ registro.moto.modelo }}</span></div>
 {% elif motos %}
@@ -11,9 +12,13 @@
 {% endif %}
 {{ campo_lista("d-tipo", "Tipo", tipos, nome="tipo", selecionado=v.tipo, largo=True) }}
 {% if erros.tipo %}<small class="msg-erro largo" role="alert">{{ erros.tipo }}</small>{% endif %}
+{% endcall %}
+{% call secao("Valores e prazo") %}
 {{ campo("d-ano", "Ano de referência", nome="ano_referencia", valor=v.ano_referencia, mono=True, inputmode="numeric", obrigatorio=True, erro=erros.ano_referencia, autocomplete="off") }}
 {{ campo("d-venc", "Vencimento", nome="vencimento", valor=v.vencimento, tipo="date", obrigatorio=True, erro=erros.vencimento) }}
-{{ campo("d-valor", "Valor", nome="valor", valor=v.valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor, autocomplete="off", largo=True) }}
+{{ campo("d-valor", "Valor", nome="valor", valor=v.valor, prefixo="R$", mono=True, inputmode="decimal", obrigatorio=True, erro=erros.valor, autocomplete="off") }}
+{% endcall %}
+{% call secao("Detalhes") %}
 {{ campo("d-desc", "Descrição", nome="descricao", valor=v.descricao, largo=True, ajuda="Opcional. Ex.: apólice 221004") }}
 <div class="campo largo{{ ' com-erro' if erros.comprovante else '' }}">
   <label for="d-comprovante">Comprovante (opcional)</label>
@@ -22,4 +27,5 @@
   {% if erros.comprovante %}<small class="msg-erro" id="d-comprovante-erro">{{ erros.comprovante }}</small>{% endif %}
 </div>
 {{ area_texto("d-obs", "Observações", nome="observacoes", valor=v.observacoes, largo=True) }}
-<p class="largo text-texto-2 text-[13px]"><span aria-hidden="true">*</span> Campo obrigatório.</p>
+{% endcall %}
+<p class="largo form-obrigatorio"><span aria-hidden="true">*</span> Campo obrigatório.</p>
