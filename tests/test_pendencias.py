@@ -137,7 +137,7 @@ class TestAvisosPagamento:
         assert "data_no_futuro" in _codigos(avisos_pagamento(dados, {"status": "aberta", "saldo": "275"}, hoje=HOJE))
 
     def test_bloqueantes_conhecidos(self):
-        assert set(AVISOS_BLOQUEANTES) == {"cobranca_nao_identificada", "cobranca_paga", "cobranca_cancelada", "valor_acima_do_saldo"}
+        assert set(AVISOS_BLOQUEANTES) == {"cobranca_nao_identificada", "cobranca_paga", "cobranca_cancelada", "valor_acima_do_saldo", "veiculo_nao_identificado"}
 
 
 class TestAvisosDespesa:
@@ -153,6 +153,7 @@ class TestAvisosDespesa:
     def test_veiculo_informado_mas_nao_encontrado(self):
         dados = self._dados(moto_id=COBRANCA)
         assert _codigos(avisos_despesa(dados, None)) == ["veiculo_nao_identificado"]
+        assert not pode_aprovar(avisos_despesa(dados, None))  # não dá para gravar despesa de um veículo que não existe
         assert avisos_despesa(dados, {"placa": "ABC1D23"}) == []
 
     def test_duplicada(self):

@@ -33,7 +33,7 @@ TAMANHO_TRECHO = 600
 TAMANHO_CHAVE = 120
 
 # Com estes avisos a pendência não pode ser aprovada como está: o dono corrige (editar e aprovar) ou recusa.
-AVISOS_BLOQUEANTES = ("cobranca_nao_identificada", "cobranca_paga", "cobranca_cancelada", "valor_acima_do_saldo")
+AVISOS_BLOQUEANTES = ("cobranca_nao_identificada", "cobranca_paga", "cobranca_cancelada", "valor_acima_do_saldo", "veiculo_nao_identificado")
 
 _UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 _PLACA = re.compile(r"\b([A-Za-z]{3})-?(\d[A-Za-z0-9]\d{2})\b")
