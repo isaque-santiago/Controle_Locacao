@@ -640,9 +640,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .filtro-opcoes {left: 0; right: 0;}
   .pendencia {grid-template-columns: 44px minmax(0, 1fr);} .pendencia .btn {grid-column: 1 / -1;}
 }
-/* Celulares estreitos: KPIs em uma coluna, para o texto não quebrar letra a letra */
-@media (max-width: 519px) {
-  .kpis, .kpis.kpis-5 {grid-template-columns: minmax(0, 1fr);}
+/* Celulares muito estreitos (< 360 px): KPIs em uma coluna, para o texto não quebrar letra a letra */
+@media (max-width: 359px) {
+  .kpis, .kpis.kpis-5, .kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}
   .kpis.kpis-5 .kpi:last-child {grid-column: auto;}
 }
 @media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}
@@ -843,8 +843,8 @@ form.htmx-request button[type="submit"]::after, form[data-enviando] button[type=
 /* Sucesso: o app.js marca o campo conferido (obrigatório/formato) ao sair dele; o ícone fica no fim do rótulo */
 .campo.ok .entrada {border-color: var(--sucesso);}
 .campo > label .campo-ok {display: none;}
-.campo.ok > label {display: flex; align-items: center; justify-content: space-between; gap: var(--e2);}
-.campo.ok > label .campo-ok {display: inline-block; width: 16px; height: 16px; color: var(--sucesso-texto);}
+.campo.ok > label {display: flex; align-items: center; gap: var(--e1);}
+.campo.ok > label .campo-ok {display: inline-block; width: 16px; height: 16px; margin-left: auto; color: var(--sucesso-texto);}
 .lateral-rodape form {display: contents;}
 
 /* Indicador de carregamento do HTMX (as classes são adicionadas pela biblioteca) */
@@ -1513,4 +1513,39 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   ::view-transition-new(root) {animation: 170ms ease-out both transicao-entra;}
   @keyframes transicao-sai {to {opacity: 0;}}
   @keyframes transicao-entra {from {opacity: 0;}}
+}
+
+/* ---------- Celular: sensação de aplicativo (Fase 6) ---------- */
+@media (max-width: 719px) {
+  /* KPIs em grade de duas colunas; o último, quando sobra sozinho, ocupa a linha inteira */
+  .kpis, .kpis.kpis-3, .kpis.kpis-5 {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3);}
+  .kpis > .kpi:last-child:nth-child(odd), .kpis > .kpi.kpi-texto {grid-column: 1 / -1;}
+  .kpis .kpi {padding: var(--e3);}
+  .kpis .kpi dd small {font-size: 12px;}
+  /* Ações do cabeçalho (ficha, listas): botões compactos lado a lado em vez de uma pilha de botões de largura total */
+  .cabecalho .acoes {display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--e2); width: 100%;}
+  .cabecalho .acoes .btn {min-height: var(--alvo); padding: 0 var(--e3); font-size: 14px; justify-content: center;}
+  .cabecalho .acoes .filtro-pagina, .cabecalho .acoes .filtro-col {grid-column: 1 / -1;}
+  /* "Opções" do Dashboard: botão pequeno à direita, não uma linha inteira */
+  .cabecalho .acoes .opcoes-dash {grid-column: auto; justify-self: end; width: auto;}
+  .cabecalho:has(.opcoes-dash) {flex-wrap: nowrap; align-items: flex-end;}
+  .cabecalho:has(.opcoes-dash) .acoes {display: block; width: auto; flex: none;}
+  .opcoes-dash summary {width: auto; min-width: var(--alvo); padding: 0 var(--e3); font-size: 14px;}
+  .opcoes-dash .filtro-opcoes {left: auto; right: 0; min-width: 14rem;}
+  /* Aba Dinheiro: o título ocupa a linha e o seletor de mês vem embaixo, na largura toda (sem cortar na borda) */
+  .cartao-cab:has(.seletor-mes) {flex-wrap: wrap; align-items: stretch;}
+  .cartao-cab:has(.seletor-mes) h2 {flex: 1 1 100%;}
+  .cartao-cab .acoes.seletor-mes {width: 100%; flex-wrap: wrap; gap: var(--e2);}
+  .seletor-mes .mes-segmentado {display: flex; flex: 1 1 auto; min-width: 0; width: 100%;}
+  .seletor-mes .mes-campo {flex: 1 1 auto; min-width: 0; width: auto;}
+  /* Áreas seguras (entalhe e barra do sistema) também nas laterais, em formulário de tela cheia e na barra inferior */
+  dialog.cheio .dialogo-cab, dialog.cheio .dialogo-corpo, dialog.cheio .dialogo-rodape, dialog.cheio .form-nav {padding-left: max(var(--e4), env(safe-area-inset-left)); padding-right: max(var(--e4), env(safe-area-inset-right));}
+  dialog.cheio .dialogo-cab {padding-top: calc(var(--e3) + env(safe-area-inset-top));}
+  /* Nada de rolagem horizontal na página */
+  html, body {overflow-x: clip;}
+  /* Formulário: rótulo e campo com folga para o toque; entrada em 16px evita o zoom automático do iOS */
+  .entrada {font-size: 16px;}
+  .campo.caixa label {min-height: var(--alvo);}
+  .form-secao {padding: var(--e3) var(--e3) var(--e4);}
+  .form-secao-grade {gap: var(--e4);}
 }
