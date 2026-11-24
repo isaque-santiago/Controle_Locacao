@@ -165,6 +165,18 @@ Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fas
   - **Microinterações**: faixa de foco na linha sob o ponteiro, resposta ao clique em botões, chips e cartões.
   - **Transição entre páginas**: View Transitions entre documentos (`@view-transition`), com o menu lateral e as barras parados; navegador sem suporte navega normalmente.
   - Testes: `tests/test_animacoes_feedback.py` (contratos do CSS/JS/templates). A conferência visual no app logado é manual.
+- **Formulários e celular** (redesign, Fase 6; CSS em `src/web/estilos/app.css`, JS em `static/js/app.js`):
+  - **Seções**: o macro `secao(titulo, descricao=None)` (`componentes/macros.html`) agrupa campos com o mesmo traço amarelo dos grupos da ficha e uma grade de
+    duas colunas (uma no celular); `largo=True` ocupa a linha inteira. Aplicado em veículo (Identificação, Características, Aquisição), cliente, documento, dívida e
+    compra parcelada, sem mudar campos, nomes, rotas nem validações. Texto de ajuda em 13 px com o contraste do texto secundário.
+  - **Validação imediata**: o `app.js` põe `novalidate` nos formulários com `.formulario` ou `#form-dialogo` e confere o óbvio (obrigatório, e-mail, data, padrão,
+    tamanho) ao sair do campo e ao enviar: borda, ícone e mensagem (`aria-invalid` e `aria-describedby`; o campo certo ganha borda e ícone de sucesso), foco no
+    primeiro inválido e o envio não sai. O erro some assim que o valor passa na conferência. As regras de verdade continuam no servidor (`src/domain`).
+  - **Celular (< 720 px)**: no formulário em tela cheia, uma faixa mostra "Seção X de Y", barra de progresso e um botão por seção (ponto vermelho nas seções com
+    erro), com o rodapé fixo; KPIs em duas colunas (uma só abaixo de 360 px; o último ímpar ocupa a linha); botões do cabeçalho/ficha em grade compacta; "Opções"
+    do Dashboard pequeno à direita; na aba Dinheiro o título ocupa a linha e o seletor de mês, a largura toda; áreas seguras laterais/topo no formulário e campos em
+    16 px (sem zoom do iOS); `overflow-x: clip` na página. Telefone usa `type="tel"`; números e valores já usam `inputmode`.
+  - Testes: `tests/test_formularios_celular.py`. A conferência visual no app logado (gaveta de pré-visualização e cartões recolhíveis no celular incluídos) é do dono.
 - **Formulário em diálogo** (`macros.form_dialogo`, `rotas/motos_formularios.py`): o diálogo `#dlg-form` abre ao
   chegar o conteúdo; a validação é no servidor, campo a campo (`src/domain/formulario_moto.py`): com erro o mesmo
   formulário volta com a mensagem ao lado do campo; com sucesso vem `HX-Redirect` e um aviso de confirmação

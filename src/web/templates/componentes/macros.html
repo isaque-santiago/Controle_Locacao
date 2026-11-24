@@ -36,8 +36,20 @@
     {%- if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %} {{ extra|safe }}>
   {%- if prefixo %}</div>{% endif %}
   {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
-  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ icone('alerta') }}<span>{{ erro }}</span></small>{% endif %}
 </div>
+{%- endmacro %}
+
+{# Seção de um formulário: título com o traço amarelo (como os grupos da ficha do veículo) e a grade dos campos (2 colunas; 1 no celular).
+   Os campos vêm do bloco {% call %}; dentro dele, `largo=True` ocupa a linha inteira. No celular, em tela cheia, o app.js lê as
+   seções para mostrar o progresso e a navegação rápida. Use dentro de .formulario (diálogo ou página). #}
+{% macro secao(titulo, descricao=None) -%}
+{%- set sid = "sec-" ~ (titulo|lower|replace(" ", "-")|replace("/", "-")) -%}
+<section class="form-secao largo" data-secao aria-labelledby="{{ sid }}">
+  <h3 id="{{ sid }}">{{ titulo }}</h3>
+  {% if descricao %}<p class="form-secao-desc">{{ descricao }}</p>{% endif %}
+  <div class="form-secao-grade">{{ caller() }}</div>
+</section>
 {%- endmacro %}
 
 {# Lista suspensa. opcoes: lista de (valor, rotulo). #}
@@ -47,7 +59,7 @@
   <select class="entrada" id="{{ id }}" name="{{ nome or id }}"{% if erro %} aria-invalid="true" aria-describedby="{{ id }}-erro"{% endif %}>
     {% for valor, texto in opcoes %}<option value="{{ valor }}"{{ ' selected' if valor == selecionado else '' }}>{{ texto }}</option>{% endfor %}
   </select>
-  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ icone('alerta') }}<span>{{ erro }}</span></small>{% endif %}
 </div>
 {%- endmacro %}
 
@@ -59,7 +71,7 @@
   <textarea class="entrada area" id="{{ id }}" name="{{ nome or id }}" rows="{{ linhas }}"{% if maximo %} maxlength="{{ maximo }}"{% endif %}
     {%- if erro %} aria-invalid="true"{% endif %}{% if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %}>{{ valor }}</textarea>
   {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
-  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ icone('alerta') }}<span>{{ erro }}</span></small>{% endif %}
 </div>
 {%- endmacro %}
 
@@ -69,7 +81,7 @@
 <div class="campo caixa{{ ' com-erro' if erro else '' }}{{ ' largo' if largo else '' }}">
   <label for="{{ id }}"><input type="checkbox" id="{{ id }}" name="{{ nome or id }}"{{ ' checked' if marcada else '' }}{% if erro %} aria-invalid="true"{% endif %}{% if descricao.strip() %} aria-describedby="{{ descricao.strip() }}"{% endif %}> {{ rotulo }}</label>
   {% if ajuda %}<small id="{{ id }}-ajuda">{{ ajuda }}</small>{% endif %}
-  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ erro }}</small>{% endif %}
+  {% if erro %}<small class="msg-erro" id="{{ id }}-erro">{{ icone('alerta') }}<span>{{ erro }}</span></small>{% endif %}
 </div>
 {%- endmacro %}
 

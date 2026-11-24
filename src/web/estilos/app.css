@@ -264,7 +264,6 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 @media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
-.campo small {color: var(--texto-3); font-size: 12px;}
 .entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--borda-campo); background: var(--superficie-elevada);}
 .entrada:hover {border-color: var(--texto-2);}
 .entrada:focus {outline: 0; border-color: var(--foco); box-shadow: 0 0 0 4px var(--foco-halo);}
@@ -512,6 +511,32 @@ table.dados {width: 100%; border-collapse: collapse;}
 .passo.atual {border-top-color: var(--marca); color: var(--texto); font-weight: 600;}
 .formulario {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e4);}
 .formulario .largo {grid-column: 1 / -1;}
+/* Seções do formulário (macro `secao`): mesmo traço amarelo dos grupos da ficha; os campos ficam numa grade própria */
+.form-secao {min-width: 0; padding: var(--e4); background: var(--superficie-hover); border: 1px solid var(--linha-sutil); border-radius: var(--raio-md); scroll-margin-top: var(--e3);}
+.form-secao > h3 {display: flex; align-items: center; gap: var(--e2); margin: 0 0 var(--e3); color: var(--texto-2); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;}
+.form-secao > h3::before {content: ""; flex: none; width: 3px; height: 14px; border-radius: var(--raio-pill); background: var(--marca);}
+.form-secao-desc {margin: calc(var(--e1) * -1) 0 var(--e3); color: var(--texto-2); font-size: 13.5px;}
+.form-secao-grade {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e4);}
+.form-secao-grade .largo {grid-column: 1 / -1;}
+.form-obrigatorio {margin: 0; color: var(--texto-2); font-size: 13px;}
+/* Celular, formulário em tela cheia: faixa de progresso e navegação entre seções (montada pelo app.js) */
+.form-nav {display: none;}
+@media (max-width: 719px) {
+  .form-nav {display: grid; gap: var(--e2); padding: var(--e2) var(--e4) var(--e3); border-bottom: 1px solid var(--linha); background: var(--superficie-elevada);}
+  .form-nav-estado {margin: 0; font-size: 13px; font-weight: 600; color: var(--texto);}
+  .form-nav progress {appearance: none; -webkit-appearance: none; width: 100%; height: 4px; border: 0; border-radius: var(--raio-pill); background: var(--linha); overflow: hidden;}
+  .form-nav progress::-webkit-progress-bar {background: var(--linha);}
+  .form-nav progress::-webkit-progress-value {background: var(--marca); border-radius: var(--raio-pill);}
+  .form-nav progress::-moz-progress-bar {background: var(--marca); border-radius: var(--raio-pill);}
+  .form-nav-lista {display: flex; gap: var(--e2); overflow-x: auto; margin: 0 calc(var(--e4) * -1); padding: 0 var(--e4); scrollbar-width: none;}
+  .form-nav-lista::-webkit-scrollbar {display: none;}
+  .form-nav-item {flex: none; position: relative; min-height: 36px; padding: 0 var(--e3); border: 1px solid var(--borda-campo); border-radius: var(--raio-pill); background: transparent; color: var(--texto-2); font: 500 13px var(--fonte-ui); cursor: pointer;}
+  .form-nav-item[aria-current="step"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto, #fff);}
+  .form-nav-item.tem-erro::after {content: ""; position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: var(--perigo); border: 2px solid var(--superficie-elevada);}
+  dialog.cheio .dialogo-corpo {scroll-padding-top: var(--e3);}
+}
+/* Texto de ajuda: legível (13px, contraste do texto secundário) */
+.campo small {color: var(--texto-2); font-size: 13px; line-height: 1.4;}
 .contrato-layout {display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--e4); align-items: start;}
 .resumo {position: sticky; top: var(--e5);}
 .resumo dl {margin: 0; display: grid; gap: var(--e3);}
@@ -597,7 +622,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .hoje-lista .dados td:nth-child(4) {grid-column: 1; grid-row: 3; font-size: 17px; font-weight: 600; color: var(--texto);}
   .hoje-lista .dados td.acao {grid-column: 2; grid-row: 3; padding: 0; border-top: 0; justify-self: end;}
   .hoje-lista .dados td.acao .btn {width: auto; min-width: 96px;}
-  .formulario {grid-template-columns: 1fr;}
+  .formulario, .form-secao-grade {grid-template-columns: 1fr;}
   .passo span {display: none;} .passo.atual span {display: block;}
   .passos {grid-template-columns: repeat(4, 1fr);}
   .cartao {padding: var(--e4);}
@@ -615,9 +640,9 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .filtro-opcoes {left: 0; right: 0;}
   .pendencia {grid-template-columns: 44px minmax(0, 1fr);} .pendencia .btn {grid-column: 1 / -1;}
 }
-/* Celulares estreitos: KPIs em uma coluna, para o texto não quebrar letra a letra */
-@media (max-width: 519px) {
-  .kpis, .kpis.kpis-5 {grid-template-columns: minmax(0, 1fr);}
+/* Celulares muito estreitos (< 360 px): KPIs em uma coluna, para o texto não quebrar letra a letra */
+@media (max-width: 359px) {
+  .kpis, .kpis.kpis-5, .kpis.kpis-3 {grid-template-columns: minmax(0, 1fr);}
   .kpis.kpis-5 .kpi:last-child {grid-column: auto;}
 }
 @media (prefers-reduced-motion: reduce) {* {transition: none !important; animation: none !important;}}
@@ -811,7 +836,15 @@ form.htmx-request button[type="submit"], form[data-enviando] button[type="submit
 form.htmx-request button[type="submit"]::after, form[data-enviando] button[type="submit"]::after {content: ""; display: inline-block; width: 14px; height: 14px; margin-left: var(--e2); border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: girar .7s linear infinite;}
 @keyframes girar {to {transform: rotate(360deg);}}
 .campo.com-erro .entrada {border-color: var(--perigo);}
-.campo .msg-erro {color: var(--perigo-texto); font-size: 12.5px;}
+.campo .msg-erro {display: flex; align-items: flex-start; gap: var(--e1); color: var(--perigo-texto); font-size: 13px; font-weight: 500;}
+.campo .msg-erro .i {width: 15px; height: 15px; flex: none; margin-top: 2px;}
+.campo.com-erro .entrada {box-shadow: 0 0 0 1px var(--perigo);}
+.campo.com-erro .entrada:focus {box-shadow: 0 0 0 4px var(--perigo-fundo, var(--foco-halo)), 0 0 0 1px var(--perigo);}
+/* Sucesso: o app.js marca o campo conferido (obrigatório/formato) ao sair dele; o ícone fica no fim do rótulo */
+.campo.ok .entrada {border-color: var(--sucesso);}
+.campo > label .campo-ok {display: none;}
+.campo.ok > label {display: flex; align-items: center; gap: var(--e1);}
+.campo.ok > label .campo-ok {display: inline-block; width: 16px; height: 16px; margin-left: auto; color: var(--sucesso-texto);}
 .lateral-rodape form {display: contents;}
 
 /* Indicador de carregamento do HTMX (as classes são adicionadas pela biblioteca) */
@@ -1480,4 +1513,46 @@ dialog.atalhos {width: min(30rem, calc(100vw - 32px));}
   ::view-transition-new(root) {animation: 170ms ease-out both transicao-entra;}
   @keyframes transicao-sai {to {opacity: 0;}}
   @keyframes transicao-entra {from {opacity: 0;}}
+}
+
+/* ---------- Celular: sensação de aplicativo (Fase 6) ---------- */
+@media (max-width: 719px) {
+  /* KPIs em grade de duas colunas; o último, quando sobra sozinho, ocupa a linha inteira */
+  .kpis, .kpis.kpis-3, .kpis.kpis-5 {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e3);}
+  .kpis > .kpi:last-child:nth-child(odd), .kpis > .kpi.kpi-texto {grid-column: 1 / -1;}
+  .kpis .kpi {padding: var(--e3);}
+  /* KPI com legenda de faixas (Em atraso) precisa da linha inteira; os vizinhos preenchem o vazio */
+  .kpis {grid-auto-flow: dense;}
+  .kpis > .kpi:has(.faixas-legenda) {grid-column: 1 / -1;}
+  .kpis .kpi dd small {font-size: 12px;}
+  /* Ações do cabeçalho (ficha, listas): botões compactos lado a lado em vez de uma pilha de botões de largura total */
+  .cabecalho .acoes {display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: var(--e2); width: 100%;}
+  .cabecalho .acoes .btn {min-height: var(--alvo); padding: 0 var(--e3); font-size: 14px; justify-content: center;}
+  .cabecalho .acoes .filtro-pagina, .cabecalho .acoes .filtro-col {grid-column: 1 / -1;}
+  /* "Opções" do Dashboard: botão pequeno à direita, não uma linha inteira */
+  .cabecalho .acoes .opcoes-dash {grid-column: auto; justify-self: end; width: auto;}
+  .cabecalho:has(.opcoes-dash) {flex-wrap: nowrap; align-items: flex-end;}
+  .cabecalho:has(.opcoes-dash) .acoes {display: block; width: auto; flex: none;}
+  .opcoes-dash summary {width: auto; min-width: var(--alvo); padding: 0 var(--e3); font-size: 14px;}
+  .opcoes-dash .filtro-opcoes {left: auto; right: 0; min-width: 14rem;}
+  /* Aba Dinheiro: o título ocupa a linha e o seletor de mês vem embaixo, na largura toda (sem cortar na borda) */
+  .cartao-cab:has(.seletor-mes) {flex-wrap: wrap; align-items: stretch;}
+  .cartao-cab:has(.seletor-mes) h2 {flex: 1 1 100%;}
+  .cartao-cab .acoes.seletor-mes {width: 100%; flex-wrap: wrap; gap: var(--e2);}
+  .seletor-mes .mes-segmentado {display: flex; flex: 1 1 auto; min-width: 0; width: 100%;}
+  .seletor-mes .mes-campo {flex: 1 1 auto; min-width: 0; width: auto;}
+  /* Áreas seguras (entalhe e barra do sistema) também nas laterais, em formulário de tela cheia e na barra inferior */
+  dialog.cheio .dialogo-cab, dialog.cheio .dialogo-corpo, dialog.cheio .dialogo-rodape, dialog.cheio .form-nav {padding-left: max(var(--e4), env(safe-area-inset-left)); padding-right: max(var(--e4), env(safe-area-inset-right));}
+  dialog.cheio .dialogo-cab {padding-top: calc(var(--e3) + env(safe-area-inset-top));}
+  /* Alvos de toque de 44 px: título do cartão recolhível, links dentro das linhas e botões compactos */
+  .recolhe-gatilho {min-height: var(--alvo);}
+  .tabela-caixa .dados td a:not(.btn):not(.ordenar) {display: inline-flex; align-items: center; min-height: var(--alvo);}
+  .btn-compacto, .acoes-linha .btn {min-height: var(--alvo);}
+  /* Nada de rolagem horizontal na página */
+  html, body {overflow-x: clip;}
+  /* Formulário: rótulo e campo com folga para o toque; entrada em 16px evita o zoom automático do iOS */
+  .entrada {font-size: 16px;}
+  .campo.caixa label {min-height: var(--alvo);}
+  .form-secao {padding: var(--e3) var(--e3) var(--e4);}
+  .form-secao-grade {gap: var(--e4);}
 }
