@@ -264,7 +264,6 @@ html:not(.com-marcador) .nav-item[aria-current="page"]::before {content: ""; pos
 @media (max-width: 959px) {.portal-acesso {grid-template-columns: 1fr;} .portal-acesso-bloco {gap: var(--e3);}}
 .campo {display: grid; gap: var(--e2); min-width: 0; align-content: start;}
 .campo > label, .campo > .rotulo {font-weight: 500; font-size: 13px;}
-.campo small {color: var(--texto-3); font-size: 12px;}
 .entrada {width: 100%; min-height: var(--alvo); padding: 0 var(--e3); border-radius: var(--raio-campo); border: 1px solid var(--borda-campo); background: var(--superficie-elevada);}
 .entrada:hover {border-color: var(--texto-2);}
 .entrada:focus {outline: 0; border-color: var(--foco); box-shadow: 0 0 0 4px var(--foco-halo);}
@@ -512,6 +511,16 @@ table.dados {width: 100%; border-collapse: collapse;}
 .passo.atual {border-top-color: var(--marca); color: var(--texto); font-weight: 600;}
 .formulario {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e4);}
 .formulario .largo {grid-column: 1 / -1;}
+/* Seções do formulário (macro `secao`): mesmo traço amarelo dos grupos da ficha; os campos ficam numa grade própria */
+.form-secao {min-width: 0; padding: var(--e4); background: var(--superficie-hover); border: 1px solid var(--linha-sutil); border-radius: var(--raio-md); scroll-margin-top: var(--e3);}
+.form-secao > h3 {display: flex; align-items: center; gap: var(--e2); margin: 0 0 var(--e3); color: var(--texto-2); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;}
+.form-secao > h3::before {content: ""; flex: none; width: 3px; height: 14px; border-radius: var(--raio-pill); background: var(--marca);}
+.form-secao-desc {margin: calc(var(--e1) * -1) 0 var(--e3); color: var(--texto-2); font-size: 13.5px;}
+.form-secao-grade {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e4);}
+.form-secao-grade .largo {grid-column: 1 / -1;}
+.form-obrigatorio {margin: 0; color: var(--texto-2); font-size: 13px;}
+/* Texto de ajuda: legível (13px, contraste do texto secundário) */
+.campo small {color: var(--texto-2); font-size: 13px; line-height: 1.4;}
 .contrato-layout {display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--e4); align-items: start;}
 .resumo {position: sticky; top: var(--e5);}
 .resumo dl {margin: 0; display: grid; gap: var(--e3);}
@@ -597,7 +606,7 @@ dialog form {display: flex; flex-direction: column; max-height: calc(100dvh - 32
   .hoje-lista .dados td:nth-child(4) {grid-column: 1; grid-row: 3; font-size: 17px; font-weight: 600; color: var(--texto);}
   .hoje-lista .dados td.acao {grid-column: 2; grid-row: 3; padding: 0; border-top: 0; justify-self: end;}
   .hoje-lista .dados td.acao .btn {width: auto; min-width: 96px;}
-  .formulario {grid-template-columns: 1fr;}
+  .formulario, .form-secao-grade {grid-template-columns: 1fr;}
   .passo span {display: none;} .passo.atual span {display: block;}
   .passos {grid-template-columns: repeat(4, 1fr);}
   .cartao {padding: var(--e4);}
@@ -811,7 +820,15 @@ form.htmx-request button[type="submit"], form[data-enviando] button[type="submit
 form.htmx-request button[type="submit"]::after, form[data-enviando] button[type="submit"]::after {content: ""; display: inline-block; width: 14px; height: 14px; margin-left: var(--e2); border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; vertical-align: -2px; animation: girar .7s linear infinite;}
 @keyframes girar {to {transform: rotate(360deg);}}
 .campo.com-erro .entrada {border-color: var(--perigo);}
-.campo .msg-erro {color: var(--perigo-texto); font-size: 12.5px;}
+.campo .msg-erro {display: flex; align-items: flex-start; gap: var(--e1); color: var(--perigo-texto); font-size: 13px; font-weight: 500;}
+.campo .msg-erro .i {width: 15px; height: 15px; flex: none; margin-top: 2px;}
+.campo.com-erro .entrada {box-shadow: 0 0 0 1px var(--perigo);}
+.campo.com-erro .entrada:focus {box-shadow: 0 0 0 4px var(--perigo-fundo, var(--foco-halo)), 0 0 0 1px var(--perigo);}
+/* Sucesso: o app.js marca o campo conferido (obrigatório/formato) ao sair dele; o ícone fica no fim do rótulo */
+.campo.ok .entrada {border-color: var(--sucesso);}
+.campo > label .campo-ok {display: none;}
+.campo.ok > label {display: flex; align-items: center; justify-content: space-between; gap: var(--e2);}
+.campo.ok > label .campo-ok {display: inline-block; width: 16px; height: 16px; color: var(--sucesso-texto);}
 .lateral-rodape form {display: contents;}
 
 /* Indicador de carregamento do HTMX (as classes são adicionadas pela biblioteca) */
