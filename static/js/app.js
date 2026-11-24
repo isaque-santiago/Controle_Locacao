@@ -204,6 +204,56 @@
     }
   });
 
+  // ---- Busca numa lista suspensa: <input data-filtrar-opcoes="id-do-select" data-filtrar-aviso="id-do-texto-de-contagem"> ----
+  // Mostra só as opções que têm todas as palavras digitadas (sem diferenciar maiúsculas nem acentos). A opção vazia e a opção
+  // que veio selecionada do servidor ficam sempre, para o formulário não mudar de valor sem querer; o que a pessoa escolher à mão
+  // também fica. Com uma única opção encontrada, ela é selecionada. As opções saem do <select> e voltam (em vez de `hidden`,
+  // que o Safari do iPhone ignora).
+  var estadoBusca = new WeakMap();
+  function semAcento(texto) { return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function filtrarOpcoes(campo) {
+    var lista = document.getElementById(campo.getAttribute('data-filtrar-opcoes'));
+    if (!lista) return;
+    if (!estadoBusca.has(lista)) {
+      var inicial = Array.prototype.filter.call(lista.options, function (o) { return o.defaultSelected; })[0];
+      estadoBusca.set(lista, { todas: Array.prototype.slice.call(lista.options), original: inicial ? inicial.value : '', auto: null });
+    }
+    var e = estadoBusca.get(lista);
+    var atual = lista.value;
+    var manual = (atual !== '' && atual !== e.original && atual !== e.auto) ? atual : null;  // escolhida pela pessoa
+    var palavras = semAcento(campo.value).split(/\s+/).filter(Boolean);
+    function casa(o) {
+      if (o.value === '') return false;
+      var texto = semAcento(o.text);
+      return palavras.every(function (p) { return texto.indexOf(p) !== -1; });
+    }
+    var encontradas = e.todas.filter(casa);
+    var visiveis = e.todas.filter(function (o) { return o.value === '' || o.value === e.original || o.value === manual || casa(o); });
+    while (lista.options.length) lista.remove(0);
+    visiveis.forEach(function (o) { lista.add(o); });
+    if (manual) {
+      lista.value = manual;
+    } else if (palavras.length && encontradas.length === 1) {
+      lista.value = encontradas[0].value;
+      e.auto = lista.value;
+    } else {
+      lista.value = e.original;
+      e.auto = null;
+    }
+    var aviso = document.getElementById(campo.getAttribute('data-filtrar-aviso'));
+    if (aviso) {
+      var total = e.todas.filter(function (o) { return o.value !== ''; }).length;
+      aviso.textContent = palavras.length ? (encontradas.length + ' de ' + total + ' grupos encontrados.') : '';
+    }
+  }
+  document.addEventListener('input', function (ev) {
+    if (ev.target.matches && ev.target.matches('[data-filtrar-opcoes]')) filtrarOpcoes(ev.target);
+  });
+  // Enter no campo de busca não envia o formulário (a busca é só para achar a opção).
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-filtrar-opcoes]')) e.preventDefault();
+  });
+
   // ---- Abas: clique e setas, Home e End ----
   // Abas com data-remoto carregam o painel pelo HTMX (um painel só): o JS não esconde painéis e,
   // ao navegar por setas, só move o foco; Enter ou Espaço (clique) é que abre a aba.
