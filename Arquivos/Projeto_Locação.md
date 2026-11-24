@@ -1258,7 +1258,9 @@ Continuação do item 7 da seção 23. O protocolo de [Sincronizacao_Chats.md](S
 3. **Comprovantes Pix dos grupos de WhatsApp** (leitura de imagem por IA) ficam para depois, alimentando a **mesma caixa**. Isso exigiria conta e chave da API da Anthropic (cobrança à parte; estimativa de centavos por comprovante) e o envio de dados pessoais a ela.
 4. Custo extra do conector: nenhum conhecido (rota no app que já roda na VPS; cada chamada consome um pouco do limite do plano do claude.ai). A confirmar na conta do dono.
 
-### 24.2 Princípio: o chat só propõe, o dono confirma
+### 24.2 Princípio: o chat só propõe, o dono confirma (**revisto em 24/11/2026: o chat grava direto e a dúvida se resolve na conversa, ver 24.7b**)
+
+> **Revisão de 24/11/2026:** a fila de aprovação foi trocada por gravação direta com a dúvida resolvida na conversa (seção 24.7b). O que segue era o desenho original e hoje vale só para o **histórico e as propostas manuais**; as pendências deixam de ser uma fila a esvaziar.
 
 O chat **nunca grava no financeiro**. Ele cria uma **pendência**; o dono a aprova numa tela do app. Isso limita o estrago de um erro do modelo ou de um texto com instruções escondidas, porque nada vale sem a confirmação. O conector não tem ação de aprovar, editar nem apagar.
 
@@ -1299,6 +1301,36 @@ Injeção de prompt contida pelo princípio 24.2; usuário de serviço sem acess
 1. **Ordem dos tipos:** começam **pagamento e despesa**. Depois, na ordem que o dono decidir: dívidas, manutenções, contratos, locatários e o resto. O desenho de `pendencias_lancamento` já comporta novos `tipo`.
 2. **Identificar o cliente:** por **nome, CPF parcial e placa**, usados em conjunto; se a combinação não puder ser feita, só pelo **CPF parcial**. O conector devolve ao chat só esses campos (sem CPF completo).
 3. **Quem aprova:** **todo usuário dono**, ou seja, o dono e as duas pessoas do financeiro. Hoje só um é "dono" no sistema: as duas pessoas do financeiro precisam entrar na tabela `administradores` (migration `20261105120000`; README, "Administradores") antes de a tela de Pendências ser usada por elas. Como `is_dono()` vale para todos, os três veem e aprovam as mesmas pendências; o registro de **quem aprovou** (`decidido_por`) fica obrigatório.
+
+### 24.7b Decisão do dono (24/11/2026): o chat grava direto e a dúvida se resolve na conversa
+
+O dono achou a fila de aprovação trabalhosa (aprovar no chat e de novo no app) e pediu ferramentas próprias no conector (cadastrar cliente, registrar pagamento e assim por diante), **sem o trabalho da fila**. Primeiro foi escolhido um híbrido com a fila como exceção; o dono então esclareceu que quer **tirar a fila do caminho**. **Decisão final:** gravação direta, e a dúvida volta para o chat.
+
+**Por quê:** quem usa o conector já entrou como dono e autorizou, então a fila não protege contra pessoa não autorizada, só contra erro do modelo e instrução escondida em texto colado. O claude.ai também pede confirmação a cada ação de um conector (a menos que o usuário clique em «Sempre permitir»), embora o servidor não possa impor isso.
+
+| Situação | O que a ferramenta faz |
+|---|---|
+| Cadastrar cliente ou veículo | **Grava direto**. CPF e placa repetidos são barrados pelo banco |
+| Pagamento ou despesa **limpos** (cobrança identificada com certeza, valor igual ao saldo, sem duplicidade, abaixo do teto) | **Grava direto** |
+| **Dúvida** (cliente ou cobrança ambíguos, pagamento parcial, possível duplicada, veículo sem cadastro) | **Não grava.** Devolve ao Claude o que está em dúvida e as opções; o Claude pergunta ao usuário **na conversa** e chama de novo com a resposta |
+| Acima do teto, cobrança paga ou cancelada, valor acima do saldo | **Não grava** e orienta a registrar pelo app |
+| Editar ou apagar | **Nunca** pelo conector |
+
+**Tetos (decididos em 24/11/2026):** **R$ 10.000,00** por pagamento e **R$ 5.000,00** por despesa. Acima disso a ferramenta não grava. O limite absoluto de uma proposta no banco continua sendo R$ 20.000,00 (pagamento) e R$ 50.000,00 (despesa), e os tetos de gravação direta ficam **dentro** dele.
+
+**A tabela `pendencias_lancamento` passa a ser o histórico e a auditoria:** cada gravação direta registra quem pediu, quando, por qual chat e o trecho citado, com `decisao_automatica`. Não há fila para o dono esvaziar. O estado `pendente` fica sem uso rotineiro (as RPCs de aprovar e recusar continuam existindo, para o caso de uma proposta manual ou futura).
+
+**Risco que continua e como é contido:** um texto malicioso colado no chat poderia gerar um pagamento «limpo» falso (que daria uma cobrança como paga e esconderia um débito). Contenção: tetos, **desfazer** pelo app (só dono, só os de decisão automática, com janela de tempo), histórico completo, e o alerta do Dashboard «N lançamentos gravados pelo chat nos últimos 7 dias» para alguém conferir sem entrar em fila nenhuma.
+
+**Como fica no banco e no conector (por fazer):**
+- Migration nova: `pendencias_lancamento.decisao_automatica`; RPCs `rpc_conector_registrar_pagamento`, `rpc_conector_registrar_despesa`, `rpc_conector_cadastrar_cliente`, `rpc_conector_cadastrar_veiculo` (só do usuário de serviço ou de dono; cada uma valida tudo e **recusa com a explicação da dúvida** em vez de criar pendência; cadastro de cliente valida o CPF e aceita a convenção de CPF provisório) e `rpc_pendencia_desfazer` (só dono).
+- Conector: ferramentas `cadastrar_cliente`, `cadastrar_veiculo`, `registrar_pagamento`, `registrar_despesa`, mais as de consulta (`consultar_cobrancas_abertas`, `buscar_veiculos`, `listar_ultimos_lancamentos`). O banco continua limitando o usuário de serviço a essas RPCs.
+
+**Etapas revistas (substituem 3 a 5 da 24.7):**
+3. **Banco da escrita direta:** migration e roteiro SQL das RPCs acima, com os tetos e a recusa explicada. *Aceite:* roteiro passa no dev; pagamento limpo grava e fica no histórico; dúvida não grava e devolve o motivo; acima do teto não grava.
+4. **Ferramentas no conector.** *Aceite:* "Fulano pagou R$ X" no chat, com cobrança identificada e valor igual ao saldo, grava o pagamento; com dúvida, o Claude pergunta e só grava depois da resposta.
+5. **Tela «Lançamentos do chat»:** histórico com **desfazer** e o alerta do Dashboard. Sem fila de aprovação.
+6. **Contratos pelo chat** e as demais entidades (dívidas, manutenções, locatários), com o mesmo critério.
 
 ### 24.8 Pendências de esclarecimento
 
