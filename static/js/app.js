@@ -441,6 +441,208 @@
   var invalidoNaPagina = document.querySelector('main form [aria-invalid="true"]');
   if (invalidoNaPagina) invalidoNaPagina.focus();
 
+  // ---- Formulários: validação imediata e navegação por seções ----
+  // O servidor continua sendo quem decide (e src/domain, as regras): aqui só se antecipa o óbvio (obrigatório e formato) ao sair do
+  // campo (blur) e ao enviar. Os formulários ganham novalidate para que as mensagens sejam as do app, não as bolhas do navegador.
+  // Formulário validado: o do diálogo (#form-dialogo) ou qualquer um com .formulario.
+  var CAMPO_IGNORADO = 'input[type="hidden"], input[type="submit"], input[type="button"], input[type="reset"], input[type="image"]';
+  function formularioValidado(form) {
+    return !!form && form.tagName === 'FORM' && (form.id === 'form-dialogo' || !!form.querySelector('.formulario'));
+  }
+  function campoDoFormulario(el) {
+    if (!el || !el.matches || !el.matches('input, select, textarea') || el.matches(CAMPO_IGNORADO)) return false;
+    return formularioValidado(el.form) && !!el.closest('.campo');
+  }
+  function visivel(el) { return !el.disabled && !el.closest('[hidden]') && el.getClientRects().length > 0; }
+  function mensagemDoCampo(el) {
+    var valor = el.type === 'file' ? (el.files && el.files.length ? 'x' : '') : el.value;
+    if (el.required && (el.type === 'checkbox' ? !el.checked : !String(valor).trim())) {
+      return el.tagName === 'SELECT' ? 'Escolha uma opção.' : (el.type === 'file' ? 'Escolha um arquivo.' : 'Preencha este campo.');
+    }
+    if (!valor) return '';
+    var v = el.validity;
+    if (v.typeMismatch) return el.type === 'email' ? 'Informe um e-mail válido, como nome@exemplo.com.' : 'Confira o formato deste campo.';
+    if (v.badInput) return el.type === 'date' ? 'Informe uma data válida.' : 'Confira o valor deste campo.';
+    if (v.patternMismatch) return el.title || 'Confira o formato deste campo.';
+    if (v.tooLong) return 'Use no máximo ' + el.maxLength + ' caracteres.';
+    if (v.rangeUnderflow || v.rangeOverflow) return 'Confira o valor: está fora do limite permitido.';
+    return '';
+  }
+  function ligarDescricao(el, id, ligar) {
+    var ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(function (x) { return x && x !== id; });
+    if (ligar) ids.push(id);
+    if (ids.length) el.setAttribute('aria-describedby', ids.join(' ')); else el.removeAttribute('aria-describedby');
+  }
+  function iconeSvg(nome, classe) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'i ' + classe);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    var uso = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    uso.setAttribute('href', '#i-' + nome);
+    svg.appendChild(uso);
+    return svg;
+  }
+  function limparEstado(el) {
+    var campo = el.closest('.campo');
+    if (!campo) return;
+    campo.classList.remove('com-erro', 'ok');
+    campo.querySelectorAll('.msg-erro').forEach(function (m) { ligarDescricao(el, m.id, false); m.remove(); });
+    el.removeAttribute('aria-invalid');
+    var ok = campo.querySelector('.campo-ok');
+    if (ok) ok.remove();
+  }
+  function mostrarErro(el, texto) {
+    limparEstado(el);
+    var campo = el.closest('.campo');
+    var id = (el.id || el.name) + '-erro';
+    var msg = document.createElement('small');
+    msg.className = 'msg-erro';
+    msg.id = id;
+    var span = document.createElement('span');
+    span.textContent = texto;
+    msg.appendChild(iconeSvg('alerta', ''));
+    msg.appendChild(span);
+    campo.appendChild(msg);
+    campo.classList.add('com-erro');
+    el.setAttribute('aria-invalid', 'true');
+    ligarDescricao(el, id, true);
+  }
+  function mostrarOk(el) {
+    limparEstado(el);
+    var campo = el.closest('.campo');
+    var rotulo = campo.querySelector(':scope > label');
+    campo.classList.add('ok');
+    if (rotulo && el.type !== 'checkbox') rotulo.appendChild(iconeSvg('check', 'campo-ok'));
+  }
+  // Confere um campo. `final` (saída do campo ou envio): marca também o que está certo. Devolve true se válido.
+  function validarCampo(el, final) {
+    if (!visivel(el)) return true;
+    var texto = mensagemDoCampo(el);
+    if (texto) { mostrarErro(el, texto); return false; }
+    // Sem erro do cliente: só marca "ok" o que tem valor e alguma regra (obrigatório, tipo ou padrão); erro que veio do servidor sai quando o valor é editado
+    if (final) {
+      var temValor = el.type === 'checkbox' ? el.checked : !!String(el.value).trim();
+      var regra = el.required || el.type === 'email' || el.pattern || el.type === 'date';
+      if (temValor && regra && el.type !== 'file') mostrarOk(el); else limparEstado(el);
+    }
+    return true;
+  }
+  function prepararFormularios(raiz) {
+    (raiz || document).querySelectorAll('form').forEach(function (form) {
+      if (!formularioValidado(form)) return;
+      form.noValidate = true;
+      montarNavegacao(form);
+    });
+  }
+  document.addEventListener('focusout', function (e) {
+    if (e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest('[data-fechar]')) return;  // indo para Cancelar/Fechar
+    if (campoDoFormulario(e.target) && e.target.type !== 'checkbox') validarCampo(e.target, true);
+  });
+  // Ao corrigir: o erro some assim que o valor passa na conferência do cliente (o servidor reconfere no envio)
+  function aoEditar(e) {
+    var el = e.target;
+    if (!campoDoFormulario(el)) return;
+    var campo = el.closest('.campo');
+    if (campo.classList.contains('com-erro') && !mensagemDoCampo(el)) { limparEstado(el); atualizarNavegacao(el.form); }
+    else if (campo.classList.contains('ok') && mensagemDoCampo(el)) validarCampo(el, true);
+  }
+  document.addEventListener('input', aoEditar);
+  document.addEventListener('change', aoEditar);
+  // Envio: confere tudo, leva o foco ao primeiro campo inválido e não deixa a requisição sair (captura: antes do HTMX e do bloqueio de clique duplo)
+  document.addEventListener('submit', function (e) {
+    var form = e.target;
+    if (!formularioValidado(form) || (e.submitter && e.submitter.hasAttribute('formnovalidate'))) return;
+    var primeiro = null;
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!campoDoFormulario(el)) return;
+      if (!validarCampo(el, true) && !primeiro) primeiro = el;
+    });
+    atualizarNavegacao(form);
+    if (!primeiro) return;
+    e.preventDefault();
+    e.stopPropagation();
+    primeiro.focus();
+    var secao = primeiro.closest('[data-secao]');
+    if (secao && secao.scrollIntoView) secao.scrollIntoView({ block: 'nearest' });
+  }, true);
+
+  // Celular, formulário em tela cheia: faixa fixa no alto com "Seção X de Y", barra de progresso e um botão por seção.
+  // As seções com campo inválido ganham um ponto de alerta. Em telas largas a faixa fica oculta (CSS).
+  var reduzMovimento = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  function montarNavegacao(form) {
+    var dialogo = form.closest('dialog.cheio');
+    var secoes = form.querySelectorAll('[data-secao]');
+    if (!dialogo || secoes.length < 2 || form.querySelector('.form-nav')) return;
+    var cab = form.querySelector('.dialogo-cab');
+    if (!cab) return;
+    var nav = document.createElement('nav');
+    nav.className = 'form-nav';
+    nav.setAttribute('aria-label', 'Seções do formulário');
+    var estado = document.createElement('p');
+    estado.className = 'form-nav-estado';
+    estado.setAttribute('aria-live', 'polite');
+    var barra = document.createElement('progress');
+    barra.setAttribute('aria-hidden', 'true');
+    barra.max = secoes.length;
+    barra.value = 1;
+    var lista = document.createElement('div');
+    lista.className = 'form-nav-lista';
+    Array.prototype.forEach.call(secoes, function (secao, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'form-nav-item';
+      b.setAttribute('data-ir', String(i));
+      b.textContent = secao.querySelector('h3').textContent;
+      lista.appendChild(b);
+    });
+    nav.appendChild(estado);
+    nav.appendChild(barra);
+    nav.appendChild(lista);
+    cab.insertAdjacentElement('afterend', nav);
+    var corpo = form.querySelector('.dialogo-corpo');
+    var pendente = false;
+    if (corpo) corpo.addEventListener('scroll', function () {
+      if (pendente) return;
+      pendente = true;
+      window.requestAnimationFrame(function () { pendente = false; atualizarNavegacao(form); });
+    }, { passive: true });
+    atualizarNavegacao(form);
+  }
+  function atualizarNavegacao(form) {
+    var nav = form && form.querySelector ? form.querySelector('.form-nav') : null;
+    if (!nav) return;
+    var secoes = form.querySelectorAll('[data-secao]');
+    var corpo = form.querySelector('.dialogo-corpo');
+    var atual = 0;
+    if (corpo) {
+      var limite = corpo.getBoundingClientRect().top + 24;
+      var fim = corpo.scrollTop + corpo.clientHeight >= corpo.scrollHeight - 4;
+      secoes.forEach(function (s, i) { if (s.getBoundingClientRect().top <= limite) atual = i; });
+      if (fim) atual = secoes.length - 1;
+    }
+    nav.querySelector('.form-nav-estado').textContent = 'Seção ' + (atual + 1) + ' de ' + secoes.length + ': ' + secoes[atual].querySelector('h3').textContent;
+    nav.querySelector('progress').value = atual + 1;
+    nav.querySelectorAll('.form-nav-item').forEach(function (b, i) {
+      b.classList.toggle('tem-erro', !!secoes[i].querySelector('.com-erro'));
+      if (i === atual) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+      if (i === atual && b.scrollIntoView && b.parentNode.scrollWidth > b.parentNode.clientWidth) {
+        var lista = b.parentNode;
+        lista.scrollLeft = b.offsetLeft - (lista.clientWidth - b.offsetWidth) / 2;
+      }
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.form-nav-item') : null;
+    if (!b) return;
+    var form = b.closest('form');
+    var secao = form.querySelectorAll('[data-secao]')[Number(b.getAttribute('data-ir'))];
+    if (secao) secao.scrollIntoView({ behavior: reduzMovimento && reduzMovimento.matches ? 'auto' : 'smooth', block: 'start' });
+  });
+  document.addEventListener('DOMContentLoaded', function () { prepararFormularios(); });
+  document.body.addEventListener('htmx:afterSettle', function () { prepararFormularios(); });
+  prepararFormularios();
+
   // ---- Falha de rede do HTMX (sem conexão ou tempo esgotado): avisa em #avisos; some quando uma requisição der certo ----
   function avisarFalhaDeRede(texto) {
     // Com um diálogo aberto, a página fica atrás do fundo escuro: o aviso vai para dentro do diálogo

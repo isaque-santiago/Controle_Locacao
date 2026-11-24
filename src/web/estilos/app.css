@@ -519,6 +519,22 @@ table.dados {width: 100%; border-collapse: collapse;}
 .form-secao-grade {display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e4);}
 .form-secao-grade .largo {grid-column: 1 / -1;}
 .form-obrigatorio {margin: 0; color: var(--texto-2); font-size: 13px;}
+/* Celular, formulário em tela cheia: faixa de progresso e navegação entre seções (montada pelo app.js) */
+.form-nav {display: none;}
+@media (max-width: 719px) {
+  .form-nav {display: grid; gap: var(--e2); padding: var(--e2) var(--e4) var(--e3); border-bottom: 1px solid var(--linha); background: var(--superficie-elevada);}
+  .form-nav-estado {margin: 0; font-size: 13px; font-weight: 600; color: var(--texto);}
+  .form-nav progress {appearance: none; -webkit-appearance: none; width: 100%; height: 4px; border: 0; border-radius: var(--raio-pill); background: var(--linha); overflow: hidden;}
+  .form-nav progress::-webkit-progress-bar {background: var(--linha);}
+  .form-nav progress::-webkit-progress-value {background: var(--marca); border-radius: var(--raio-pill);}
+  .form-nav progress::-moz-progress-bar {background: var(--marca); border-radius: var(--raio-pill);}
+  .form-nav-lista {display: flex; gap: var(--e2); overflow-x: auto; margin: 0 calc(var(--e4) * -1); padding: 0 var(--e4); scrollbar-width: none;}
+  .form-nav-lista::-webkit-scrollbar {display: none;}
+  .form-nav-item {flex: none; position: relative; min-height: 36px; padding: 0 var(--e3); border: 1px solid var(--borda-campo); border-radius: var(--raio-pill); background: transparent; color: var(--texto-2); font: 500 13px var(--fonte-ui); cursor: pointer;}
+  .form-nav-item[aria-current="step"] {background: var(--btn); border-color: var(--btn); color: var(--btn-texto, #fff);}
+  .form-nav-item.tem-erro::after {content: ""; position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: var(--perigo); border: 2px solid var(--superficie-elevada);}
+  dialog.cheio .dialogo-corpo {scroll-padding-top: var(--e3);}
+}
 /* Texto de ajuda: legível (13px, contraste do texto secundário) */
 .campo small {color: var(--texto-2); font-size: 13px; line-height: 1.4;}
 .contrato-layout {display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--e4); align-items: start;}
