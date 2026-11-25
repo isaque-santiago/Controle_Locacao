@@ -553,7 +553,7 @@ zoom e teclado.
 
 **Situação (05/10/2026): absorvida pela Fase 4 da migração de frontend (`Analise_Migracao_Frontend.md`); não será encerrada no Streamlit.** Estado anterior: parte automatizada concluída; fechamento dependia do usuário. Resultado e pendências na seção 11 de
 `Design_UI.md`. Falta: gravar os 10 fluxos no banco de dev, aparelhos reais (Android e, se houver, iPhone/iPad) e a rodada
-autenticada, conforme `Arquivos/Roteiro_Homologacao_Manual.md`. O plano só se dá por encerrado depois disso.
+autenticada, conforme `Arquivos/homologacao/Roteiro_Homologacao_Manual.md`. O plano só se dá por encerrado depois disso.
 
 **Objetivo:** produzir evidência verificável de qualidade.
 

@@ -2,7 +2,7 @@
 
 Protocolo de trabalho para que uma **sessão dedicada do Claude Code** leia os dois chats do Claude (que o dono continua usando),
 compare o que está neles com o sistema e, **quando o dono pedir**, atualize o sistema. Desenho de 17/11/2026 (item 7 da seção 23 do
-[plano](Projeto_Locação.md)). Nada aqui roda sozinho: é um procedimento, não uma funcionalidade do app.
+[plano](../Projeto_Locação.md)). Nada aqui roda sozinho: é um procedimento, não uma funcionalidade do app.
 
 ## 1. Decisões do dono (17/11/2026)
 
@@ -86,7 +86,7 @@ São as mesmas das cargas de dados reais (seção 16 do plano e [Importacao_Dado
 
 Abra uma sessão nova neste projeto e use este texto de partida:
 
-> Você é a sessão de sincronização dos chats. Leia `Arquivos/Sincronizacao_Chats.md` e siga o protocolo. Peça acesso às pastas dos dois
+> Você é a sessão de sincronização dos chats. Leia `Arquivos/dados/Sincronizacao_Chats.md` e siga o protocolo. Peça acesso às pastas dos dois
 > chats e à pasta do backup (`request_directory`). Não use credenciais nem abra links do claude.ai. Comece pelo relatório de comparação;
 > não altere nada antes da minha decisão. Quando eu pedir "atualize o sistema", gere o SQL do que aprovei, primeiro para o dev.
 
@@ -115,7 +115,7 @@ Na primeira sincronização a conferência usou também a planilha "PAGAMENTO MO
 ## 12. Entrega do histórico pelo próprio chat (25/11/2026)
 
 Além da leitura das pastas (seções 3 e 4), o conector do claude.ai permite que **o Claude de cada chat entregue o histórico** em lotes para um rascunho que
-o dono confere (seção 24.9 do [plano](Projeto_Locação.md)). Nada vai para o financeiro; aplicar continua sendo uma carga SQL aprovada pelo dono.
+o dono confere (seção 24.9 do [plano](../Projeto_Locação.md)). Nada vai para o financeiro; aplicar continua sendo uma carga SQL aprovada pelo dono.
 
 **Como usar.** Em cada chat (com o conector «LA Locadora de Veículos» ligado no menu `+` > Conectores), mande este pedido, ajustando a fonte:
 

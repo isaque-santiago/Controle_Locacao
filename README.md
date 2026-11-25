@@ -244,7 +244,7 @@ uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console 
 
 **Fase 4 concluída** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
 Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`), C (CI do app novo), D (revisão de segurança:
-`Arquivos/Revisao_Seguranca.md`), E (homologação com o proprietário: `Arquivos/Roteiro_Homologacao_Manual.md`) e F (remoção do Streamlit:
+`Arquivos/Revisao_Seguranca.md`), E (homologação com o proprietário: `Arquivos/homologacao/Roteiro_Homologacao_Manual.md`) e F (remoção do Streamlit:
 `app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
 `plotly` e `watchdog`).
 
@@ -253,7 +253,7 @@ produção separadas (`requirements.txt`; testes em `requirements-dev.txt`) e jo
 Confirmado: DNS (DuckDNS), `ufw` só com 22, 80 e 443, `unattended-upgrades` ativo, SSH só por chave, app no Coolify (Auto Deploy e webhook
 desligados, limite de memória), `FORWARDED_ALLOW_IPS` restrito ao IP do Traefik, segredos do GitHub, migrations aplicadas no Supabase de
 produção, `/saude`, HSTS/CSP, HTTP→HTTPS, `/componentes` com 404, login e portal do locatário, e monitor UptimeRobot em `/saude`.
-Lighthouse medido em 26/10/2026 no app publicado (login, Dashboard, Cobranças, Motos e ficha: desempenho 89–100, acessibilidade 98–100, boas práticas 100, CLS ≤ 0,023; detalhes na seção 10 de `Arquivos/Design_UI.md`).
+Lighthouse medido em 26/10/2026 no app publicado (login, Dashboard, Cobranças, Motos e ficha: desempenho 89–100, acessibilidade 98–100, boas práticas 100, CLS ≤ 0,023; detalhes na seção 10 de `Arquivos/interface/Design_UI.md`).
 Backup do Supabase: manual semanal (decisão de 29/10/2026; ver `Arquivos/Deploy_VPS.md`, seção 8). Pendente: roteiro de homologação manual no app publicado.
 
 Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
@@ -342,7 +342,7 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   `historico_chat_lotes` e `historico_chat_registros` (só o dono lê; ninguém grava direto; o backup as inclui, junto com `pendencias_lancamento`) e as
   RPCs `rpc_conector_entregar_lote_historico`, `rpc_conector_resumo_historico`, `rpc_conector_historico_a_conferir` e `rpc_historico_descartar_lote`
   (só dono, não apaga lote com registro aplicado). **Aplicar** o que for novo ou divergente continua sendo uma carga SQL aprovada pelo dono (sessão de
-  sincronização, dev antes de produção, ver `Arquivos/Sincronizacao_Chats.md`).
+  sincronização, dev antes de produção, ver `Arquivos/dados/Sincronizacao_Chats.md`).
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.
@@ -378,7 +378,7 @@ cobranças, manutenção, documentos, Dashboard, relatórios, configurações e 
 As regras existentes foram complementadas com transações para entrega/devolução,
 conclusão de manutenção, plano automático de motos e proteção de pagamentos.
 
-Revisão de fidelidade visual ao `Arquivos/Design_UI.md` (22/09/2026): paleta de
+Revisão de fidelidade visual ao `Arquivos/interface/Design_UI.md` (22/09/2026): paleta de
 status corrigida para os tokens exatos do documento, chip de placa em mono no
 padrão do plano, selos circulares tracejados para alertas (Dashboard e
 Manutenção), barra de ocupação segmentada substituindo a barra padrão do
@@ -576,7 +576,7 @@ e o roteiro `supabase/verificar_fluxos.sql` foi executado em produção (23/09) 
 falhas; ele termina em `ROLLBACK`, então não deixa dados.
 
 **Aceite externo:** uploads e URLs assinadas do Supabase Storage validados em produção em 26/10/2026 (ver a seção 7 de
-`Arquivos/Roteiro_Homologacao_Manual.md`). O bucket `trocas_oleo` do portal do locatário também foi validado no mesmo dia. O roteiro de aceite (fluxos 1 a 10) foi executado no app publicado em 26/10/2026, com achados menores listados no Roteiro de homologação. A rodada no celular (POCO M6 Pro) foi feita em 27/10/2026 e gerou a correção das fotos da entrega e da câmera. Ainda pendente:
+`Arquivos/homologacao/Roteiro_Homologacao_Manual.md`). O bucket `trocas_oleo` do portal do locatário também foi validado no mesmo dia. O roteiro de aceite (fluxos 1 a 10) foi executado no app publicado em 26/10/2026, com achados menores listados no Roteiro de homologação. A rodada no celular (POCO M6 Pro) foi feita em 27/10/2026 e gerou a correção das fotos da entrega e da câmera. Ainda pendente:
 conferir a câmera no aparelho depois do deploy e revisar no Firefox no aplicativo publicado. O teste local não valida Supabase Storage, infraestrutura
 ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas e testes isolados.
 
@@ -738,7 +738,7 @@ vencer/regularizado. Rode manualmente no SQL Editor após migrations e
 
 ## Importação dos dados reais (modelo pronto; parcela 1 em produção; parcela 2 pendente)
 
-Desenho, conflitos nos dados e decisões: `Arquivos/Importacao_Dados_Reais.md` (seção 16 do plano). A parcela 1 da carga está aplicada em
+Desenho, conflitos nos dados e decisões: `Arquivos/dados/Importacao_Dados_Reais.md` (seção 16 do plano). A parcela 1 da carga está aplicada em
 produção (conferida em 13/11/2026: 32 motos, 16 clientes, 12 contratos, 75 despesas, 72 multas, 5 dívidas); a parcela 2 depende de dados
 que ainda faltam (cadastros sem CPF ou com identidade a confirmar e dívidas com saldo conflitante). Oito migrations
 preparam o banco para a planilha "PAGAMENTO MOTOS":
@@ -773,7 +773,7 @@ Produção só depois de backup e autorização do dono. Regra pura da agenda: `
 dívidas sem conflito, capital do Etios e do Celta, e 8 clientes com 5 contratos de identidade confirmada). As cargas são SQL gerado fora do
 repositório (contêm CPF, telefone e dados reais), idempotente por lote (`importacoes_lote`) e com SQL para desfazer. Faltam os demais
 locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
-`Arquivos/Importacao_Dados_Reais.md`.
+`Arquivos/dados/Importacao_Dados_Reais.md`.
 
 ## Dashboard (em abas desde a Fase 1 do redesenho, 09/11/2026)
 
@@ -833,17 +833,17 @@ novas devem usar `var(--…)`, nunca cores fixas. O contraste mínimo de 4,5:1 d
 
 ## Testes de navegador (UI/UX)
 
-`e2e/` contém a suíte Playwright do `Arquivos/Plano_Melhorias_UI_UX.md` (Etapa 0), separada
+`e2e/` contém a suíte Playwright do `Arquivos/interface/Plano_Melhorias_UI_UX.md` (Etapa 0), separada
 de `tests/`: mede overflow, alvos de toque, diálogos e erros de console em cinco larguras,
 dois temas e Chromium/Firefox/WebKit, contra o projeto Supabase de **desenvolvimento**.
 `pytest` roda só `tests/`; `pytest e2e` roda a suíte de navegador. Instalação, variáveis de
-ambiente e opções em `e2e/README.md`; inventário em `Arquivos/Inventario_UI_UX.md`;
-achados curados em `Arquivos/Achados_UI_UX.md`; massa de dados extremos em
+ambiente e opções em `e2e/README.md`; inventário em `Arquivos/interface/Inventario_UI_UX.md`;
+achados curados em `Arquivos/interface/Achados_UI_UX.md`; massa de dados extremos em
 `supabase/seed_e2e.sql`.
 
-Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-child` e com pilhas de fonte com fallback do sistema; as fontes são locais (`static/fontes/`, declaradas em `src/web/estilos/app.css`). O Lighthouse foi medido depois, já no app novo (seção 10 do `Arquivos/Design_UI.md`).
+Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-child` e com pilhas de fonte com fallback do sistema; as fontes são locais (`static/fontes/`, declaradas em `src/web/estilos/app.css`). O Lighthouse foi medido depois, já no app novo (seção 10 do `Arquivos/interface/Design_UI.md`).
 
-Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/Roteiro_Homologacao_Manual.md`).
+Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/interface/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/homologacao/Roteiro_Homologacao_Manual.md`).
 
 ### Arquivamento de veículos vendidos e ex-locatários (item 10 da seção 23, 19/11/2026)
 

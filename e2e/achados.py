@@ -61,7 +61,7 @@ class Coletor:
             "# Achados de UI/UX (gerado pela suíte e2e)",
             "",
             f"Gerado em {datetime.now():%d/%m/%Y %H:%M}. Arquivo gerado: não edite; "
-            "copie o que for tratado para `Arquivos/Achados_UI_UX.md`. "
+            "copie o que for tratado para `Arquivos/interface/Achados_UI_UX.md`. "
             "O detalhe por ocorrência está em `achados.json`.",
             "",
         ]
