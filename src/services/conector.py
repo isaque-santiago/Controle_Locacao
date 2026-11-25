@@ -13,6 +13,7 @@ from postgrest.exceptions import APIError
 
 from src import db
 from src.domain.formatadores import formatar_data, formatar_data_hora, formatar_moeda
+from src.domain.historico_chat import lacunas, normalizar_lote, periodos_cobertos
 from src.domain.pendencias import (
     chave_operacao_padrao,
     normalizar_cliente,
@@ -30,6 +31,15 @@ _CODIGO_REGRA_DE_NEGOCIO = "P0001"  # `raise exception` das RPCs: a mensagem já
 _MARGEM_RENOVAR_SEGUNDOS = 120
 MENSAGEM_FALHA = "Não foi possível falar com o sistema agora. Nada foi gravado; tente de novo em instantes."
 _ROTULO_ESTADO = {"aprovada": "gravado", "desfeita": "desfeito pelo dono", "pendente": "aguardando o dono", "recusada": "recusado pelo dono"}
+
+
+def _inteiro(valor, padrao: int) -> int:
+    if valor in (None, ""):
+        return padrao
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        raise ValueError("O limite precisa ser um número inteiro.") from None
 
 
 def _resposta(texto: str, erro: bool = False) -> dict:
@@ -69,6 +79,54 @@ def texto_dos_lancamentos(linhas: list[dict]) -> dict:
     return _resposta("\n".join(
         f"- {formatar_data_hora(x['criado_em'])} | {x['resumo']} | {_ROTULO_ESTADO.get(x['status'], x['status'])}"
         + (" | automático" if x.get("decisao_automatica") else "") for x in linhas))
+
+
+_NOME_DA_FONTE = {"chat_financeiro": "Acompanhamento Financeiro", "chat_contratos": "Contratos Locadora"}
+_ROTULO_DA_SITUACAO = {"ja_existe": "já existem no sistema", "nova": "novos", "diverge": "divergem do sistema", "sem_comparacao": "sem comparação automática"}
+_ORDEM_DAS_SITUACOES = ("ja_existe", "nova", "diverge", "sem_comparacao")
+
+
+def texto_do_lote(r: dict) -> dict:
+    """Resposta da entrega de um lote do histórico (rascunho; nada vai para o financeiro)."""
+    situacoes = r.get("situacoes") or {}
+    partes = [f"{situacoes[s]} {_ROTULO_DA_SITUACAO[s]}" for s in _ORDEM_DAS_SITUACOES if situacoes.get(s)]
+    comparacao = " Comparação com o sistema: " + "; ".join(partes) + "." if partes else ""
+    return _resposta(f"Lote recebido: {r['recebidos']} registro(s), {r['inseridos']} novo(s) no rascunho e {r['repetidos']} já entregue(s) antes."
+                     + comparacao + " Nada foi gravado no financeiro. Continue com o próximo período; ao terminar, chame resumo_do_historico.")
+
+
+def _periodo(inicio, fim) -> str:
+    return f"{formatar_data(inicio)} a {formatar_data(fim)}"
+
+
+def texto_do_resumo(r: dict) -> dict:
+    """Lotes e períodos entregues, os buracos entre eles e as contagens por tipo e situação."""
+    lotes, contagens = r.get("lotes") or [], r.get("contagens") or []
+    if not lotes:
+        return _resposta("Nenhum lote do histórico foi entregue ainda.")
+    linhas = []
+    for fonte in sorted({lote["fonte"] for lote in lotes}):
+        meus = [lote for lote in lotes if lote["fonte"] == fonte]
+        periodos = [(lote["periodo_inicio"], lote["periodo_fim"]) for lote in meus]
+        buracos = lacunas(periodos)
+        linhas.append(f"{_NOME_DA_FONTE.get(fonte, fonte)}: {len(meus)} lote(s), {sum(lote['registros'] for lote in meus)} registro(s) recebido(s).")
+        linhas.append("  Períodos entregues: " + "; ".join(_periodo(a, b) for a, b in periodos_cobertos(periodos)) + ".")
+        linhas.append("  BURACOS (nenhum lote cobriu): " + "; ".join(_periodo(a, b) for a, b in buracos) + "." if buracos
+                      else "  Sem buracos entre o primeiro e o último dia entregues.")
+        por_tipo: dict[str, list[str]] = {}
+        for c in sorted((c for c in contagens if c["fonte"] == fonte), key=lambda c: (c["tipo"], _ORDEM_DAS_SITUACOES.index(c["situacao"])
+                                                                                       if c["situacao"] in _ORDEM_DAS_SITUACOES else 9)):
+            por_tipo.setdefault(c["tipo"], []).append(f"{c['qtd']} {_ROTULO_DA_SITUACAO.get(c['situacao'], c['situacao'])}")
+        linhas += [f"  {tipo}: " + "; ".join(partes) for tipo, partes in por_tipo.items()]
+    return _resposta("\n".join(linhas))
+
+
+def texto_do_a_conferir(linhas: list[dict]) -> dict:
+    if not linhas:
+        return _resposta("Nada a conferir: nenhum registro novo ou divergente nessa seleção.")
+    itens = [f"- [{_ROTULO_DA_SITUACAO.get(x['situacao'], x['situacao'])}] {formatar_data(x['data']) if x.get('data') else 'sem data'} | {x['resumo']}"
+             + (f" | {x['detalhe']}" if x.get("detalhe") else "") for x in linhas]
+    return _resposta(f"{len(linhas)} registro(s):\n" + "\n".join(itens) + "\nNada foi aplicado no sistema: o dono decide o que entra.")
 
 
 class ServicoConector:
@@ -116,9 +174,14 @@ class ServicoConector:
             return texto_das_cobrancas(repositorio.cobrancas_abertas(a["busca"]))
         if nome == "buscar_veiculos":
             return texto_dos_veiculos(repositorio.veiculos(a["busca"]))
+        if nome == "entregar_lote_historico":
+            return texto_do_lote(repositorio.entregar_lote_historico(normalizar_lote(a, self._hoje())))
+        if nome == "resumo_do_historico":
+            return texto_do_resumo(repositorio.resumo_historico(a.get("fonte") or None))
+        if nome == "listar_historico_a_conferir":
+            return texto_do_a_conferir(repositorio.historico_a_conferir(a.get("fonte") or None, a.get("situacao") or None, _inteiro(a.get("limite"), 30)))
         if nome == "listar_ultimos_lancamentos":
-            limite = a.get("limite")
-            return texto_dos_lancamentos(repositorio.ultimos_lancamentos(10 if limite in (None, "") else int(limite)))
+            return texto_dos_lancamentos(repositorio.ultimos_lancamentos(_inteiro(a.get("limite"), 10)))
         if nome == "registrar_pagamento":
             return self._gravar(repositorio.registrar_pagamento, "pagamento", "chat_financeiro", normalizar_pagamento(a, self._hoje()), a)
         if nome == "registrar_despesa":

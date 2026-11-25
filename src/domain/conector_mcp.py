@@ -107,6 +107,51 @@ FERRAMENTAS = (
         "annotations": _GRAVA,
     },
     {
+        "name": "entregar_lote_historico", "title": "Entregar um lote do histórico do chat",
+        "description": "Entrega ao sistema um lote do HISTÓRICO deste chat. Vai para um RASCUNHO que o dono confere; NÃO grava no financeiro. "
+                       "Leia o chat em ordem cronológica e envie lotes de até 50 registros. Cada registro leva: tipo, data (aaaa-mm-dd, a data do fato), "
+                       "dados (só campos simples) e trecho (a frase do chat que originou o registro; obrigatório; copie, não invente). "
+                       "Chaves de dados: pagamento: cliente, cpf, placa, valor; despesa: placa, valor, descricao, categoria; multa: placa, ait, valor; "
+                       "cliente: nome, cpf, telefone; veiculo: placa, marca, modelo; contrato: cliente, cpf, placa, valor_periodo, periodicidade "
+                       "(a data é o início); divida, movimento_socio e outro: campos livres. Valores em reais (ex.: 275 ou '1.234,56'). "
+                       "Informe o período real que o lote cobre (periodo_inicio e periodo_fim): é com ele que o sistema acha buracos. Se um dado não "
+                       "estiver no chat, deixe o campo de fora; nunca invente. Se o lote for recusado, nada foi enviado: corrija o que a resposta "
+                       "apontar e envie de novo. Ao terminar todos os lotes, chame resumo_do_historico e confira as contagens com o usuário.",
+        "inputSchema": _objeto({
+            "fonte": {"type": "string", "enum": ["chat_financeiro", "chat_contratos"],
+                      "description": "chat_financeiro para «Locadora - Acompanhamento Financeiro»; chat_contratos para «Contratos Locadora»."},
+            "rotulo": {"type": "string", "description": "Nome curto do lote, único por período (ex.: 'financeiro-2026-10')."},
+            "periodo_inicio": {"type": "string", "description": "Primeiro dia do chat que este lote cobre (aaaa-mm-dd)."},
+            "periodo_fim": {"type": "string", "description": "Último dia do chat que este lote cobre (aaaa-mm-dd)."},
+            "registros": {"type": "array", "maxItems": 50, "description": "Até 50 registros.", "items": {
+                "type": "object", "required": ["tipo", "dados", "trecho"], "additionalProperties": False,
+                "properties": {
+                    "tipo": {"type": "string", "enum": ["pagamento", "despesa", "multa", "divida", "movimento_socio", "cliente", "veiculo", "contrato", "outro"]},
+                    "data": {"type": "string", "description": "Data do fato (aaaa-mm-dd), dentro do período do lote."},
+                    "dados": {"type": "object", "description": "Campos simples do registro (texto, número ou verdadeiro/falso)."},
+                    "trecho": {"type": "string", "description": "Frase do chat que originou o registro."}}}},
+            "observacao": {"type": "string", "description": "Opcional. Avisos sobre o lote (ex.: parte do chat ilegível)."},
+        }, ("fonte", "rotulo", "periodo_inicio", "periodo_fim", "registros")),
+        "annotations": _GRAVA,
+    },
+    {
+        "name": "resumo_do_historico", "title": "Resumo do histórico entregue",
+        "description": "Mostra o que já foi entregue do histórico: os lotes e os períodos, os BURACOS entre eles, e a contagem de registros por tipo e por "
+                       "situação (nova, já existe, diverge, sem comparação). Use depois de entregar os lotes e confira com o usuário se bate com o chat.",
+        "inputSchema": _objeto({"fonte": {"type": "string", "enum": ["chat_financeiro", "chat_contratos"], "description": "Opcional. Padrão: as duas."}}),
+        "annotations": _LEITURA,
+    },
+    {
+        "name": "listar_historico_a_conferir", "title": "Listar o histórico a conferir",
+        "description": "Lista os registros do histórico entregue que são NOVOS (não existem no sistema) ou DIVERGEM do que o sistema tem, com o motivo. "
+                       "Mostre ao usuário para ele decidir; nada é aplicado no sistema por esta ferramenta.",
+        "inputSchema": _objeto({
+            "fonte": {"type": "string", "enum": ["chat_financeiro", "chat_contratos"], "description": "Opcional. Padrão: as duas."},
+            "situacao": {"type": "string", "enum": ["nova", "diverge", "ja_existe", "sem_comparacao"], "description": "Opcional. Padrão: novas e divergentes."},
+            "limite": {"type": "integer", "description": "Quantos listar (1 a 50). Padrão: 30."}}),
+        "annotations": _LEITURA,
+    },
+    {
         "name": "listar_ultimos_lancamentos", "title": "Listar os últimos lançamentos do chat",
         "description": "Lista o que o chat gravou por último (pagamentos, despesas, clientes e veículos), com o resumo e o estado de cada um "
                        "(gravado, desfeito pelo dono). Use para conferir o que já foi registrado antes de registrar de novo.",

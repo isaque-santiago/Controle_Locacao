@@ -39,6 +39,10 @@ TABELAS = (
     "whatsapp_grupos",
     "pedidos_senha_portal",
     "portal_eventos",
+    # Acrescentadas em 25/11/2026: o que o chat gravou (histórico e auditoria) e o rascunho do histórico dos chats a conferir.
+    "pendencias_lancamento",
+    "historico_chat_lotes",
+    "historico_chat_registros",
 )
 # Fora do backup, de propósito: `administradores` e `servico_mensagens` (nem o dono lê: só a própria linha) e a fila
 # `mensagens_whatsapp` / `mensagens_whatsapp_itens` (o envio a recria a partir das cobranças).

@@ -434,4 +434,5 @@ def test_todas_as_ferramentas_aparecem_no_tools_list(cli_com_banco):
     lista = _mcp(cli_com_banco, {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}, token).json()["result"]["tools"]
     nomes = {f["name"] for f in lista}
     assert {"registrar_pagamento", "registrar_despesa", "cadastrar_cliente", "cadastrar_veiculo", "consultar_cobrancas_abertas",
-            "buscar_veiculos", "listar_ultimos_lancamentos", "ping"} == nomes
+            "buscar_veiculos", "listar_ultimos_lancamentos", "ping", "entregar_lote_historico", "resumo_do_historico",
+            "listar_historico_a_conferir"} == nomes
