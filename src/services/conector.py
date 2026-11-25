@@ -91,8 +91,11 @@ def texto_do_lote(r: dict) -> dict:
     situacoes = r.get("situacoes") or {}
     partes = [f"{situacoes[s]} {_ROTULO_DA_SITUACAO[s]}" for s in _ORDEM_DAS_SITUACOES if situacoes.get(s)]
     comparacao = " Comparação com o sistema: " + "; ".join(partes) + "." if partes else ""
+    parecidos = r.get("parecidos_com_trecho_diferente") or []
+    aviso = (f" ATENÇÃO: {len(parecidos)} registro(s) parecem iguais a outros já entregues, mas com outro trecho do chat ({'; '.join(parecidos[:5])}). "
+             "Se forem fatos distintos (por exemplo, dois pagamentos iguais no mesmo dia), reenvie com ocorrencia=2.") if parecidos else ""
     return _resposta(f"Lote recebido: {r['recebidos']} registro(s), {r['inseridos']} novo(s) no rascunho e {r['repetidos']} já entregue(s) antes."
-                     + comparacao + " Nada foi gravado no financeiro. Continue com o próximo período; ao terminar, chame resumo_do_historico.")
+                     + comparacao + aviso + " Nada foi gravado no financeiro. Continue com o próximo período; ao terminar, chame resumo_do_historico.")
 
 
 def _periodo(inicio, fim) -> str:
@@ -121,12 +124,19 @@ def texto_do_resumo(r: dict) -> dict:
     return _resposta("\n".join(linhas))
 
 
-def texto_do_a_conferir(linhas: list[dict]) -> dict:
+def texto_do_a_conferir(r: dict) -> dict:
+    """Uma página da lista a conferir, com o total e o aviso de que há mais páginas (a lista antiga cortava em 50 sem avisar)."""
+    linhas, total = r.get("linhas") or [], int(r.get("total") or 0)
     if not linhas:
-        return _resposta("Nada a conferir: nenhum registro novo ou divergente nessa seleção.")
+        return _resposta("Nada a conferir: nenhum registro nessa seleção." if not total else f"A página {r.get('pagina')} está vazia (o total é {total}).")
     itens = [f"- [{_ROTULO_DA_SITUACAO.get(x['situacao'], x['situacao'])}] {formatar_data(x['data']) if x.get('data') else 'sem data'} | {x['resumo']}"
              + (f" | {x['detalhe']}" if x.get("detalhe") else "") for x in linhas]
-    return _resposta(f"{len(linhas)} registro(s):\n" + "\n".join(itens) + "\nNada foi aplicado no sistema: o dono decide o que entra.")
+    pagina, por_pagina = int(r.get("pagina") or 1), int(r.get("por_pagina") or len(linhas))
+    primeiro = (pagina - 1) * por_pagina + 1
+    ultimo = primeiro + len(linhas) - 1
+    mais = f"\nHÁ MAIS {total - ultimo} registro(s): chame de novo com pagina={pagina + 1}." if ultimo < total else ""
+    return _resposta(f"Mostrando {primeiro} a {ultimo} de {total}:\n" + "\n".join(itens) + mais
+                     + "\nNada foi aplicado no sistema: o dono decide o que entra.")
 
 
 class ServicoConector:
@@ -179,7 +189,8 @@ class ServicoConector:
         if nome == "resumo_do_historico":
             return texto_do_resumo(repositorio.resumo_historico(a.get("fonte") or None))
         if nome == "listar_historico_a_conferir":
-            return texto_do_a_conferir(repositorio.historico_a_conferir(a.get("fonte") or None, a.get("situacao") or None, _inteiro(a.get("limite"), 30)))
+            return texto_do_a_conferir(repositorio.historico_a_conferir(a.get("fonte") or None, a.get("situacao") or None, _inteiro(a.get("limite"), 30),
+                                                                         _inteiro(a.get("pagina"), 1), a.get("tipo") or None))
         if nome == "listar_ultimos_lancamentos":
             return texto_dos_lancamentos(repositorio.ultimos_lancamentos(_inteiro(a.get("limite"), 10)))
         if nome == "registrar_pagamento":
