@@ -67,6 +67,14 @@ async def backup(_: Sessao = Depends(exigir_dono)):
                     headers={"Content-Disposition": f'attachment; filename="backup-{hoje_br().isoformat()}.zip"'})
 
 
+@router.post("/configuracoes/historico-chats/planilha", dependencies=[Depends(validar_csrf)])
+async def planilha_historico(_: Sessao = Depends(exigir_dono)):
+    """Planilha de conferência do histórico dos chats. Só o dono; contém dados pessoais, então a resposta nunca vai para cache."""
+    arquivo = await run_in_threadpool(dados_configuracoes.planilha_historico)
+    return Response(arquivo, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="historico-chats-{hoje_br().isoformat()}.xlsx"'})
+
+
 def _procurar_orfaos(request):
     """Mesma página, com a lista dos arquivos órfãos para o dono conferir (formulário comum: funciona sem JavaScript)."""
     config = dados_configuracoes.obter()

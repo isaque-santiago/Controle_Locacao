@@ -52,5 +52,8 @@ def resumo_historico(fonte: str | None = None) -> dict:
     return get_client().rpc("rpc_conector_resumo_historico", {"p_fonte": fonte}).execute().data or {"lotes": [], "contagens": []}
 
 
-def historico_a_conferir(fonte: str | None = None, situacao: str | None = None, limite: int = 30) -> list[dict]:
-    return get_client().rpc("rpc_conector_historico_a_conferir", {"p_fonte": fonte, "p_situacao": situacao, "p_limite": limite}).execute().data or []
+def historico_a_conferir(fonte: str | None = None, situacao: str | None = None, limite: int = 30, pagina: int = 1, tipo: str | None = None) -> dict:
+    """{"total", "pagina", "por_pagina", "linhas": [...]}."""
+    vazio = {"total": 0, "pagina": pagina, "por_pagina": limite, "linhas": []}
+    return get_client().rpc("rpc_conector_historico_a_conferir", {"p_fonte": fonte, "p_situacao": situacao, "p_limite": limite,
+                                                                   "p_pagina": pagina, "p_tipo": tipo}).execute().data or vazio

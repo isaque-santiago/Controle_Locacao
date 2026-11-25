@@ -50,6 +50,33 @@ class TestNormalizarDados:
         assert len(normalizar_dados({"descricao": "x" * 500})["descricao"]) == 200
 
 
+class TestCamposDaVersao2:
+    def test_data_estimada_inferido_faltando_e_finalidade(self):
+        d = normalizar_dados({"cliente": "A B", "valor": 100, "data_estimada": "sim", "inferido": True, "faltando": ["placa", "cpf"], "finalidade": "Caução", "ocorrencia": "2"})
+        assert d == {"cliente": "A B", "valor": "100.00", "data_estimada": True, "inferido": True, "faltando": "placa, cpf", "finalidade": "caucao", "ocorrencia": 2}
+
+    def test_data_estimada_falsa_nao_entra(self):
+        assert "data_estimada" not in normalizar_dados({"valor": 1, "data_estimada": False}) and "data_estimada" not in normalizar_dados({"valor": 1, "data_estimada": "não"})
+
+    @pytest.mark.parametrize("entrada,trecho", [({"valor": 1, "finalidade": "presente"}, "finalidade precisa ser"), ({"valor": 1, "ocorrencia": "x"}, "ocorrência")])
+    def test_recusa(self, entrada, trecho):
+        with pytest.raises(ValueError, match=trecho):
+            normalizar_dados(entrada)
+
+    @pytest.mark.parametrize("bruto,esperado", [("semana", "locacao"), ("Parcela", "locacao"), ("locação", "locacao"), ("multa", "multa"), ("dano", "dano"), ("outros", "outros")])
+    def test_finalidade_canonica(self, bruto, esperado):
+        assert normalizar_dados({"valor": 1, "finalidade": bruto})["finalidade"] == esperado
+
+    def test_resumo_mostra_as_marcas(self):
+        d = normalizar_dados({"cliente": "Jhonatan", "valor": 275, "data_estimada": True, "inferido": True, "faltando": "placa"})
+        r = resumo_do_registro("pagamento", d, date(2026, 10, 12))
+        assert r.startswith("Pagamento de Jhonatan R$ 275,00 em 12/10/2026") and r.endswith("[data estimada; inferido; falta: placa]") and len(r) <= 200
+
+    def test_resumo_longo_com_marcas_continua_em_200(self):
+        d = normalizar_dados({"descricao": "d" * 200, "valor": 1, "inferido": True})
+        assert len(resumo_do_registro("despesa", d, None)) <= 200
+
+
 class TestResumo:
     def test_pagamento(self):
         d = normalizar_dados({"cliente": "Jhonatan Silva", "valor": 275})

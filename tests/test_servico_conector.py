@@ -303,16 +303,39 @@ class TestHistorico:
     def test_a_conferir(self, servico):
         linhas = [{"situacao": "diverge", "data": "2026-10-12", "resumo": "Pagamento de Jhonatan R$ 300,00", "detalhe": "No sistema, nesse dia, há pagamento de R$ 275,00."},
                   {"situacao": "nova", "data": None, "resumo": "Cliente Maria (CPF final 4725)", "detalhe": None}]
-        with patch(f"{REPO}.historico_a_conferir", return_value=linhas) as rpc:
-            r = servico.executar("listar_historico_a_conferir", {"situacao": "diverge", "limite": "5"})
-        assert rpc.call_args.args == (None, "diverge", 5)
+        resposta = {"total": 2, "pagina": 1, "por_pagina": 5, "linhas": linhas}
+        with patch(f"{REPO}.historico_a_conferir", return_value=resposta) as rpc:
+            r = servico.executar("listar_historico_a_conferir", {"situacao": "diverge", "limite": "5", "tipo": "pagamento"})
+        assert rpc.call_args.args == (None, "diverge", 5, 1, "pagamento")
+        assert "Mostrando 1 a 2 de 2:" in r["texto"] and "HÁ MAIS" not in r["texto"]
         assert "[divergem do sistema] 12/10/2026 | Pagamento de Jhonatan R$ 300,00 | No sistema, nesse dia, há pagamento de R$ 275,00." in r["texto"]
         assert "[novos] sem data | Cliente Maria (CPF final 4725)" in r["texto"] and "Nada foi aplicado no sistema" in r["texto"]
 
+    def test_a_conferir_avisa_quando_ha_mais_paginas(self, servico):
+        """O Financeiro tinha 55 novos e só 50 apareciam, sem aviso: agora o texto diz quantos faltam e qual página pedir."""
+        linhas = [{"situacao": "nova", "data": "2026-11-10", "resumo": f"Registro {i}", "detalhe": None} for i in range(50)]
+        with patch(f"{REPO}.historico_a_conferir", return_value={"total": 55, "pagina": 1, "por_pagina": 50, "linhas": linhas}):
+            r = servico.executar("listar_historico_a_conferir", {"limite": 50})
+        assert "Mostrando 1 a 50 de 55:" in r["texto"] and "HÁ MAIS 5 registro(s): chame de novo com pagina=2." in r["texto"]
+        with patch(f"{REPO}.historico_a_conferir", return_value={"total": 55, "pagina": 2, "por_pagina": 50, "linhas": linhas[:5]}) as rpc:
+            r = servico.executar("listar_historico_a_conferir", {"limite": 50, "pagina": 2})
+        assert rpc.call_args.args == (None, None, 50, 2, None)
+        assert "Mostrando 51 a 55 de 55:" in r["texto"] and "HÁ MAIS" not in r["texto"]
+
+    def test_pagina_alem_do_fim(self, servico):
+        with patch(f"{REPO}.historico_a_conferir", return_value={"total": 55, "pagina": 9, "por_pagina": 50, "linhas": []}):
+            assert "página 9 está vazia" in servico.executar("listar_historico_a_conferir", {"pagina": 9})["texto"]
+
+    def test_lote_com_registro_parecido_avisa_para_usar_ocorrencia(self, servico):
+        resposta = {"recebidos": 3, "inseridos": 2, "repetidos": 1, "situacoes": {"nova": 2}, "parecidos_com_trecho_diferente": ["Pagamento de Apolinário R$ 280,00"]}
+        with patch(f"{REPO}.entregar_lote_historico", return_value=resposta):
+            r = servico.executar("entregar_lote_historico", _lote())
+        assert "ATENÇÃO: 1 registro(s) parecem iguais" in r["texto"] and "Apolinário" in r["texto"] and "ocorrencia=2" in r["texto"]
+
     def test_a_conferir_vazio_e_limite_invalido(self, servico):
-        with patch(f"{REPO}.historico_a_conferir", return_value=[]) as rpc:
+        with patch(f"{REPO}.historico_a_conferir", return_value={"total": 0, "pagina": 1, "por_pagina": 30, "linhas": []}) as rpc:
             assert "Nada a conferir" in servico.executar("listar_historico_a_conferir", {})["texto"]
-            assert rpc.call_args.args == (None, None, 30)
+            assert rpc.call_args.args == (None, None, 30, 1, None)
             r = servico.executar("listar_historico_a_conferir", {"limite": "muitos"})
         assert r["erro"] and "número inteiro" in r["texto"]
 
@@ -325,5 +348,6 @@ class TestHistorico:
             assert repo.entregar_lote_historico({"a": 1}) == {"lote_id": "l"}
             cliente.rpc.assert_called_with("rpc_conector_entregar_lote_historico", {"payload": {"a": 1}})
             cliente.rpc.return_value.execute.return_value.data = None
-            assert repo.resumo_historico("chat_financeiro") == {"lotes": [], "contagens": []} and repo.historico_a_conferir() == []
-        cliente.rpc.assert_any_call("rpc_conector_historico_a_conferir", {"p_fonte": None, "p_situacao": None, "p_limite": 30})
+            assert repo.resumo_historico("chat_financeiro") == {"lotes": [], "contagens": []}
+            assert repo.historico_a_conferir() == {"total": 0, "pagina": 1, "por_pagina": 30, "linhas": []}
+        cliente.rpc.assert_any_call("rpc_conector_historico_a_conferir", {"p_fonte": None, "p_situacao": None, "p_limite": 30, "p_pagina": 1, "p_tipo": None})

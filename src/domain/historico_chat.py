@@ -30,6 +30,8 @@ TAMANHO_OBSERVACAO = 500
 TAMANHO_RESUMO = 200
 MAXIMO_ERROS_MOSTRADOS = 5
 _CHAVES_DE_DINHEIRO = ("valor", "valor_periodo", "saldo", "valor_total", "entrada", "valor_parcela", "caucao", "multa", "juros")
+# Para o pagamento composto (semana + caução + multa num só valor): um registro por parte, cada um com a sua finalidade.
+FINALIDADES = {"locacao": "locacao", "semana": "locacao", "parcela": "locacao", "caucao": "caucao", "multa": "multa", "dano": "dano", "outros": "outros"}
 
 
 def _simplificar(texto) -> str:
@@ -73,8 +75,26 @@ def normalizar_dados(bruto) -> dict:
             raise ValueError("há um campo sem nome")
         if valor is None or (isinstance(valor, str) and not valor.strip()):
             continue
+        if chave == "faltando" and isinstance(valor, list):  # lista curta de campos que o chat não achou
+            valor = ", ".join(str(v) for v in valor if str(v).strip())
         if isinstance(valor, (dict, list)):
             raise ValueError(f"o campo {chave} precisa ser um valor simples (texto, número ou verdadeiro/falso)")
+        if chave in ("data_estimada", "inferido") and not isinstance(valor, bool) and _simplificar(valor) in ("sim", "true", "1", "verdadeiro"):
+            valor = True
+        if chave == "data_estimada" and valor is not True:
+            continue  # só interessa quando é verdadeiro
+        if chave == "finalidade":
+            canonica = FINALIDADES.get(_simplificar(valor))
+            if canonica is None:
+                raise ValueError("a finalidade precisa ser: semana, caucao, multa, dano ou outros")
+            dados[chave] = canonica
+            continue
+        if chave == "ocorrencia":
+            try:
+                dados[chave] = max(1, int(valor))
+            except (TypeError, ValueError):
+                raise ValueError("a ocorrência precisa ser um número inteiro (2 para o segundo registro igual no mesmo dia)") from None
+            continue
         if isinstance(valor, bool):
             dados[chave] = valor
         elif chave in _CHAVES_DE_DINHEIRO:
@@ -129,7 +149,9 @@ def resumo_do_registro(tipo: str, dados: dict, data: date | None) -> str:
     if not any(partes):
         partes = [tipo.replace("_", " ").capitalize()] + [f"{k}={v}" for k, v in list(dados.items())[:4] if k != "cpf"]
     texto = " ".join(str(p) for p in partes if p)
-    return texto[:TAMANHO_RESUMO]
+    marcas = [m for ok, m in ((dados.get("data_estimada") is True, "data estimada"), (bool(dados.get("inferido")), "inferido"),
+                              (bool(dados.get("faltando")), f"falta: {dados.get('faltando')}")) if ok]
+    return (texto[:TAMANHO_RESUMO - 40] + (" [" + "; ".join(marcas) + "]" if marcas else "")) if marcas else texto[:TAMANHO_RESUMO]
 
 
 def normalizar_registro(entrada, fonte: str, hoje: date) -> dict:

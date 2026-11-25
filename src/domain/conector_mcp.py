@@ -114,6 +114,10 @@ FERRAMENTAS = (
                        "Chaves de dados: pagamento: cliente, cpf, placa, valor; despesa: placa, valor, descricao, categoria; multa: placa, ait, valor; "
                        "cliente: nome, cpf, telefone; veiculo: placa, marca, modelo; contrato: cliente, cpf, placa, valor_periodo, periodicidade "
                        "(a data é o início); divida, movimento_socio e outro: campos livres. Valores em reais (ex.: 275 ou '1.234,56'). "
+                       "Campos opcionais úteis em dados: data_estimada=true (quando você deduziu a data), inferido=true (quando deduziu um dado, como a placa), "
+                       "faltando='valor' (o que o chat não traz) e finalidade (semana, caucao, multa, dano ou outros). Um pagamento que cobre mais de uma coisa "
+                       "(semana + caução + multa) vira UM registro POR PARTE, cada um com a sua finalidade. Se houver dois fatos realmente iguais no mesmo dia, "
+                       "mande o segundo com ocorrencia=2. "
                        "Informe o período real que o lote cobre (periodo_inicio e periodo_fim): é com ele que o sistema acha buracos. Se um dado não "
                        "estiver no chat, deixe o campo de fora; nunca invente. Se o lote for recusado, nada foi enviado: corrija o que a resposta "
                        "apontar e envie de novo. Ao terminar todos os lotes, chame resumo_do_historico e confira as contagens com o usuário.",
@@ -144,11 +148,15 @@ FERRAMENTAS = (
     {
         "name": "listar_historico_a_conferir", "title": "Listar o histórico a conferir",
         "description": "Lista os registros do histórico entregue que são NOVOS (não existem no sistema) ou DIVERGEM do que o sistema tem, com o motivo. "
+                       "Mostra o total e a página; se houver mais, chame de novo com a página seguinte até ver todos. "
                        "Mostre ao usuário para ele decidir; nada é aplicado no sistema por esta ferramenta.",
         "inputSchema": _objeto({
             "fonte": {"type": "string", "enum": ["chat_financeiro", "chat_contratos"], "description": "Opcional. Padrão: as duas."},
             "situacao": {"type": "string", "enum": ["nova", "diverge", "ja_existe", "sem_comparacao"], "description": "Opcional. Padrão: novas e divergentes."},
-            "limite": {"type": "integer", "description": "Quantos listar (1 a 50). Padrão: 30."}}),
+            "tipo": {"type": "string", "enum": ["pagamento", "despesa", "multa", "divida", "movimento_socio", "cliente", "veiculo", "contrato", "outro"],
+                     "description": "Opcional. Só este tipo."},
+            "limite": {"type": "integer", "description": "Quantos por página (1 a 50). Padrão: 30."},
+            "pagina": {"type": "integer", "description": "Página (1, 2, 3...). Padrão: 1."}}),
         "annotations": _LEITURA,
     },
     {

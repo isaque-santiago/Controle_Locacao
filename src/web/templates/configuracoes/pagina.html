@@ -60,10 +60,18 @@
 </section>
 <section class="cartao" aria-labelledby="cfg-backup">
   <h2 id="cfg-backup">Backup manual</h2>
-  <p class="text-texto-2 mb-4">Gera um ZIP com um CSV de cada uma das 15 tabelas. Contém dados pessoais; guarde em local privado. Fotos e comprovantes devem ser copiados separadamente do Storage. Evite outras alterações durante a geração, que pode levar alguns segundos. Recomendado semanalmente.</p>
+  <p class="text-texto-2 mb-4">Gera um ZIP com um CSV de cada uma das 32 tabelas. Contém dados pessoais; guarde em local privado. Fotos e comprovantes devem ser copiados separadamente do Storage. Evite outras alterações durante a geração, que pode levar alguns segundos. Recomendado semanalmente.</p>
   <form method="post" action="/configuracoes/backup">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button class="btn" type="submit">Gerar e baixar backup</button>
+  </form>
+</section>
+<section class="cartao mb-4" aria-labelledby="cfg-historico" id="cfg-historico">
+  <h2 id="cfg-historico">Histórico dos chats</h2>
+  <p class="text-texto-2 mb-4">Os chats «Acompanhamento Financeiro» e «Contratos Locadora» entregam o histórico deles pelo conector, em lotes, para um rascunho; nada vai para o financeiro. Esta planilha reúne tudo o que foi entregue, com o motivo da comparação com o sistema, o trecho do chat e uma coluna <strong>Decisão</strong> (aplicar, ignorar, corrigir ou perguntar) para você marcar. O id de cada linha liga a decisão ao registro. Contém dados pessoais (CPF, telefone, trechos do chat); guarde em local privado.</p>
+  <form method="post" action="/configuracoes/historico-chats/planilha">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="btn" type="submit">Baixar a conferência (xlsx)</button>
   </form>
 </section>
 <section class="cartao" aria-labelledby="cfg-orfaos-titulo" id="cfg-orfaos">

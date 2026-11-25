@@ -343,6 +343,13 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   RPCs `rpc_conector_entregar_lote_historico`, `rpc_conector_resumo_historico`, `rpc_conector_historico_a_conferir` e `rpc_historico_descartar_lote`
   (só dono, não apaga lote com registro aplicado). **Aplicar** o que for novo ou divergente continua sendo uma carga SQL aprovada pelo dono (sessão de
   sincronização, dev antes de produção, ver `Arquivos/dados/Sincronizacao_Chats.md`).
+- **Histórico dos chats, versão 2 (25/11/2026).** Depois da primeira entrega real dos dois chats: a lista `listar_historico_a_conferir` ganhou **página e total** (cortava em 50
+  de 55 sem avisar) e filtro por tipo; a comparação de **multa** olha também o valor atualizado e reconhece o valor com **20% de desconto** (as 8 «divergências» eram isso); `dados.data_estimada`
+  abre uma janela de datas (±7 dias; ±30 no contrato); `dados.finalidade` (semana, caução, multa...) faz o pagamento composto casar com o tipo da cobrança; `inferido`, `faltando` e
+  `ocorrencia` (segundo fato igual no mesmo dia) são aceitos, e a entrega avisa quando um registro «igual» já entregue veio com **outro trecho** do chat. Migration
+  `20261125130000_historico_v2.sql` (o roteiro `verificar_historico_chats.sql` cobre as duas). **A planilha de conferência é gerada pelo app** (Configurações > «Histórico dos chats»; só o
+  dono; `src/services/historico_chat.py`): Resumo, Conferência (id, motivo, trecho e coluna Decisão com lista) e Lotes. O histórico anterior ao que o chat enxerga vem da **exportação oficial**
+  do claude.ai: `python scripts/extrair_chat_exportado.py EXPORTACAO.zip PASTA_FORA_DO_REPOSITORIO --titulo "..."` (ver `Arquivos/dados/Sincronizacao_Chats.md`, seções 12 e 13).
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.

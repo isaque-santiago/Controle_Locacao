@@ -1,9 +1,11 @@
 -- Executar no SQL Editor de DESENVOLVIMENTO após aplicar as migrations
---   20261124120000_pendencias_lancamento.sql  e  20261125120000_historico_chats.sql
+--   20261124120000_pendencias_lancamento.sql, 20261125120000_historico_chats.sql  e  20261125130000_historico_v2.sql
 -- Verifica: só o usuário de serviço e o dono entregam e consultam o histórico, e só o dono descarta; o usuário de serviço não lê
 --   as tabelas nem grava direto; o lote é validado (fonte, período, tipo, data dentro do período, dados, trecho, até 50 registros);
 --   cada registro é comparado com o sistema (pagamento, despesa, multa, cliente, veículo e contrato: já existe, nova ou diverge;
---   dívida e registro sem data: sem comparação); reenviar o mesmo lote não duplica; o resumo traz contagens e períodos; a lista
+--   dívida e registro sem data: sem comparação); multa com valor atualizado ou com 20% de desconto não diverge; `data_estimada` abre uma janela
+--   de datas; `finalidade` casa com o tipo da cobrança; a lista «a conferir» tem total, páginas e filtro por tipo; um registro «igual» com outro
+--   trecho é avisado; a conferência completa é só do dono; reenviar o mesmo lote não duplica; o resumo traz contagens e períodos; a lista
 --   «a conferir» traz só novas e divergentes, sem trecho nem CPF inteiro; descartar apaga o lote e os registros, menos os já aplicados.
 -- Precisa existir pelo menos um administrador (dono). Todas as alterações deste roteiro são desfeitas ao final (ROLLBACK).
 -- Usa nomes de teste próprios (Zeferino/Zacarias Testehist, HIS1A11, HIS9Z99) para dados reais não interferirem nas comparações.
@@ -190,20 +192,89 @@ begin
   begin perform rpc_conector_resumo_historico('outra'); raise exception 'Fonte inválida no resumo deveria ser recusada';
   exception when others then if sqlerrm like 'Fonte inválida no resumo%' then raise; end if; assert sqlerrm like 'A fonte precisa ser%', 'Mensagem: ' || sqlerrm; end;
 
-  lista := rpc_conector_historico_a_conferir('chat_contratos');
-  assert jsonb_array_length(lista) = 7 and not exists (select 1 from jsonb_array_elements(lista) e where e->>'situacao' not in ('nova', 'diverge')), 'A conferir: só novas e divergentes: ' || lista::text;
+  r := rpc_conector_historico_a_conferir('chat_contratos');
+  lista := r->'linhas';
+  assert (r->>'total')::int = 7 and (r->>'pagina')::int = 1 and jsonb_array_length(lista) = 7 and not exists (select 1 from jsonb_array_elements(lista) e where e->>'situacao' not in ('nova', 'diverge')), 'A conferir: só novas e divergentes: ' || lista::text;
   assert not (lista->0 ? 'trecho') and not (lista->0 ? 'dados') and position('90000000091' in lista::text) = 0 and position('11144477735' in lista::text) = 0,
     'A lista não traz trecho, dados nem CPF inteiro';
-  assert jsonb_array_length(rpc_conector_historico_a_conferir('chat_financeiro', 'ja_existe')) = 3, 'Filtro por situação';
-  assert jsonb_array_length(rpc_conector_historico_a_conferir(null, null, 2)) = 2, 'Limite';
+  assert jsonb_array_length(rpc_conector_historico_a_conferir('chat_financeiro', 'ja_existe')->'linhas') = 3, 'Filtro por situação';
+  assert jsonb_array_length(rpc_conector_historico_a_conferir(null, null, 2)->'linhas') = 2, 'Limite';
+  -- paginação: 7 registros do chat de contratos, de 3 em 3
+  r := rpc_conector_historico_a_conferir('chat_contratos', null, 3, 3);
+  assert (r->>'total')::int = 7 and (r->>'pagina')::int = 3 and jsonb_array_length(r->'linhas') = 1, 'Terceira página: ' || r::text;
+  assert (rpc_conector_historico_a_conferir('chat_contratos', null, 3, 2)->'linhas'->0->>'id') <> (rpc_conector_historico_a_conferir('chat_contratos', null, 3, 1)->'linhas'->0->>'id'), 'Páginas diferentes';
+  assert jsonb_array_length(rpc_conector_historico_a_conferir('chat_contratos', null, 30, 4)->'linhas') = 0, 'Página além do fim vem vazia';
+  -- filtro por tipo
+  r := rpc_conector_historico_a_conferir('chat_contratos', null, 30, 1, 'contrato');
+  assert (r->>'total')::int = 2 and not exists (select 1 from jsonb_array_elements(r->'linhas') e where e->>'tipo' <> 'contrato'), 'Filtro por tipo: ' || r::text;
+  begin perform rpc_conector_historico_a_conferir(null, null, 30, 1, 'lazer'); raise exception 'Tipo inválido deveria ser recusado';
+  exception when others then if sqlerrm like 'Tipo inválido deveria%' then raise; end if; assert sqlerrm like 'Tipo desconhecido%', 'Mensagem: ' || sqlerrm; end;
   begin perform rpc_conector_historico_a_conferir(null, 'aplicada'); raise exception 'Situação inválida deveria ser recusada';
   exception when others then if sqlerrm like 'Situação inválida deveria%' then raise; end if; assert sqlerrm like 'A situação precisa ser%', 'Mensagem: ' || sqlerrm; end;
+
+  -- ---------- versão 2: multa com desconto, data estimada, finalidade, inferido/faltando e trecho diferente ----------
+  reset role;
+  update multas_transito set valor_atual = 120.00 where ait = 'HIS-001';
+  perform set_config('request.jwt.claim.sub', robo::text, true);
+  set local role authenticated;
+  r := rpc_conector_entregar_lote_historico(jsonb_build_object('fonte', 'chat_financeiro', 'rotulo', 'v2-teste',
+    'periodo_inicio', (hoje_br() - 40)::text, 'periodo_fim', hoje_br()::text,
+    'registros', jsonb_build_array(
+      jsonb_build_object('tipo', 'multa', 'data', (hoje_br() - 20)::text, 'trecho', 'm1', 'resumo', 'Multa com 20% de desconto',
+        'dados', jsonb_build_object('placa', 'HIS1A11', 'ait', 'HIS-001', 'valor', '104.13')),
+      jsonb_build_object('tipo', 'multa', 'data', (hoje_br() - 20)::text, 'trecho', 'm2', 'resumo', 'Multa com o valor atualizado',
+        'dados', jsonb_build_object('placa', 'HIS1A11', 'ait', 'HIS-001', 'valor', '120.00')),
+      jsonb_build_object('tipo', 'pagamento', 'data', (p1 + 3)::text, 'trecho', 'e1', 'resumo', 'Pagamento com data estimada',
+        'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'valor', '275.00', 'data_estimada', true)),
+      jsonb_build_object('tipo', 'pagamento', 'data', (p1 + 3)::text, 'trecho', 'e2', 'resumo', 'Pagamento com data certa',
+        'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'valor', '275.00')),
+      jsonb_build_object('tipo', 'pagamento', 'data', p1::text, 'trecho', 'f1', 'resumo', 'Pagamento de caução',
+        'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'valor', '275.00', 'finalidade', 'caução')),
+      jsonb_build_object('tipo', 'pagamento', 'data', p1::text, 'trecho', 'f2', 'resumo', 'Pagamento de outros',
+        'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'valor', '275.00', 'finalidade', 'outros')),
+      jsonb_build_object('tipo', 'contrato', 'data', (d0 + 10)::text, 'trecho', 'k4', 'resumo', 'Contrato com data estimada',
+        'dados', jsonb_build_object('placa', 'HIS1A11', 'cliente', 'Zeferino Testehist', 'valor_periodo', '275.00', 'data_estimada', true)),
+      jsonb_build_object('tipo', 'contrato', 'data', (d0 + 10)::text, 'trecho', 'k5', 'resumo', 'Contrato com data certa',
+        'dados', jsonb_build_object('placa', 'HIS1A11', 'cliente', 'Zeferino Testehist', 'valor_periodo', '275.00')),
+      jsonb_build_object('tipo', 'pagamento', 'data', (hoje_br() - 2)::text, 'trecho', 'i1', 'resumo', 'Pagamento sem valor, inferido',
+        'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'inferido', true, 'faltando', 'valor')))));
+  assert (r->'situacoes'->>'ja_existe')::int = 5 and (r->'situacoes'->>'nova')::int = 2 and (r->'situacoes'->>'diverge')::int = 1
+         and (r->'situacoes'->>'sem_comparacao')::int = 1, 'Situações da v2: ' || (r->'situacoes')::text;
+  assert (select count(*) from historico_chat_registros) = 0, 'continua sem ler a tabela';
+  lista := rpc_conector_historico_a_conferir('chat_financeiro', 'ja_existe', 50)->'linhas';
+  assert (select e->>'detalhe' from jsonb_array_elements(lista) e where e->>'resumo' = 'Multa com 20% de desconto') like '%20% de desconto%R$ 130,16%', 'Multa com desconto: ' || lista::text;
+  assert (select e->>'detalhe' is null from jsonb_array_elements(lista) e where e->>'resumo' = 'Multa com o valor atualizado'), 'Multa com valor atualizado não diverge';
+  assert (select e->>'data_estimada' from jsonb_array_elements(lista) e where e->>'resumo' = 'Pagamento com data estimada') = 'true', 'data_estimada aparece na lista';
+  lista := rpc_conector_historico_a_conferir('chat_financeiro', 'nova', 50)->'linhas';
+  assert exists (select 1 from jsonb_array_elements(lista) e where e->>'resumo' = 'Pagamento com data certa'), 'Sem data_estimada a data tem de bater';
+  assert exists (select 1 from jsonb_array_elements(lista) e where e->>'resumo' = 'Pagamento de caução'), 'finalidade caução não casa com cobrança de outros';
+  lista := rpc_conector_historico_a_conferir('chat_financeiro', 'sem_comparacao', 50)->'linhas';
+  assert (select e->>'inferido' = 'true' and e->>'faltando' = 'valor' from jsonb_array_elements(lista) e where e->>'resumo' = 'Pagamento sem valor, inferido'), 'inferido e faltando na lista';
+  -- o mesmo registro com outro trecho do chat é avisado (pode ser um segundo pagamento real)
+  r := rpc_conector_entregar_lote_historico(jsonb_build_object('fonte', 'chat_financeiro', 'rotulo', 'v2-teste',
+    'periodo_inicio', (hoje_br() - 40)::text, 'periodo_fim', hoje_br()::text,
+    'registros', jsonb_build_array(jsonb_build_object('tipo', 'pagamento', 'data', p1::text, 'trecho', 'OUTRO trecho', 'resumo', 'Pagamento igual',
+      'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'placa', 'HIS1A11', 'valor', '275.00')))));
+  assert (r->>'repetidos')::int = 1 and r->'parecidos_com_trecho_diferente' = '["Pagamento igual"]'::jsonb, 'Aviso de trecho diferente: ' || r::text;
+  r := rpc_conector_entregar_lote_historico(jsonb_build_object('fonte', 'chat_financeiro', 'rotulo', 'v2-teste',
+    'periodo_inicio', (hoje_br() - 40)::text, 'periodo_fim', hoje_br()::text,
+    'registros', jsonb_build_array(jsonb_build_object('tipo', 'pagamento', 'data', p1::text, 'trecho', 't1', 'resumo', 'Pagamento igual',
+      'dados', jsonb_build_object('cliente', 'Zeferino Testehist', 'placa', 'HIS1A11', 'valor', '275.00')))));
+  assert (r->>'repetidos')::int = 1 and r->'parecidos_com_trecho_diferente' = '[]'::jsonb, 'Reenvio idêntico não avisa: ' || r::text;
+  begin perform rpc_historico_conferencia(); raise exception 'O robô não deveria ver a conferência';
+  exception when insufficient_privilege then null; end;
   reset role;
 
   -- ---------- o dono lê e descarta ----------
   perform set_config('request.jwt.claim.sub', dono::text, true);
   set local role authenticated;
   assert (select count(*) from historico_chat_registros) >= 20, 'O dono lê os registros';
+  r := rpc_historico_conferencia();
+  assert (r->>'total')::int = (select count(*) from historico_chat_registros) and jsonb_array_length(r->'linhas') = (r->>'total')::int, 'Conferência completa: ' || (r->>'total');
+  assert (r->'linhas'->0 ? 'trecho') and (r->'linhas'->0 ? 'lote') and (r->'linhas'->0 ? 'entregue_em'), 'A conferência traz trecho, lote e data';
+  assert (rpc_historico_conferencia('chat_contratos', 'nova')->>'total')::int = 3 and (rpc_historico_conferencia('chat_contratos')->'linhas'->0->>'situacao') = 'diverge', 'Filtros e ordem (divergentes primeiro)';
+  begin perform rpc_historico_conferencia('outra'); raise exception 'Fonte inválida deveria ser recusada';
+  exception when others then if sqlerrm like 'Fonte inválida deveria%' then raise; end if; assert sqlerrm like 'A fonte precisa ser%', 'Mensagem: ' || sqlerrm; end;
   begin update historico_chat_registros set situacao = 'aplicada' where false; raise exception 'Nem o dono deveria alterar a tabela direto';
   exception when insufficient_privilege then null; end;  -- só as RPCs (e a carga aprovada, rodada pelo SQL Editor) escrevem
   begin
