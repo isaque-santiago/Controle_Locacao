@@ -117,15 +117,41 @@ Na primeira sincronização a conferência usou também a planilha "PAGAMENTO MO
 Além da leitura das pastas (seções 3 e 4), o conector do claude.ai permite que **o Claude de cada chat entregue o histórico** em lotes para um rascunho que
 o dono confere (seção 24.9 do [plano](../Projeto_Locação.md)). Nada vai para o financeiro; aplicar continua sendo uma carga SQL aprovada pelo dono.
 
-**Como usar.** Em cada chat (com o conector «LA Locadora de Veículos» ligado no menu `+` > Conectores), mande este pedido, ajustando a fonte:
+**Como usar (pedido v2, de 25/11/2026).** Em cada chat (com o conector «LA Locadora de Veículos» ligado no menu `+` > Conectores), mande este pedido, ajustando a fonte:
 
-> Entregue ao sistema o histórico completo deste chat, do começo ao fim, com a ferramenta entregar_lote_historico (fonte: chat_financeiro, ou chat_contratos
-> no chat de contratos). Leia em ordem cronológica e envie lotes de até 30 registros, sempre informando o período real que cada lote cobre. Em cada registro
-> inclua o tipo, a data do fato, os dados e o trecho do chat que o originou (copie, não invente; se um dado não estiver no chat, deixe o campo de fora). Se um
-> lote for recusado, corrija o que a resposta apontar e envie de novo. Ao terminar, chame resumo_do_historico e me mostre os períodos, os buracos e as contagens
-> por tipo; depois liste o que é novo ou diverge com listar_historico_a_conferir. Não use nenhuma ferramenta que grave no financeiro.
+> Entregue ao sistema o histórico deste chat com a ferramenta entregar_lote_historico (fonte: chat_financeiro, ou chat_contratos no chat de contratos). Leia em ordem
+> cronológica e envie lotes de até 30 registros, sempre informando o período real que cada lote cobre. NÃO monte planilha: o próprio sistema gera a planilha de conferência.
+> Em cada registro inclua o tipo, a data do fato, os dados e o trecho do chat que o originou (copie, não invente; se um dado não estiver no chat, deixe o campo de fora
+> e escreva em dados.faltando o que falta). Marque dados.data_estimada=true quando você deduziu a data e dados.inferido=true quando deduziu qualquer dado (como a placa).
+> Um pagamento que cobre mais de uma coisa (semana + caução + multa) vira UM registro POR PARTE, cada um com dados.finalidade (semana, caucao, multa, dano ou outros).
+> Se houver dois fatos realmente iguais no mesmo dia, mande o segundo com dados.ocorrencia=2. Se o chat só tiver o resumo de uma parte antiga (sem as mensagens),
+> NÃO invente: diga isso na observação do lote e entregue só o período que você consegue ler. Se um lote for recusado, corrija o que a resposta apontar e envie de novo.
+> Ao terminar, chame resumo_do_historico e me mostre os períodos, os buracos e as contagens por tipo; depois use listar_historico_a_conferir (e as páginas seguintes, se houver
+> mais) para me mostrar o que é novo ou diverge. Não use nenhuma ferramenta que grave no financeiro.
+
+**O limite do chat.** O Claude do chat só enxerga a parte recente: o que veio antes vira resumo (na primeira entrega real, o Financeiro só tinha as mensagens de 09/11 em diante e o de
+Contratos não guardava a data das mensagens antes de 02/11). O histórico antigo vem da **exportação oficial** (seção 13).
+
+**A planilha de conferência é do sistema.** Em Configurações > «Histórico dos chats» > «Baixar a conferência (xlsx)»: Resumo (períodos, buracos e contagens), Conferência (um registro por
+linha, com id, motivo da comparação, trecho do chat e a coluna **Decisão**: Aplicar, Ignorar, Corrigir ou Perguntar ao dono) e Lotes. O id de cada linha liga a sua decisão ao registro.
 
 **Depois:** conferir com o dono os buracos e as contagens; o que for novo ou divergente entra por uma carga SQL gerada numa sessão de sincronização (dev antes de
 produção, backup antes, transação única e SQL para desfazer), marcando os registros como `aplicada`. O backup passa a trazer `historico_chat_lotes` e
 `historico_chat_registros`, para essa sessão comparar sem acessar o banco.
+
+## 13. Histórico antigo pela exportação oficial do claude.ai (25/11/2026)
+
+Para o período que o chat já não enxerga, use a exportação de dados do claude.ai, que traz cada mensagem com data e hora.
+
+1. No claude.ai: nome (canto inferior esquerdo) > Configurações > Privacidade > **Exportar dados**. O link de download chega por e-mail (um `.zip` com `conversations.json`; o formato exato pode variar, por isso o script mostra o resultado para você conferir).
+2. Baixe o `.zip` para uma pasta **fora do repositório** (as conversas têm CPF, telefone e valores reais).
+3. Extraia só os dois chats, com o script (a pasta de saída também fica fora do repositório; o script recusa escrever dentro dele):
+
+```bash
+python scripts/extrair_chat_exportado.py ~/Documentos/sincronizacao-chats/exportacao.zip ~/Documentos/sincronizacao-chats/chats \
+  --titulo "Acompanhamento Financeiro" --titulo "Contratos Locadora"
+```
+
+4. Confira o `indice.txt` que o script grava: período e mensagens **por mês** de cada chat. Mês com poucas mensagens ou buraco é sinal de leitura incompleta.
+5. A sessão de sincronização lê os `.md` (protocolo das seções 3 e 4) e compara com o backup e com o rascunho do histórico (planilha de conferência). O que for aplicado entra por carga SQL aprovada pelo dono, como em 19/11.
 

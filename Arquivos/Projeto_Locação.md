@@ -1350,6 +1350,15 @@ O dono achou a fila de aprovação trabalhosa (aprovar no chat e de novo no app)
 2. **Entregar o histórico** dos dois chats, lote a lote, e conferir as contagens com o dono.
 3. **Aplicar** o que for novo ou divergente por carga SQL aprovada (sessão de sincronização), marcando os registros como `aplicada`. Contratos, saldo anterior e pagamentos antigos exigem desenho próprio.
 
+#### 24.9.1 Versão 2 (25/11/2026), depois da primeira entrega real
+
+Os dois chats entregaram (Contratos: 123 registros em 7 lotes; Financeiro: 131 registros em 7 lotes) e geraram planilhas. O que se aprendeu e foi feito:
+- **Cobertura:** o Financeiro só tinha as mensagens de **09/11 a 25/11** (o resto virou resumo no contexto do chat), e o de Contratos não guardava a data antes de 02/11. O histórico antigo vem da **exportação oficial** do claude.ai (script `scripts/extrair_chat_exportado.py`; [Sincronizacao_Chats.md](dados/Sincronizacao_Chats.md), seção 13).
+- **Defeitos corrigidos (migration `20261125130000`):** a lista «a conferir» cortava em 50 de 55 sem aviso (agora tem página e total e filtra por tipo); as 8 multas «divergentes» eram o valor com 20% de desconto (agora comparadas também com o valor atualizado e com o desconto); pagamentos compostos e datas estimadas geravam divergência falsa (`finalidade`, `data_estimada`); registro «igual» com outro trecho é avisado (`ocorrencia`); `inferido` e `faltando` aparecem na lista.
+- **Planilha de conferência gerada pelo app**, igual para os dois chats, com o id de cada registro e a coluna Decisão (Configurações > «Histórico dos chats»).
+- **Pedido v2** para os chats ([Sincronizacao_Chats.md](dados/Sincronizacao_Chats.md), seção 12): não montar planilha, dividir pagamento composto, marcar estimativas e inferências, não inventar o que o chat só tem em resumo.
+- **Decisões do dono ainda abertas, apontadas pelos chats:** os 58 contratos antigos entram ou não; Alfredo (TIA1B71 no chat, RID4D62 na planilha); Leonardo (PSG0C86 ou HYF1F47); placa do Erivaldo (deduzida); possíveis duplicados do Cícero Anderson (R$ 67); pagamentos de seguros e de Cabeça, Jhonatan e Otávio sem valor.
+
 ### 24.8 Pendências de esclarecimento
 
 - Falta incluir as duas pessoas do financeiro em `administradores` (decisão 3 acima).
