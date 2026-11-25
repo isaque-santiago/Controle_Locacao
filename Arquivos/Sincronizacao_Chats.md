@@ -111,3 +111,21 @@ O relatório de cada uma e o `ultima_sincronizacao.txt` ficam **fora do reposit�
 | 19/11/2026 (1ª) | `backup-2026-11-19` (29 tabelas, 14:07 antes e 14:36 depois) | Financeiro até 16/10; Contratos até 03/11 | `chats-2026-11-19-correcoes` (SQL 01 a 04 e 06 a 11) | Multas, Celta, Ricão, Lima, seguros e 6 contratos conferem. Em produção: 10 locatários novos (8 com CPF provisório), 4 contratos corrigidos, 33 pagamentos, 2 encerramentos e 2 clientes inativados. Estado final: 27 clientes, 25 contratos, 179 cobranças, 139 pagamentos; os débitos batem com a planilha. Abertos: aluguel do Jhonatan, encargos de quem saiu, retomada do Joel, 8 CPFs, Celta/Gabriel, remendo da Biz, compressor e seguro "PNM". |
 
 Na primeira sincronização a conferência usou também a planilha "PAGAMENTO MOTOS" e a "Completar Dados", porque os chats só chegam até outubro e o início de novembro.
+
+## 12. Entrega do histórico pelo próprio chat (25/11/2026)
+
+Além da leitura das pastas (seções 3 e 4), o conector do claude.ai permite que **o Claude de cada chat entregue o histórico** em lotes para um rascunho que
+o dono confere (seção 24.9 do [plano](Projeto_Locação.md)). Nada vai para o financeiro; aplicar continua sendo uma carga SQL aprovada pelo dono.
+
+**Como usar.** Em cada chat (com o conector «LA Locadora de Veículos» ligado no menu `+` > Conectores), mande este pedido, ajustando a fonte:
+
+> Entregue ao sistema o histórico completo deste chat, do começo ao fim, com a ferramenta entregar_lote_historico (fonte: chat_financeiro, ou chat_contratos
+> no chat de contratos). Leia em ordem cronológica e envie lotes de até 30 registros, sempre informando o período real que cada lote cobre. Em cada registro
+> inclua o tipo, a data do fato, os dados e o trecho do chat que o originou (copie, não invente; se um dado não estiver no chat, deixe o campo de fora). Se um
+> lote for recusado, corrija o que a resposta apontar e envie de novo. Ao terminar, chame resumo_do_historico e me mostre os períodos, os buracos e as contagens
+> por tipo; depois liste o que é novo ou diverge com listar_historico_a_conferir. Não use nenhuma ferramenta que grave no financeiro.
+
+**Depois:** conferir com o dono os buracos e as contagens; o que for novo ou divergente entra por uma carga SQL gerada numa sessão de sincronização (dev antes de
+produção, backup antes, transação única e SQL para desfazer), marcando os registros como `aplicada`. O backup passa a trazer `historico_chat_lotes` e
+`historico_chat_registros`, para essa sessão comparar sem acessar o banco.
+
