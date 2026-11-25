@@ -342,7 +342,7 @@ não renderiza por conta própria. Quando o app cria o elemento, usamos `.st-key
 
 Evidência produzida em 05/10/2026. **Limite honesto**: a automação rodou no preview com serviços simulados (sem login,
 dados fictícios fixos), em Chromium, Firefox e WebKit; a rodada autenticada contra o banco de desenvolvimento, a gravação
-real dos 10 fluxos e os aparelhos físicos ficam com o usuário (`Arquivos/Roteiro_Homologacao_Manual.md`).
+real dos 10 fluxos e os aparelhos físicos ficam com o usuário (`Arquivos/homologacao/Roteiro_Homologacao_Manual.md`).
 
 ### O que a suíte mede (`e2e/`)
 
@@ -396,7 +396,7 @@ real dos 10 fluxos e os aparelhos físicos ficam com o usuário (`Arquivos/Rotei
   blocos que crescem no render exige medir cada um e arrisca deslocar o layout homologado; fica como melhoria futura.
 - **Lighthouse** de Cobranças, Motos e uma ficha: medido em 26/10/2026 no app publicado (seção 10).
 - **Manual (usuário)**: os 10 fluxos gravando no banco de dev, Android (obrigatório) e iPhone/iPad (se houver), leitor de
-  tela, zoom real do navegador, janela dividida e teclado virtual. Marcar em `Arquivos/Roteiro_Homologacao_Manual.md`.
+  tela, zoom real do navegador, janela dividida e teclado virtual. Marcar em `Arquivos/homologacao/Roteiro_Homologacao_Manual.md`.
 - **CI**: `.github/workflows/ci.yml` roda pytest e o e2e do login em 4 perfis a cada push/PR, enviando capturas e achados
   como artefatos; as páginas autenticadas rodam sob demanda (`workflow_dispatch`) com segredos do projeto de **dev**
   (`SUPABASE_DEV_URL`, `SUPABASE_DEV_ANON_KEY`, `E2E_EMAIL`, `E2E_SENHA`). A comparação de pixels fica local (as

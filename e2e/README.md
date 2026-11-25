@@ -29,7 +29,7 @@ vistoria, configurações); o que criam leva "E2E" na descrição. Recrie o banc
    |---|---|
    | `E2E_BASE_URL` | URL do app local (padrão `http://localhost:8000`) |
    | `E2E_EMAIL`, `E2E_SENHA` | usuário **dono** de teste do projeto de dev; sem elas, só a tela de acesso é testada |
-   | `E2E_DADOS` | `vazio`, `normal` ou `extremo`: rótulo do estado do banco (ver `Arquivos/Inventario_UI_UX.md`) |
+   | `E2E_DADOS` | `vazio`, `normal` ou `extremo`: rótulo do estado do banco (ver `Arquivos/interface/Inventario_UI_UX.md`) |
 
 PowerShell:
 
@@ -80,7 +80,7 @@ reaproveitado (largura e tema mudam no mesmo contexto). O tema vem do cookie `te
 - `e2e/resultados/achados.md` e `achados.json`: achados agrupados por página, severidade e onde reproduzir (perfil, largura,
   tema, estado de dados, fluxo). Ignorados pelo git.
 - `e2e/capturas/<dados>/<perfil>/<tema>/<largura>/<tela>.png`: capturas de página inteira. Ignoradas pelo git.
-- O registro curado fica em `Arquivos/Achados_UI_UX.md`.
+- O registro curado fica em `Arquivos/interface/Achados_UI_UX.md`.
 
 ## Regressão visual
 
@@ -94,5 +94,5 @@ pixels aceito. As referências do Streamlit (`e2e/referencia/<sistema>/`) deixar
 
 - Os fluxos que gravam rodam só nos perfis Chromium (desktop e celular emulado), para não multiplicar dados no banco.
 - Botões e campos são localizados por nome acessível e por `id`; se o rótulo mudar, o fluxo registra um achado INFO ou P0.
-- Emulação não substitui aparelho real nem leitor de tela: a homologação final usa o `Arquivos/Roteiro_Homologacao_Manual.md`.
+- Emulação não substitui aparelho real nem leitor de tela: a homologação final usa o `Arquivos/homologacao/Roteiro_Homologacao_Manual.md`.
 - O app só é testado em `localhost`.

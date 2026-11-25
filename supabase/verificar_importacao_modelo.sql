@@ -4,7 +4,7 @@
 --   20261022140000_importacao_multas.sql
 --   20261022150000_importacao_rastreio_lotes.sql
 --   20261022160000_importacao_capital_veiculos.sql
--- Verifica o modelo da importação dos dados reais (Arquivos/Importacao_Dados_Reais.md):
+-- Verifica o modelo da importação dos dados reais (Arquivos/dados/Importacao_Dados_Reais.md):
 --   * promessa de compra: restrição do total, agenda ancorada em primeira_cobranca, numeração e parada;
 --   * abatimento (desconto sem dinheiro) aceito como forma de pagamento;
 --   * saldo de dívida de fornecedor (dívida anterior + pedidos novos - pagamentos);
