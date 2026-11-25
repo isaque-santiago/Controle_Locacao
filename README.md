@@ -332,6 +332,17 @@ Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macr
   e fica registrado em `servico_conector`); sem essas variáveis só o `ping` funciona. Erros inesperados nunca vão em detalhe para o chat. As gravações
   descartam o cache de leituras das telas. Criar o usuário: Supabase > Authentication > Users (com «Auto Confirm User»), depois
   `insert into servico_conector (user_id) select id from auth.users where email = 'o-email-do-usuario';`.
+- **Histórico dos chats pelo conector (25/11/2026; seção 24.9 do plano).** O Claude dos chats «Locadora - Acompanhamento Financeiro» e «Contratos
+  Locadora» entrega o histórico em **lotes de até 50 registros** para uma **caixa de rascunho**, sem gravar nada no financeiro. Ferramentas:
+  `entregar_lote_historico`, `resumo_do_historico` e `listar_historico_a_conferir` (`src/domain/historico_chat.py`, `src/services/conector.py`).
+  Cada registro leva tipo, data, dados e o **trecho do chat** que o originou; cada lote informa o **período que cobre**, e o resumo mostra os
+  **buracos** entre os lotes (para saber se o chat foi lido inteiro). O banco compara cada registro com o sistema (pagamento, despesa, multa,
+  cliente, veículo e contrato) e marca `ja_existe`, `nova` ou `diverge`; o mesmo registro entregue duas vezes não duplica. Migration
+  `20261125120000_historico_chats.sql` (roteiro `supabase/verificar_historico_chats.sql`, só em dev, termina em ROLLBACK): tabelas
+  `historico_chat_lotes` e `historico_chat_registros` (só o dono lê; ninguém grava direto; o backup as inclui, junto com `pendencias_lancamento`) e as
+  RPCs `rpc_conector_entregar_lote_historico`, `rpc_conector_resumo_historico`, `rpc_conector_historico_a_conferir` e `rpc_historico_descartar_lote`
+  (só dono, não apaga lote com registro aplicado). **Aplicar** o que for novo ou divergente continua sendo uma carga SQL aprovada pelo dono (sessão de
+  sincronização, dev antes de produção, ver `Arquivos/Sincronizacao_Chats.md`).
 - **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
   atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
   sessões e o usuário seria deslogado ao acaso.
@@ -705,7 +716,7 @@ Use um projeto de homologação; os passos criam dados.
 9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
    Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente
    fica vazio; o cálculo usa a distância observada, sem extrapolar leituras ausentes.
-10. Gere e baixe o backup. Confira as 29 tabelas e as contagens em `manifesto.json`.
+10. Gere e baixe o backup. Confira as 32 tabelas e as contagens em `manifesto.json`.
     O ZIP não inclui os binários de fotos/comprovantes nem usuários do Auth. Evite
     alterações durante a geração, pois as leituras não formam um snapshot transacional.
 11. Confira os formulários e tabelas em celular. Saia da conta e verifique que os dados

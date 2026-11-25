@@ -101,7 +101,8 @@ class TestMcp:
         r = responder(self._req("tools/list"))
         nomes = [f["name"] for f in r["result"]["tools"]]
         assert nomes == ["ping", "consultar_cobrancas_abertas", "buscar_veiculos", "registrar_pagamento", "registrar_despesa",
-                         "cadastrar_cliente", "cadastrar_veiculo", "listar_ultimos_lancamentos"]
+                         "cadastrar_cliente", "cadastrar_veiculo", "entregar_lote_historico", "resumo_do_historico",
+                         "listar_historico_a_conferir", "listar_ultimos_lancamentos"]
         for nome in nomes:  # nenhuma ferramenta edita, apaga ou aprova
             assert not any(p in nome for p in ("apagar", "excluir", "editar", "aprovar", "desfazer", "atualizar", "remover"))
 
@@ -131,7 +132,7 @@ class TestFerramentasDoChat:
 
     def test_escrita_so_nas_ferramentas_que_gravam_e_todas_sem_destruir(self):
         from src.domain.conector_mcp import FERRAMENTAS_QUE_GRAVAM
-        assert FERRAMENTAS_QUE_GRAVAM == ("registrar_pagamento", "registrar_despesa", "cadastrar_cliente", "cadastrar_veiculo")
+        assert FERRAMENTAS_QUE_GRAVAM == ("registrar_pagamento", "registrar_despesa", "cadastrar_cliente", "cadastrar_veiculo", "entregar_lote_historico")
         assert all(f["annotations"]["destructiveHint"] is False and f["annotations"]["openWorldHint"] is False for f in FERRAMENTAS)
 
     def test_todo_esquema_fecha_os_argumentos_e_descreve_a_ferramenta(self):

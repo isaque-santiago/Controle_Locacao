@@ -245,3 +245,85 @@ def test_servico_do_ambiente_sem_usuario_de_servico_fica_desligado(monkeypatch):
     monkeypatch.setenv("SERVICO_CONECTOR_EMAIL", "c@exemplo.com")
     monkeypatch.setenv("SERVICO_CONECTOR_SENHA", "s")
     assert isinstance(servico_conector.servico_do_ambiente(), ServicoConector)
+
+
+# ---------- histórico dos chats ----------
+
+def _lote(**extra):
+    return {"fonte": "chat_financeiro", "rotulo": "financeiro-out", "periodo_inicio": "2026-10-01", "periodo_fim": "2026-10-31",
+            "registros": [{"tipo": "pagamento", "data": "2026-10-12", "trecho": "12/10 Jhonatan pagou 275",
+                           "dados": {"cliente": "Jhonatan Silva", "placa": "abc-1d23", "valor": "275"}}], **extra}
+
+
+class TestHistorico:
+    def test_entrega_o_lote_normalizado_e_explica_o_resultado(self, servico):
+        resposta = {"lote_id": "l", "recebidos": 1, "inseridos": 1, "repetidos": 0, "situacoes": {"nova": 1}}
+        with patch(f"{REPO}.entregar_lote_historico", return_value=resposta) as rpc:
+            r = servico.executar("entregar_lote_historico", _lote())
+        payload = rpc.call_args.args[0]
+        assert payload["fonte"] == "chat_financeiro" and payload["periodo_inicio"] == "2026-10-01" and payload["observacao"] is None
+        registro = payload["registros"][0]
+        assert registro["dados"] == {"cliente": "Jhonatan Silva", "placa": "ABC1D23", "valor": "275.00"} and registro["data"] == "2026-10-12"
+        assert registro["resumo"].startswith("Pagamento de Jhonatan Silva") and registro["trecho"] == "12/10 Jhonatan pagou 275"
+        assert r["erro"] is False and "1 novo(s) no rascunho" in r["texto"] and "1 novos" in r["texto"] and "Nada foi gravado no financeiro" in r["texto"]
+
+    def test_comparacao_em_texto(self, servico):
+        resposta = {"recebidos": 6, "inseridos": 5, "repetidos": 1, "situacoes": {"ja_existe": 2, "nova": 1, "diverge": 1, "sem_comparacao": 1}}
+        with patch(f"{REPO}.entregar_lote_historico", return_value=resposta):
+            r = servico.executar("entregar_lote_historico", _lote())
+        assert "2 já existem no sistema; 1 novos; 1 divergem do sistema; 1 sem comparação automática" in r["texto"]
+
+    def test_lote_invalido_nao_chama_o_banco_e_diz_o_que_corrigir(self, servico):
+        registros = [{"tipo": "pagamento", "dados": {"valor": "-1"}, "trecho": "x"}, {"tipo": "xx", "dados": {"a": 1}, "trecho": "y"}]
+        with patch(f"{REPO}.entregar_lote_historico") as rpc:
+            r = servico.executar("entregar_lote_historico", _lote(registros=registros))
+        assert r["erro"] and r["texto"].startswith("Nenhum registro foi enviado") and "registro 1:" in r["texto"] and "registro 2:" in r["texto"] and not rpc.called
+
+    def test_resumo_mostra_periodos_buracos_e_contagens(self, servico):
+        resumo = {"lotes": [{"fonte": "chat_financeiro", "rotulo": "a", "periodo_inicio": "2026-08-01", "periodo_fim": "2026-08-31", "registros": 20},
+                            {"fonte": "chat_financeiro", "rotulo": "b", "periodo_inicio": "2026-10-01", "periodo_fim": "2026-10-31", "registros": 30},
+                            {"fonte": "chat_contratos", "rotulo": "c", "periodo_inicio": "2026-09-01", "periodo_fim": "2026-09-30", "registros": 5}],
+                  "contagens": [{"fonte": "chat_financeiro", "tipo": "pagamento", "situacao": "ja_existe", "qtd": 30},
+                                {"fonte": "chat_financeiro", "tipo": "pagamento", "situacao": "nova", "qtd": 12},
+                                {"fonte": "chat_financeiro", "tipo": "despesa", "situacao": "diverge", "qtd": 3}]}
+        with patch(f"{REPO}.resumo_historico", return_value=resumo) as rpc:
+            r = servico.executar("resumo_do_historico", {})
+        assert rpc.call_args.args == (None,) and r["erro"] is False
+        t = r["texto"]
+        assert "Acompanhamento Financeiro: 2 lote(s), 50 registro(s) recebido(s)." in t and "Contratos Locadora: 1 lote(s), 5 registro(s)" in t
+        assert "BURACOS (nenhum lote cobriu): 01/09/2026 a 30/09/2026." in t
+        assert "Sem buracos entre o primeiro e o último dia entregues." in t  # o chat de contratos tem um período só
+        assert "pagamento: 30 já existem no sistema; 12 novos" in t and "despesa: 3 divergem do sistema" in t
+
+    def test_resumo_sem_lotes(self, servico):
+        with patch(f"{REPO}.resumo_historico", return_value={"lotes": [], "contagens": []}) as rpc:
+            r = servico.executar("resumo_do_historico", {"fonte": "chat_contratos"})
+        assert rpc.call_args.args == ("chat_contratos",) and "Nenhum lote" in r["texto"]
+
+    def test_a_conferir(self, servico):
+        linhas = [{"situacao": "diverge", "data": "2026-10-12", "resumo": "Pagamento de Jhonatan R$ 300,00", "detalhe": "No sistema, nesse dia, há pagamento de R$ 275,00."},
+                  {"situacao": "nova", "data": None, "resumo": "Cliente Maria (CPF final 4725)", "detalhe": None}]
+        with patch(f"{REPO}.historico_a_conferir", return_value=linhas) as rpc:
+            r = servico.executar("listar_historico_a_conferir", {"situacao": "diverge", "limite": "5"})
+        assert rpc.call_args.args == (None, "diverge", 5)
+        assert "[divergem do sistema] 12/10/2026 | Pagamento de Jhonatan R$ 300,00 | No sistema, nesse dia, há pagamento de R$ 275,00." in r["texto"]
+        assert "[novos] sem data | Cliente Maria (CPF final 4725)" in r["texto"] and "Nada foi aplicado no sistema" in r["texto"]
+
+    def test_a_conferir_vazio_e_limite_invalido(self, servico):
+        with patch(f"{REPO}.historico_a_conferir", return_value=[]) as rpc:
+            assert "Nada a conferir" in servico.executar("listar_historico_a_conferir", {})["texto"]
+            assert rpc.call_args.args == (None, None, 30)
+            r = servico.executar("listar_historico_a_conferir", {"limite": "muitos"})
+        assert r["erro"] and "número inteiro" in r["texto"]
+
+    def test_repositorio_do_historico(self):
+        from src.repositories import conector as repo
+
+        cliente = MagicMock()
+        cliente.rpc.return_value.execute.return_value.data = {"lote_id": "l"}
+        with patch.object(repo, "get_client", return_value=cliente):
+            assert repo.entregar_lote_historico({"a": 1}) == {"lote_id": "l"}
+            cliente.rpc.assert_called_with("rpc_conector_entregar_lote_historico", {"payload": {"a": 1}})
+            cliente.rpc.return_value.execute.return_value.data = None
+            assert repo.resumo_historico("chat_financeiro") == {"lotes": [], "contagens": []} and repo.historico_a_conferir() == []
+        cliente.rpc.assert_any_call("rpc_conector_historico_a_conferir", {"p_fonte": None, "p_situacao": None, "p_limite": 30})

@@ -40,3 +40,17 @@ def cadastrar_cliente(payload: dict) -> dict:
 @invalida_cache
 def cadastrar_veiculo(payload: dict) -> dict:
     return _gravar("rpc_conector_cadastrar_veiculo", payload)
+
+
+# ---- Histórico dos chats (rascunho que o dono confere; nada entra no financeiro) ----
+
+def entregar_lote_historico(payload: dict) -> dict:
+    return _gravar("rpc_conector_entregar_lote_historico", payload)
+
+
+def resumo_historico(fonte: str | None = None) -> dict:
+    return get_client().rpc("rpc_conector_resumo_historico", {"p_fonte": fonte}).execute().data or {"lotes": [], "contagens": []}
+
+
+def historico_a_conferir(fonte: str | None = None, situacao: str | None = None, limite: int = 30) -> list[dict]:
+    return get_client().rpc("rpc_conector_historico_a_conferir", {"p_fonte": fonte, "p_situacao": situacao, "p_limite": limite}).execute().data or []

@@ -1332,6 +1332,24 @@ O dono achou a fila de aprovação trabalhosa (aprovar no chat e de novo no app)
 5. **Tela «Lançamentos do chat»:** histórico com **desfazer** e o alerta do Dashboard. Sem fila de aprovação.
 6. **Contratos pelo chat** e as demais entidades (dívidas, manutenções, locatários), com o mesmo critério.
 
+### 24.9 Histórico completo dos chats pelo conector (25/11/2026)
+
+**Pedido do dono:** os chats «Locadora - Acompanhamento Financeiro» e «Contratos Locadora» entregarem o **histórico completo, desde o início**, para os dados serem verificados e incluídos no sistema, que ainda tem lacunas e dados incompletos.
+
+**Decisão:** uma **caixa de rascunho com conferência** (e não gravação direta). O Claude de cada chat tem o histórico no próprio contexto: ele o extrai e o entrega em lotes pelo conector, o que contorna o link de compartilhamento que exige login. **Nada entra no financeiro**; o dono confere e a carga continua aprovada por ele (sessão de sincronização, dev antes de produção, ver [Sincronizacao_Chats.md](Sincronizacao_Chats.md)).
+
+**Como funciona:**
+- Ferramentas: `entregar_lote_historico` (até 50 registros por vez; cada registro com tipo, data, dados e o **trecho do chat** que o originou; cada lote declara o **período que cobre**), `resumo_do_historico` (lotes, períodos, **buracos** entre eles e contagens por tipo e situação) e `listar_historico_a_conferir` (só novos e divergentes, sem trecho nem CPF inteiro).
+- O banco compara cada registro com o sistema e marca `ja_existe`, `nova` ou `diverge` (pagamento, despesa, multa, cliente, veículo e contrato); dívida, sócio e «outro» ficam `sem_comparacao`. O mesmo registro entregue de novo não duplica.
+- Tabelas `historico_chat_lotes` e `historico_chat_registros` (só o dono lê; o backup as inclui, com `pendencias_lancamento`, agora 32 tabelas). Migration `20261125120000_historico_chats.sql`, roteiro `verificar_historico_chats.sql`.
+
+**Cuidados:** um chat muito longo pode não caber inteiro na leitura do Claude, por isso o período de cada lote é obrigatório e o resumo aponta buracos; o trecho citado em cada registro permite conferir contra o chat; o rascunho guarda CPF e telefone completos (como o cadastro de clientes).
+
+**Etapas:**
+1. **Caixa e conferência (código entregue em 25/11/2026 na branch `feat/historico-chats`; falta aplicar a migration no dev e rodar o roteiro lá, depois em produção, e remover e adicionar o conector no claude.ai).** *Aceite:* o chat entrega um lote, o resumo mostra o período e os buracos, e os registros aparecem como já existe, nova ou diverge.
+2. **Entregar o histórico** dos dois chats, lote a lote, e conferir as contagens com o dono.
+3. **Aplicar** o que for novo ou divergente por carga SQL aprovada (sessão de sincronização), marcando os registros como `aplicada`. Contratos, saldo anterior e pagamentos antigos exigem desenho próprio.
+
 ### 24.8 Pendências de esclarecimento
 
 - Falta incluir as duas pessoas do financeiro em `administradores` (decisão 3 acima).
