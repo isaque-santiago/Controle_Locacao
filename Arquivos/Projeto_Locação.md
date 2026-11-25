@@ -1357,6 +1357,7 @@ Os dois chats entregaram (Contratos: 123 registros em 7 lotes; Financeiro: 131 r
 - **Defeitos corrigidos (migration `20261125130000`):** a lista «a conferir» cortava em 50 de 55 sem aviso (agora tem página e total e filtra por tipo); as 8 multas «divergentes» eram o valor com 20% de desconto (agora comparadas também com o valor atualizado e com o desconto); pagamentos compostos e datas estimadas geravam divergência falsa (`finalidade`, `data_estimada`); registro «igual» com outro trecho é avisado (`ocorrencia`); `inferido` e `faltando` aparecem na lista.
 - **Planilha de conferência gerada pelo app**, igual para os dois chats, com o id de cada registro e a coluna Decisão (Configurações > «Histórico dos chats»).
 - **Pedido v2** para os chats ([Sincronizacao_Chats.md](dados/Sincronizacao_Chats.md), seção 12): não montar planilha, dividir pagamento composto, marcar estimativas e inferências, não inventar o que o chat só tem em resumo.
+- **Código:** branch `feat/historico-v2` (migration `20261125130000`, ferramentas, planilha do app e script da exportação). Falta aplicar a migration no dev e em produção, ligar o conector de novo e pedir os lotes pelo pedido v2.
 - **Decisões do dono ainda abertas, apontadas pelos chats:** os 58 contratos antigos entram ou não; Alfredo (TIA1B71 no chat, RID4D62 na planilha); Leonardo (PSG0C86 ou HYF1F47); placa do Erivaldo (deduzida); possíveis duplicados do Cícero Anderson (R$ 67); pagamentos de seguros e de Cabeça, Jhonatan e Otávio sem valor.
 
 ### 24.8 Pendências de esclarecimento
