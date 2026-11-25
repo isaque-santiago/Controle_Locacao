@@ -2,7 +2,7 @@
 
 from starlette.testclient import TestClient
 
-from tests.web.conftest import CPF_LOCATARIO, csrf_da_sessao, entrar
+from tests.web.conftest import CPF_LOCATARIO, csrf_da_sessao, entrar, extrair_csrf
 
 URL = "/configuracoes/historico-chats/planilha"
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -36,4 +36,4 @@ def test_exige_csrf_e_dono(cliente, base_configuracoes, monkeypatch):
     assert chamadas == []
     locatario = TestClient(cliente.app, follow_redirects=False, raise_server_exceptions=False)  # outro navegador, no mesmo app
     entrar(locatario, identificador=CPF_LOCATARIO, senha="senha-locatario")
-    assert locatario.post(URL, data={"csrf_token": csrf_da_sessao(locatario)}).status_code == 403 and chamadas == []
+    assert locatario.post(URL, data={"csrf_token": extrair_csrf(locatario.get("/portal").text)}).status_code == 403 and chamadas == []
