@@ -1,12 +1,14 @@
 # Documentação do projeto
 
-Índice dos documentos em `Arquivos/`. O plano mestre e os três guias de uso corrente ficam aqui na raiz (o `CLAUDE.md` aponta para eles); o resto está em subpastas por tema.
+Índice dos documentos em `Arquivos/`. O plano mestre e os documentos de uso corrente ficam aqui na raiz (o `CLAUDE.md` aponta para eles); o resto está em subpastas por tema.
 
 ## Essenciais (nesta pasta)
 
 | Documento | Para que serve |
 |---|---|
 | [Projeto_Locação.md](Projeto_Locação.md) | **Plano mestre**: fases, regras de negócio, decisões do dono e o feedback pós-entrega (seção 23). |
+| [Referencia_Tecnica.md](Referencia_Tecnica.md) | Como o sistema funciona hoje: telas, regras, segurança e integrações. |
+| [Historico_Desenvolvimento.md](Historico_Desenvolvimento.md) | **Histórico do projeto** (o que foi feito e quando). Entradas novas vão aqui, nunca no README. |
 | [Analise_Migracao_Frontend.md](Analise_Migracao_Frontend.md) | Decisões e histórico da migração da interface (Streamlit para FastAPI, Jinja2, HTMX e Tailwind). |
 | [Deploy_VPS.md](Deploy_VPS.md) | Guia de implantação na VPS (Coolify): variáveis, tarefa agendada de WhatsApp, verificação pós-deploy. |
 | [Revisao_Seguranca.md](Revisao_Seguranca.md) | Revisão de segurança do app web e requisitos para o deploy; riscos aceitos pelo dono. |
