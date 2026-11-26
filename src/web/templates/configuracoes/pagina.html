@@ -39,7 +39,7 @@
 </form>
 <section class="cartao mb-4" id="cfg-whatsapp" aria-labelledby="cfg-whatsapp-titulo">
   <h2 id="cfg-whatsapp-titulo">Envio automático por WhatsApp</h2>
-  <p class="text-texto-2 mb-4">Lembretes de vencimento, avisos de atraso e recibos enviados no grupo de WhatsApp de cada locatário, em três horários (7:30, 11:30 e 15:00), de segunda a sábado, sem feriados nacionais. Veja o que foi enviado em <a href="/mensagens">Mensagens</a>.</p>
+  <p class="text-texto-2 mb-4">Cobranças, recibos e avisos de CNH, documentos, troca de óleo e portal enviados no grupo de WhatsApp de cada locatário, em três horários (7:30, 11:30 e 15:00), de segunda a sábado, sem feriados nacionais. Veja o que foi enviado em <a href="/mensagens">Mensagens</a>.</p>
   <p class="mb-4" id="cfg-zap-estado">Instância do WhatsApp: <strong>{{ zap.estado }}</strong>{% if zap.ultima_rodada %} · última rodada em <span class="mono">{{ zap.ultima_rodada|data_hora_br }}</span>{% endif %}</p>
   <form method="post" action="/configuracoes/whatsapp" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
