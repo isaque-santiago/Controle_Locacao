@@ -6,6 +6,8 @@ Sistema web para controlar locação, manutenção, documentação e vistorias d
 
 Ver plano completo em [Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md).
 
+Guia de uso para novos funcionários: [Arquivos/Guia_de_Uso_LA_Locadora.docx](Arquivos/Guia_de_Uso_LA_Locadora.docx) (edição de novembro de 2026; os nomes, CPFs, telefones, placas e e-mails nas telas são fictícios; os valores são ilustrativos). Revise o guia quando telas ou regras mudarem.
+
 ## Stack
 
 Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + Storage), pytest.
