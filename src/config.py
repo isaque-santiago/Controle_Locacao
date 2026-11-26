@@ -110,7 +110,6 @@ EMPRESA_NOS_TEXTOS = "LA Locadora"
 
 def get_textos_whatsapp() -> dict:
     """O que entra nos textos de WhatsApp: `WHATSAPP_EMPRESA` (nome na saudação; sem ela, "LA Locadora"),
-    `WHATSAPP_CONTATO` (como falar com o dono),
     `WHATSAPP_PIX` (chave Pix estática, opcional) e `PORTAL_URL` (link do portal do locatário, opcional).
 
     Com o link do portal definido, os avisos de documento convidam o locatário a enviar o comprovante pelo portal
@@ -120,7 +119,6 @@ def get_textos_whatsapp() -> dict:
     link_portal = (_ler("PORTAL_URL") or "").strip() or None
     return {
         "empresa": empresa,
-        "contato": (_ler("WHATSAPP_CONTATO") or "").strip() or None,
         "pix": (_ler("WHATSAPP_PIX") or "").strip() or None,
         "link_portal": link_portal,
         "comprovante_no_portal": link_portal is not None,

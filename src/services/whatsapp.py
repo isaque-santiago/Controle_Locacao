@@ -7,7 +7,7 @@ Uma execução (`executar`) faz, nesta ordem:
    próximo disparo;
 3. confere a instância do WhatsApp e grava o estado da rodada (o Dashboard avisa o dono se ela cair ou a rodada parar);
 4. dentro de um disparo, envia as pendentes pela Evolution, com pausa aleatória entre elas. O destino é o **grupo**
-   do locatário (só cobranças e recibos; cliente sem grupo fica `ignorada`); em modo teste, o número de teste, que
+   do locatário (cliente sem grupo fica `ignorada`); em modo teste, o número de teste, que
    é conferido antes (o grupo não precisa de conferência);
 5. com a instância conectada, atualiza a lista de grupos que o dono escolhe no cadastro do cliente.
 
