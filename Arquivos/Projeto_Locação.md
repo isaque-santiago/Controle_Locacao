@@ -1242,7 +1242,7 @@ Feedback do segundo responsável após ver o sistema "terminado". Cada item viro
 ### 23.3 Pendências de esclarecimento
 
 - **Item 2:** testar no iPhone real (adicionar à tela inicial; nome «LA Locadora» e ícone).
-- **Item 6:** criar os grupos e cadastrar os IDs; testar em modo teste. Os textos das mensagens ainda tratam o locatário no singular («Olá, Maria»); revisar com o dono se o tom serve para um grupo com o financeiro. Os avisos de CNH, óleo, documentos e portal estão fora do envio até o dono decidir como entregá-los.
+- **Item 6:** criar os grupos e cadastrar os IDs; testar em modo teste. Textos de cobrança e recibo reescritos em tom leve, aprovados pelo dono em 26/11/2026 (saudação ao locatário pelo primeiro nome, identificação «LA Locadora», comprovante pedido no grupo; atraso e inadimplência da mesma cobrança aparecem uma vez só). Os avisos de CNH, óleo, documentos e portal estão fora do envio até o dono decidir como entregá-los.
 - **Item 7 (seção 24):** etapa 1 concluída e testada (24/11/2026). Falta incluir as duas pessoas do financeiro em `administradores` e confirmar que o conector não tem cobrança extra; as etapas 2 a 6 seguem em ordem.
 - **Item 8:** a primeira sincronização foi feita em 19/11/2026. Para a próxima: link novo dos dois chats e backup novo. Decisões abertas listadas na seção 11 de `Sincronizacao_Chats.md`.
 - **Item 10:** arquivamento entregue em 23/11/2026. Falta: a data da venda de `NVE8D78` e `OIH0D80` (hoje vazia) e arquivar os 2 ex-locatários com débito quando quitarem ou quando o débito for decidido.

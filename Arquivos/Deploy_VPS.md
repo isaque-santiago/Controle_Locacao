@@ -254,8 +254,8 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
 | `SERVICO_MENSAGENS_EMAIL`, `SERVICO_MENSAGENS_SENHA` | usuário de serviço do passo 2 |
 | `EVOLUTION_URL`, `EVOLUTION_APIKEY`, `EVOLUTION_INSTANCIA` | endereço (use o interno do Docker, se houver rede em comum), chave e nome da instância |
 | `EVOLUTION_VERSAO` | `2` (padrão) ou `1` |
-| `WHATSAPP_EMPRESA` | nome na saudação (sem ela, usa `LOCADOR_NOME`) |
-| `WHATSAPP_CONTATO` | como o locatário fala com o dono, ex.: `o Alisson, no (11) 99999-0000`. O chip é dedicado e ninguém lê as respostas dele: sem contato, o texto manda falar com «a empresa» |
+| `WHATSAPP_EMPRESA` | nome na saudação (sem ela, `LA Locadora`) |
+| `WHATSAPP_CONTATO` | como o locatário fala com o dono, ex.: `o Alisson, no (11) 99999-0000`. As cobranças e os recibos não usam esta variável (pedem a resposta no próprio grupo, onde o dono está); ela só aparece nos avisos que estão fora do envio e quando passam do teto de assuntos |
 | `WHATSAPP_PIX` (opcional) | chave Pix estática que entra nas cobranças |
 | `PORTAL_URL` (opcional) | link do portal nos avisos de troca de óleo e de acesso |
 
