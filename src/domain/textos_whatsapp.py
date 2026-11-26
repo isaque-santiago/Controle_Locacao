@@ -3,16 +3,15 @@
 Todo o texto fica neste módulo (fixo no código, por decisão do dono; editável em Configurações só no futuro).
 Os assuntos de um cliente saem juntos, em UMA mensagem.
 
-**Cobranças e recibos** (o que vai ao grupo do locatário) têm tom leve, de conversa (decisão do dono, 26/11/2026):
-recibos primeiro, depois a cobrança — com os valores um por linha quando é uma só, ou uma linha por cobrança e o total
-quando são várias — e, no fim, o que fazer (mandar o comprovante no grupo). Todas entram, sem teto, para o total bater
-com as linhas. Se a mesma cobrança está atrasada e virou inadimplência, ela aparece uma vez só (os dois assuntos são
-marcados como enviados). A inadimplência é mais séria, sem ameaça.
+Todos têm tom leve, de conversa (decisão do dono, 26/11/2026), e vão ao grupo do locatário.
 
-**Os outros avisos** (documentos, óleo, CNH, portal; fora do envio por enquanto) seguem em blocos com título, os mais
-urgentes primeiro; passando de `maximo_assuntos`, o resto sai no dia seguinte e não é marcado como enviado.
+**Cobranças e recibos** abrem a mensagem: recibos primeiro, depois a cobrança — com os valores um por linha quando é uma
+só, ou uma linha por cobrança e o total quando são várias — e, no fim, o que fazer (mandar o comprovante no grupo). Todas
+entram, sem teto, para o total bater com as linhas. Se a mesma cobrança está atrasada e virou inadimplência, ela aparece
+uma vez só (os dois assuntos são marcados como enviados). A inadimplência é mais séria, sem ameaça.
 
-Nenhum texto leva senha. Dinheiro em `R$ 1.234,56`, datas em `dd/mm/aaaa`, placa `ABC-1D23`.
+**Os outros avisos** (documentos, óleo, CNH, portal) vêm depois, um parágrafo cada, os mais urgentes primeiro. Passando de
+`maximo_assuntos`, os que sobram não são marcados como enviados e vão em outra mensagem.
 """
 
 from dataclasses import dataclass
@@ -20,7 +19,7 @@ from datetime import datetime
 
 from src.domain.avisos_whatsapp import Aviso
 from src.domain.formatadores import formatar_data, formatar_moeda, formatar_placa
-from src.domain.grupo_whatsapp import TIPOS_NO_GRUPO, normalizar_grupo
+from src.domain.grupo_whatsapp import TIPOS_DE_COBRANCA, normalizar_grupo
 
 # Mais urgente primeiro: cobranças, depois documentos, manutenção, CNH e portal.
 ORDEM = (
@@ -38,29 +37,26 @@ _COBRANCA = {
 }
 _COMPROVANTE = "Depois de pagar, é só mandar o comprovante aqui no grupo."
 _JA_PAGOU = "Se já pagou, pode desconsiderar. 🙏"
+
+# Documento do veículo: (nome com artigo, o que fazer).
 _DOCUMENTO = {
-    "ipva": ("IPVA", "Providencie o pagamento da guia"),
-    "licenciamento": ("Licenciamento", "Providencie o pagamento da guia"),
-    "seguro": ("Seguro", "Providencie a renovação do seguro"),
-    "vistoria_detran": ("Vistoria do Detran", "Agende e faça a vistoria"),
+    "ipva": ("O IPVA", "Providencie o pagamento da guia"),
+    "licenciamento": ("O licenciamento", "Providencie o pagamento da guia"),
+    "seguro": ("O seguro", "Providencie a renovação do seguro"),
+    "vistoria_detran": ("A vistoria do Detran", "Agende e faça a vistoria"),
 }
 
 
 @dataclass(frozen=True)
 class OpcoesTexto:
     empresa: str | None = None        # "LA Locadora": aparece na saudação
-    contato: str | None = None        # como falar com o dono: "o Alisson, no (11) 99999-0000"
     pix: str | None = None            # chave Pix estática (decisão do dono adiada: sem ela, a linha não aparece)
     link_portal: str | None = None
-    comprovante_no_portal: bool = False  # só vira True quando o envio de comprovante pelo portal existir (Etapa 6)
+    comprovante_no_portal: bool = False  # com o link do portal definido, o documento pede o comprovante por lá
     maximo_assuntos: int = 5
 
 
 # ------------------------------------------------------------------- blocos --
-
-
-def _contato(op: OpcoesTexto) -> str:
-    return op.contato or "a empresa"
 
 
 def _moto(placa) -> str:
@@ -181,17 +177,19 @@ def _recibo(a: Aviso) -> str:
     return f"Recebemos {formatar_moeda(d['valor'])}{referente}{placa}. {fim}"
 
 
-def _partes_do_grupo(nome: str, avisos: list[Aviso], op: OpcoesTexto) -> list[str]:
+def _saudacao(nome: str, seria: bool, op: OpcoesTexto) -> str:
+    saudacao = f"Olá, {_primeiro_nome(nome)}." if seria else f"Oi, {_primeiro_nome(nome)}! 👋"
+    return saudacao + (f" Aqui é da {op.empresa}." if op.empresa else "")
+
+
+def _partes_das_cobrancas(avisos: list[Aviso], op: OpcoesTexto) -> list[str]:
     inadimplentes = {a.referencia_id for a in avisos if a.tipo == "inadimplencia"}
     recibos = [a for a in avisos if a.tipo == "recibo_pagamento"]
     cobrancas = sorted(
         (a for a in avisos if a.tipo != "recibo_pagamento"
          and not (a.tipo == "atraso" and a.referencia_id in inadimplentes)),  # a mesma dívida aparece uma vez só
         key=lambda a: (a.dados["vencimento"], a.referencia_id))
-    saudacao = f"Olá, {_primeiro_nome(nome)}." if inadimplentes else f"Oi, {_primeiro_nome(nome)}! 👋"
-    if op.empresa:
-        saudacao += f" Aqui é da {op.empresa}."
-    partes = [saudacao] + [_recibo(a) for a in recibos]
+    partes = [_recibo(a) for a in recibos]
     if len(cobrancas) == 1:
         partes += _uma_cobranca(cobrancas[0], op)
     elif cobrancas:
@@ -202,29 +200,30 @@ def _partes_do_grupo(nome: str, avisos: list[Aviso], op: OpcoesTexto) -> list[st
 # ----------------------------------------------------------- outros avisos --
 
 
-def _como_enviar_comprovante(op: OpcoesTexto) -> str:
-    if op.comprovante_no_portal and op.link_portal:
-        return f"pelo portal ({op.link_portal}) ou para {_contato(op)}"
-    return f"para {_contato(op)}"
+def _daqui_a(dias: int) -> str:
+    return "hoje" if dias == 0 else f"daqui a {_plural(dias, 'dia', 'dias')}"
 
 
-def _bloco_documento(a: Aviso, op: OpcoesTexto):
+def _com_link(frase: str, op: OpcoesTexto) -> str:
+    return f"{frase}: {op.link_portal}" if op.link_portal else f"{frase}."
+
+
+def _bloco_documento(a: Aviso, op: OpcoesTexto) -> list[str]:
     d = a.dados
-    nome, instrucao = _DOCUMENTO.get(d["tipo_documento"], (d.get("descricao") or "Documento", "Providencie a regularização"))
-    if d["tipo_documento"] == "outro" and d.get("descricao"):
-        nome = d["descricao"]
-    dias = d["dias"]
+    nome, instrucao = _DOCUMENTO.get(d["tipo_documento"], ("O documento", "Providencie a regularização"))
+    if d["tipo_documento"] not in _DOCUMENTO and d.get("descricao"):
+        nome = f"O documento ({d['descricao']})"
+    dias, vence = d["dias"], formatar_data(d["vencimento"])
     if a.tipo == "documento_proximo":
-        titulo = "Documento perto de vencer"
-        situacao = f"vence em {formatar_data(d['vencimento'])} ({_plural(dias, 'dia', 'dias')})"
+        situacao = f"📄 {nome}{_moto(d['placa'])} vence em {vence} ({_daqui_a(dias)})."
     else:
-        titulo = "Documento vencido"
-        situacao = f"venceu em {formatar_data(d['vencimento'])} (há {_plural(-dias, 'dia', 'dias')})"
-    return titulo, [
-        f"{nome}{_moto(d['placa'])} {situacao}.",
-        f"{instrucao}. Se o custo for do proprietário, combine com {_contato(op)}.",
-        f"Depois de regularizar, envie o comprovante {_como_enviar_comprovante(op)}.",
-    ]
+        situacao = f"⚠️ {nome}{_moto(d['placa'])} venceu em {vence} (há {_plural(-dias, 'dia', 'dias')})."
+    if op.comprovante_no_portal and op.link_portal:
+        # Só o comprovante enviado pelo portal pausa o aviso até o dono conferir.
+        pedido = f"{instrucao} e envie o comprovante pelo portal: {op.link_portal}"
+    else:
+        pedido = f"{instrucao} e envie o comprovante aqui no grupo."
+    return [situacao, pedido, "Se esse custo não for seu, é só avisar aqui no grupo."]
 
 
 def _faltam(d) -> str:
@@ -245,45 +244,35 @@ def _passou(d) -> str:
     return " e ".join(partes)
 
 
-def _bloco_oleo(a: Aviso, op: OpcoesTexto):
+def _bloco_oleo(a: Aviso, op: OpcoesTexto) -> list[str]:
     d = a.dados
-    registro = ("Faça a troca e registre pelo portal, com a foto do painel e a nota fiscal"
-                + (f": {op.link_portal}" if op.link_portal else "."))
+    placa = formatar_placa(d["placa"])
+    como = "pelo portal com a foto do painel e a da nota fiscal"
     if a.tipo == "oleo_proxima":
-        return "Troca de óleo próxima", [f"O veículo {formatar_placa(d['placa'])} está perto da troca de óleo (faltam {_faltam(d)}).", registro]
+        return [f"🛢️ O veículo {placa} está perto da troca de óleo (faltam {_faltam(d)}).",
+                _com_link(f"Quando trocar, registre {como}", op)]
     passou = _passou(d)
     atraso = f" (passou {passou})" if passou else ""
-    return "Troca de óleo atrasada", [
-        f"A troca de óleo do veículo {formatar_placa(d['placa'])} passou do prazo{atraso}. Trocas fora do intervalo podem gerar multa.",
-        registro,
-    ]
+    return [f"⚠️ A troca de óleo do veículo {placa} está atrasada{atraso}. Trocas fora do intervalo podem gerar multa.",
+            _com_link(f"Faça a troca e registre {como}", op)]
 
 
-def _bloco_cnh(a: Aviso, op: OpcoesTexto):
+def _bloco_cnh(a: Aviso, op: OpcoesTexto) -> list[str]:
     d = a.dados
     if a.tipo == "cnh_proxima":
-        return "CNH perto de vencer", [
-            f"Sua CNH vence em {formatar_data(d['validade'])} ({_plural(d['dias'], 'dia', 'dias')}).",
-            f"Depois de renovar, envie a nova CNH para {_contato(op)}, para atualizar o cadastro.",
-        ]
-    return "CNH vencida", [
-        f"Sua CNH venceu em {formatar_data(d['validade'])} (há {_plural(-d['dias'], 'dia', 'dias')}). "
-        "Não é permitido conduzir com a CNH vencida.",
-        f"Regularize e envie a nova CNH para {_contato(op)}.",
-    ]
+        return [f"🪪 Sua CNH vence em {formatar_data(d['validade'])} ({_daqui_a(d['dias'])}).",
+                "Depois de renovar, manda a nova aqui no grupo."]
+    return [f"⚠️ Sua CNH venceu em {formatar_data(d['validade'])} (há {_plural(-d['dias'], 'dia', 'dias')}). "
+            "Não é permitido conduzir com a CNH vencida.",
+            "Assim que renovar, manda a nova aqui no grupo."]
 
 
-def _bloco_portal(a: Aviso, op: OpcoesTexto):
+def _bloco_portal(a: Aviso, op: OpcoesTexto) -> list[str]:
     if a.tipo == "portal_acesso":
         onde = f"Entre em {op.link_portal}" if op.link_portal else "Entre no portal"
-        return "Acesso ao portal", [
-            "Seu acesso ao portal do locatário foi criado.",
-            f"{onde} com seu e-mail de acesso e a senha informada pela empresa.",
-        ]
-    return "Senha do portal alterada", [
-        "A senha do seu acesso ao portal foi alterada.",
-        f"Se não foi você, avise {_contato(op)} agora.",
-    ]
+        return ["🔐 Seu acesso ao portal foi criado!",
+                f"{onde} com seu e-mail de acesso e a senha que a empresa te passou."]
+    return ["🔐 A senha do seu acesso ao portal foi alterada.", "Se não foi você, avise aqui no grupo agora."]
 
 
 _CONSTRUTORES = {
@@ -294,9 +283,9 @@ _CONSTRUTORES = {
 }
 
 
-def texto_bloco(aviso: Aviso, opcoes: OpcoesTexto | None = None) -> tuple[str, list[str]]:
-    """(título, linhas) de um aviso que não é cobrança nem recibo."""
-    return _CONSTRUTORES[aviso.tipo](aviso, opcoes or OpcoesTexto())
+def texto_bloco(aviso: Aviso, opcoes: OpcoesTexto | None = None) -> str:
+    """O parágrafo de um aviso que não é cobrança nem recibo."""
+    return "\n".join(_CONSTRUTORES[aviso.tipo](aviso, opcoes or OpcoesTexto()))
 
 
 # --------------------------------------------------------------- mensagem --
@@ -314,26 +303,21 @@ def montar_mensagem(nome: str, avisos, opcoes: OpcoesTexto | None = None) -> tup
     if not avisos:
         raise ValueError("Não há avisos para montar a mensagem.")
     ordenados = sorted(avisos, key=lambda a: (_POSICAO[a.tipo], a.referencia_id))
-    do_grupo = [a for a in ordenados if a.tipo in TIPOS_NO_GRUPO]
-    outros = [a for a in ordenados if a.tipo not in TIPOS_NO_GRUPO]
-    vagas = max(op.maximo_assuntos - len(do_grupo), 0)
+    cobrancas = [a for a in ordenados if a.tipo in TIPOS_DE_COBRANCA]
+    outros = [a for a in ordenados if a.tipo not in TIPOS_DE_COBRANCA]
+    # As cobranças entram todas; os outros avisos ocupam o que sobrar do teto.
+    vagas = max(op.maximo_assuntos - len(cobrancas), 0)
     blocos, sobram = outros[:vagas], outros[vagas:]
 
-    if do_grupo:
-        partes = _partes_do_grupo(nome, do_grupo, op)
-    else:
-        saudacao = f"Olá, {_primeiro_nome(nome)}!" + (f" Aqui é da {op.empresa}." if op.empresa else "")
-        abertura = "Segue um aviso:" if len(blocos) == 1 else f"Seguem {len(blocos)} avisos:"
-        partes = [f"{saudacao} {abertura}"]
-    for i, aviso in enumerate(blocos, start=1):
-        titulo, linhas = texto_bloco(aviso, op)
-        cabecalho = f"*{titulo}*" if len(blocos) == 1 else f"*{i}. {titulo}*"
-        partes.append("\n".join([cabecalho] + linhas))
+    seria = any(a.tipo == "inadimplencia" for a in cobrancas)
+    partes = [_saudacao(nome, seria, op)]
+    if cobrancas:
+        partes += _partes_das_cobrancas(cobrancas, op)
+    partes += [texto_bloco(aviso, op) for aviso in blocos]
     if sobram:
-        partes.append(f"Há mais {_plural(len(sobram), 'assunto', 'assuntos')} pendente(s). Fale com {_contato(op)} para ver tudo.")
-    elif not do_grupo:
-        partes.append(f"Dúvidas? Fale com {_contato(op)}.")
-    return "\n\n".join(partes), do_grupo + blocos, sobram
+        resto = "Tem mais 1 aviso, que vai" if len(sobram) == 1 else f"Tem mais {len(sobram)} avisos, que vão"
+        partes.append(f"{resto} em outra mensagem.")
+    return "\n\n".join(partes), cobrancas + blocos, sobram
 
 
 def montar_payload(clientes: dict, avisos, momento: datetime, opcoes: OpcoesTexto | None = None) -> list[dict]:

@@ -16,7 +16,7 @@ def test_ha_a_aba_whatsapp_na_ficha(cliente, base_clientes):
 def test_aba_mostra_o_historico_e_oferece_parar(cliente, base_clientes, base_whatsapp):
     entrar(cliente)
     html = cliente.get(f"/clientes/{base_clientes.id}?aba=whatsapp").text
-    assert "Mensagens automáticas de WhatsApp" in html and "nenhuma cobrança nem recibo automático" in html
+    assert "Mensagens automáticas de WhatsApp" in html and "nenhum aviso automático" in html
     assert "Histórico de mensagens" in html and html.count("<tr data-recolhivel>") == 3
     assert "A Evolution recusou o pedido (400)." in html and "Aguardando envio" in html and "Enviada" in html
     assert f'hx-post="/clientes/{base_clientes.id}/whatsapp/bloquear"' in html and "Parar mensagens deste cliente" in html

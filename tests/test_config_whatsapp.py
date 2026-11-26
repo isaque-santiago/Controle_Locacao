@@ -40,9 +40,9 @@ def test_usuario_de_servico(monkeypatch):
 
 
 def test_textos_usam_la_locadora_quando_nao_ha_empresa_e_nunca_a_razao_social(monkeypatch):
-    _ambiente(monkeypatch, {"LOCADOR_NOME": "Razão Social do Contrato Ltda", "WHATSAPP_CONTATO": "o Alisson, no (11) 99999-0000"})
+    _ambiente(monkeypatch, {"LOCADOR_NOME": "Razão Social do Contrato Ltda", "WHATSAPP_CONTATO": "variável antiga, ignorada"})
     textos = config.get_textos_whatsapp()
-    assert textos == {"empresa": "LA Locadora", "contato": "o Alisson, no (11) 99999-0000", "pix": None, "link_portal": None,
+    assert textos == {"empresa": "LA Locadora", "pix": None, "link_portal": None,
                       "comprovante_no_portal": False}
     _ambiente(monkeypatch, {"WHATSAPP_EMPRESA": "LA Locadora", "LOCADOR_NOME": "Outro", "WHATSAPP_PIX": "chave", "PORTAL_URL": "https://p"})
     textos = config.get_textos_whatsapp()

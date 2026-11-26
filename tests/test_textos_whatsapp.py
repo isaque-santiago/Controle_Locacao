@@ -11,7 +11,7 @@ from src.domain.janela_envio import FUSO
 from src.domain.textos_whatsapp import ORDEM, OpcoesTexto, montar_mensagem, montar_payload, texto_bloco
 
 DIA = date(2026, 11, 13)
-OP = OpcoesTexto(empresa="LA Locadora", contato="o Alisson, no (11) 99999-0000", link_portal="https://portal.exemplo.com.br")
+OP = OpcoesTexto(empresa="LA Locadora", link_portal="https://portal.exemplo.com.br")
 
 
 def _aviso(tipo, ref="ref-1", cliente="cli-1", **dados):
@@ -162,59 +162,78 @@ def test_recibo_parcial_vem_antes_da_cobranca():
 
 def test_cobranca_nao_pede_para_falar_com_a_empresa():
     texto = _texto(_cobranca("atraso", encargos="36.00", dias_atraso=3), op=OP)
-    assert "Dúvidas?" not in texto and "o Alisson" not in texto
+    assert "Dúvidas?" not in texto and "Fale com" not in texto
 
 
 # ------------------------------------------------------- outros avisos --
 
 
-@pytest.mark.parametrize("tipo, esperado", [
-    ("ipva", "IPVA"), ("licenciamento", "Licenciamento"), ("seguro", "Seguro"), ("vistoria_detran", "Vistoria do Detran"),
+PORTAL = "https://portal.exemplo.com.br/portal"
+COM_PORTAL = OpcoesTexto(empresa="LA Locadora", link_portal=PORTAL, comprovante_no_portal=True)
+
+
+def _documento(tipo="documento_vencido", tipo_documento="ipva", vencimento=date(2026, 11, 5), dias=-8, descricao=None, ref="doc-1"):
+    return _aviso(tipo, ref=ref, placa="ABC1D23", tipo_documento=tipo_documento, descricao=descricao, vencimento=vencimento, dias=dias)
+
+
+@pytest.mark.parametrize("tipo, nome, instrucao", [
+    ("ipva", "O IPVA", "Providencie o pagamento da guia"),
+    ("licenciamento", "O licenciamento", "Providencie o pagamento da guia"),
+    ("seguro", "O seguro", "Providencie a renovação do seguro"),
+    ("vistoria_detran", "A vistoria do Detran", "Agende e faça a vistoria"),
 ])
-def test_documento_cita_o_tipo_o_prazo_e_o_comprovante(tipo, esperado):
-    aviso = _aviso("documento_vencido", ref="doc-1", placa="ABC1D23", tipo_documento=tipo, descricao=None,
-                   vencimento=date(2026, 11, 5), dias=-8)
-    _, linhas = texto_bloco(aviso, OP)
-    texto = "\n".join(linhas)
-    assert esperado in texto and "venceu em 05/11/2026 (há 8 dias)" in texto
-    assert "Se o custo for do proprietário, combine com o Alisson" in texto
-    assert "envie o comprovante para o Alisson" in texto
-    assert "portal" not in texto  # o envio pelo portal ainda não existe
+def test_documento_cita_o_tipo_o_prazo_e_o_que_fazer(tipo, nome, instrucao):
+    assert texto_bloco(_documento(tipo_documento=tipo), COM_PORTAL) == (
+        f"⚠️ {nome} do veículo ABC-1D23 venceu em 05/11/2026 (há 8 dias).\n"
+        f"{instrucao} e envie o comprovante pelo portal: {PORTAL}\n"
+        "Se esse custo não for seu, é só avisar aqui no grupo.")
 
 
-def test_documento_cita_o_portal_so_quando_habilitado():
-    aviso = _aviso("documento_proximo", ref="doc-1", placa="ABC1D23", tipo_documento="ipva", descricao=None,
-                   vencimento=date(2026, 11, 20), dias=7)
-    texto = "\n".join(texto_bloco(aviso, OpcoesTexto(contato="o Alisson", link_portal="https://p.exemplo", comprovante_no_portal=True))[1])
-    assert "vence em 20/11/2026 (7 dias)" in texto
-    assert "pelo portal (https://p.exemplo) ou para o Alisson" in texto
+def test_documento_perto_de_vencer_sem_portal_pede_o_comprovante_no_grupo():
+    texto = texto_bloco(_documento("documento_proximo", vencimento=date(2026, 11, 20), dias=7))
+    assert texto.startswith("📄 O IPVA do veículo ABC-1D23 vence em 20/11/2026 (daqui a 7 dias).")
+    assert "envie o comprovante aqui no grupo." in texto and "portal" not in texto
+
+
+def test_documento_que_vence_hoje():
+    assert "(hoje)" in texto_bloco(_documento("documento_proximo", vencimento=DIA, dias=0))
 
 
 def test_documento_outro_usa_a_descricao():
-    aviso = _aviso("documento_vencido", ref="doc-1", placa="ABC1D23", tipo_documento="outro", descricao="Taxa do rastreador",
-                   vencimento=date(2026, 11, 5), dias=-1)
-    assert "Taxa do rastreador do veículo ABC-1D23 venceu" in "\n".join(texto_bloco(aviso, OP)[1])
+    texto = texto_bloco(_documento(tipo_documento="outro", descricao="Taxa do rastreador", dias=-1))
+    assert "O documento (Taxa do rastreador) do veículo ABC-1D23 venceu" in texto and "há 1 dia)" in texto
+    assert "Providencie a regularização" in texto
 
 
 def test_oleo_proxima_e_vencida_levam_o_link_do_portal():
-    proxima = "\n".join(texto_bloco(_aviso("oleo_proxima", ref="m1", placa="ABC1D23", km_restantes=300, dias_restantes=None), OP)[1])
-    vencida = "\n".join(texto_bloco(_aviso("oleo_vencida", ref="m1", placa="ABC1D23", km_restantes=-50, dias_restantes=-4), OP)[1])
-    assert "faltam 300 km" in proxima and "https://portal.exemplo.com.br" in proxima
-    assert "passou do prazo (passou 50 km e 4 dias)" in vencida and "multa" in vencida
+    proxima = texto_bloco(_aviso("oleo_proxima", ref="m1", placa="ABC1D23", km_restantes=300, dias_restantes=None), COM_PORTAL)
+    vencida = texto_bloco(_aviso("oleo_vencida", ref="m1", placa="ABC1D23", km_restantes=-50, dias_restantes=-4), COM_PORTAL)
+    assert proxima == ("🛢️ O veículo ABC-1D23 está perto da troca de óleo (faltam 300 km).\n"
+                       f"Quando trocar, registre pelo portal com a foto do painel e a da nota fiscal: {PORTAL}")
+    assert vencida == ("⚠️ A troca de óleo do veículo ABC-1D23 está atrasada (passou 50 km e 4 dias). "
+                       "Trocas fora do intervalo podem gerar multa.\n"
+                       f"Faça a troca e registre pelo portal com a foto do painel e a da nota fiscal: {PORTAL}")
+
+
+def test_oleo_sem_link_termina_a_frase():
+    texto = texto_bloco(_aviso("oleo_proxima", ref="m1", placa="ABC1D23", km_restantes=300, dias_restantes=5))
+    assert "(faltam 300 km ou 5 dias)" in texto and texto.endswith("a da nota fiscal.")
 
 
 def test_cnh_proxima_e_vencida():
-    prox = "\n".join(texto_bloco(_aviso("cnh_proxima", ref="c", validade=date(2026, 11, 30), dias=17), OP)[1])
-    venc = "\n".join(texto_bloco(_aviso("cnh_vencida", ref="c", validade=date(2026, 11, 1), dias=-12), OP)[1])
-    assert "vence em 30/11/2026 (17 dias)" in prox
-    assert "venceu em 01/11/2026 (há 12 dias)" in venc and "Não é permitido conduzir" in venc
+    prox = texto_bloco(_aviso("cnh_proxima", ref="c", validade=date(2026, 11, 30), dias=17))
+    venc = texto_bloco(_aviso("cnh_vencida", ref="c", validade=date(2026, 11, 1), dias=-12))
+    assert prox == "🪪 Sua CNH vence em 30/11/2026 (daqui a 17 dias).\nDepois de renovar, manda a nova aqui no grupo."
+    assert venc == ("⚠️ Sua CNH venceu em 01/11/2026 (há 12 dias). Não é permitido conduzir com a CNH vencida.\n"
+                    "Assim que renovar, manda a nova aqui no grupo.")
 
 
 def test_portal_nunca_leva_senha():
-    acesso = "\n".join(texto_bloco(_aviso("portal_acesso", ref="e1"), OP)[1])
-    troca = "\n".join(texto_bloco(_aviso("portal_senha_alterada", ref="e2"), OP)[1])
-    assert "https://portal.exemplo.com.br" in acesso and "senha informada pela empresa" in acesso
-    assert "foi alterada" in troca and "avise o Alisson" in troca
+    acesso = texto_bloco(_aviso("portal_acesso", ref="e1"), COM_PORTAL)
+    troca = texto_bloco(_aviso("portal_senha_alterada", ref="e2"), COM_PORTAL)
+    assert acesso == ("🔐 Seu acesso ao portal foi criado!\n"
+                      f"Entre em {PORTAL} com seu e-mail de acesso e a senha que a empresa te passou.")
+    assert troca == "🔐 A senha do seu acesso ao portal foi alterada.\nSe não foi você, avise aqui no grupo agora."
 
 
 # ------------------------------------------------------------- mensagem --
@@ -224,33 +243,31 @@ def _cnh(ref="c"):
     return _aviso("cnh_proxima", ref=ref, validade=date(2026, 11, 30), dias=17)
 
 
-def test_aviso_que_nao_e_cobranca_segue_em_bloco_com_titulo():
+def test_aviso_sozinho_tem_saudacao_leve_e_o_paragrafo():
     texto, entram, sobram = montar_mensagem("maria da silva", [_cnh()], OP)
-    assert texto.startswith("Olá, Maria! Aqui é da LA Locadora. Segue um aviso:")
-    assert "*CNH perto de vencer*" in texto
-    assert texto.endswith("Dúvidas? Fale com o Alisson, no (11) 99999-0000.")
+    assert texto == "Oi, Maria! 👋 Aqui é da LA Locadora.\n\n" + texto_bloco(_cnh(), OP)
     assert len(entram) == 1 and sobram == []
 
 
-def test_cobranca_vem_antes_dos_outros_avisos():
+def test_cobranca_vem_antes_dos_outros_avisos_com_uma_saudacao_so():
     texto, entram, _ = montar_mensagem("Maria", [_cnh(), _atraso()], OP)
-    assert texto.index("venceu em 10/11/2026") < texto.index("*CNH perto de vencer*")
+    assert texto.index("venceu em 10/11/2026") < texto.index("🪪 Sua CNH")
+    assert texto.count("Oi, Maria!") == 1 and "Seguem" not in texto and "*1." not in texto
     assert [a.tipo for a in entram] == ["atraso", "cnh_proxima"]
 
 
 def test_passando_do_teto_o_resto_dos_outros_avisos_fica_de_fora():
     avisos = [_atraso()] + [_cnh(f"c{i}") for i in range(6)]
-    texto, entram, sobram = montar_mensagem("Maria", avisos, OpcoesTexto(contato="o Alisson", maximo_assuntos=5))
+    texto, entram, sobram = montar_mensagem("Maria", avisos, OpcoesTexto(maximo_assuntos=5))
     assert len(entram) == 5 and len(sobram) == 2
     assert entram[0].tipo == "atraso"
-    assert "Há mais 2 assuntos pendente(s). Fale com o Alisson para ver tudo." in texto
-    assert "Dúvidas?" not in texto
+    assert texto.endswith("Tem mais 2 avisos, que vão em outra mensagem.")
+    um = montar_mensagem("Maria", avisos[:6], OpcoesTexto(maximo_assuntos=5))[0]
+    assert um.endswith("Tem mais 1 aviso, que vai em outra mensagem.")
 
 
-def test_sem_empresa_nem_contato_usa_padroes():
-    assert montar_mensagem("Maria", [_atraso()])[0].startswith("Oi, Maria! 👋\n\n")
-    texto = montar_mensagem("Maria", [_cnh()])[0]
-    assert texto.startswith("Olá, Maria! Segue um aviso:") and "Fale com a empresa." in texto
+def test_sem_empresa_a_saudacao_fica_so_com_o_nome():
+    assert montar_mensagem("Maria", [_cnh()])[0].startswith("Oi, Maria! 👋\n\n🪪")
 
 
 def test_mensagem_sem_avisos_e_erro():

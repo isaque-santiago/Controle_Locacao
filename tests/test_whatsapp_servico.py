@@ -9,7 +9,7 @@ from src.domain.textos_whatsapp import OpcoesTexto
 from src.services import whatsapp
 from src.services.evolution import ErroEnvio, EvolutionConfiguracaoInvalida, EvolutionIndisponivel
 
-OP = OpcoesTexto(empresa="LA Locadora", contato="o Alisson")
+OP = OpcoesTexto(empresa="LA Locadora")
 QUINTA_11H40 = datetime(2026, 11, 12, 11, 40, tzinfo=FUSO)  # dentro do disparo das 11:30
 QUINTA_20H = datetime(2026, 11, 12, 20, 0, tzinfo=FUSO)
 DOMINGO_10H = datetime(2026, 11, 15, 10, 0, tzinfo=FUSO)
@@ -111,14 +111,14 @@ def _executar(evolution, agora=QUINTA_11H40, pausas=None):
 # ------------------------------------------------------------------- grupo --
 
 
-def test_so_cobrancas_e_recibos_sao_enfileirados(instalar):
+def test_cobrancas_cnh_e_portal_saem_juntos_na_mesma_mensagem(instalar):
     bruto = _bruto()
-    bruto["cnhs"] = [{"cliente_id": "cli-1", "cnh_validade": "2026-11-20", "situacao": "proxima"}]
+    bruto["cnhs"] = [{"cliente_id": "cli-1", "cnh_validade": "2026-11-20", "situacao": "a_vencer"}]
     bruto["portal"] = [{"tipo": "portal_acesso", "cliente_id": "cli-1", "referencia_id": "u1", "ocorrido_em": "2026-11-12"}]
     repo = instalar(RepoFalso(bruto))
     _executar(EvolutionFalsa())
     tipos = {i["tipo"] for m in repo.enfileirado[0] for i in m["itens"]}
-    assert tipos == {"atraso"}  # CNH e portal ficam fora (decisão do dono, 17/11/2026)
+    assert tipos == {"atraso", "cnh_proxima", "portal_acesso"} and len(repo.enfileirado[0]) == 1  # decisão do dono, 26/11/2026
 
 
 def test_envio_ao_grupo_nao_confere_se_o_numero_tem_whatsapp(instalar):

@@ -286,7 +286,7 @@ def whatsapp_reenviada():
 
 
 def whatsapp_grupo_salvo(nome):
-    return _toast(f"Grupo de WhatsApp de {nome} salvo. As cobranças e os recibos dele passam a ir para esse grupo.")
+    return _toast(f"Grupo de WhatsApp de {nome} salvo. Os avisos automáticos dele passam a ir para esse grupo.")
 
 
 def whatsapp_grupo_removido(nome):

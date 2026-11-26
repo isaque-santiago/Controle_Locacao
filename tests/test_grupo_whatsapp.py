@@ -3,7 +3,7 @@
 import pytest
 
 from src.domain.avisos_whatsapp import TIPOS, Aviso
-from src.domain.grupo_whatsapp import TIPOS_NO_GRUPO, eh_grupo, normalizar_grupo, somente_assuntos_do_grupo
+from src.domain.grupo_whatsapp import TIPOS_DE_COBRANCA, TIPOS_NO_GRUPO, eh_grupo, normalizar_grupo, somente_assuntos_do_grupo
 
 
 @pytest.mark.parametrize("texto, esperado", [
@@ -25,12 +25,12 @@ def test_eh_grupo():
     assert eh_grupo("120363025246125486@g.us") and not eh_grupo("5511988887777") and not eh_grupo(None)
 
 
-def test_so_cobrancas_e_recibos_vao_ao_grupo():
-    assert TIPOS_NO_GRUPO == {"lembrete_vespera", "lembrete_vencimento", "atraso", "inadimplencia", "recibo_pagamento"}
-    assert TIPOS_NO_GRUPO <= set(TIPOS)
+def test_todos_os_avisos_vao_ao_grupo_e_as_cobrancas_sao_um_subconjunto():
+    assert TIPOS_NO_GRUPO == set(TIPOS)
+    assert TIPOS_DE_COBRANCA == {"lembrete_vespera", "lembrete_vencimento", "atraso", "inadimplencia", "recibo_pagamento"}
     from datetime import date
-    avisos = [Aviso(t, "c1", "r", date(2026, 11, 17), {}) for t in TIPOS]
-    assert {a.tipo for a in somente_assuntos_do_grupo(avisos)} == TIPOS_NO_GRUPO
+    avisos = [Aviso(t, "c1", "r", date(2026, 11, 17), {}) for t in TIPOS] + [Aviso("tipo_novo", "c1", "r", date(2026, 11, 17), {})]
+    assert {a.tipo for a in somente_assuntos_do_grupo(avisos)} == set(TIPOS)  # um tipo novo não sai sem decisão do dono
     assert somente_assuntos_do_grupo([]) == []
 
 

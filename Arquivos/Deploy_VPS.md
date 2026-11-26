@@ -255,9 +255,8 @@ quando o dono liga a chave em Configurações; até lá a rodada termina na hora
 | `EVOLUTION_URL`, `EVOLUTION_APIKEY`, `EVOLUTION_INSTANCIA` | endereço (use o interno do Docker, se houver rede em comum), chave e nome da instância |
 | `EVOLUTION_VERSAO` | `2` (padrão) ou `1` |
 | `WHATSAPP_EMPRESA` | nome na saudação (sem ela, `LA Locadora`) |
-| `WHATSAPP_CONTATO` | como o locatário fala com o dono, ex.: `o Alisson, no (11) 99999-0000`. As cobranças e os recibos não usam esta variável (pedem a resposta no próprio grupo, onde o dono está); ela só aparece nos avisos que estão fora do envio e quando passam do teto de assuntos |
 | `WHATSAPP_PIX` (opcional) | chave Pix estática que entra nas cobranças |
-| `PORTAL_URL` (opcional) | link do portal nos avisos de troca de óleo e de acesso |
+| `PORTAL_URL` (recomendada) | endereço do portal, ex.: `https://SEU-SUBDOMINIO.duckdns.org/portal`. Entra nos avisos de documento, troca de óleo e acesso. Com ela, o aviso de documento pede o comprovante **pelo portal**, o único envio que pausa o aviso (mandado só no grupo, o sistema não fica sabendo) |
 
 5. **Tarefa agendada** (Coolify > aplicativo > *Scheduled Tasks*): comando `python -m src.enviar_mensagens_whatsapp`, frequência
    `*/15 * * * *` (a cada 15 minutos; é seguro repetir). Como as mensagens só saem nos três disparos do dia (7:30, 11:30 e 15:00, cada um aberto por 1 hora), cada rodada envia um lote de 5: a cada 15 minutos cabem cerca de 20 mensagens por disparo. Saída: uma linha JSON com o resumo; código 0 = rodada feita, 2 = configuração faltando
