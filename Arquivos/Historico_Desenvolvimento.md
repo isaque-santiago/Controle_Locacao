@@ -16,6 +16,10 @@ Diário do projeto: fases, entregas, correções, validações e estado das carg
 O README acumulava instalação, referência e diário. O diário passou para este arquivo, o funcionamento atual para a [Referência técnica](Referencia_Tecnica.md)
 e o README ficou só com apresentação, instalação e uso. O `CLAUDE.md` passou a registrar onde cada coisa é escrita.
 
+## Arquivamento em produção (23/11/2026)
+
+Em produção estão arquivados os veículos `NVE8D78` e `OIH0D80` (vendidos, data da venda vazia) e 3 ex-locatários sem pendência; quem ainda deve continua inativo.
+
 ## Conector do claude.ai: etapas 1 a 3 (17 e 24/11/2026)
 
 - **Conector do claude.ai (etapa 1 da seção 24 do plano; 17/11/2026).** `POST /mcp` (servidor MCP remoto, JSON-RPC sobre HTTP) com OAuth
