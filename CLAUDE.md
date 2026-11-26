@@ -14,8 +14,21 @@
 - Faça um commit por alteração, logo depois de fazê-la, com mensagem descritiva em português (o quê e por quê). Uma alteração é uma unidade
   lógica: uma migration, uma regra de `src/domain` com os seus testes, um ajuste de tela, uma atualização de documentação. Não junte várias
   alterações em um commit só e não termine a tarefa com alterações sem commit.
-- Ao terminar cada fase: rodar pytest e atualizar o README (os commits já saem por alteração, conforme a regra acima).
+- Ao terminar cada fase: rodar pytest e atualizar a documentação, conforme a seção "Documentação" (os commits já saem por alteração, conforme a regra acima).
 - Se uma regra do plano for ambígua, pergunte antes de decidir.
+
+# Documentação
+
+**O histórico do projeto fica em `Arquivos/Historico_Desenvolvimento.md`, e nunca no `README.md`.** Vale para qualquer IA e para qualquer pessoa.
+Cada informação tem um lugar:
+
+- **`Arquivos/Historico_Desenvolvimento.md` (o que foi feito e quando):** fases e etapas concluídas, entregas, correções, validações, resultados de
+  testes, pendências datadas e estado de migrations ou cargas de dados em cada ambiente. Acrescente a entrada no topo da seção "Registro", com o
+  título `### dd/mm/aaaa: assunto`, sem reescrever as antigas.
+- **`Arquivos/Referencia_Tecnica.md` (como o sistema funciona hoje):** telas, regras, segurança e integrações. Quando um comportamento mudar,
+  corrija o trecho existente; não acrescente diário.
+- **`README.md` (apresentação, instalação e uso):** só mude quando mudar o que o sistema oferece, a instalação, a configuração, os comandos ou a
+  publicação. Não escreva nele andamento de tarefas, datas de entrega nem relatos do que foi feito.
 
 # Como a IA acessa o app em execução (ambiente de preview)
 

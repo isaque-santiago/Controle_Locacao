@@ -1,946 +1,224 @@
 # LA Locadora: controle de locação e manutenção de veículos
 
 Sistema web para controlar locação, manutenção, documentação e vistorias de uma frota de veículos de aluguel (hoje, motos).
+Publicado em `https://lamotos.duckdns.org`.
 
-> **Nomes (16/11/2026).** A marca é **LA Locadora**. Nas telas e mensagens o termo é «veículo»; por dentro (tabelas `motos`, rotas `/motos`, colunas `moto_id`, funções) o nome técnico continua «moto», para não mexer no banco em produção. As mensagens de regra de negócio que vêm do banco são ajustadas na exibição (`src/domain/mensagens_banco.py`). O contrato em PDF também diz «veículo» (a frota tem motos e carros; o quadro do veículo mostra «Motocicleta» ou «Automóvel» conforme o tipo); só a razão social «L.A ALUGUEL DE MOTOS» continua como está.
+## O que o sistema faz
 
-Ver plano completo em [Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md).
+- **Frota e clientes:** cadastro de veículos e locatários, plano de manutenção, documentos e arquivamento de vendidos e ex-locatários.
+- **Contratos:** locação ou promessa de compra, com uma ou várias motos, vistorias de entrega e devolução, caução e contrato em PDF.
+- **Financeiro:** cobranças e encargos, pagamentos, dívidas, Dashboard e relatórios com exportação em CSV e Excel.
+- **Portal do locatário:** troca de óleo, envio de comprovantes de documentos e troca de senha.
+- **Integrações (desligadas até serem configuradas):** avisos automáticos por WhatsApp e conector do claude.ai.
 
-Guia de uso para novos funcionários: [Arquivos/Guia_de_Uso_LA_Locadora.docx](Arquivos/Guia_de_Uso_LA_Locadora.docx) (edição de novembro de 2026; os nomes, CPFs, telefones, placas e e-mails nas telas são fictícios; os valores são ilustrativos). Revise o guia quando telas ou regras mudarem.
+## Documentação
+
+| Documento | Para que serve |
+|---|---|
+| [Referência técnica](Arquivos/Referencia_Tecnica.md) | Como o sistema funciona hoje: telas, regras, segurança e integrações. |
+| [Histórico do desenvolvimento](Arquivos/Historico_Desenvolvimento.md) | Fases, entregas, correções, validações e cargas de dados, com datas. |
+| [Plano do projeto](Arquivos/Projeto_Locação.md) | Fases, regras de negócio e decisões do dono. |
+| [Deploy na VPS](Arquivos/Deploy_VPS.md) | Implantação no Coolify, variáveis, backup e tarefa agendada. |
+| [Guia de uso](Arquivos/Guia_de_Uso_LA_Locadora.docx) | Para novos funcionários (edição de novembro de 2026; dados das telas fictícios, valores ilustrativos). Revise quando telas ou regras mudarem. |
+| [Índice completo](Arquivos/README.md) | Demais documentos (interface, dados, homologação). |
+
+As regras para contribuir, inclusive com assistentes de IA, estão no [CLAUDE.md](CLAUDE.md).
 
 ## Stack
 
-Python 3.11+, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + Storage), pytest.
+Python 3.12 ou mais recente, FastAPI + Jinja2 + HTMX + Tailwind, Supabase (PostgreSQL + Auth + Storage) e pytest.
 
-## Setup
+## Estrutura
 
-1. Crie um projeto no Supabase. As migrations em `supabase/migrations/` seguem o formato `AAAAMMDDHHMMSS_descricao.sql` (exigido pela integração Supabase ↔ GitHub, que aplica cada push automaticamente); ao adicionar uma nova, use um timestamp maior que o da última. `supabase/seed.sql` **não** é aplicado por essa integração — rode-o manualmente no SQL Editor após a primeira aplicação das migrations.
-2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users) e troque o UUID dentro de `is_dono()` na migration `20260922000000_restringe_rls_ao_dono.sql` **antes de aplicá-la** — a RLS libera o acesso somente a esse usuário; com um UUID errado, ninguém consegue ler nem gravar dados.
-3. Copie `.env.example` para `.env` (só em desenvolvimento; ignorado pelo git) e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Em produção use variáveis de ambiente.
-4. Instale as dependências:
+| Pasta | Conteúdo |
+|---|---|
+| `src/domain/` | Regras de negócio (funções puras). |
+| `src/services/`, `src/repositories/` | Casos de uso e acesso ao Supabase (página → service → repository/RPC). |
+| `src/web/` | Rotas (`rotas/`), templates Jinja2 (`templates/`) e CSS-fonte (`estilos/app.css`). |
+| `static/` | CSS compilado, fontes, JavaScript e ícones. |
+| `supabase/` | Migrations, Edge Function, seeds e roteiros de verificação. |
+| `tests/`, `e2e/` | Testes automatizados e suíte de navegador. |
+| `scripts/` | Utilitários (CSS, ícones, extração de chat exportado). |
+| `Arquivos/` | Documentação. |
+
+A organização planejada está na seção 3 do [plano](Arquivos/Projeto_Locação.md).
+
+## Instalação
+
+Use um projeto Supabase de **desenvolvimento** para trabalhar no código; nunca o de produção.
+
+1. Crie um projeto no Supabase.
+2. Desative o cadastro público em Authentication > Providers > Email e crie manualmente o usuário do dono. Copie o UUID dele (Authentication > Users).
+3. Aplique as migrations de `supabase/migrations/`, na ordem dos timestamps. **Antes** de aplicar a `20260922000000_restringe_rls_ao_dono.sql`,
+   troque o UUID dentro de `is_dono()` pelo do seu usuário: com um UUID errado, ninguém consegue ler nem gravar dados.
+   Faça a troca numa cópia, sem alterar o arquivo versionado (o UUID dele é o de produção).
+4. Rode `supabase/seed.sql` manualmente no SQL Editor (a integração com o GitHub não o aplica).
+5. Copie `.env.example` para `.env` (ignorado pelo git) e preencha `SUPABASE_URL` e `SUPABASE_ANON_KEY`. Em produção, use variáveis de ambiente.
+   A chave `service_role` nunca é usada pelo app.
+6. Crie o ambiente virtual e instale as dependências (`requirements.txt` é só produção; `requirements-dev.txt` inclui os testes):
 
 ```bash
-pip install -r requirements-dev.txt   # desenvolvimento e testes (requirements.txt = só produção)
+python -m venv .venv
 ```
-
-5. Rode o app:
 
 ```bash
-python executar_web.py
+.venv/bin/python -m pip install -r requirements-dev.txt
 ```
 
-Abre em `http://localhost:8000` (detalhes na seção abaixo).
+No Windows, use `.venv\Scripts\python.exe` no lugar de `.venv/bin/python`.
 
-## Contrato em PDF
+## Rodar em desenvolvimento
 
-A ficha do contrato tem o botão **Contrato em PDF** (rota `/contratos/{id}/pdf`, só para o dono), que gera o contrato com os dados do
-cliente, da moto e do contrato (valor e caução por extenso, datas, km inicial). O PDF só é montado no clique.
+```bash
+.venv/bin/python executar_web.py
+```
 
-- **Um template, duas variantes** (`src/domain/contrato_la.py` para o texto e `src/services/contrato_la_pdf.py` para o visual), escolhidas
-  pelo `tipo_contrato`. O visual é o do contrato de exemplo de 16/11/2026: faixa preta com a logo (`static/contrato/`), linha vermelha,
-  marca d'água, quadros de partes, veículo e preço, resumo de multas, rubricas no rodapé, assinaturas e duas testemunhas.
-  - **Promessa de compra:** 13 cláusulas, com propriedade futura, quitação e transferência (cláusula 12) e quadro de preço com entrada,
-    parcelas, total e datas da agenda (1ª e última parcela, dia da semana).
-  - **Locação simples:** o mesmo documento sem o que é da promessa (12 cláusulas, partes só "LOCADOR" e "LOCATÁRIO", sem direito à
-    aquisição) e quadro de preço por período (periodicidade, valor, vencimento, primeiro pagamento, vigência, caução). O texto antigo de
-    10 cláusulas deixou de existir (está no histórico do git).
-- **Valores fixos:** as multas e prazos ficam em `TERMOS` (um lugar só, para revisão com o advogado) e o **resumo de multas sai de
-  `TERMOS`**, então nunca destoa das cláusulas. A fonte é a padrão do PDF (Helvetica), não a Poppins do exemplo.
-- **Arquivo baixado:** `Contrato_<Cliente>_<PLACA>.pdf` nos contratos de promessa; `contrato_<PLACA>_<data>.pdf` nos de locação.
-- **Dados da empresa (LOCADOR):** variáveis `LOCADOR_NOME`, `LOCADOR_CNPJ` etc. (lista completa em `.env.example`; em produção, no Coolify), fora do git. Sem elas o contrato sai com linhas em branco no lugar do locador. Locador pessoa física (sem `LOCADOR_CNPJ`, usa o representante) ou jurídica (com CNPJ). Cidade e foro vêm de `LOCADOR_CIDADE` e `LOCADOR_FORO` (sem eles, o foro padrão é Crato/CE) e a linha de contato do cabeçalho, de `LOCADOR_CIDADE` e `LOCADOR_TELEFONES`.
-- **Contrato com várias motos:** cada moto ganha o seu quadro (a quilometragem inicial é a da principal; as outras saem em branco).
-- **Dados do contrato no cadastro (migration `20261117120000_dados_do_contrato.sql`):** cliente com data de nascimento, nacionalidade,
-  naturalidade, estado civil, profissão, RG e órgão, CEP e referências; moto com motor e combustível. Todos opcionais: o que faltar sai
-  como linha em branco para preencher à mão.
-- **Fora do contrato gerado:** a multa e os juros por atraso (cláusula 8.2) e a multa de R$ 10,00 por erro na troca de óleo (5.13.1)
-  usam os valores fixos de `TERMOS`, não os da tela Configurações; se a operação mudar de regra, ajuste `TERMOS` ou passe a usar a
-  configuração.
-- Modelo padrão de contrato: revise o texto final com um advogado antes de usar.
+Abre em `http://localhost:8000`.
+
+- O servidor reinicia ao salvar um `.py` de `src/` e o login continua valendo: em desenvolvimento, as sessões ficam também em
+  `.sessoes_dev.json`. O arquivo contém tokens: não compartilhe nem versione; apagá-lo encerra as sessões.
+- `--sem-recarga` sobe sem a recarga automática (no preview, a configuração `locacao-web-estavel`).
+- Com `LOCACAO_AMBIENTE=dev` (já definido por esse script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
 
 ## Testes
 
 ```bash
-pytest
+.venv/bin/python -m pytest
 ```
 
-## Frontend (FastAPI + Jinja2 + HTMX + Tailwind)
+Roda só `tests/`. A suíte de navegador (`pytest e2e`, Playwright) usa o Supabase de desenvolvimento; instalação e opções em [e2e/README.md](e2e/README.md).
 
-O Streamlit foi removido (Fase 4, parte F). Plano, fases e decisões em
-[Arquivos/Analise_Migracao_Frontend.md](Arquivos/Analise_Migracao_Frontend.md). **Fase 1 (fundação) concluída (06/10/2026):** app, login/logout, sessão,
-papéis, CSRF, erros e biblioteca de componentes. **Fase 2 (páginas piloto) concluída (06/10/2026):**
-Dashboard (`/`) e Motos (`/motos`, `/motos/{id}`). **Fase 3 (demais páginas) concluída (08/10/2026):** Clientes (`/clientes`, `/clientes/{id}`), Contratos
-(`/contratos`, `/contratos/{id}`, `/contratos/novo`), Cobranças (`/cobrancas`), Manutenção (`/manutencao`), Vistorias
-(`/vistorias`), Documentos (`/documentos`), Relatórios (`/relatorios`), Configurações (`/configuracoes`) e Portal do
-Locatário (`/portal`). Todas as telas estão migradas e o Streamlit saiu na Fase 4.
+## CSS (Tailwind)
 
-**Padrões validados na Fase 2** (a reutilizar nas próximas páginas):
-- **Lista** (`rotas/motos.py`, `templates/motos/`): filtro, busca e página na URL (`?situacao=&q=&pagina=&por_pagina=`);
-  o HTMX troca só `#resultado` (e a restauração do histórico recebe a página inteira); chips são links, então
-  funcionam sem JS. A tabela vira cartões conforme a largura **da própria caixa** (container query), não da tela.
-- **Nome que leva à ficha** (como no cell-pag): em qualquer lista ou ficha, o nome do cliente e a placa do veículo são
-  links para a ficha de cada um. Em tabela recolhível use `rc_titulo(classe, href=..., estica=...)`: a célula leva o
-  link (só a partir de 720 px) e o botão que abre/fecha o cartão (só no celular), porque link não pode ficar dentro de
-  botão; no celular tocar no nome continua abrindo o cartão. Com `<tr class="linha-link">` o link do título (ou o botão
-  "Abrir ficha" com a classe `link-linha`, quando o título leva a outra ficha) estica e a linha inteira abre a ficha
-  (Clientes, Veículos e Contratos). Fora do título, use `link_nome(href)` (ou `<a class="link-nome">`). As linhas
-  precisam trazer `cliente_id` e `moto_id` (a camada de dados é quem os passa). No Dashboard não há link com "ocultar
-  dados" ligado.
-- **Ficha com abas** (`macros.abas_remotas`): cada aba carrega o painel por HTMX, com URL própria
-  (`/motos/{id}?aba=plano`); o servidor devolve as abas junto do painel (swap fora de banda), então o botão
-  voltar do navegador fica coerente. Setas movem o foco, Enter abre.
-- **Falha de rede do HTMX** (`static/js/app.js`): `htmx:sendError` e `htmx:timeout` (limite de 60 s, em `htmx-config`)
-  mostram um aviso de erro em `#avisos` (ou dentro do diálogo aberto) e ele some na próxima requisição bem-sucedida.
-- **Confirmação de ações destrutivas** (`#dlg-confirmar` em `layout_painel.html`, lógica em `static/js/app.js`): em vez do
-  `confirm()` do navegador, `hx-confirm="texto"` (HTMX) e `data-confirmar="texto"` (formulário comum) abrem um diálogo próprio;
-  `data-confirmar-titulo`, `data-confirmar-rotulo` e `data-confirmar-neutro` personalizam. Usado em: gerar nova senha e remover
-  acesso do portal, inativar moto e cancelar o novo contrato.
-- **Formulário em diálogo seguro** (`#dlg-form`, `static/js/app.js`): qualquer alteração marca `data-alterado` no diálogo; fechar
-  (Cancelar, X, fundo ou Esc) com alterações pede "Descartar alterações?" no diálogo de confirmação. No envio, `form_dialogo` usa
-  `hx-sync="this:drop"` e `hx-disabled-elt` (ignora cliques repetidos); formulários comuns recebem `data-enviando` (bloqueio por
-  10 s, para não travar downloads) e o botão mostra um anel girando.
-- **Ordenação por coluna** (Motos, Clientes e Contratos): `?ordem=campo` (crescente) ou `?ordem=-campo` (decrescente); cada clique no
-  cabeçalho cicla crescente → decrescente → ordem padrão. Regras puras em `src/domain/ordenacao.py` (valores ausentes ficam no
-  fim) e `COLUNAS_ORDENAVEIS` de cada `*_lista.py`; a macro `tabela(..., ordenacao=)` põe `aria-sort` e o link no `<th>`. O
-  cabeçalho some em cartões, então no celular a ordem só vem da URL. Busca, chips e paginação preservam a ordem.
-- **Filtros lembrados** (Motos, Clientes, Contratos, Vistorias e Documentos; `<form id="filtros" data-lembrar-filtros>`): o `app.js`
-  guarda na aba (`sessionStorage`) a query da URL (busca, filtro, ordem, "por página"). Voltar da ficha pelo "Voltar" ou pelo menu
-  para o endereço puro da lista reabre com ela. "Limpar filtros" apaga o guardado; sair da conta apaga tudo.
-  Quando a lista está filtrada, o resultado mostra o indicador **Filtro ativo: N de total** com o botão "Limpar filtros" (macro `aviso_filtro`); o
-  cabeçalho "N cadastrados" continua sendo o total geral. O servidor não guarda filtro: só o endereço com `?q=` aparece filtrado.
-- **Atalhos de teclado** (`static/js/app.js` e `static/js/interativo.js`): `/` foca a busca da página (e, em páginas sem busca própria, abre a busca global),
-  `n` aciona o botão marcado com `data-atalho-novo` (o "Novo ..." das listas; `aria-keyshortcuts="n"`), `Ctrl+K` abre a busca global, `g` e depois uma letra
-  vai a uma página (`g i` Dashboard, `g o` Contratos, `g b` Cobranças, `g v` Veículos, `g c` Clientes, `g m` Manutenção, `g d` Documentos, `g r` Relatórios; a lista
-  fica em `navegacao.ATALHOS_IR` e é lida da própria janela de atalhos) e `?` abre essa janela (também no menu da conta). Só valem sem Ctrl/Alt/Cmd, fora de
-  campos de texto e com nenhum diálogo aberto (exceto `Ctrl+K`, que funciona até dentro de um campo).
-- **Interatividade** (redesign, Fase 4; JS novo em `static/js/interativo.js`, carregado só no layout do painel; tudo é melhoria progressiva):
-  - **Busca global** (`Ctrl+K`, `/` ou o botão "Buscar"): paleta em `<dialog id="dlg-busca">` que consulta `GET /busca?q=` (rota -> `dados_busca` -> serviços;
-    regra pura em `src/domain/busca_global.py`: placa com ou sem hífen, modelo, nome e CPF; arquivados ficam de fora; até 5 por grupo; mínimo 2 letras).
-    Setas navegam (combobox com `aria-activedescendant`), Enter abre a ficha, Esc fecha e o foco volta ao que estava. Com `?ocultar=1` na URL (modo "ocultar dados
-    pessoais" do Dashboard) os resultados saem mascarados. Sem JavaScript, `/busca` abre como página.
-  - **Filtros instantâneos**: Veículos, Clientes e Contratos já trocavam só `#resultado` (debounce de 300 ms, `hx-push-url`); **Cobranças** ganhou a busca por cliente ou
-    placa, que troca só o painel da aba, mantém `aba` e `q` na URL e filtra as contagens das abas (o resumo de atraso do cabeçalho segue sobre tudo).
-  - **Gaveta de pré-visualização**: o botão do olho em cada linha de Veículos, Clientes e Contratos (`GET /motos|clientes|contratos/{id}/previa`, rotas em
-    `src/web/rotas/previa.py`; o botão usa `hx-push-url="false"` porque o `#resultado` fica dentro do `<form hx-push-url="true">` e o HTMX herda o atributo; aberta direto, sem `HX-Request`, a rota redireciona para a ficha) carrega os dados principais num diálogo que desliza da direita (`#dlg-gaveta`), com link para a ficha. O foco vai ao título e volta ao botão ao fechar.
-  - **Abas e ordenação**: continuam trocando só o painel; o traço da aba aberta entra suave. Tudo com `prefers-reduced-motion`.
-  - **Ações em linha**: pagar e cancelar uma cobrança a partir de `/cobrancas` atualizam a lista no lugar (`rotas/cobrancas_na_lista.py`): a resposta traz fora de banda o
-    aviso, o resumo, as abas e o painel e fecha o diálogo (`HX-Trigger: dialogo-concluido`). Vindo de outra tela (Dashboard) ou sem JS, segue o redirecionamento de antes.
-    Regras e RPCs não mudaram. "Mensagem" já abre num diálogo sem sair da lista (é só texto para copiar/enviar).
-- **App instalável (PWA básico)**: `static/manifest.webmanifest` (modo `standalone`, `start_url` `/`), ícones em `static/icones/`
-  (gerados por `python scripts/gerar_icones_pwa.py`, com Pillow; versionados) e, no `<head>` de `base.html`, `manifest`,
-  `apple-touch-icon`, `theme-color` claro/escuro e as metas do iPhone (`apple-mobile-web-app-capable`, `-title` "LA Locadora" e `-status-bar-style`; 16/11/2026). **Nome do app: "LA Locadora"** (manifest, `<title>`, marca do login/menu/portal, monograma "LA" no favicon e nos ícones; 16/11/2026). **Sem service worker**: a sessão fica na memória do servidor, então o app não
-  funciona offline e não há cache de páginas autenticadas. No Android/Chrome aparece "Instalar app"; no iOS, "Adicionar à Tela de Início" (Safari > Compartilhar). No iPhone o app instalado guarda os cookies separados do Safari: entre uma vez de novo dentro dele.
-- **Aviso de sessão** (`data-sessao-limite` no `<body>`, `static/js/app.js`): 5 minutos antes do fim do prazo (só para prazos de até 1 dia; com a sessão de 90 dias o aviso fica desligado) abre o diálogo de
-  confirmação com "Continuar conectado" (`POST /sessao/renovar`, 204, exige CSRF); passado o prazo, avisa que expirou e leva ao login.
-  Requisições do HTMX bem-sucedidas reiniciam a contagem.
-- **Indicadores (KPIs)** (macro `kpi` em `componentes/macros.html`; redesign, Fase 2): rótulo pequeno e cinza, valor grande com números tabulares
-  (o tamanho acompanha a largura do cartão, `cqi`), ícone em círculo suave (`icone_nome`) e `texto=True` para valores em palavras ou datas. O tom vem de
-  `src/domain/painel.py` (`tons_kpis_hoje`, `tons_kpis_dinheiro`, `tom_tempo_parado`): `critico` (vermelho) só para o que pede ação e no máximo um por linha;
-  `aviso` (âmbar) para o que preocupa sem pedir ação. Colunas de dinheiro das tabelas usam `num mono` (alinhadas à direita, `tabular-nums`).
-- **Listas e fichas** (redesign, Fase 3): nas listas de Veículos, Contratos e Clientes a linha inteira leva à ficha (link esticado, acessível por teclado; o botão
-  "Abrir ficha" só aparece no cartão do celular). Em Cobranças, "Pagar" é o botão primário, "Mensagem" o secundário e "Cancelar" usa a variante `discreto` do macro
-  `botao`. Selos de status maiores, com ponto colorido e texto. A coluna Km de Veículos some quando todos os veículos listados têm km 0
-  (`motos_lista.mostrar_coluna_km`). Campo vazio usa o macro `sem_dado()` (traço apagado; leitor de tela ouve "não informado") e grupos inteiros vazios da ficha do
-  cliente viram uma linha só. A barra superior do desktop mostra seção / página atual e o atalho "Novo contrato". Nomes longos na tabela ficam em até duas linhas.
-- **Impressão** (`@media print` no fim de `src/web/estilos/app.css`): papel sempre claro (os tokens do tema escuro são refeitos), sem menus, botões,
-  filtros, abas, paginação nem diálogos; cartões, KPIs e linhas não quebram entre páginas; selos e barras mantêm a cor.
-- **Acessibilidade (auditoria de 23/10/2026)**: contraste AA conferido nos dois temas (texto, selos, botões e menu); contorno de campos com
-  3:1 (`--borda-campo`); alvos de toque ≥ 44 px medidos em 13 páginas (390 e 1280 px), sem exceções; `/favicon.ico` deixou de dar 404.
-- **Variação mês a mês no Dashboard** ("Recebido no mês" e "Manutenção no mês"; **saiu do Dashboard na Fase 1 do redesenho e volta na Fase 2**, as regras de `painel.py` continuam): compara o acumulado do mês (dia 1 até hoje) com o *mesmo
-  intervalo* do mês anterior (`painel.periodo_anterior`: em 31/10 compara 01–30/09). Regras puras em `src/domain/painel.py`
-  (`variacao`, `descrever_variacao`); recebido sobe = verde, manutenção sobe = vermelho, e o texto sempre diz "a mais"/"a menos". Sem
-  base de comparação (mês anterior zerado) mostra o aviso; os dois zerados, nada. "Em atraso" e ocupação não têm variação: são fotos do
-  momento e o sistema não guarda histórico.
-- **Feedback de carregamento** (`static/js/app.js`): enquanto há requisição do HTMX, o `<html>` ganha a classe
-  `carregando` (barra fina no topo, `#barra-carregamento`) e o alvo da troca recebe `aria-busy="true"` (`#resultado` e
-  `#painel-aba` esmaecem após 150 ms). Respeita `prefers-reduced-motion`.
-- **Animações e feedback** (redesign, Fase 5; CSS em `src/web/estilos/app.css`, JS em `static/js/app.js`; tudo respeita `prefers-reduced-motion`, que mostra só o
-  estado final):
-  - **Entrada curta**: blocos, cartões e as primeiras linhas das tabelas entram em 180 a 200 ms, com atraso de no máximo ~175 ms. A grade de KPIs e o
-    `<main>` não animam por si (a opacidade de pai e filho se multiplica; era isso que deixava a página desbotada por mais de um segundo).
-  - **Números que contam**: o macro `kpi` marca o valor com `data-contar`; o JS sobe de 0 até o número (700 ms) e devolve o texto original no fim. O HTML já traz o valor
-    final, então sem JS o número está certo. Só conta quando há um único número no texto. Barras e colunas dos gráficos crescem por CSS.
-  - **Toasts**: `#avisos` é uma pilha fixa no canto (sem JS já funciona). O JS acrescenta o botão Fechar e o fechamento automático (sucesso 5 s, informação 6 s,
-    atenção 9 s, erro 12 s; pausa com mouse ou foco), no máximo 4 ao mesmo tempo. `role`/`aria-live` vêm do macro `aviso`. Erros HTMX usam `HX-Reswap: beforeend` e as
-    respostas fora de banda preservam os toasts na tela, então eles empilham. Dentro de diálogo, o aviso de falha de rede continua inline no diálogo.
-  - **Skeleton** (≥ 720 px): enquanto `#resultado`/`#painel-aba` estão com `aria-busy`, as células viram barras cinzas depois de 150 ms (respostas rápidas não piscam).
-  - **Estados vazios**: `estado_vazio(titulo, texto, icone_nome=...)` mostra ícone em placa, título, texto e, no bloco `{% call %}`, a ação sugerida (`.vazio-acoes`).
-  - **Microinterações**: faixa de foco na linha sob o ponteiro, resposta ao clique em botões, chips e cartões.
-  - **Transição entre páginas**: View Transitions entre documentos (`@view-transition`), com o menu lateral e as barras parados; navegador sem suporte navega normalmente.
-  - Testes: `tests/test_animacoes_feedback.py` (contratos do CSS/JS/templates). A conferência visual no app logado é manual.
-- **Formulários e celular** (redesign, Fase 6; CSS em `src/web/estilos/app.css`, JS em `static/js/app.js`):
-  - **Seções**: o macro `secao(titulo, descricao=None)` (`componentes/macros.html`) agrupa campos com o mesmo traço amarelo dos grupos da ficha e uma grade de
-    duas colunas (uma no celular); `largo=True` ocupa a linha inteira. Aplicado em veículo (Identificação, Características, Aquisição), cliente, documento, dívida e
-    compra parcelada, sem mudar campos, nomes, rotas nem validações. Texto de ajuda em 13 px com o contraste do texto secundário.
-  - **Validação imediata**: o `app.js` põe `novalidate` nos formulários com `.formulario` ou `#form-dialogo` e confere o óbvio (obrigatório, e-mail, data, padrão,
-    tamanho) ao sair do campo e ao enviar: borda, ícone e mensagem (`aria-invalid` e `aria-describedby`; o campo certo ganha borda e ícone de sucesso), foco no
-    primeiro inválido e o envio não sai. O erro some assim que o valor passa na conferência. As regras de verdade continuam no servidor (`src/domain`).
-  - **Celular (< 720 px)**: no formulário em tela cheia, uma faixa mostra "Seção X de Y", barra de progresso e um botão por seção (ponto vermelho nas seções com
-    erro), com o rodapé fixo; KPIs em duas colunas (uma só abaixo de 360 px; o último ímpar ocupa a linha); botões do cabeçalho/ficha em grade compacta; "Opções"
-    do Dashboard pequeno à direita; na aba Dinheiro o título ocupa a linha e o seletor de mês, a largura toda; áreas seguras laterais/topo no formulário e campos em
-    16 px (sem zoom do iOS); `overflow-x: clip` na página. Telefone usa `type="tel"`; números e valores já usam `inputmode`.
-  - Testes: `tests/test_formularios_celular.py`. A conferência visual no app logado (gaveta de pré-visualização e cartões recolhíveis no celular incluídos) é do dono.
-- **Formulário em diálogo** (`macros.form_dialogo`, `rotas/motos_formularios.py`): o diálogo `#dlg-form` abre ao
-  chegar o conteúdo; a validação é no servidor, campo a campo (`src/domain/formulario_moto.py`): com erro o mesmo
-  formulário volta com a mensagem ao lado do campo; com sucesso vem `HX-Redirect` e um aviso de confirmação
-  (uma vez só, guardado na sessão). Operações repetíveis levam `chave_operacao`.
-- **Camadas:** a rota chama `dados_*.py` (leitura) e `acoes_*.py` (gravação), que chamam os serviços e o
-  `src/domain`; os testes de rota trocam esses dois módulos por dados fictícios (`tests/web/conftest.py`).
-- **Cache** de leituras (`repositories/consultas.py`): por usuário e por dia, 60 s; sem usuário identificado não
-  há cache. O limite de "gerar cobranças uma vez por hora" também é por usuário.
-
-**Fase 3, andamento: Clientes concluída (07/10/2026).** Lista, ficha com quatro abas (Resumo com cartão de
-contrato ativo, Contratos, Pagamentos paginados de 10 em 10 e Portal), cadastro e edição em diálogo, em
-`src/web/rotas/clientes*.py` e `src/web/templates/clientes/`. A aba Portal cria o acesso do locatário, gera nova
-senha e remove o acesso; a senha só existe na resposta do POST (sem sessão, URL ou cache, `Cache-Control: no-store`)
-e as fotos das trocas abrem por redirecionamento para URL assinada de 5 minutos. Foi aceita sem a comparação lado a
-lado com o Streamlit nos passos finais (decisão do proprietário).
-
-**Fase 3, andamento: Contratos concluída (07/10/2026).** Lista (abre nos ativos; filtro por situação, busca por
-cliente ou placa, paginação) e ficha com faixa de dados e abas Cobranças, Vistorias e Manutenções
-(`rotas/contratos.py`, `templates/contratos/`). **Novo contrato** é um assistente de quatro etapas (Cliente, Moto,
-Condições, Confirmar) em `rotas/contratos_novo.py`: cada etapa tem URL própria (`/contratos/novo?etapa=N`), funciona
-sem JavaScript e o rascunho (escolhas e texto digitado, mesmo inválido) fica em `sessao.rascunho_contrato`, então dá
-para voltar e revisar; a criação usa a RPC única de contrato com vistoria de entrega. **Encerrar contrato**
-(`rotas/contratos_encerramento.py`) abre um diálogo com a vistoria de devolução, danos descontados da caução e uma
-prévia (caução a devolver, excedente cobrado, cobranças canceladas) recalculada pelo servidor ao mudar a data ou os
-danos. Regras puras em `src/domain/contratos_lista.py`, `formulario_contrato.py` e `encerramento.py`. Fotos da
-vistoria continuam sendo anexadas na página Vistorias (como no Streamlit).
-
-**Fase 3, andamento: Cobranças concluída (07/10/2026).** Abas Hoje, Atrasadas, Próximos 7 dias e Pagas com contagem
-e URL própria (`?aba=`), resumo de atraso no cabeçalho, encargos por cobrança atrasada e paginação de 10 em 10
-(`rotas/cobrancas.py`, `templates/cobrancas/`; regras puras em `src/domain/cobrancas_lista.py`). **Registrar pagamento**
-(`rotas/cobrancas_pagamento.py`) abre em diálogo pelo HTMX e também como página sem JavaScript (é para onde o "Pagar" do
-Dashboard leva): a prévia dos encargos é recalculada pelo servidor quando a data muda, a validação é por campo
-(`src/domain/formulario_pagamento.py`: principal > 0 e <= saldo) e a gravação leva `chave_operacao`, então reenviar o
-mesmo formulário não lança o pagamento duas vezes. **Mensagem de cobrança** (`rotas/cobrancas_mensagem.py`) mostra o
-texto pronto para o WhatsApp com botão de copiar (`data-copiar` em `static/js/app.js`; a CSP não aceita script inline).
-**Cancelar cobrança (12/11/2026).** Em Cobranças, o botão **Cancelar** (abas Hoje, Atrasadas e Próximos 7 dias) abre um diálogo
-que pede o **motivo** (3 a 200 caracteres) e, sem JavaScript, o mesmo formulário abre como página (`rotas/cobrancas_cancelamento.py`).
-Regra confirmada com o dono: só cobrança em aberto **e sem nenhum pagamento registrado** pode ser cancelada (`src/domain/cancelamento_cobranca.py`);
-com pagamento, parcial que seja, o botão some e o estorno continua sendo feito no banco. Cancelada, a cobrança sai da dívida, das listas e dos avisos de WhatsApp
-e não é gerada de novo. A gravação é a RPC `rpc_cancelar_cobranca` (migration `20261112140000_cancelar_cobranca.sql`, que acrescenta
-`cobrancas.motivo_cancelamento` e `cancelada_em`; só o dono; roteiro `supabase/verificar_cancelar_cobranca.sql`, só em dev, termina em ROLLBACK).
-**Fase 3, andamento: Manutenção concluída (07/10/2026).** Abas Alertas, Histórico e Catálogo; filtros, busca e
-paginação; registro com itens do plano, peças adicionais, prévia de custos e idempotência; conclusão e cancelamento
-de serviços abertos; cadastro, edição e inativação do catálogo. Diálogos têm alternativa sem JavaScript e validação
-por campo. Homologada no banco de desenvolvimento e em 320, 390 e 1440 px; 981 testes passaram.
-
-**Fase 3, andamento: Vistorias concluída (08/10/2026).** Lista (filtro por tipo, busca, paginação) e comparação entrega x
-devolução com checklist e galeria de fotos por URL assinada (o CSP libera em `img-src` só a origem do Supabase); registro em
-duas etapas, em diálogo e em página sem JavaScript, com até 10 fotos de 10 MB (validadas por extensão, tamanho e formato
-antes de gravar). Adicionar fotos depois do registro ficou de fora por decisão do proprietário.
-**Documentos:** lista com situação, busca por placa e comprovante por link assinado na hora do clique; novo, editar e
-regularizar (com comprovante opcional e o cadastro do ano seguinte). **Relatórios:** quatro abas com período na URL, barras
-em SVG e exportação CSV e Excel dos mesmos dados da tabela. **Configurações:** encargos, alertas e backup manual (ZIP
-baixado por POST, só o dono). **Portal do Locatário** (`rotas/portal.py`): o locatário vê só o contrato ativo dele,
-reporta a troca de óleo com a foto do painel e a da nota fiscal e troca a própria senha (`ServicoAutenticacao.alterar_senha`,
-PUT em `/auth/v1/user` com o token dele). O contrato do formulário é sempre procurado entre os que a RPC devolve para o
-locatário, e ele recebe 403 em todas as telas do dono. Homologadas no banco de desenvolvimento e em 320, 390 e 1440 px;
-a suíte inteira passa (1168 testes, em 08/10/2026; os de Cobranças usam relógio congelado em 07/10/2026).
-
-**Recarga automática resolvida (08/10/2026):** em desenvolvimento o armazém de sessões espelha as sessões no arquivo
-`.sessoes_dev.json` (ignorado pelo git; só `executar_web.py` o configura, por `LOCACAO_SESSOES_ARQUIVO`, e só vale com
-`LOCACAO_AMBIENTE=dev`), então salvar um `.py` reinicia o servidor sem derrubar o login. A recarga é do próprio
-`executar_web.py` (o servidor roda como processo filho, reiniciado a cada `.py` salvo em `src/`), e não do `--reload` do
-uvicorn, que no Windows manda Ctrl+C ao console e trava quando não há console (preview do Claude). Em produção nada vai a disco.
-
-**Fase 4 concluída** (branch `fase-4-e2e-e-desligamento`; plano em `Arquivos/Analise_Migracao_Frontend.md`).
-Partes A (núcleo sem Streamlit), B (suíte Playwright no app novo, ver `e2e/README.md`), C (CI do app novo), D (revisão de segurança:
-`Arquivos/Revisao_Seguranca.md`), E (homologação com o proprietário: `Arquivos/homologacao/Roteiro_Homologacao_Manual.md`) e F (remoção do Streamlit:
-`app.py`, `pages/`, `src/ui/`, `src/auth.py`, os testes de tela e as dependências `streamlit`, `streamlit-cookies-controller`, `pandas`,
-`plotly` e `watchdog`).
-
-**Fase 5 (deploy) publicada em `https://lamotos.duckdns.org` (verificada em 20/10/2026):** `Dockerfile`, `.dockerignore`, dependências de
-produção separadas (`requirements.txt`; testes em `requirements-dev.txt`) e job `deploy` na CI (passo a passo em `Arquivos/Deploy_VPS.md`).
-Confirmado: DNS (DuckDNS), `ufw` só com 22, 80 e 443, `unattended-upgrades` ativo, SSH só por chave, app no Coolify (Auto Deploy e webhook
-desligados, limite de memória), `FORWARDED_ALLOW_IPS` restrito ao IP do Traefik, segredos do GitHub, migrations aplicadas no Supabase de
-produção, `/saude`, HSTS/CSP, HTTP→HTTPS, `/componentes` com 404, login e portal do locatário, e monitor UptimeRobot em `/saude`.
-Lighthouse medido em 26/10/2026 no app publicado (login, Dashboard, Cobranças, Motos e ficha: desempenho 89–100, acessibilidade 98–100, boas práticas 100, CLS ≤ 0,023; detalhes na seção 10 de `Arquivos/interface/Design_UI.md`).
-Backup do Supabase: manual semanal (decisão de 29/10/2026; ver `Arquivos/Deploy_VPS.md`, seção 8). Pendente: roteiro de homologação manual no app publicado.
-
-Rodar em desenvolvimento (usa as credenciais de `.env` ou as variáveis
-`SUPABASE_URL` e `SUPABASE_ANON_KEY`; aponte para o projeto de **desenvolvimento**):
+Edite apenas `src/web/estilos/app.css`. O `static/css/app.css` é gerado a partir dele e **fica versionado** (a VPS não precisa do Tailwind).
+Depois de mudar templates ou estilos, recompile (`--watch` recompila a cada vez que um arquivo é salvo):
 
 ```bash
-.venv\Scripts\python.exe executar_web.py
+.venv/bin/python scripts/construir_css.py
 ```
 
-Abre em `http://localhost:8000`. O servidor reinicia ao salvar um `.py` de `src/` e o login continua valendo (as sessões de
-desenvolvimento ficam também em `.sessoes_dev.json`, que contém tokens: não compartilhe nem versione; apagá-lo encerra as
-sessões). `executar_web.py --sem-recarga` sobe sem recarga automática (no preview, a configuração `locacao-web-estavel`). Em desenvolvimento (`LOCACAO_AMBIENTE=dev`, já definido por esse
-script) existe também `/componentes`, o catálogo visual dos componentes, sem login e com dados fictícios.
+É preciso o Tailwind CLI standalone (sem Node) em `tools/tailwindcss` (`tools/tailwindcss.exe` no Windows), baixado das
+[releases do Tailwind](https://github.com/tailwindlabs/tailwindcss/releases). A pasta `tools/` não vai para o git.
 
-Estrutura: `src/web/` (rotas em `rotas/`, templates Jinja2 em `templates/`, macros dos componentes em
-`templates/componentes/macros.html`, estilos em `estilos/app.css`), `static/` (CSS compilado, fontes,
-`htmx.min.js` e `app.js`). Regras de negócio seguem em `src/domain`; o acesso ao Supabase, em
-`src/services/autenticacao.py` e nos repositórios (o cliente da requisição entra por
-`src.db.get_client()`).
+## Banco de dados
 
-**Sessão e segurança.**
-- A sessão vive na **memória do processo**: o cookie leva só um identificador aleatório (`httpOnly`,
-  `SameSite=Lax`, `Secure` em HTTPS) e os tokens do Supabase ficam no servidor.
-- **Sessão longa (16/11/2026).** O locatário não quer entrar toda hora: a sessão expira após **90 dias sem uso** (cada uso renova)
-  e, no máximo, **1 ano** depois do login (`src/domain/sessao_longa.py`). Os cookies têm validade de 90 dias (não somem ao fechar o
-  navegador ou o app do celular). Como a memória do servidor some a cada deploy, o login também grava o cookie `lembrar`: o token de
-  renovação do Supabase **criptografado** (Fernet) com a chave `SESSAO_CHAVE`, que só existe no servidor (`src/web/lacre.py`). Sem a
-  sessão em memória, o app abre o cookie, renova os tokens e refaz a sessão sem pedir login. Nada vai a disco. **Sem `SESSAO_CHAVE`
-  o recurso fica desligado** e reiniciar ou fazer deploy derruba o login de todos. Gere a chave com
-  `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` e guarde-a no Coolify (nunca no repositório;
-  trocar a chave desconecta todos).
-- **Sair de todos os dispositivos** (`POST /sessao/sair-de-todos`, no menu do dono e no portal do locatário): revoga todos os tokens
-  do usuário no Supabase (escopo global) e encerra as sessões do servidor, então nenhum cookie `lembrar` volta a funcionar. Se o
-  Supabase falhar, nada muda e a tela avisa. No Supabase, mantenha **sem** limite de sessão (Authentication > Sessions: time-box e
-  inactivity timeout desligados ou de 90 dias ou mais), senão ele derruba a sessão antes.
-- **Conector do claude.ai (etapa 1 da seção 24 do plano; 17/11/2026).** `POST /mcp` (servidor MCP remoto, JSON-RPC sobre HTTP) com OAuth
-  2.1: registro dinâmico de cliente (`/oauth/register`), PKCE S256 e callback fixo do claude.ai (`src/web/rotas/conector.py`, regras
-  puras em `src/domain/conector_oauth.py` e `conector_mcp.py`). O dono entra com o login do app e autoriza o Claude numa tela de
-  consentimento (só donos; o CSP libera o destino do Claude apenas nessa tela). Os tokens são **sem estado** (Fernet com
-  `CONECTOR_CHAVE`; trocar a chave revoga tudo; sem a chave o conector fica desligado e todas as rotas dão 404). Nesta etapa a
-  única ferramenta é `ping` (só leitura): não lê nem grava o banco. As ferramentas de verdade só **propõem** lançamentos; aprovar,
-  editar e apagar nunca serão ferramentas. Variáveis: `CONECTOR_CHAVE` (chave Fernet) e `CONECTOR_URL_BASE` (endereço público
-  do app, ex.: `https://SEU-SUBDOMINIO.duckdns.org`; evita depender do cabeçalho Host); `CONECTOR_PERMITE_LOOPBACK=1` só para testes
-  locais. Como conectar: Claude > Personalizar > Conectores > Adicionar conector personalizado, URL `https://SEU-SUBDOMINIO.duckdns.org/mcp`,
-  deixar a autenticação como detectada (registro automático).
-- **Caixa de pendências de lançamento (etapa 2 da seção 24 do plano; 24/11/2026; só banco e regras, ainda sem tela nem ferramentas no
-  conector).** O chat do claude.ai nunca grava no financeiro: ele **propõe** um pagamento ou uma despesa (`rpc_pendencia_criar`) e um usuário
-  dono aprova, edita-e-aprova ou recusa (`rpc_pendencia_aprovar`, `rpc_pendencia_recusar`). Só na aprovação o registro é gravado, numa
-  transação única e pelos gatilhos de sempre (a cobrança fica paga). Migration `20261124120000_pendencias_lancamento.sql`
-  (roteiro `supabase/verificar_pendencias.sql`, só em dev, termina em ROLLBACK): tabela `pendencias_lancamento` (só o dono lê; ninguém
-  grava direto), usuário de serviço `servico_conector` (mesmo padrão do WhatsApp: não lê tabela nenhuma, só chama as RPCs), idempotência por
-  `chave_operacao`, trava de 200 pendências em aberto e consultas mínimas para o chat (`rpc_conector_cobrancas_abertas` por nome, CPF parcial
-  ou placa, devolvendo só os 4 últimos dígitos do CPF; `rpc_conector_veiculos`; `rpc_conector_minhas_pendencias`). Avisos de divergência:
-  cobrança não identificada, paga, cancelada, valor acima do saldo e veículo não encontrado **bloqueiam** a aprovação; pagamento parcial,
-  duplicada, sem veículo e data no futuro só avisam. Regras puras (normalização, avisos, identificar o cliente por nome, CPF parcial e placa)
-  em `src/domain/pendencias.py`, espelhadas no SQL. Para ligar o conector ao banco (etapa 4), crie o usuário em Authentication > Users e rode
-  `insert into servico_conector (user_id) select id from auth.users where email = 'conector@exemplo.com';`.
-- **Escrita direta do conector (etapa 3 da seção 24; 24/11/2026; só banco e regras, ainda sem as ferramentas no conector).** Decisão do dono:
-  sem fila de aprovação; o chat **grava direto** o que está limpo e, na dúvida, **não grava** e devolve o motivo para o Claude perguntar na
-  conversa. Migration `20261124130000_escrita_direta_conector.sql` (roteiro `supabase/verificar_escrita_direta.sql`, só em dev, termina em
-  ROLLBACK): `rpc_conector_registrar_pagamento` (grava se a cobrança foi identificada, o valor é igual ao saldo, sem duplicidade nem data
-  futura e **até R$ 10.000,00**), `rpc_conector_registrar_despesa` (**até R$ 5.000,00**, exige o veículo ou a descrição dele),
-  `rpc_conector_cadastrar_cliente` (CPF válido, ou **CPF provisório** `0000000000N` com `[CPF PROVISÓRIO]` na observação; recusa CPF repetido e
-  homônimo não confirmado), `rpc_conector_cadastrar_veiculo` (placa válida e única) e `rpc_pendencia_desfazer` (só dono, só lançamentos
-  automáticos e só em **7 dias**; apaga o registro e reabre a cobrança; recusa se o registro já tem outros dados ligados). Cada RPC devolve
-  `{"gravado": true, ...}` ou `{"gravado": false, "motivo": "duvida" | "acima_do_teto" | "cpf_ja_cadastrado" | "homonimo" | "placa_ja_cadastrada", "mensagem"}`;
-  dado inválido levanta erro em português. Tudo o que o chat grava fica em `pendencias_lancamento` (histórico e auditoria, com
-  `decisao_automatica`, quem pediu e o trecho do chat). Regras puras em `src/domain/pendencias.py` (tetos, o que é «limpo», normalização de
-  cliente e veículo, CPF provisório).
-- **Ferramentas do chat no conector (etapa 4 da seção 24; 24/11/2026).** O claude.ai passa a usar 8 ferramentas (`src/domain/conector_mcp.py`):
-  `consultar_cobrancas_abertas`, `buscar_veiculos` e `listar_ultimos_lancamentos` (só leitura) e `registrar_pagamento`, `registrar_despesa`,
-  `cadastrar_cliente` e `cadastrar_veiculo` (gravam, nunca editam nem apagam), além do `ping`. Cada ferramenta valida os argumentos
-  (`src/domain/pendencias.py`), chama a RPC do banco (`src/services/conector.py`, `src/repositories/conector.py`) e devolve ao Claude um texto:
-  **«Gravado: ...»** ou **«NÃO GRAVADO (motivo): ... Pergunte ao usuário o que falta e tente de novo.»**, que o Claude resolve na conversa. O app
-  entra no Supabase como o **usuário de serviço do conector** (`SERVICO_CONECTOR_EMAIL` e `SERVICO_CONECTOR_SENHA`; ele só executa as RPCs `rpc_conector_*`
-  e fica registrado em `servico_conector`); sem essas variáveis só o `ping` funciona. Erros inesperados nunca vão em detalhe para o chat. As gravações
-  descartam o cache de leituras das telas. Criar o usuário: Supabase > Authentication > Users (com «Auto Confirm User»), depois
-  `insert into servico_conector (user_id) select id from auth.users where email = 'o-email-do-usuario';`.
-- **Histórico dos chats pelo conector (25/11/2026; seção 24.9 do plano).** O Claude dos chats «Locadora - Acompanhamento Financeiro» e «Contratos
-  Locadora» entrega o histórico em **lotes de até 50 registros** para uma **caixa de rascunho**, sem gravar nada no financeiro. Ferramentas:
-  `entregar_lote_historico`, `resumo_do_historico` e `listar_historico_a_conferir` (`src/domain/historico_chat.py`, `src/services/conector.py`).
-  Cada registro leva tipo, data, dados e o **trecho do chat** que o originou; cada lote informa o **período que cobre**, e o resumo mostra os
-  **buracos** entre os lotes (para saber se o chat foi lido inteiro). O banco compara cada registro com o sistema (pagamento, despesa, multa,
-  cliente, veículo e contrato) e marca `ja_existe`, `nova` ou `diverge`; o mesmo registro entregue duas vezes não duplica. Migration
-  `20261125120000_historico_chats.sql` (roteiro `supabase/verificar_historico_chats.sql`, só em dev, termina em ROLLBACK): tabelas
-  `historico_chat_lotes` e `historico_chat_registros` (só o dono lê; ninguém grava direto; o backup as inclui, junto com `pendencias_lancamento`) e as
-  RPCs `rpc_conector_entregar_lote_historico`, `rpc_conector_resumo_historico`, `rpc_conector_historico_a_conferir` e `rpc_historico_descartar_lote`
-  (só dono, não apaga lote com registro aplicado). **Aplicar** o que for novo ou divergente continua sendo uma carga SQL aprovada pelo dono (sessão de
-  sincronização, dev antes de produção, ver `Arquivos/dados/Sincronizacao_Chats.md`).
-- **Histórico dos chats, versão 2 (25/11/2026).** Depois da primeira entrega real dos dois chats: a lista `listar_historico_a_conferir` ganhou **página e total** (cortava em 50
-  de 55 sem avisar) e filtro por tipo; a comparação de **multa** olha também o valor atualizado e reconhece o valor com **20% de desconto** (as 8 «divergências» eram isso); `dados.data_estimada`
-  abre uma janela de datas (±7 dias; ±30 no contrato); `dados.finalidade` (semana, caução, multa...) faz o pagamento composto casar com o tipo da cobrança; `inferido`, `faltando` e
-  `ocorrencia` (segundo fato igual no mesmo dia) são aceitos, e a entrega avisa quando um registro «igual» já entregue veio com **outro trecho** do chat. Migration
-  `20261125130000_historico_v2.sql` (o roteiro `verificar_historico_chats.sql` cobre as duas). **A planilha de conferência é gerada pelo app** (Configurações > «Histórico dos chats»; só o
-  dono; `src/services/historico_chat.py`): Resumo, Conferência (id, motivo, trecho e coluna Decisão com lista) e Lotes. O histórico anterior ao que o chat enxerga vem da **exportação oficial**
-  do claude.ai: `python scripts/extrair_chat_exportado.py EXPORTACAO.zip PASTA_FORA_DO_REPOSITORIO --titulo "..."` (ver `Arquivos/dados/Sincronizacao_Chats.md`, seções 12 e 13).
-- **Rode com um único worker** (`uvicorn --factory src.web.app:criar_app --workers 1 --proxy-headers`
-  atrás do proxy, com `--forwarded-allow-ips` restrito ao proxy). Com 2 workers cada um teria as suas
-  sessões e o usuário seria deslogado ao acaso.
-- Todo POST exige token CSRF (campo `csrf_token` ou cabeçalho `X-CSRF-Token`, que o HTMX envia sozinho).
-- Login limitado a 5 falhas por e-mail/CPF e 20 por IP em 15 min (também em memória).
-- Cabeçalhos de segurança (CSP sem inline, HSTS em HTTPS, `X-Frame-Options`) saem da aplicação. Por
-  causa da CSP não há `style=` nem `<script>` inline nos templates; há testes que garantem isso.
+- **Migrations:** `supabase/migrations/AAAAMMDDHHMMSS_descricao.sql`, formato exigido pela integração Supabase ↔ GitHub, que aplica cada push
+  automaticamente. Uma migration nova usa um timestamp maior que o da última.
+- **Roteiros de verificação:** `supabase/verificar_*.sql` terminam em `ROLLBACK`. Rode em desenvolvimento ou homologação.
 
-**CSS (Tailwind).** O `static/css/app.css` é gerado a partir de `src/web/estilos/app.css` e **fica
-versionado** (a VPS não precisa do Tailwind). Depois de mudar templates ou estilos, recompile:
+### Atualizar uma instalação existente
 
-```bash
-.venv\Scripts\python.exe scripts/construir_css.py            # uma vez
-.venv\Scripts\python.exe scripts/construir_css.py --watch    # ao salvar
-```
-
-Precisa do Tailwind CLI standalone (sem Node) em `tools/tailwindcss.exe` (ou `tools/tailwindcss` no
-Linux), baixado de https://github.com/tailwindlabs/tailwindcss/releases. A pasta `tools/` não vai para
-o git. Os testes de `tests/web/` ficam em `pytest` normalmente.
-
-## Estrutura
-
-Ver seção 3 do plano ([Arquivos/Projeto_Locação.md](Arquivos/Projeto_Locação.md)).
-
-## Status da implementação
-
-> **Histórico:** as entradas abaixo foram escritas ao longo do desenvolvimento. As anteriores à migração (até 06/10/2026) descrevem a
-> interface em Streamlit — `app.py`, `pages/`, `src/ui/`, `st.*` e `streamlit-cookies-controller` —, que foi removida na Fase 4 (parte F). Os
-> arquivos citados nelas não existem mais; o que vale hoje está nas seções «Frontend», «Publicação» e «Estilização do painel».
-
-As telas das fases 1 a 7 estão implementadas: cadastros, contratos com vistorias,
-cobranças, manutenção, documentos, Dashboard, relatórios, configurações e backup.
-As regras existentes foram complementadas com transações para entrega/devolução,
-conclusão de manutenção, plano automático de motos e proteção de pagamentos.
-
-Revisão de fidelidade visual ao `Arquivos/interface/Design_UI.md` (22/09/2026): paleta de
-status corrigida para os tokens exatos do documento, chip de placa em mono no
-padrão do plano, selos circulares tracejados para alertas (Dashboard e
-Manutenção), barra de ocupação segmentada substituindo a barra padrão do
-Streamlit e assistente em 4 etapas (Cliente, Moto, Condições, Vistoria de
-entrega) na criação de contrato. O painel autenticado agora oferece modo escuro
-na barra lateral — automático por padrão (acompanha o tema do sistema/navegador),
-com o toggle manual sobrepondo a escolha e o botão "Usar tema do sistema" para voltar
-ao automático — com paleta própria (fundos em camadas e texto claro com contraste
-mínimo de 4,5:1) para cartões, tabelas, formulários, abas e alertas. As cores inline
-dos módulos são remapeadas por seletores sobre o `style` normalizado pelo navegador
-(`color: rgb(...)`), não pelo hexadecimal escrito no código.
-A tela de login foi validada em viewport mobile de 390 × 844 px; a validação
-mobile autenticada continua dependendo do acesso ao ambiente de homologação.
-
-Reconstrução do Dashboard (22/09/2026), conferida linha a linha contra o
-artboard `Main.dc.html`: faixa de instrumentos como um único painel com quatro
-seções (frota com barra segmentada, recebido no mês com barra de progresso,
-em atraso, manutenção no mês), cartão "Hoje" com ação real de registrar
-pagamento (leva à página Cobranças com a cobrança pré-selecionada) e cartão
-"Alertas" único combinando manutenção, documentos e CNH com os selos
-circulares tracejados de 40px do mockup. `app.py` passou a usar
-`st.navigation`/`st.Page` para eliminar a entrada duplicada "app" da barra
-lateral, e o rodapé da barra lateral (avatar, nome, botão Sair) segue o
-padrão visual do mockup. As demais páginas ainda não foram revisadas contra
-seus artboards — trabalho em andamento, uma página por vez.
-
-Reconstrução de Motos (22/09/2026), conferida contra `Motos.dc.html` e
-`MotoFicha.dc.html`: lista com pílulas de filtro por status, busca, chip de
-placa mono e paginação de 7 por página; cadastro/edição movidos para modais
-(`st.dialog`), como pedem os demais formulários de passo único do plano; a
-ficha da moto virou uma visão própria (navegação `‹ Motos` / `→` na lista,
-sem recarregar página) com faixa de dados rápidos e 6 abas — Resumo (contrato
-ativo, dados da moto, quilometragem), Plano de manutenção, Histórico,
-Documentos (com ação "Regularizar"), Contratos e Financeiro (receita, custos
-e custo por km). Novos componentes reutilizáveis em `componentes.py`:
-`chip_placa`, `selo_situacao` e `tabela_html`. Corrigido também um bug
-anterior: as classes CSS `.rotulo`/`.mono`/`.campo` usadas no HTML injetado
-do Dashboard não tinham regra correspondente no tema global — só o seletor de
-tag (`h1,h2,h3`) pegava por acidente; várias leituras em mono no Dashboard
-podiam não estar com a fonte certa.
-
-Correções complementares (22/09/2026): as fichas de Moto e Cliente abrem
-diretamente o contrato selecionado; o registro de manutenção aceita várias
-peças ou serviços livres numa tabela com linhas adicionáveis e removíveis; a
-ficha de Cliente escapa dados cadastrados antes de inseri-los em HTML, carrega
-históricos financeiros em lote e mantém todos os cálculos monetários em
-`Decimal`.
-
-Reconstrução de Vistorias (23/09/2026), conferida contra `Vistorias.dc.html` e
-`VistoriaComparacao.dc.html`: lista de todas as vistorias (mais recentes
-primeiro) com pílulas Todas/Entrega/Devolução, busca por cliente ou placa,
-paginação, chip de placa, combustível e avarias em vermelho. O registro virou
-modal (só oferece contratos e tipos ainda pendentes, data não anterior ao início
-do contrato, checklist em duas colunas, itens adicionais e envio de várias fotos;
-falha no envio de foto não desfaz a vistoria, apenas avisa). A seta da linha abre
-a comparação entrega × devolução lado a lado, com faixa de resumo (período, km
-rodados, avarias na devolução), itens que mudaram destacados em amarelo, fotos
-por URL assinada e "Adicionar fotos" em cada lado. A lógica pura (rótulos,
-ordem do checklist, contagem de avarias, km rodados, tipos pendentes e o
-instante gravado no fuso America/Sao_Paulo) ficou em `src/domain/vistorias.py`,
-com testes; a tela está em `src/ui/vistorias.py`. O formulário usado pelo
-assistente e pelo encerramento de contratos (`campos`/`preparar`) não mudou.
-
-Reconstrução de Manutenção (23/09/2026), conferida contra `Manutencao.dc.html`:
-cabeçalho com contagem de vencidas/próximas e botão "Registrar manutenção",
-3 abas — Alertas (pílulas Todas/Vencidas/Próximas, chip de placa, restante em
-vermelho quando negativo), Histórico (filtro por tipo, busca por moto/oficina,
-paginação e ação ✓ para concluir/cancelar manutenções abertas) e Catálogo
-(interruptor de ativo, edição por ícone). O registro virou modal com prévia ao
-vivo de custo de peças e total; a lógica está em `src/ui/manutencao.py`.
-
-Reconstrução de Clientes (22/09/2026), conferida contra `Clientes.dc.html` e
-`ClienteFicha.dc.html`: lista com pílulas de filtro por status, busca por
-nome/CPF, avatar com inicial (grafite-900 quando ativo, grafite-500 quando
-não), selo de validade da CNH por cliente (novo `src/domain/cnh_regras.py`,
-com testes, pois a view `vw_alertas_cnh` só alerta clientes com contrato
-ativo — a lista mostra a validade de todos) e moto atual via chip de placa;
-cadastro/edição em modal. Ficha com faixa de dados rápidos e 3 abas — Resumo
-(contrato ativo, dados pessoais, situação financeira), Contratos e
-Pagamentos. Corrigida uma inconsistência de paleta encontrada nesta revisão:
-"ativo" é neutro para contrato (confirmado em `MotoFicha`/`ClienteFicha`),
-mas verde para cliente — os dois usos agora têm chaves de situação
-diferentes (`ativo` vs `ativo_cliente`) na paleta compartilhada.
-
-Reconstrução de Contratos (23/09/2026), conferida contra `Contratos.dc.html`,
-`ContratoNovo.dc.html` e `ContratoFicha.dc.html`: lista com pílulas de filtro
-(Ativo por padrão), busca por cliente/placa e linhas de contratos não ativos
-esmaecidas; assistente em 4 etapas (Cliente, Moto, Condições, Confirmar) com
-cartões selecionáveis (cliente bloqueado/inativo aparece desabilitado, "já
-aluga X" como aviso), periodicidade em pílulas e etapa final com resumo,
-prévia da agenda e a vistoria de entrega exigida pela Fase 5; ficha com
-faixa de dados, abas Cobranças/Vistorias/Manutenções e encerramento em
-modal. O contrato é por **prazo indeterminado** por padrão (decisão de negócio,
-seção 14.4 do plano): o assistente começa com "Prazo indeterminado" marcado e a
-periodicidade **semanal**; desmarcar mostra o "Fim previsto" para o caso de data final
-combinada. Sem data final a prévia mostra só os 30 primeiros dias e as cobranças
-seguintes são geradas por `rpc_gerar_cobrancas_pendentes` enquanto o contrato estiver ativo.
-No encerramento o dono informa os **danos**, que são descontados da caução recebida
-(`src/domain/caucao.py`, espelhado na RPC): caução R$ 1.000 − dano R$ 300 = devolver
-R$ 700; dano acima da caução zera a devolução e gera uma cobrança de dano com o excedente. O diálogo mostra as avarias anotadas na vistoria de devolução como base para o valor dos danos.
-
-Reconstrução de Cobranças (23/09/2026), conferida contra `Cobrancas.dc.html`:
-subtítulo com total em atraso e nº de clientes; abas Hoje, Atrasadas, Próximos 7
-dias e Pagas (com contagem); Atrasadas mostra atraso, original, encargos e total;
-ações por linha: mensagem de cobrança para copiar (popover) e registrar
-pagamento em diálogo, com multa e adicional diário recalculados ao mudar a data. O pagamento
-mantém principal e "multa e adicional" em campos separados (como grava a tabela
-`pagamentos`), em vez do campo único "Valor a pagar" do mockup. A aba Pagas
-mostra as 30 mais recentes. Regras de abas/resumo/mensagem em
-`src/domain/painel_cobrancas.py`, testadas em `tests/test_painel_cobrancas.py`.
-
-Reconstrução de Documentos (23/09/2026), conferida contra `Documentos.dc.html`:
-a página deixou de ser um seletor por moto e passou a listar os documentos de
-toda a frota (Moto, Tipo, Referência, Vencimento, Valor, Situação), com subtítulo
-de vencidos/a vencer, pílulas Todos/Vencido/A vencer/Em dia com contagem, busca
-por placa e paginação de 10. Novo documento e regularizar são diálogos; as ações
-por linha são ver comprovante (URL assinada de 5 minutos), editar e regularizar.
-A situação vem de `situacao_documento` em `src/domain/documentos.py` (mesma regra
-da view `vw_alertas_documentos`, testada em `tests/test_documentos.py`); documento
-regularizado aparece como "Regularizado" e conta em "Em dia". Diferenças em
-relação ao mockup: há um campo "Descrição" (é ele que alimenta a coluna
-Referência, ex.: apólice), o botão de editar (o mockup não previa edição) e, ao
-regularizar, o "documento do ano seguinte" abre o cadastro já preenchido em vez
-de criar direto, porque `vencimento` é obrigatório no banco.
-
-Reconstrução de Relatórios (23/09/2026), conferida contra `Relatorios.dc.html`:
-subtítulo com o período, filtros De/Até e quatro abas — Resultado por moto,
-Custo de manutenção (pílulas Por moto/Por modelo, esta com total e média por
-moto), Inadimplência (total em atraso, % da carteira do mês, clientes atrasados
-e valor com encargos por parcela) e Fluxo de caixa (mês corrente marcado como
-parcial) — com barras proporcionais em HTML/CSS e exportação CSV/Excel por aba,
-com os mesmos dados da tabela. **Decisão a confirmar:** o mockup não define
-"% da carteira do mês"; foi adotado total em atraso ÷ previsto do mês (parcelas
-sem caução nem canceladas que vencem no mês, o mesmo "previsto" do Dashboard).
-Cálculos em `src/domain/relatorios.py`, testados em
-`tests/test_relatorios_dominio.py`.
-
-Reconstrução de Configurações (23/09/2026), conferida contra `Configuracoes.dc.html`:
-quatro cartões em largura total (até 25/09/2026 eram de 780px) — Encargos por atraso (multa de atraso e adicional por dia, em reais,
-com exemplo calculado: locação de R$ 500,00 vencida há 5 dias), Alertas de manutenção,
-Alertas de documentos e CNH e Backup manual (ZIP de CSVs) — e botão "Salvar
-alterações" no cabeçalho. Valores em reais com até duas casas, não negativos; demais
-campos, inteiros não negativos; erros aparecem em português sem gravar nada.
-O backup é gerado em dois passos (Gerar → Baixar) para não consultar as 14
-tabelas a cada interação. **Decisão a confirmar:** o mockup mostra "Último backup"
-com data/hora, mas o schema não guarda isso; a tela informa apenas o backup gerado
-na sessão atual. O exemplo usa os valores já salvos (o formulário só grava ao salvar).
-Validação em `src/domain/configuracoes.py`, testada em `tests/test_configuracoes.py`.
-
-Rearranjo de elementos em 25/09/2026 (só interface, sem regra de negócio): na ficha do
-cliente, o botão "Ver contrato →" passou para o cabeçalho do cartão Contrato ativo e
-"Dados pessoais" ocupa a largura total em grade de 3 colunas (2 abaixo de 1100px, 1 abaixo
-de 640px), sem quebrar CPF, CNH e e-mail no meio; o ícone de "Copiar mensagem de cobrança"
-fica centralizado no botão; as colunas de valor de Cobranças > Pagas, Manutenção > Histórico
-e Documentos ficam alinhadas à esquerda, como o cabeçalho (exceção deliberada à regra
-"números à direita" do `Design_UI.md`); Configurações usa toda a largura da página; e os
-selos de status/situação de tabelas e listas têm largura única (`--selo-largura`, 104px, nunca
-maior que a coluna), com o texto centralizado.
-
-Correção em 22/09/2026: a sessão de login ficava apenas em `st.session_state`, que o
-Streamlit descarta a cada refresh completo do navegador — o usuário logado caía na
-tela de login ao atualizar a página. Agora o refresh token é guardado num cookie do
-navegador (`streamlit-cookies-controller`) e a sessão é restaurada automaticamente a
-partir dele; um segundo cookie, renovado a cada requisição e com validade de 30
-minutos, mantém a regra de expiração por inatividade (agora de 90 dias) mesmo entre refreshes.
-
-Correção em 24/09/2026: o F5 ainda derrubava a sessão por dois motivos. (1) O login
-chamava `st.rerun()` logo após pedir a gravação do cookie, e o Streamlit descartava o
-componente antes de o navegador executá-lo; agora o formulário é esvaziado e a mesma
-execução segue até a página, sem rerun. (2) O Supabase rotaciona o refresh token (uso
-único) nas renovações automáticas do access token, e o cookie ficava com um token já
-consumido; `sincronizar_refresh_token_cookie()` (`src/db.py`), chamada a cada execução
-em `require_login()`, regrava o cookie sempre que o token muda. Testes em
-`tests/test_sessao_cookie.py`.
-
-Validação local em 21/09/2026:
-
-- Testes pytest de regras, exportação, paginação, login e telas com serviços simulados.
-- Todas as migrations então existentes executadas em PostgreSQL embarcado (PGlite 0.5.8).
-- Roteiro `supabase/verificar_fluxos.sql` executado com rollback: contrato duplicado,
-  pagamento parcial/total, preservação da parcela parcialmente paga no encerramento,
-  cancelamento de futuras sem pagamento, vistorias, plano e conclusão de manutenção,
-  custo total e resultado financeiro.
-- `seed_demo.sql` executado duas vezes, sem duplicar o cenário.
-
-**Validação em produção (22 e 23/09/2026):** as 13 migrations estão aplicadas no
-Supabase de destino (as 7 que ficaram pendentes por um tempo foram aplicadas
-manualmente no SQL Editor; o PostgREST só reconheceu os objetos novos depois do
-restart do projeto). Login do dono confirmado: as permissões do papel
-`authenticated` (`20260921154000_permissoes_authenticated.sql`) e a RLS restrita
-ao UUID do dono (`20260922000000_restringe_rls_ao_dono.sql`) funcionam — o
-Dashboard carrega sem erro de permissão. A RPC `rpc_finalizar_manutencao` passou
-a receber `payload jsonb` (`20260922010000_finalizar_manutencao_payload_jsonb.sql`)
-e o roteiro `supabase/verificar_fluxos.sql` foi executado em produção (23/09) sem
-falhas; ele termina em `ROLLBACK`, então não deixa dados.
-
-**Aceite externo:** uploads e URLs assinadas do Supabase Storage validados em produção em 26/10/2026 (ver a seção 7 de
-`Arquivos/homologacao/Roteiro_Homologacao_Manual.md`). O bucket `trocas_oleo` do portal do locatário também foi validado no mesmo dia. O roteiro de aceite (fluxos 1 a 10) foi executado no app publicado em 26/10/2026, com achados menores listados no Roteiro de homologação. A rodada no celular (POCO M6 Pro) foi feita em 27/10/2026 e gerou a correção das fotos da entrega e da câmera. Ainda pendente:
-conferir a câmera no aparelho depois do deploy e revisar no Firefox no aplicativo publicado. O teste local não valida Supabase Storage, infraestrutura
-ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas e testes isolados.
-
-## Atualização de uma instalação existente
-
-1. Faça backup antes de aplicar alterações no projeto de produção.
-2. Aplique somente as migrations pendentes, na ordem dos timestamps. As novas são:
-   - `20260921150000_cadastro_moto.sql`: plano e histórico iniciais atômicos, km não regride.
-   - `20260921151000_fluxos_contratos.sql`: contratos com vistorias e validação de pagamentos.
-   - `20260921152000_finalizar_manutencao.sql`: conclusão/cancelamento de manutenção aberta.
-   - `20260921153000_resultado_km.sql`: distância registrada e custo por km na view.
-   - `20260921154000_permissoes_authenticated.sql`: permissões do papel `authenticated` (a RLS continua decidindo as linhas).
-   - `20260922000000_restringe_rls_ao_dono.sql`: RLS e Storage só para o dono (ajuste o UUID em `is_dono()` antes de aplicar). A migration `20261105120000_administradores.sql` passa o acesso para a tabela `administradores` (veja "Administradores").
-   - `20260922010000_finalizar_manutencao_payload_jsonb.sql`: `rpc_finalizar_manutencao` passa a receber `payload jsonb`.
-   - `20260928120000_portal_locatario.sql`: portal do locatário (Fase 7) — vínculo `clientes.auth_user_id`, tabela `trocas_oleo`, cobrança `multa_manutencao`, multa fixa em `configuracoes`, RPCs e bucket `trocas_oleo`. Veja "Portal do locatário" abaixo.
-   - `20261002120000_idempotencia_operacoes.sql`: coluna `chave_operacao` e índice único em `pagamentos`, `manutencoes`, `documentos_moto` e `historico_km`, e `rpc_registrar_manutencao` passa a devolver o resultado do primeiro envio quando a chave se repete (Etapa 7 do plano de UI/UX). Rode `supabase/verificar_fluxos.sql` no projeto de homologação depois de aplicar.
-   - `20261005120000_encargos_fixos.sql`: encargo de atraso fixo (decisão de negócio, seção 14.1 do plano) — `configuracoes` ganha `multa_atraso_valor` (R$ 15,00) e `encargo_diario_valor` (R$ 7,00) e perde `multa_atraso_percentual`, `juros_mensal_percentual` e `carencia_dias`. **Aplique antes de publicar esta versão do app**, que já não lê as colunas antigas.
-   - `20261005130000_contrato_indeterminado.sql`: `rpc_criar_contrato_com_vistoria` deixa de exigir `data_fim_prevista` (contrato por prazo indeterminado, seção 14.4 do plano).
-   - `20261005140000_caucao_danos.sql`: danos descontados da caução no encerramento (seção 14.3) — `contratos` ganha `caucao_desconto_danos`, `caucao_valor_devolvido` e `descricao_danos`; `rpc_encerrar_contrato` e `rpc_encerrar_contrato_com_vistoria` trocam `p_caucao_devolvida` por `p_valor_danos` e `p_descricao_danos` (as versões antigas são removidas). **Aplique antes de publicar esta versão do app.**
-   - `20261005150000_manutencao_faixa_km.sql`: faixa de km nos itens de manutenção (seção 14.5) — `itens_manutencao` e `moto_plano_manutencao` ganham `intervalo_minimo_km` (início do alerta; `intervalo_km` continua sendo o máximo, em que o item vence), a view `vw_alertas_manutencao` é recriada e o catálogo padrão passa a ter "Kit de tração" e "Patins de freio" de 3.000 a 5.000 km (renomeia os itens genéricos antigos só se ainda estiverem no valor original).
-   - `20261005160000_receita_caucao_retida.sql`: a parte da caução retida para danos (`contratos.caucao_desconto_danos`) passa a contar como receita da moto em `vw_resultado_moto`, como já faz `domain/relatorios.py` nos relatórios (seção 14.3).
-3. Se a integração GitHub já aplica as migrations, confira o histórico antes de
-   executá-las manualmente. Não reaplique migrations antigas. Pela CLI, revise o
-   projeto conectado com `supabase link` e use `supabase db push`.
+1. Faça backup antes de alterar o projeto de produção.
+2. Aplique somente as migrations pendentes, na ordem dos timestamps. Aplique primeiro no desenvolvimento e confira a regra de ordem entre migration e
+   deploy em [Deploy na VPS](Arquivos/Deploy_VPS.md).
+3. Se a integração com o GitHub já aplica as migrations, confira o histórico antes de executar algo manualmente e não reaplique as antigas. Pela CLI,
+   revise o projeto conectado com `supabase link` e use `supabase db push`
+   ([documentação do Supabase](https://supabase.com/docs/guides/deployment/database-migrations)).
 4. Rode `supabase/seed.sql` para o catálogo, caso ainda não tenha sido aplicado.
-5. Em homologação, execute `supabase/verificar_fluxos.sql`, `supabase/verificar_portal_locatario.sql` e `supabase/verificar_regras_negocio.sql`. Os roteiros usam `ROLLBACK`.
-6. Reinicie o aplicativo com as dependências de `requirements-dev.txt`.
+5. Em homologação, execute os roteiros `supabase/verificar_*.sql` ligados ao que mudou.
+6. Atualize as dependências e reinicie o aplicativo.
 
-Referência: [migrations do Supabase](https://supabase.com/docs/guides/deployment/database-migrations).
+### Dados de demonstração
 
-## Portal do locatário (Fase 7)
+Rode no SQL Editor depois das migrations e do `seed.sql`. **Nunca em produção.** Os dois são idempotentes pela placa.
 
-O locatário entra com **e-mail + senha** no padrão `nome.sobrenome@locadora.com` (homônimos: `nome.sobrenome2@...`; ele pode
-digitar só `nome.sobrenome`; o domínio é só um rótulo, nenhum e-mail é enviado; o dono continua entrando com o e-mail dele) e vê só a tela
-"Troca de óleo": moto e contrato ativos dele, situação do óleo e o formulário para
-reportar a troca com **foto do painel (hodômetro)** e **foto da nota fiscal** (cláusula 4.13
-do contrato). O dono continua com o app completo; o menu depende do papel (`rpc_meu_papel`).
+| Arquivo | Cenário | Placa de controle |
+|---|---|---|
+| `supabase/seed_demo.sql` | Uma moto, um cliente fictício, contrato, cobranças, pagamentos e documento vencido. | `DEM1A23` |
+| `supabase/seed_exemplos.sql` | 6 motos (uma em cada status), 5 clientes, 3 contratos com vistorias, cobranças em várias situações, manutenções e documentos. | `EXA1A11` |
 
-**Segurança.** As tabelas seguem com RLS só para o dono (`is_dono()`); o locatário não tem
-acesso direto a nenhuma tabela. Ele lê e grava apenas por RPCs `SECURITY DEFINER`
-(`rpc_portal_locatario`, `rpc_registrar_troca_oleo_locatario`), que o identificam por
-`auth.uid()` e só enxergam o contrato ativo dele. No Storage, o bucket `trocas_oleo` é
-privado (só imagens, até 10 MB): o locatário só envia para a própria pasta e não lê nem
-sobrescreve arquivos; o dono vê as fotos por URL assinada na ficha do cliente (aba "Portal").
-O cadastro público continua desativado e a `service_role` nunca é usada pelo app.
+## Usuários e acessos
 
-**Como liberar um locatário.** Na ficha do cliente, aba "Portal", o dono clica em **"Criar
-acesso"**. O app chama a Edge Function `criar-locatario`, que cria o usuário no Supabase Auth
-(e-mail `nome.sobrenome@locadora.com` e **senha padrão** = primeiro nome minúsculo e sem acento + **6 últimos dígitos do
-CPF**, por exemplo `joao224725`; decisão do dono em 16/11/2026, pois o sistema não guarda a data de nascimento e o locatário
-esquece senhas) e o vincula ao cliente. O app mostra o e-mail e a senha ao criar: entregue-os ao locatário. Ele pode trocar a
-senha no portal ("Alterar minha senha"), mas não é obrigado. "Gerar nova senha" volta a senha para a padrão e "Remover acesso" exclui o login.
-**Padronizar os acessos existentes.** Configurações > «Acessos dos locatários» > «Padronizar acessos de todos os locatários»
-(só o dono, com confirmação): a Edge Function troca o e-mail e a senha de todos os acessos que já existem para o padrão (a ordem do cadastro
-decide quem fica sem sufixo). Não devolve senhas e não avisa ninguém por WhatsApp. Depois de publicar a função e aplicar a migration
-`20261116120000_vincular_locatario_por_email.sql` (a função e a migration andam juntas: aplique as duas antes de criar acessos novos).
-**Esqueci minha senha (12/11/2026).** O e-mail do portal é fictício, então não há link de redefinição: na tela de login, «Peça uma senha nova»
-(`/login/esqueci-senha`, `rotas/esqueci_senha.py`) pede só o **CPF** e registra um **pedido** para o dono. A resposta ao locatário é sempre a mesma para
-qualquer CPF válido (ninguém descobre quem é cliente), cada pedido conta no limite por IP (20 em 15 min) e o CSRF usa o cookie do login. O dono vê o pedido
-em **duas** telas: o alerta «Nova senha do portal pedida» no Dashboard (aba Hoje, lista Atenção) e o aviso no topo da aba Portal da ficha do cliente, com **Descartar
-pedido** (para quando não foi o locatário que pediu). **Gerar nova senha** (ou remover o acesso) fecha o pedido; o dono continua entregando a senha pessoalmente.
-Migration `20261112150000_pedidos_senha_portal.sql` (tabela `pedidos_senha_portal`, no máximo um pedido aberto por cliente, só o dono lê; RPC
-`rpc_portal_pedir_redefinicao`, a única chamada **sem login**, papel `anon`); roteiro `supabase/verificar_pedidos_senha_portal.sql` (só em dev, termina em ROLLBACK).
-Sem a migration, a tela de pedido mostra um erro genérico e o Dashboard e a ficha seguem normais. O bloqueio de tentativas do Supabase
-Auth protege contra tentativas repetidas de senha.
+### Administradores
 
-**Edge Function `criar-locatario`** (`supabase/functions/criar-locatario/index.ts`). Criar,
-redefinir e excluir usuários exige a `service_role`, que nunca vai para o app nem para o
-repositório: a função roda dentro do Supabase, onde essa chave é um segredo injetado
-automaticamente (`SUPABASE_SERVICE_ROLE_KEY`). Ela só atende o **dono** (repassa o JWT de quem
-chamou e confere `rpc_meu_papel() = 'dono'`), monta o e-mail a partir do CPF do cadastro e
-gera a senha com gerador criptográfico. O app só usa a anon key e a sessão do usuário.
+Quem está na tabela `administradores` tem o mesmo acesso do dono (`is_dono()` consulta essa tabela). Ela só é alterada pelo SQL Editor.
+Crie o usuário em Authentication > Users (com "Auto Confirm User") e rode:
 
-Publicar (uma vez por projeto Supabase — dev e produção são projetos diferentes):
+```sql
+insert into administradores (user_id) select id from auth.users where email = 'fulano@exemplo.com';
+```
+
+Para remover o acesso:
+
+```sql
+delete from administradores where user_id = (select id from auth.users where email = 'fulano@exemplo.com');
+```
+
+Roteiro de teste: `supabase/verificar_administradores.sql` (só em dev). Nunca coloque senhas ou e-mails reais no repositório.
+
+### Portal do locatário
+
+O acesso de cada locatário é criado na ficha do cliente (aba "Portal"). Isso depende da Edge Function `criar-locatario`, publicada uma vez em cada
+projeto Supabase (desenvolvimento e produção são projetos diferentes):
 
 ```bash
 supabase login
+```
+
+```bash
 supabase functions deploy criar-locatario --project-ref <ref-do-projeto>
 ```
 
-Sem publicar a função, "Criar acesso" mostra um erro. Confira no painel: Edge Functions >
-`criar-locatario` (com "Verify JWT" ligado, que é o padrão) e os logs em caso de falha.
+Sem a função, "Criar acesso" mostra um erro. Confira no painel (Edge Functions > `criar-locatario`) que "Verify JWT" está ligado.
+Logins, senhas e segurança: [Referência técnica](Arquivos/Referencia_Tecnica.md#portal-do-locatário).
 
-**Regras da troca.** O hodômetro não pode ser menor que o último registrado. A troca grava
-uma manutenção preventiva concluída (custo zero), reinicia o plano de óleo da moto e lança o
-km no histórico. Se o km informado passar de `última troca + intervalo` (1.000 km no plano
-padrão), é gerada a cobrança **fixa** `multa_manutencao`, com o valor definido em
-Configurações > "Multa por troca de óleo fora do intervalo". O valor padrão é R$ 12,50;
-valor 0,00 desativa a cobrança da multa. Se a foto não confirmar o km, o dono cancela a
-multa em Cobranças (botão **Cancelar**, veja «Cancelar cobrança» abaixo).
+### Usuários de serviço
 
-### Arquivos órfãos do portal (12/11/2026)
+Os robôs entram com um usuário próprio, criado em Authentication > Users (com "Auto Confirm User"), que não lê tabelas: só executa as RPCs dele.
+Registre-o na tabela correspondente pelo SQL Editor:
 
-O locatário envia as fotos da troca de óleo e o comprovante de documento ao Storage **antes** de registrar a operação. Se o registro falha (hodômetro
-menor que o anterior, troca repetida, documento já regularizado), o arquivo fica no Storage sem nenhuma linha que o referencie: um **arquivo órfão**.
-Em **Configurações > Arquivos órfãos do portal** o dono clica em **Procurar arquivos órfãos**, confere a lista (tipo, caminho, tamanho e data) e só então
-**Apaga**, com confirmação. Regras (`src/domain/arquivos_orfaos.py`, `src/services/arquivos_orfaos.py`):
+| Integração | Tabela | Variáveis |
+|---|---|---|
+| WhatsApp | `servico_mensagens` | `SERVICO_MENSAGENS_EMAIL`, `SERVICO_MENSAGENS_SENHA` |
+| Conector do claude.ai | `servico_conector` | `SERVICO_CONECTOR_EMAIL`, `SERVICO_CONECTOR_SENHA` |
 
-- só entram arquivos **do portal**: o bucket `trocas_oleo` e a pasta `portal/` do bucket `documentos`; vistorias e os arquivos que o próprio dono enviou nunca são tocados;
-- só entram arquivos com **mais de 24 horas** e que **nenhuma linha referencia** (foto do painel ou nota fiscal de troca; comprovante de envio, inclusive recusado; arquivo de documento da moto);
-- a lista vem da RPC `rpc_listar_arquivos_orfaos` (só o dono; migration `20261112160000_arquivos_orfaos_portal.sql`, roteiro `supabase/verificar_arquivos_orfaos_portal.sql`, só em dev, termina em ROLLBACK), com no máximo 1000 por vez;
-- quem apaga é o app, pela **API do Storage** (que remove o arquivo de verdade, não só a linha), em lotes de 100 e com a sessão do dono. A lista é **recalculada na hora de apagar**:
-  nada que vem do navegador define o que é removido. Uma falha em um lote não impede os outros: a mensagem diz quantos foram apagados e quantos não puderam ser.
+```sql
+insert into servico_mensagens (user_id) select id from auth.users where email = 'robo@exemplo.com';
+```
+
+Para o conector, troque a tabela por `servico_conector`. Para remover o acesso, apague a linha do usuário na mesma tabela.
+
+## Configuração opcional
+
+A lista comentada de variáveis do app está em `.env.example`; em produção elas ficam no Coolify.
+
+### Sessão longa
+
+`SESSAO_CHAVE` (chave Fernet) mantém o login depois de um deploy. Sem ela, reiniciar o app desconecta todos; trocá-la também. Gere com:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+### Contrato em PDF
+
+Os dados do locador vêm das variáveis `LOCADOR_*`, fora do git. O que faltar sai como linha em branco para preencher à mão. O texto é um modelo
+padrão: revise-o com um advogado antes de usar.
+
+### Envio por WhatsApp
+
+Usa a Evolution API e nasce desligado; o dono o liga em Configurações. Variáveis e tarefa agendada estão na seção 8.1 do
+[Deploy na VPS](Arquivos/Deploy_VPS.md).
+
+### Conector do claude.ai
+
+| Variável | Uso |
+|---|---|
+| `CONECTOR_CHAVE` | Chave Fernet própria. Sem ela o conector fica desligado; trocá-la revoga todos os tokens. |
+| `CONECTOR_URL_BASE` | Endereço público do app, ex.: `https://SEU-SUBDOMINIO.duckdns.org`. |
+| `SERVICO_CONECTOR_EMAIL`, `SERVICO_CONECTOR_SENHA` | Usuário de serviço. Sem elas, só a ferramenta `ping` funciona. |
+| `CONECTOR_PERMITE_LOOPBACK` | `1` somente em testes locais. |
+
+Para conectar: Claude > Personalizar > Conectores > Adicionar conector personalizado, com a URL `https://SEU-SUBDOMINIO.duckdns.org/mcp`,
+deixando a autenticação como detectada (registro automático).
 
 ## Publicação
 
-O deploy do app FastAPI (Fase 5) usa o `Dockerfile` do repositório no Coolify da VPS; o passo a passo está em
-`Arquivos/Deploy_VPS.md`. O deploy só sai pela CI, no push para a `main`, depois do `pytest` verde (job `deploy` de `.github/workflows/ci.yml`;
-segredos `COOLIFY_URL`, `COOLIFY_TOKEN` e `COOLIFY_APP_UUID` no GitHub); a reversão é o Rollback do Coolify. A imagem já sobe com 1 worker,
-`--proxy-headers` e `LOCACAO_AMBIENTE=producao`. Requisitos da revisão de segurança na revisão de segurança (`Arquivos/Revisao_Seguranca.md`):
-`uvicorn --factory src.web.app:criar_app` com `--proxy-headers` e `--forwarded-allow-ips` do proxy, **1 worker**, `LOCACAO_AMBIENTE`
-diferente de `dev`, `SUPABASE_URL` e `SUPABASE_ANON_KEY` por variável de ambiente (nunca a chave `service_role`). Antes de publicar:
-migrations aplicadas, cadastro público do Supabase desativado, usuário do dono criado e buckets privados.
+O deploy usa o `Dockerfile` no Coolify da VPS e só sai pela CI, no push para a `main`, depois do `pytest` verde (job `deploy` de
+`.github/workflows/ci.yml`). A reversão é o Rollback do Coolify. O passo a passo está em [Deploy na VPS](Arquivos/Deploy_VPS.md) e os requisitos de
+segurança, na [Revisão de segurança](Arquivos/Revisao_Seguranca.md). Em resumo:
 
-## Roteiro manual de aceite
-
-Use um projeto de homologação; os passos criam dados.
-
-1. Sem login, visite a página inicial e cada página do menu; nenhuma deve exibir dados.
-2. Cadastre uma moto e um cliente. Confira o plano automático e o histórico inicial.
-   Confira recusa de placa/CPF duplicados e inválidos; confira CPF mascarado nas listas.
-3. Atualize o km. Uma leitura histórica menor exige confirmação e não reduz o km atual.
-4. Crie contrato com caução e vistoria (prazo indeterminado, semanal). Compare a prévia
-   com as parcelas geradas (caução e 1ª semana vencem na data de início); confira que a
-   moto deixa de aparecer entre as disponíveis.
-5. Registre pagamentos em dia, atrasado, parcial e total. Confira principal separado
-   dos encargos (R$ 15 no vencimento + R$ 7 por dia, só locação), saldo residual e
-   recusa de pagamento superior ao saldo.
-6. Suba o km até o limite preventivo. Abra manutenção com peças e mão de obra; conclua
-   o serviço. Confira custo total, status da moto e reinício apenas dos itens marcados.
-7. Cadastre documento vencido e confira destaque no Dashboard. Anexe comprovante,
-   abra a URL assinada, regularize e crie o próximo ano pela sugestão de vencimento vazio.
-8. Anexe fotos à entrega. Encerre contrato com devolução e avaria, informando o dano
-   (confira o valor a devolver da caução e, com dano maior que a caução, a cobrança do
-   excedente); compare checklists.
-   Confira preservação de dívida parcial, cancelamento das futuras sem pagamento e km final.
-9. Compare Dashboard e relatórios com as consultas no banco. Caução não é receita.
-   Exporte CSV e Excel e confira acentos, valores e período. Custo/km sem leitura suficiente
-   fica vazio; o cálculo usa a distância observada, sem extrapolar leituras ausentes.
-10. Gere e baixe o backup. Confira as 32 tabelas e as contagens em `manifesto.json`.
-    O ZIP não inclui os binários de fotos/comprovantes nem usuários do Auth. Evite
-    alterações durante a geração, pois as leituras não formam um snapshot transacional.
-11. Confira os formulários e tabelas em celular. Saia da conta e verifique que os dados
-    deixam de aparecer. A sessão dura 90 dias sem uso: para testar a expiração, use os testes automatizados (`tests/web/test_autenticacao_web.py`).
-
-## Demonstração
-
-`supabase/seed_demo.sql` cria uma moto, um cliente fictício, contrato, cobranças,
-pagamentos e documento vencido. Execute apenas em projeto de demonstração, após
-migrations e `seed.sql`. É idempotente pela placa `DEM1A23`; não rode em produção.
-
-`supabase/seed_exemplos.sql` popula um cenário mais completo para explorar o
-sistema: 6 motos (uma em cada status), 5 clientes (ativo, CNH a vencer,
-bloqueado, sem contrato), 3 contratos (2 ativos e 1 encerrado, com vistorias
-de entrega/devolução), cobranças pagas/em aberto/vencida/paga com atraso,
-manutenção preventiva concluída e corretiva em aberto, e documentos vencido/a
-vencer/regularizado. Rode manualmente no SQL Editor após migrations e
-`seed.sql`. É idempotente pela placa `EXA1A11`; não rode em produção.
-
-## Importação dos dados reais (modelo pronto; parcela 1 em produção; parcela 2 pendente)
-
-Desenho, conflitos nos dados e decisões: `Arquivos/dados/Importacao_Dados_Reais.md` (seção 16 do plano). A parcela 1 da carga está aplicada em
-produção (conferida em 13/11/2026: 32 motos, 16 clientes, 12 contratos, 75 despesas, 72 multas, 5 dívidas); a parcela 2 depende de dados
-que ainda faltam (cadastros sem CPF ou com identidade a confirmar e dívidas com saldo conflitante). Oito migrations
-preparam o banco para a planilha "PAGAMENTO MOTOS":
-
-- `20261022120000_importacao_veiculos_contratos.sql`: tipo/dono/rastreador/seguro em `motos`; promessa de compra em `contratos`
-  (`tipo_contrato`, `numero_parcelas`, `valor_total`, `valor_entrada`, `parcelas_pagas_inicial`, `dia_cobranca`,
-  `primeira_cobranca`); `contas`; `conta_id`, `data_estimada` e a forma `abatimento` em `pagamentos`; `rpc_criar_contrato` e
-  `rpc_gerar_cobrancas_pendentes` respeitam a promessa (a janela móvel nasce em `primeira_cobranca`, não na data antiga de início).
-- `20261022130000_importacao_despesas_socio_dividas.sql`: `fornecedores`, `despesas`, `movimentos_socio`, `dividas`,
-  `pagamentos_divida`, `vw_saldo_dividas` e as colunas `custo_despesas` e `resultado_com_despesas` em `vw_resultado_moto`.
-- `20261022140000_importacao_multas.sql`: `multas_transito` e `vw_multas_locatario`.
-- `20261022150000_importacao_rastreio_lotes.sql`: `importacoes_lote` (idempotência e desfazer por lote).
-- `20261022160000_importacao_capital_veiculos.sql`: capital em veículos sem operação (Etios, Celta): `placa_provisoria`, categoria `aquisicao`,
-  `pago_por`, `a_confirmar`, dívida `emprestimo`, `dividas_vencimentos`, aporte ligado ao veículo e `vw_capital_veiculo`.
-
-- `20261103120000_contrato_varias_motos.sql`: contrato com mais de uma moto (`contrato_motos`, moto principal em `contratos.moto_id`,
-  `motos_vinculadas` em `rpc_criar_contrato`); `supabase/verificar_contrato_varias_motos.sql`.
-- `20261103130000_compra_parcelada.sql`: dívida `compra_parcelada` com entrada, calendário de parcelas, `rpc_criar_compra_parcelada`,
-  `rpc_pagar_parcela_divida` e `vw_parcelas_divida`; `supabase/verificar_compra_parcelada.sql`.
-- `20261103140000_capital_inclui_compra_parcelada.sql`: `vw_capital_veiculo` soma também as compras parceladas.
-
-**Telas (novo contrato):** o assistente de `/contratos/novo` aceita até 4 motos vinculadas na etapa Moto (a principal fica com a parcela e
-a receita), o tipo "Promessa de compra" na etapa Condições (entrada, número de parcelas, parcelas já pagas, dia e primeira cobrança) e mostra
-o total e a prévia da agenda na confirmação. A lista de contratos exibe "+N motos" e "Promessa de compra"; a ficha mostra as motos do contrato
-e o total, a entrada e as parcelas pagas/restantes. A vistoria de entrega continua só na moto principal. As telas de dívidas (compra parcelada)
-ainda não existem.
-
-Aplicar **primeiro no projeto de desenvolvimento** e conferir com `supabase/verificar_importacao_modelo.sql` (desfaz tudo ao final).
-Produção só depois de backup e autorização do dono. Regra pura da agenda: `src/domain/agenda_cobrancas.py` (`tests/test_agenda_promessa.py`).
-
-**Estado em 23/10/2026:** as migrations 1 a 5 estão aplicadas no dev e cinco cargas de dados já rodaram lá (veículos, despesas, multas, sócio,
-dívidas sem conflito, capital do Etios e do Celta, e 8 clientes com 5 contratos de identidade confirmada). As cargas são SQL gerado fora do
-repositório (contêm CPF, telefone e dados reais), idempotente por lote (`importacoes_lote`) e com SQL para desfazer. Faltam os demais
-locatários e contratos, três dívidas com saldo conflitante e a carga em produção. Detalhes, decisões (D1 a D8), conflitos e pendências em
-`Arquivos/dados/Importacao_Dados_Reais.md`.
-
-## Dashboard (em abas desde a Fase 1 do redesenho, 09/11/2026)
-
-O Dashboard (`/`) tem três abas, cada uma com URL própria e sem JavaScript: **Hoje** (`/`), **Dinheiro** (`/?aba=dinheiro`) e **Frota** (`/?aba=frota`).
-Cada aba lê só o que mostra, e todas leem das mesmas fontes (`src/services/financeiro.py`): um indicador, uma definição, um lugar.
-
-- **Hoje:** quatro indicadores (A cobrar = vencido + vence hoje; Em atraso, com os contratos e os inadimplentes pelo corte configurável; Frota, com a
-  ocupação sobre as motos ativas; Caixa do mês, dizendo quanto é investimento em veículos), a lista **Cobrar agora** (uma linha por contrato, do maior
-  atraso para o menor, com **Pagar** e **WhatsApp**, que abre a mensagem de cobrança) e a lista **Atenção** (manutenção, documentos, CNH, WhatsApp e
-  pendências de dinheiro, com o que está em perigo na frente). O que vence hoje leva a multa do dia, como na tela de pagamento.
-- **Dinheiro:** o mês escolhido em `?mes=aaaa-mm` (só aqui há seletor de mês): receita contra o previsto, despesas, resultado, caixa, investimento,
-  parcelas de dívida, retiradas e aportes, receita estimada, dívidas em aberto, os últimos 6 meses, as entradas por conta e as despesas por categoria.
-- **Frota:** ocupação (rosca e legenda), motos em manutenção, o gasto com manutenção do mês (o mesmo valor da categoria Manutenção em Dinheiro) e o
-  resultado por veículo.
-- **Menu Opções** (no cabeçalho): **Modo compacto** (`?compacto=1`: só os indicadores e a atenção) e **Ocultar dados pessoais** (`?ocultar=1`: valores,
-  nomes, placas e descrições saem trocados por pontos já no servidor, nem vão no HTML, e os gráficos somem). A aba e os dois modos seguem na navegação.
-- Se a leitura de uma aba falhar (migration pendente, banco fora do ar), só aquela aba mostra "indisponível" e o erro vai para o log; na aba Hoje, se
-  falhar só o caixa do mês, a cobrança e a frota continuam. **Sem as migrations `20261104120000` e `20261104130000` a aba Dinheiro e o caixa ficam indisponíveis.**
-- Os totais vêm de duas RPCs de leitura: `rpc_resumo_financeiro` (migration `20261104120000_resumo_financeiro.sql`, roteiro `supabase/verificar_resumo_financeiro.sql`)
-  e `rpc_detalhe_financeiro` (migration `20261104130000_detalhe_financeiro.sql`, roteiro `supabase/verificar_detalhe_financeiro.sql`). Os roteiros terminam em ROLLBACK.
-  As regras ficam em `src/domain/financeiro.py` e `src/domain/cobrar_agora.py`.
-- O corte entre "em atraso" e "inadimplente" é o parâmetro **Inadimplente a partir de (dias de atraso)** em Configurações (padrão 15, mínimo 1; migration `20261104140000_corte_inadimplencia.sql`, que deve ser aplicada antes de publicar o app novo).
-- Caixa = receita - despesas - investimento - parcelas de dívida - retiradas + aportes; a receita não inclui caução nem abatimento.
-- Os gráficos são SVG sem script e sem estilo inline (a política de conteúdo só aceita CSS do próprio site); a tabela ao lado traz os mesmos números.
-- **Fase 2 (contexto nos cartões, 09/11/2026):** *Em atraso* ganha a barra e a legenda por faixa (1 a 6, 7 a 14, 15 a 30 e 31 dias ou mais, pelo maior atraso do
-  contrato; a soma é o total em atraso); *Frota* troca a rosca por uma barra segmentada (na aba Hoje e na aba Frota); *Caixa do mês* ganha a sparkline dos últimos 6 meses;
-  em Dinheiro, *Receita* mostra um bullet contra o previsto, com a marca do esperado até hoje (as cobranças que já venceram), e os quatro cartões mostram a variação contra o
-  mês anterior **só em mês fechado** (mês inteiro contra mês inteiro, colorida pelo resultado e sempre dita em texto); no mês corrente aparece o mês anterior, sem variação.
-  Tudo é SVG sem script e sem estilo inline, com texto alternativo; com "ocultar dados" nenhum desenho aparece. Regras em `domain/cobrar_agora.py` e `domain/financeiro.py`.
-- **Fase 3 (o que faltava, 09/11/2026):** na aba Hoje, **Próximos 7 dias** (entra = cobranças abertas de amanhã em diante, sem caução; sai = parcelas de dívida a vencer, inclusive as de hoje;
-  saldo previsto). Na aba Frota, **Receita por moto** (receita do mês ÷ motos ativas), **Tempo parado no mês** (dias de moto na oficina ÷ motos ativas × dias do mês até hoje; alerta acima de 5%)
-  e **Motos paradas** (em manutenção desde a ordem aberta mais antiga, ou disponíveis desde o último contrato encerrado). Regras em `domain/frota_parada.py` e `domain/cobrar_agora.py`.
-- **Saiu do Dashboard na Fase 1:** o cálculo antigo (`services/dashboard`), que dava números diferentes dos do financeiro (receita, manutenção, atraso). Com ele saiu a
-  variação mês a mês dos cartões, que voltou na Fase 2 com a base certa (só mês fechado).
-
-## Dívidas (telas)
-
-Menu **Dívidas** (só o dono): `/dividas` lista cada dívida com saldo, próxima parcela e situação; `/dividas/{id}` mostra parcelas e pagamentos;
-`/dividas/parcelas/{id}/pagar` registra o pagamento de uma parcela (total ou parcial); `/dividas/nova` cadastra uma compra parcelada com
-conferência do total, do saldo e do calendário antes de gravar. Usam as RPCs e views das migrations 6 e 7 (não há migration nova). O contrato com
-várias motos já tem tela desde 03/11/2026 (etapa Moto do novo contrato, lista e ficha). `/dividas/nova-divida` cadastra moto fiado, financiamento, fornecedor, rastreador e empréstimo (inserção direta em `dividas`, sem RPC, porque mexe em uma tabela só) e `/dividas/{id}/pagar` registra pagamento de dívida sem parcelas (insere em `pagamentos_divida`). A ficha também tem **Editar** (na compra parcelada só credor, moto, descrição e observações, porque o total e as parcelas seguem o calendário gerado), **Confirmar saldo** (o saldo informado pelo responsável, com data, vale sobre o calculado; dá para remover a confirmação) e **Apagar** (página de confirmação; parcelas e pagamentos saem junto, em cascata, e não há como desfazer). **Editar** também troca o tipo da dívida entre moto fiado, financiamento, fornecedor, rastreador e empréstimo (a compra parcelada não troca). Cada parcela tem **Editar** (vencimento, que pode ficar vazio, e o valor, só se ainda não houve pagamento) e cada pagamento tem **Corrigir** (data, com opção de data aproximada, valor até o que falta, conta e observações); os gatilhos do banco reavaliam sozinhos se a parcela está paga.
-
-## Convenções dos relatórios
-
-Receita usa a data de pagamento e exclui caução. Custo de manutenção considera
-serviços concluídos, pela data de entrada. Documentos entram na data de regularização.
-Essas datas representam o controle disponível no sistema; não há uma tabela separada
-de pagamentos a fornecedores. O custo/km representa manutenção dividida pela distância
-registrada. Os cálculos financeiros usam `Decimal`; as células do Excel são numéricas.
-
-## Estilização do painel
-
-Os tokens (cores, espaçamento, tipografia, modo escuro) e as regras ficam em `src/web/estilos/app.css`; `static/css/app.css` é o arquivo
-gerado por `python scripts/construir_css.py` (Tailwind), então edite só o de `src/web/estilos`. Fontes locais em `static/fontes`. Regras
-novas devem usar `var(--…)`, nunca cores fixas. O contraste mínimo de 4,5:1 dos tokens nos dois temas é protegido por
-`tests/test_contraste_tokens.py`. Os componentes são macros Jinja em `src/web/templates/`.
-
-## Testes de navegador (UI/UX)
-
-`e2e/` contém a suíte Playwright do `Arquivos/interface/Plano_Melhorias_UI_UX.md` (Etapa 0), separada
-de `tests/`: mede overflow, alvos de toque, diálogos e erros de console em cinco larguras,
-dois temas e Chromium/Firefox/WebKit, contra o projeto Supabase de **desenvolvimento**.
-`pytest` roda só `tests/`; `pytest e2e` roda a suíte de navegador. Instalação, variáveis de
-ambiente e opções em `e2e/README.md`; inventário em `Arquivos/interface/Inventario_UI_UX.md`;
-achados curados em `Arquivos/interface/Achados_UI_UX.md`; massa de dados extremos em
-`supabase/seed_e2e.sql`.
-
-Robustez visual (Etapa 8 do plano de UI/UX, feita ainda no Streamlit): sem `nth-child` e com pilhas de fonte com fallback do sistema; as fontes são locais (`static/fontes/`, declaradas em `src/web/estilos/app.css`). O Lighthouse foi medido depois, já no app novo (seção 10 do `Arquivos/interface/Design_UI.md`).
-
-Homologação (Etapa 9 do plano de UI/UX): a suíte `e2e/` agora audita acessibilidade com axe-core (crítico/grave reprovam em `--e2e-estrito`), percorre as páginas só com teclado, testa zoom 200%, reflow a 320 px, texto a 200%, espaçamento WCAG, paisagem e rede/CPU reduzidas, e compara capturas com uma referência (`--atualizar-referencia`, `--tolerancia-visual`). `.github/workflows/ci.yml` roda `pytest` e o e2e do login em Chromium, Chromium móvel, Firefox e WebKit. O contraste dos tokens é protegido por `tests/test_contraste_tokens.py`. Resultado, exceções e pendências: seção 11 de `Arquivos/interface/Design_UI.md`. Falta o que só você pode fazer: gravar os 10 fluxos no banco de dev e testar em aparelhos reais (`Arquivos/homologacao/Roteiro_Homologacao_Manual.md`).
-
-### Arquivamento de veículos vendidos e ex-locatários (item 10 da seção 23, 19/11/2026)
-
-Nada é apagado: o dono **arquiva** pela ficha, e só quando não há pendências (contrato ativo, manutenção aberta ou cobrança em aberto, inclusive o débito de contratos encerrados). O veículo pede o motivo («Vendido», com a data, ou «Outro motivo») e fica inativo. Arquivados saem de «Todos» nas listas e ficam no filtro «Arquivados»; dá para desarquivar (o veículo continua inativo até ser reativado). Contrato novo não aceita veículo nem cliente arquivado. Banco: migration `20261119120000_arquivamento.sql` (RPCs `rpc_arquivar_*` e `rpc_desarquivar_*`); regra em `src/domain/arquivamento.py`.
-
-Atualização de uma instalação existente: aplicar a migration; rodar `supabase/verificar_arquivamento.sql` no **dev** (desfaz tudo no fim); `supabase/consultar_candidatos_arquivamento.sql` (somente leitura) lista quem já pode ser arquivado. No SQL Editor do Supabase só o resultado da **última** consulta aparece: rode as duas consultas do arquivo uma de cada vez. Em produção (23/11/2026) estão arquivados os veículos `NVE8D78` e `OIH0D80` (vendidos, data da venda vazia) e 3 ex-locatários sem pendência; quem ainda deve continua inativo. Detalhes na seção 23, item 10, do plano.
-
-### Administradores (mais de um usuário com acesso total)
-
-`is_dono()` consulta a tabela `administradores (user_id)`: quem está nela tem o mesmo acesso do dono (migration `20261105120000_administradores.sql`, que também move o dono atual para a tabela, lendo o UUID da função antiga, então vale para dev e produção). A tabela só é alterada pelo SQL Editor; o app não escreve nela e cada usuário vê só a própria linha.
-
-Para criar um administrador: crie o usuário em Authentication > Users (com "Auto Confirm User") e rode no SQL Editor `insert into administradores (user_id) select id from auth.users where email = 'fulano@exemplo.com';`. Para remover o acesso: `delete from administradores where user_id = (select id from auth.users where email = 'fulano@exemplo.com');`. Roteiro de teste: `supabase/verificar_administradores.sql` (só em dev, termina em ROLLBACK). Nunca coloque senhas ou e-mails reais no repositório.
-
-### Vistoria por moto (contrato com várias motos)
-
-**Parte 1, banco, regras e serviços.** Migration `20261105130000_vistoria_por_moto.sql`: a entrega e a devolução passam a ser **uma por moto do contrato** (`unique (contrato_id, moto_id, tipo)`); `rpc_registrar_vistoria` aceita a moto principal ou uma vinculada e um gatilho recusa moto de fora do contrato; `rpc_criar_contrato_com_vistoria` e `rpc_encerrar_contrato_com_vistoria` recebem `p_vistorias_vinculadas` (opcional, as chamadas antigas valem) e gravam o km de cada moto, então o `km_atual` e os alertas de manutenção das vinculadas acompanham. Regras puras em `src/domain/vistorias_por_moto.py`; os serviços de contratos aceitam `vistorias_vinculadas` e `exigir_todas`. As leituras de vistoria por contrato devolvem por padrão a da moto principal. Roteiro de teste: `supabase/verificar_vistoria_por_moto.sql` (só em dev, termina em ROLLBACK).
-
-**Parte 2, telas.** Com a migration aplicada:
-- **Novo contrato (etapa Confirmar)** e **encerramento**: um bloco de vistoria por moto vinculada (campos `vinc<n>_...`, regras em `src/domain/formulario_vistoria_por_moto.py`), **obrigatório**: o contrato só é criado ou encerrado se todas as vistorias forem válidas (km não menor que o da moto). O texto digitado volta em caso de erro. As fotos continuam só na moto principal; as das outras entram depois, em Vistorias.
-- **Vistorias**: a lista mostra a placa da moto da própria vistoria; a comparação ganha um grupo de entrega e devolução por moto vinculada; **Registrar vistoria** lista cada par contrato-moto que ainda não tem as duas vistorias (o campo `contrato` vale o id do contrato ou `contrato:moto`) e registra na moto escolhida. É por aqui que os contratos já carregados (ex.: Plano Conquista do Yangry) ganham a **entrega retroativa** da moto vinculada.
-- **Ficha do contrato, aba Vistorias**: um grupo por moto do contrato.
-- Contrato de uma moto só fica exatamente como era. Desenho: seção 19 de `Arquivos/Projeto_Locação.md`.
-
-### Envio automático por WhatsApp (Etapa 1: base do banco)
-
-Desenho e etapas: seção 20 de `Arquivos/Projeto_Locação.md`. A Etapa 1 só prepara o banco; **nenhuma mensagem é enviada ainda**.
-Migration `20261106120000_whatsapp_base.sql` (compatível com a versão anterior do app):
-- `clientes` ganha `nao_enviar_whatsapp`, `motivo_bloqueio_whatsapp` e `bloqueio_whatsapp_em` (o bloqueio exige motivo e data; só o dono liga, nas telas da Etapa 4).
-- `mensagens_whatsapp` é a fila e o histórico; `mensagens_whatsapp_itens` lista os assuntos de cada mensagem e a chave única (tipo, referência, data) impede o mesmo aviso de sair duas vezes no mesmo dia. Só administradores enxergam as duas tabelas.
-- `servico_mensagens (user_id)` é o usuário de serviço (o robô do script agendado). Ele não lê nenhuma tabela: só chama `rpc_whatsapp_enfileirar` (pula duplicadas e clientes bloqueados; sem número válido grava `ignorada`), `rpc_whatsapp_reservar` (entrega as pendentes e as reserva por 10 min; cancela as de cliente bloqueado depois) e `rpc_whatsapp_registrar_resultado` (enviada, ignorada ou falha, com até 3 tentativas e espera de 30 min x tentativa). A `service_role` não é usada.
-
-Para criar o usuário de serviço: crie o usuário em Authentication > Users (com "Auto Confirm User") e rode no SQL Editor `insert into servico_mensagens (user_id) select id from auth.users where email = 'robo@exemplo.com';`. Para remover o acesso: `delete from servico_mensagens where user_id = (select id from auth.users where email = 'robo@exemplo.com');`. Roteiro de teste: `supabase/verificar_whatsapp_base.sql` (só em dev, termina em ROLLBACK). Nunca coloque senhas ou e-mails reais no repositório.
-
-### Envio automático por WhatsApp (Etapa 2: regras puras e textos)
-
-Só regras em `src/domain` (sem banco, sem rede); **nenhuma mensagem é enviada ainda**. O que cada módulo faz, com testes em `tests/`:
-- `feriados.py`: feriados nacionais por ano (fixos, Carnaval, Sexta-feira Santa, Corpus Christi).
-- `janela_envio.py`: três disparos por dia, às 7:30, 11:30 e 15:00 (America/Sao_Paulo; cada um aberto por 1 hora), segunda a sábado, sem feriado nacional; leva o que cair fora para o próximo disparo (era 8h às 19h até 17/11/2026).
-- `numero_whatsapp.py`: transforma o que está em `clientes.whatsapp` em `55` + DDD + número; fixo ou número estranho vira `None` (aviso `ignorada`).
-- `avisos_whatsapp.py`: quais avisos são devidos no dia de envio (lembrete de véspera e de vencimento, atraso, inadimplência, recibo, CNH, documentos, óleo, portal). Atraso, CNH vencida, documento vencido e óleo vencida seguem a escala 1º, 3º e 7º dia e depois a cada 3 dias, com teto de 10 avisos por assunto (`ConfigAvisos.max_repeticoes`). Contrato diário só recebe o lembrete do dia.
-- `textos_whatsapp.py`: os textos (fixos no código) e o agrupamento dos assuntos de um cliente em uma mensagem, em tom leve (26/11/2026), com uma saudação («Aqui é da LA Locadora»). **Cobranças e recibos** abrem a mensagem: recibos primeiro, valores um por linha (ou uma linha por cobrança e o «Total destas parcelas/cobranças», que soma só as listadas: as com aviso devido no dia), pedido do comprovante no grupo e «se já pagou, pode desconsiderar»; todas entram, sem teto. Atraso e inadimplência da mesma cobrança aparecem uma vez só (os dois assuntos são marcados como enviados); a inadimplência é mais séria, sem ameaça. **CNH, documentos, óleo e portal** vêm depois, um parágrafo cada; o que passar de 5 assuntos vai em outra mensagem (a rodada seguinte já a monta). `montar_payload` devolve o formato de `rpc_whatsapp_enfileirar`.
-
-Desenho completo e decisões: seção 20 de `Arquivos/Projeto_Locação.md`.
-
-### Envio automático por WhatsApp (Etapa 3: leitura, Evolution e rodada agendada)
-
-Já existe o envio de ponta a ponta, **desligado por padrão** (chave geral em `configuracoes.whatsapp_ativo`, hoje só pelo SQL Editor; a tela é a Etapa 4).
-- Migration `20261106130000_whatsapp_leitura.sql`: controles em `configuracoes` (`whatsapp_ativo` desligado, `whatsapp_modo_teste` ligado, `whatsapp_numero_teste`, `whatsapp_max_repeticoes`) e `rpc_whatsapp_dados`, a leitura única que alimenta as regras (documentos e troca de óleo vão ao locatário do contrato ativo, inclusive de moto vinculada). Roteiro: `supabase/verificar_whatsapp_leitura.sql` (só em dev, termina em ROLLBACK).
-- `src/services/evolution.py`: cliente HTTP da Evolution (estado da instância, número tem WhatsApp, envio de texto; corpos da v1 e da v2). `src/services/whatsapp.py`: uma rodada = ler, aplicar as regras, enfileirar (a qualquer hora) e enviar dentro da janela, com pausa aleatória de 20 a 60 s entre mensagens. Cada rodada pega no máximo 5 mensagens, com tempo limite de 20 s por chamada, e para antes de passar dos 10 minutos de reserva (se a Evolution estiver lenta, o resto volta para a fila). Limite de requisições (429) e tempo esgotado (408) da Evolution não derrubam a mensagem: ela volta para a fila e a rodada para. No **modo teste** tudo vai só ao número de teste.
-- `python -m src.enviar_mensagens_whatsapp` é o comando da Tarefa Agendada do Coolify; as variáveis e o passo a passo estão em `Arquivos/Deploy_VPS.md`, seção 8.1.
-- Conferido contra um Postgres do Supabase em Docker: a saída real de `rpc_whatsapp_dados` alimenta as regras, a mensagem gerada entra em `rpc_whatsapp_enfileirar` e uma segunda rodada não duplica nada.
-
-### Envio automático por WhatsApp (Etapa 4: telas do dono)
-
-Migration `20261106140000_whatsapp_painel.sql` (compatível com a versão anterior do app): `configuracoes` guarda quando a rodada rodou pela última vez, o estado da instância e o resumo (`rpc_whatsapp_registrar_rodada`, só usuário de serviço e administradores). Roteiro: `supabase/verificar_whatsapp_painel.sql` (só em dev, termina em ROLLBACK). A rodada agora confere a instância a cada execução e grava esse estado.
-- **Configurações > Envio automático por WhatsApp**: liga/desliga, modo teste ou envio aos clientes (este exige confirmação), número de teste e máximo de avisos por assunto, com o estado da instância e a hora da última rodada. É aqui que o envio se liga; nasce desligado.
-- **Mensagens** (menu Operação): lista das mensagens recentes com os filtros Com problema, Aguardando, Enviadas e Todas; mostra situação, motivo e tentativas, e abre o texto. **Reenviar** devolve à fila o que falhou; **Cancelar** vale para pendente ou falhada.
-- **Ficha do cliente, aba WhatsApp**: para onde as mensagens vão, histórico do cliente e o bloqueio. Só o dono para o envio de um cliente (com motivo; fica a data); o cliente não consegue pedir isso pelo WhatsApp.
-- **Dashboard, Precisa de atenção**: envio automático parado (sem rodada há mais de 1h30), WhatsApp desconectado, Evolution fora do ar, modo teste ligado e clientes cuja mensagem mais recente não foi entregue. Sem o envio ligado, nenhum desses alertas aparece.
-- As tabelas `mensagens_whatsapp*` não entram no backup manual (é histórico derivado, com dados pessoais).
-- **Backup completo (17/11/2026).** O backup manual passou de 15 para 29 tabelas (32 desde 25/11/2026, com a caixa do histórico dos chats): além das originais, traz `despesas`, `multas_transito`, `dividas`, `dividas_vencimentos`, `pagamentos_divida`, `movimentos_socio`, `contas`, `fornecedores`, `contrato_motos`, `documento_comprovantes`, `importacoes_lote`, `whatsapp_grupos`, `pedidos_senha_portal` e `portal_eventos`. Ficam de fora só `administradores`, `servico_mensagens` (nem o dono as lê) e a fila `mensagens_whatsapp*`. Antes, conferir multas, despesas e dívidas contra planilha ou chats não era possível. O ZIP agora tem mais dados pessoais e financeiros: guarde-o em local privado.
-
-### Envio ao grupo do locatário (item 6 da seção 23, 17/11/2026)
-
-Migration `20261117130000_whatsapp_grupo.sql` (roteiro `supabase/verificar_whatsapp_grupo.sql`, só em dev, termina em ROLLBACK). Cada locatário tem um
-grupo de WhatsApp (ele, o dono, o financeiro e o número do envio automático). As mensagens automáticas vão **para o grupo**, não para `clientes.whatsapp`:
-- `clientes.whatsapp_grupo_id` (formato `...@g.us`, único por cliente). `mensagens_whatsapp.numero` continua sendo o destino e passa a aceitar o ID do grupo.
-- Desde 26/11/2026 vão ao grupo **todos os avisos** (`TIPOS_NO_GRUPO` em `src/domain/grupo_whatsapp.py`): cobranças, recibos, CNH, documentos do veículo,
-  troca de óleo e portal (de 17 a 26/11/2026 iam só cobranças e recibos).
-- Cliente sem grupo: a mensagem fica `ignorada`, com o motivo «Cliente sem grupo de WhatsApp cadastrado.». O envio ao grupo não confere se o número tem WhatsApp.
-- Cada rodada, com a instância conectada, grava a lista de grupos da Evolution (`whatsapp_grupos`, `GET /group/fetchAllGroups`). Na ficha do cliente (aba WhatsApp)
-  o dono escolhe o grupo na lista ou cola o ID. Como a lista pode ter dezenas de grupos (a instância é compartilhada com o negócio de celulares), há uma **caixa de busca** acima de uma **lista aberta** (8 linhas) de grupos (`data-filtrar-opcoes` em `static/js/app.js`). Cada palavra digitada vale um ponto (sem diferenciar maiúsculas nem acentos; "hyf1f47" acha "HYF-1F47"), e os grupos com mais pontos vêm primeiro: "Gabriel Santos HYF1F47" acha o grupo "Gabriel - [HYF-1F47]" mesmo sem o sobrenome. O grupo atual do cliente fica sempre no topo (salvar sem querer não o remove) e, se só um grupo tem todas as palavras, ele é selecionado. O site não fala com a Evolution (a chave dela fica só na tarefa agendada).
-- Em modo teste tudo continua indo só para o número de teste, com o aviso «iria para o grupo do cliente».
-
-### Aviso de senha do portal alterada (WhatsApp)
-
-Migration `20261109120000_portal_eventos_senha.sql` (compatível com a versão anterior do app): a troca de senha acontece no Supabase Auth e não deixava registro, então o aviso não tinha de onde nascer. Agora `portal_eventos` guarda cada troca feita pelo locatário e `rpc_whatsapp_dados` a entrega ao envio (o evento mais recente de cada cliente, dos últimos dias).
-- O **locatário** troca a própria senha no portal: o app chama `rpc_portal_registrar_troca_senha()` (no máximo um evento a cada 10 minutos por cliente; quem chama é identificado por `auth.uid()`).
-- O **dono** gerar uma senha nova na aba Portal da ficha do cliente **não** gera aviso: ele entrega a senha pessoalmente (decisão do dono em 09/11/2026). A RPC `rpc_portal_registrar_redefinicao_senha`, criada na migration, fica sem uso.
-- O registro é o melhor possível: se falhar, a senha já trocada continua valendo e o erro só vai para o log. Senha recusada pelo Supabase não registra nada.
-- O texto ao locatário diz que a senha foi alterada e pede que avise o dono se não foi ele (a nova senha nunca vai na mensagem). Acesso novo continua sendo avisado a partir da criação do login. Só o dono lê `portal_eventos`. Roteiro: `supabase/verificar_portal_eventos_senha.sql` (só em dev, termina em ROLLBACK).
-
-### Comprovante de documento enviado pelo locatário (portal; Etapa 6 do WhatsApp)
-
-O locatário pode mandar pelo portal a foto ou o PDF do comprovante de um documento da moto (IPVA, licenciamento, seguro...). O envio **não regulariza** nada: fica aguardando o dono, que aceita ou recusa.
-- Migration `20261112120000_comprovantes_documentos.sql`: tabela `documento_comprovantes` (aguardando, aceito ou recusado com motivo; no máximo um aguardando por documento; só o dono lê), política do Storage (o locatário só **envia** para `portal/<cliente_id>/` do bucket `documentos`, sem listar nem ler) e as RPCs `rpc_portal_documentos` (documentos pendentes das motos dos contratos ativos, principal e vinculada), `rpc_portal_enviar_comprovante` (confere documento, pasta e arquivo) e `rpc_aceitar_comprovante_documento` (regulariza o documento com o arquivo do envio e fecha o envio, numa transação). Roteiro: `supabase/verificar_comprovantes_documentos.sql` (só em dev, termina em ROLLBACK).
-- **Portal:** seção «Documentos da moto» com a situação de cada documento, o último comprovante e, quando não há um aguardando, o formulário (PDF, JPG ou PNG de até 10 MB; foto perde GPS e dados do aparelho; observação opcional de até 200 caracteres). Recusado, o locatário vê o motivo e pode enviar outro.
-- **Dono:** em Documentos, o selo «Comprovante a conferir» e o botão **Conferir comprovante** abrem a página de conferência (quem enviou, quando, observação, arquivo por URL assinada de 5 minutos, histórico) com **Aceitar e regularizar** (data não futura; pode seguir para o cadastro do ano seguinte) e **Recusar** (motivo de 3 a 200 letras). O Dashboard avisa «Comprovante a conferir».
-- **WhatsApp:** migration `20261112130000_whatsapp_comprovante_enviado.sql` (roteiro `supabase/verificar_whatsapp_comprovante.sql`): enquanto há comprovante aguardando, o aviso daquele documento **pausa**; recusado, volta. Com `PORTAL_URL` definido, o texto do aviso de documento pede o comprovante pelo portal (sem ela, no grupo).
-- Se a migration ainda não foi aplicada, o portal, a lista de Documentos e o Dashboard seguem funcionando, só sem esta parte (o erro vai para o log).
-
+- **um único worker** (as sessões ficam na memória do processo), com `--proxy-headers` e `--forwarded-allow-ips` restrito ao proxy;
+- `LOCACAO_AMBIENTE` diferente de `dev`;
+- `SUPABASE_URL` e `SUPABASE_ANON_KEY` por variável de ambiente, nunca a chave `service_role`;
+- migrations aplicadas, cadastro público do Supabase desativado, usuário do dono criado e buckets privados.
