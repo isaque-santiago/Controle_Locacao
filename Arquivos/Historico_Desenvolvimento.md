@@ -391,6 +391,7 @@ ou publicação. Nenhuma fase é declarada homologada apenas com base nas telas 
 
 Lista que ficava no passo «aplique as migrations pendentes» do README. A relação completa está em `supabase/migrations/`.
 
+- `20260921150000_cadastro_moto.sql`: plano e histórico iniciais atômicos, km não regride.
 - `20260921151000_fluxos_contratos.sql`: contratos com vistorias e validação de pagamentos.
 - `20260921152000_finalizar_manutencao.sql`: conclusão/cancelamento de manutenção aberta.
 - `20260921153000_resultado_km.sql`: distância registrada e custo por km na view.
