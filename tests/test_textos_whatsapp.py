@@ -27,53 +27,145 @@ def test_ordem_cobre_todos_os_tipos():
     assert sorted(ORDEM) == sorted(TIPOS)
 
 
-def test_atraso_mostra_valor_encargos_e_total():
-    titulo, linhas = texto_bloco(_atraso(), OP)
-    texto = "\n".join(linhas)
-    assert titulo == "Pagamento em atraso"
-    assert "ABC-1D23" in texto and "10/11/2026" in texto and "há 3 dias" in texto
-    assert "Valor: R$ 450,00" in texto
-    assert "Multa e adicional por atraso: R$ 36,00" in texto
-    assert "*Total hoje: R$ 486,00*" in texto
+# ------------------------------------------------- cobranças e recibos --
+
+GRUPO_OP = OpcoesTexto(empresa="LA Locadora")
 
 
-def test_atraso_de_um_dia_no_singular_e_sem_encargos_nao_mostra_total():
-    _, linhas = texto_bloco(_atraso(dias=1, encargos="0.00", total="450.00"), OP)
-    texto = "\n".join(linhas)
-    assert "há 1 dia." in texto and "Total hoje" not in texto and "Multa" not in texto
+def _cobranca(tipo, ref="cob-1", vencimento=date(2026, 11, 13), saldo="350.00", encargos=None, total=None, **extra):
+    dados = dict(vencimento=vencimento, placa="ABC1D23", saldo=Decimal(saldo), tipo_cobranca="locacao")
+    if encargos is not None:
+        dados.update(encargos=Decimal(encargos), total=Decimal(total or saldo) if total else Decimal(saldo) + Decimal(encargos))
+    return _aviso(tipo, ref=ref, **{**dados, **extra})
 
 
-def test_pix_so_aparece_quando_informado():
-    sem = "\n".join(texto_bloco(_atraso(), OP)[1])
-    com = "\n".join(texto_bloco(_atraso(), OpcoesTexto(pix="chave-pix-exemplo"))[1])
-    assert "Pix" not in sem
-    assert "Pix para pagar: chave-pix-exemplo" in com
+def _recibo(restante="0", ref="pag-1"):
+    return _aviso("recibo_pagamento", ref=ref, valor=Decimal("200"), placa="ABC1D23", vencimento=date(2026, 11, 10),
+                  saldo_restante=Decimal(restante))
 
 
-def test_lembretes_dizem_quando_vence():
-    base = dict(vencimento=date(2026, 11, 13), placa="ABC1D23", saldo=Decimal("450"), tipo_cobranca="locacao")
-    hoje = "\n".join(texto_bloco(_aviso("lembrete_vencimento", dias_ate_vencer=0, **base), OP)[1])
-    amanha = "\n".join(texto_bloco(_aviso("lembrete_vespera", dias_ate_vencer=1, **base), OP)[1])
-    segunda = "\n".join(texto_bloco(_aviso("lembrete_vespera", dias_ate_vencer=2, **dict(base, vencimento=date(2026, 11, 16))), OP)[1])
-    assert "vence hoje" in hoje
-    assert "vence amanhã (13/11/2026)" in amanha
-    assert "vence segunda-feira (16/11/2026)" in segunda
-    assert "R$ 450,00" in hoje
+def _texto(*avisos, op=GRUPO_OP, nome="MARIA SOUZA"):
+    return montar_mensagem(nome, list(avisos), op)[0]
 
 
-def test_recibo_quitado_e_parcial():
-    base = dict(valor=Decimal("200"), placa="ABC1D23", vencimento=date(2026, 11, 10))
-    quitado = "\n".join(texto_bloco(_aviso("recibo_pagamento", saldo_restante=Decimal("0"), **base), OP)[1])
-    parcial = "\n".join(texto_bloco(_aviso("recibo_pagamento", saldo_restante=Decimal("250"), **base), OP)[1])
-    assert "Recebemos R$ 200,00" in quitado and "Obrigado" in quitado
-    assert "Ainda falta R$ 250,00" in parcial
+def test_vespera():
+    aviso = _cobranca("lembrete_vespera", vencimento=date(2026, 11, 14), dias_ate_vencer=1)
+    assert _texto(aviso) == (
+        "Oi, Maria! 👋 Aqui é da LA Locadora.\n\n"
+        "Passando pra lembrar que amanhã (14/11/2026) vence a parcela do veículo ABC-1D23.\n\n"
+        "💰 *Valor: R$ 350,00*\n\n"
+        "Depois de pagar, é só mandar o comprovante aqui no grupo. 😊")
 
 
-def test_inadimplencia_chama_o_dono():
-    _, linhas = texto_bloco(_aviso("inadimplencia", vencimento=date(2026, 10, 25), placa="ABC1D23", saldo=Decimal("450"),
-                                   tipo_cobranca="locacao", dias_atraso=19, encargos=Decimal("148"), total=Decimal("598")), OP)
-    texto = "\n".join(linhas)
-    assert "inadimplente" in texto and "há 19 dias" in texto and "o Alisson" in texto
+def test_vespera_de_vencimento_na_segunda_diz_o_dia_da_semana():
+    aviso = _cobranca("lembrete_vespera", vencimento=date(2026, 11, 16), dias_ate_vencer=2)
+    texto = _texto(aviso)
+    assert "que segunda-feira (16/11/2026) vence a parcela" in texto and "amanhã" not in texto
+    assert "Se já pagou" not in texto
+
+
+def test_vence_hoje():
+    assert _texto(_cobranca("lembrete_vencimento", dias_ate_vencer=0)) == (
+        "Oi, Maria! 👋 Aqui é da LA Locadora.\n\n"
+        "Passando pra lembrar que a parcela do veículo ABC-1D23 vence hoje (13/11/2026).\n\n"
+        "💰 *Valor: R$ 350,00*\n\n"
+        "Depois de pagar, é só mandar o comprovante aqui no grupo.\nSe já pagou, pode desconsiderar. 🙏")
+
+
+def test_atraso_mostra_a_conta_e_o_total():
+    aviso = _cobranca("atraso", vencimento=date(2026, 11, 10), encargos="36.00", dias_atraso=3)
+    assert _texto(aviso) == (
+        "Oi, Maria! 👋 Aqui é da LA Locadora.\n\n"
+        "A parcela do veículo ABC-1D23 que venceu em 10/11/2026 está em aberto há 3 dias.\n\n"
+        "💰 Parcela: R$ 350,00\n➕ Multa e adicional: R$ 36,00\n✅ *Total hoje: R$ 386,00*\n\n"
+        "O valor aumenta a cada dia. Depois de pagar, é só mandar o comprovante aqui no grupo.\n"
+        "Se já pagou, pode desconsiderar. 🙏")
+
+
+def test_atraso_de_um_dia_no_singular_e_sem_encargos_nao_fala_em_aumento():
+    texto = _texto(_cobranca("atraso", encargos="0.00", dias_atraso=1))
+    assert "há 1 dia." in texto and "*Valor: R$ 350,00*" in texto
+    assert "Total hoje" not in texto and "Multa" not in texto and "aumenta" not in texto
+
+
+def test_inadimplencia_e_seria_e_sem_ameaca():
+    aviso = _cobranca("inadimplencia", vencimento=date(2026, 10, 29), encargos="120.00", dias_atraso=15)
+    texto = _texto(aviso)
+    assert texto.startswith("Olá, Maria. Aqui é da LA Locadora.\n\n⚠️ A parcela do veículo ABC-1D23 que venceu em 29/10/2026")
+    assert "há 15 dias, e o contrato passa a constar como inadimplente." in texto
+    assert "✅ *Total hoje: R$ 470,00*" in texto
+    assert "Precisamos regularizar isso *hoje*. Responda aqui no grupo pra gente resolver." in texto
+    assert "bloque" not in texto and "👋" not in texto
+
+
+def test_atraso_e_inadimplencia_da_mesma_cobranca_aparecem_uma_vez_e_os_dois_sao_marcados():
+    base = dict(vencimento=date(2026, 10, 29), encargos="120.00", dias_atraso=15)
+    texto, entram, sobram = montar_mensagem("Maria", [_cobranca("atraso", **base), _cobranca("inadimplencia", **base)], GRUPO_OP)
+    assert texto.count("29/10/2026") == 1 and texto.count("R$ 470,00") == 1 and "Seguem" not in texto
+    assert sorted(a.tipo for a in entram) == ["atraso", "inadimplencia"] and sobram == []
+
+
+def test_varias_parcelas_uma_linha_cada_com_o_total():
+    avisos = [_cobranca("lembrete_vencimento", ref="b", dias_ate_vencer=0),
+              _cobranca("atraso", ref="a", vencimento=date(2026, 11, 6), encargos="64.00", dias_atraso=7)]
+    assert _texto(*avisos) == (
+        "Oi, Maria! 👋 Aqui é da LA Locadora.\n\n"
+        "Seguem 2 parcelas do veículo ABC-1D23:\n\n"
+        "• *06/11/2026* (7 dias de atraso): R$ 350,00 + R$ 64,00 de multa e adicional\n"
+        "• *13/11/2026* (vence hoje): R$ 350,00\n\n"
+        "✅ *Total destas parcelas: R$ 764,00*\n\n"
+        "O valor aumenta a cada dia de atraso. Depois de pagar, é só mandar o comprovante aqui no grupo.\n"
+        "Se já pagou, pode desconsiderar. 🙏")
+
+
+def test_cobrancas_de_tipos_e_veiculos_diferentes_dizem_qual_e_qual():
+    avisos = [_cobranca("lembrete_vencimento", ref="a", dias_ate_vencer=0),
+              _cobranca("lembrete_vencimento", ref="b", dias_ate_vencer=0, tipo_cobranca="caucao", placa="XYZ9A88", saldo="100.00")]
+    texto = _texto(*avisos)
+    assert "Seguem 2 cobranças:" in texto and "*Total destas cobranças: R$ 450,00*" in texto
+    assert "· Parcela · ABC-1D23 (vence hoje)" in texto and "· Caução · XYZ-9A88 (vence hoje)" in texto
+
+
+def test_varias_com_inadimplencia_usa_o_tom_serio_sem_repetir_a_divida():
+    antiga = dict(vencimento=date(2026, 10, 29), encargos="120.00", dias_atraso=15)
+    avisos = [_cobranca("atraso", ref="a", **antiga), _cobranca("inadimplencia", ref="a", **antiga),
+              _cobranca("lembrete_vencimento", ref="b", dias_ate_vencer=0)]
+    texto = _texto(*avisos)
+    assert texto.startswith("Olá, Maria.") and "⚠️ Seguem 2 parcelas" in texto and "15 dias de atraso, inadimplente" in texto
+    assert texto.count("29/10/2026") == 1 and "*Total destas parcelas: R$ 820,00*" in texto
+    assert "Precisamos regularizar isso *hoje*" in texto
+
+
+def test_todas_as_cobrancas_entram_mesmo_acima_do_teto_para_o_total_bater():
+    avisos = [_cobranca("lembrete_vencimento", ref=f"c{i}", dias_ate_vencer=0, saldo="10.00") for i in range(7)]
+    texto, entram, sobram = montar_mensagem("Maria", avisos, OpcoesTexto(maximo_assuntos=5))
+    assert len(entram) == 7 and sobram == [] and texto.count("• ") == 7 and "R$ 70,00" in texto
+
+
+def test_pix_so_aparece_quando_informado_e_logo_abaixo_do_valor():
+    aviso = _cobranca("atraso", encargos="36.00", dias_atraso=3)
+    assert "Pix" not in _texto(aviso)
+    assert "*Total hoje: R$ 386,00*\n🔑 Pix: chave-exemplo\n\n" in _texto(aviso, op=OpcoesTexto(pix="chave-exemplo"))
+
+
+def test_recibo_quitado():
+    assert _texto(_recibo()) == (
+        "Oi, Maria! 👋 Aqui é da LA Locadora.\n\n"
+        "Recebemos R$ 200,00 da parcela de 10/11/2026 (ABC-1D23). Está tudo certo. Obrigado! 🙏")
+
+
+def test_recibo_parcial_vem_antes_da_cobranca():
+    texto = _texto(_cobranca("lembrete_vencimento", dias_ate_vencer=0), _recibo(restante="150"))
+    assert "Ainda faltam R$ 150,00. Obrigado! 🙏" in texto
+    assert texto.index("Recebemos") < texto.index("Passando pra lembrar")
+
+
+def test_cobranca_nao_pede_para_falar_com_a_empresa():
+    texto = _texto(_cobranca("atraso", encargos="36.00", dias_atraso=3), op=OP)
+    assert "Dúvidas?" not in texto and "o Alisson" not in texto
+
+
+# ------------------------------------------------------- outros avisos --
 
 
 @pytest.mark.parametrize("tipo, esperado", [
@@ -128,24 +220,26 @@ def test_portal_nunca_leva_senha():
 # ------------------------------------------------------------- mensagem --
 
 
-def test_mensagem_de_um_assunto():
-    texto, entram, sobram = montar_mensagem("maria da silva", [_atraso()], OP)
+def _cnh(ref="c"):
+    return _aviso("cnh_proxima", ref=ref, validade=date(2026, 11, 30), dias=17)
+
+
+def test_aviso_que_nao_e_cobranca_segue_em_bloco_com_titulo():
+    texto, entram, sobram = montar_mensagem("maria da silva", [_cnh()], OP)
     assert texto.startswith("Olá, Maria! Aqui é da LA Locadora. Segue um aviso:")
-    assert "*Pagamento em atraso*" in texto and "1." not in texto.split("\n\n")[1].split("\n")[0]
+    assert "*CNH perto de vencer*" in texto
     assert texto.endswith("Dúvidas? Fale com o Alisson, no (11) 99999-0000.")
     assert len(entram) == 1 and sobram == []
 
 
-def test_dois_assuntos_no_mesmo_dia_vao_numerados_e_o_mais_urgente_vem_primeiro():
-    cnh = _aviso("cnh_proxima", ref="c", validade=date(2026, 11, 30), dias=17)
-    texto, entram, _ = montar_mensagem("Maria", [cnh, _atraso()], OP)
-    assert "Seguem 2 avisos:" in texto
-    assert texto.index("*1. Pagamento em atraso*") < texto.index("*2. CNH perto de vencer*")
+def test_cobranca_vem_antes_dos_outros_avisos():
+    texto, entram, _ = montar_mensagem("Maria", [_cnh(), _atraso()], OP)
+    assert texto.index("venceu em 10/11/2026") < texto.index("*CNH perto de vencer*")
     assert [a.tipo for a in entram] == ["atraso", "cnh_proxima"]
 
 
-def test_passando_do_teto_os_mais_urgentes_entram_e_o_resto_fica_de_fora():
-    avisos = [_atraso()] + [_aviso("cnh_proxima", ref=f"c{i}", validade=date(2026, 11, 30), dias=17) for i in range(6)]
+def test_passando_do_teto_o_resto_dos_outros_avisos_fica_de_fora():
+    avisos = [_atraso()] + [_cnh(f"c{i}") for i in range(6)]
     texto, entram, sobram = montar_mensagem("Maria", avisos, OpcoesTexto(contato="o Alisson", maximo_assuntos=5))
     assert len(entram) == 5 and len(sobram) == 2
     assert entram[0].tipo == "atraso"
@@ -154,9 +248,9 @@ def test_passando_do_teto_os_mais_urgentes_entram_e_o_resto_fica_de_fora():
 
 
 def test_sem_empresa_nem_contato_usa_padroes():
-    texto, _, _ = montar_mensagem("Maria", [_atraso()])
-    assert texto.startswith("Olá, Maria! Segue um aviso:")
-    assert "Fale com a empresa." in texto
+    assert montar_mensagem("Maria", [_atraso()])[0].startswith("Oi, Maria! 👋\n\n")
+    texto = montar_mensagem("Maria", [_cnh()])[0]
+    assert texto.startswith("Olá, Maria! Segue um aviso:") and "Fale com a empresa." in texto
 
 
 def test_mensagem_sem_avisos_e_erro():
