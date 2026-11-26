@@ -148,6 +148,10 @@ def verificar_saude(page: Page, registrar, nome_pagina: str) -> None:
     erros.clear()
 
 
+def _resumo_axe(no: dict) -> str:
+    return " ".join(str(no.get("failureSummary") or "").split())[:300]
+
+
 def verificar_acessibilidade(page: Page, registrar, nome_pagina: str) -> None:
     """Auditoria automatizada (axe-core): uma ocorrência por regra violada na tela atual."""
     _esperar_assentar(page)
@@ -174,7 +178,8 @@ def verificar_acessibilidade(page: Page, registrar, nome_pagina: str) -> None:
             nome_pagina,
             f"{v['help']} ({v['id']})",
             alvos[0][:160],
-            detalhe=f"{len(v['nodes'])} elemento(s)",
+            # O resumo do 1º elemento traz as cores e a razão medidas: sem ele, a falha na CI não se explica.
+            detalhe=f"{len(v['nodes'])} elemento(s). {_resumo_axe(v['nodes'][0])}",
         )
 
 
