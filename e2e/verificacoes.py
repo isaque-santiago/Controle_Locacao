@@ -54,6 +54,16 @@ def _slug(texto: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", texto.lower()).strip("-") or "pagina"
 
 
+# Leva ao estado final as animações de CSS que têm fim (a entrada dos blocos parte de opacity 0). As contínuas
+# (spinner, brilho do esqueleto) ficam como estão: finish() não vale para elas.
+_JS_CONCLUIR_ANIMACOES = """() => {
+  for (const animacao of document.getAnimations()) {
+    const fim = animacao.effect ? animacao.effect.getComputedTiming().endTime : Infinity;
+    if (Number.isFinite(fim)) animacao.finish();
+  }
+}"""
+
+
 def _esperar_assentar(page: Page) -> None:
     """Espera trocas do HTMX e transições de CSS terminarem.
 
@@ -66,6 +76,9 @@ def _esperar_assentar(page: Page) -> None:
     except Exception:
         pass
     page.wait_for_timeout(500)
+    # A espera por tempo não basta: no WebKit da CI, a primeira página aberta às vezes ainda não avançou a animação
+    # de entrada passados os 500 ms, e o axe reprovava o contraste da tela inteira.
+    page.evaluate(_JS_CONCLUIR_ANIMACOES)
 
 
 def verificar_layout(page: Page, cenario, registrar, nome_pagina: str) -> None:
