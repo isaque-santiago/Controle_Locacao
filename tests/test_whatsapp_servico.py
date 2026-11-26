@@ -178,7 +178,7 @@ def test_enfileira_a_mensagem_devida_para_o_grupo_do_cliente(instalar):
     mensagem = repo.enfileirado[0][0]
     assert mensagem["cliente_id"] == "cli-1" and mensagem["numero"] == GRUPO
     assert mensagem["itens"][0]["tipo"] == "atraso" and mensagem["itens"][0]["data_referencia"] == "2026-11-12"
-    assert "Olá, Maria!" in mensagem["texto"] and "R$" in mensagem["texto"]
+    assert "Oi, Maria!" in mensagem["texto"] and "R$" in mensagem["texto"]
 
 
 def test_sem_nada_devido_nao_chama_a_fila(instalar):

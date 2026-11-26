@@ -1,9 +1,16 @@
 """Textos das mensagens de WhatsApp e o agrupamento por cliente (seção 20 do plano). Funções puras.
 
 Todo o texto fica neste módulo (fixo no código, por decisão do dono; editável em Configurações só no futuro).
-Quem recebe é sempre o locatário. Um cliente recebe UMA mensagem por dia de envio, com um bloco por assunto,
-os mais urgentes primeiro e uma linha de ação em cada bloco. Passando de `maximo_assuntos`, os mais urgentes vão
-na mensagem e o resto sai no dia seguinte (os assuntos que não entram não são marcados como enviados).
+Os assuntos de um cliente saem juntos, em UMA mensagem.
+
+**Cobranças e recibos** (o que vai ao grupo do locatário) têm tom leve, de conversa (decisão do dono, 26/11/2026):
+recibos primeiro, depois a cobrança — com os valores um por linha quando é uma só, ou uma linha por cobrança e o total
+quando são várias — e, no fim, o que fazer (mandar o comprovante no grupo). Todas entram, sem teto, para o total bater
+com as linhas. Se a mesma cobrança está atrasada e virou inadimplência, ela aparece uma vez só (os dois assuntos são
+marcados como enviados). A inadimplência é mais séria, sem ameaça.
+
+**Os outros avisos** (documentos, óleo, CNH, portal; fora do envio por enquanto) seguem em blocos com título, os mais
+urgentes primeiro; passando de `maximo_assuntos`, o resto sai no dia seguinte e não é marcado como enviado.
 
 Nenhum texto leva senha. Dinheiro em `R$ 1.234,56`, datas em `dd/mm/aaaa`, placa `ABC-1D23`.
 """
@@ -13,7 +20,7 @@ from datetime import datetime
 
 from src.domain.avisos_whatsapp import Aviso
 from src.domain.formatadores import formatar_data, formatar_moeda, formatar_placa
-from src.domain.grupo_whatsapp import normalizar_grupo
+from src.domain.grupo_whatsapp import TIPOS_NO_GRUPO, normalizar_grupo
 
 # Mais urgente primeiro: cobranças, depois documentos, manutenção, CNH e portal.
 ORDEM = (
@@ -24,10 +31,13 @@ ORDEM = (
 _POSICAO = {tipo: i for i, tipo in enumerate(ORDEM)}
 
 _DIAS_SEMANA = ("segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado", "domingo")
+# Nome de cada tipo de cobrança (todos femininos: "a parcela", "a caução", "a multa de trânsito").
 _COBRANCA = {
-    "locacao": "A parcela da locação", "caucao": "A caução", "dano": "A cobrança de danos",
-    "multa_transito": "A multa de trânsito", "multa_manutencao": "A multa de manutenção", "outros": "A cobrança",
+    "locacao": "parcela", "caucao": "caução", "dano": "cobrança de danos",
+    "multa_transito": "multa de trânsito", "multa_manutencao": "multa de manutenção", "outros": "cobrança",
 }
+_COMPROVANTE = "Depois de pagar, é só mandar o comprovante aqui no grupo."
+_JA_PAGOU = "Se já pagou, pode desconsiderar. 🙏"
 _DOCUMENTO = {
     "ipva": ("IPVA", "Providencie o pagamento da guia"),
     "licenciamento": ("Licenciamento", "Providencie o pagamento da guia"),
@@ -57,63 +67,139 @@ def _moto(placa) -> str:
     return f" do veículo {formatar_placa(placa)}" if placa else ""
 
 
-def _quando(vencimento, dias_ate) -> str:
-    if dias_ate == 0:
-        return "hoje"
-    if dias_ate == 1:
-        return f"amanhã ({formatar_data(vencimento)})"
-    return f"{_DIAS_SEMANA[vencimento.weekday()]} ({formatar_data(vencimento)})"
-
-
-def _linha_pix(op: OpcoesTexto) -> list[str]:
-    return [f"Pix para pagar: {op.pix}"] if op.pix else []
-
-
-def _cobranca_nome(d) -> str:
-    return _COBRANCA.get(d.get("tipo_cobranca"), "A cobrança")
-
-
 def _plural(n: int, singular: str, plural: str) -> str:
     return f"{n} {singular if n == 1 else plural}"
 
 
-def _bloco_lembrete(a: Aviso, op: OpcoesTexto):
+# ---------------------------------------------------- cobranças e recibos --
+
+
+def _tipo(d) -> str:
+    return _COBRANCA.get(d.get("tipo_cobranca"), "cobrança")
+
+
+def _dia_do_vencimento(vencimento, dias_ate: int) -> str:
+    """"hoje", "amanhã" ou o dia da semana (o lembrete de um vencimento de segunda sai no sábado)."""
+    if dias_ate == 0:
+        return "hoje"
+    if dias_ate == 1:
+        return "amanhã"
+    return _DIAS_SEMANA[vencimento.weekday()]
+
+
+def _linha_pix(op: OpcoesTexto) -> list[str]:
+    return [f"🔑 Pix: {op.pix}"] if op.pix else []
+
+
+def _valores(d, op: OpcoesTexto) -> str:
+    """Valores de uma cobrança só, um por linha; com encargos, mostra a conta e o total."""
+    encargos = d.get("encargos") or 0
+    if encargos > 0:
+        rotulo = "Parcela" if _tipo(d) == "parcela" else "Valor"
+        linhas = [f"💰 {rotulo}: {formatar_moeda(d['saldo'])}",
+                  f"➕ Multa e adicional: {formatar_moeda(encargos)}",
+                  f"✅ *Total hoje: {formatar_moeda(d['total'])}*"]
+    else:
+        linhas = [f"💰 *Valor: {formatar_moeda(d['saldo'])}*"]
+    return "\n".join(linhas + _linha_pix(op))
+
+
+def _fechamento_inadimplencia() -> str:
+    return ("Precisamos regularizar isso *hoje*. Responda aqui no grupo pra gente resolver.\n"
+            "Se já pagou, envie o comprovante aqui.")
+
+
+def _uma_cobranca(a: Aviso, op: OpcoesTexto) -> list[str]:
     d = a.dados
-    ate = d.get("dias_ate_vencer", 0)
-    titulo = "Parcela vence hoje" if ate == 0 else "Parcela perto de vencer"
-    linhas = [f"{_cobranca_nome(d)}{_moto(d['placa'])} vence {_quando(d['vencimento'], ate)}. Valor: {formatar_moeda(d['saldo'])}."]
-    return titulo, linhas + _linha_pix(op)
+    nome, veiculo = _tipo(d), _moto(d.get("placa"))
+    if a.tipo in ("lembrete_vespera", "lembrete_vencimento"):
+        dia = _dia_do_vencimento(d["vencimento"], d.get("dias_ate_vencer", 0))
+        data = formatar_data(d["vencimento"])
+        if a.tipo == "lembrete_vencimento":
+            return [f"Passando pra lembrar que a {nome}{veiculo} vence hoje ({data}).", _valores(d, op),
+                    f"{_COMPROVANTE}\n{_JA_PAGOU}"]
+        return [f"Passando pra lembrar que {dia} ({data}) vence a {nome}{veiculo}.", _valores(d, op),
+                f"{_COMPROVANTE} 😊"]
+    abertura = (f"a {nome}{veiculo} que venceu em {formatar_data(d['vencimento'])} está em aberto há "
+                f"{_plural(d['dias_atraso'], 'dia', 'dias')}")
+    if a.tipo == "inadimplencia":
+        return [f"⚠️ {abertura[0].upper()}{abertura[1:]}, e o contrato passa a constar como inadimplente.",
+                _valores(d, op), _fechamento_inadimplencia()]
+    aumenta = "O valor aumenta a cada dia. " if d.get("encargos", 0) > 0 else ""
+    return [f"{abertura[0].upper()}{abertura[1:]}.", _valores(d, op), f"{aumenta}{_COMPROVANTE}\n{_JA_PAGOU}"]
 
 
-def _bloco_atraso(a: Aviso, op: OpcoesTexto):
+def _linha_da_cobranca(a: Aviso, com_tipo: bool, com_placa: bool) -> str:
     d = a.dados
-    linhas = [
-        f"{_cobranca_nome(d)}{_moto(d['placa'])}, que venceu em {formatar_data(d['vencimento'])}, está atrasada "
-        f"há {_plural(d['dias_atraso'], 'dia', 'dias')}.",
-        f"Valor: {formatar_moeda(d['saldo'])}",
-    ]
-    if d["encargos"] > 0:
-        linhas += [f"Multa e adicional por atraso: {formatar_moeda(d['encargos'])}",
-                   f"*Total hoje: {formatar_moeda(d['total'])}* (o valor aumenta a cada dia de atraso)"]
-    return "Pagamento em atraso", linhas + _linha_pix(op)
+    if a.tipo in ("atraso", "inadimplencia"):
+        situacao = f"{_plural(d['dias_atraso'], 'dia', 'dias')} de atraso"
+        if a.tipo == "inadimplencia":
+            situacao += ", inadimplente"
+    else:
+        situacao = f"vence {_dia_do_vencimento(d['vencimento'], d.get('dias_ate_vencer', 0))}"
+    detalhes = [f"*{formatar_data(d['vencimento'])}*"]
+    if com_tipo:
+        detalhes.append(_tipo(d).capitalize())
+    if com_placa and d.get("placa"):
+        detalhes.append(formatar_placa(d["placa"]))
+    linha = f"• {' · '.join(detalhes)} ({situacao}): {formatar_moeda(d['saldo'])}"
+    if (d.get("encargos") or 0) > 0:
+        linha += f" + {formatar_moeda(d['encargos'])} de multa e adicional"
+    return linha
 
 
-def _bloco_inadimplencia(a: Aviso, op: OpcoesTexto):
+def _varias_cobrancas(cobrancas: list[Aviso], op: OpcoesTexto) -> list[str]:
+    """Uma linha por cobrança e o total das que aparecem. A frase não diz "você tem N em aberto": a mensagem traz só as
+    cobranças com aviso devido no dia, e pode haver outra em aberto esperando o próximo aviso da escala."""
+    so_parcelas = all(_tipo(a.dados) == "parcela" for a in cobrancas)
+    placas = {a.dados.get("placa") for a in cobrancas}
+    mesma_placa = len(placas) == 1 and None not in placas
+    nome = "parcelas" if so_parcelas else "cobranças"
+    veiculo = _moto(next(iter(placas))) if mesma_placa else ""
+    linhas = [_linha_da_cobranca(a, not so_parcelas, not mesma_placa) for a in cobrancas]
+    total = sum(a.dados["saldo"] + (a.dados.get("encargos") or 0) for a in cobrancas)
+    soma = "\n".join([f"✅ *Total destas {nome}: {formatar_moeda(total)}*"] + _linha_pix(op))
+
+    if any(a.tipo == "inadimplencia" for a in cobrancas):
+        abertura = f"⚠️ Seguem {len(cobrancas)} {nome}{veiculo}, e o contrato passa a constar como inadimplente:"
+        fim = _fechamento_inadimplencia()
+    else:
+        abertura = f"Seguem {len(cobrancas)} {nome}{veiculo}:"
+        aumenta = ("O valor aumenta a cada dia de atraso. "
+                   if any((a.dados.get("encargos") or 0) > 0 for a in cobrancas) else "")
+        tudo_a_vencer = all(a.tipo == "lembrete_vespera" for a in cobrancas)
+        fim = f"{aumenta}{_COMPROVANTE}" + (" 😊" if tudo_a_vencer else f"\n{_JA_PAGOU}")
+    return [abertura, "\n".join(linhas), soma, fim]
+
+
+def _recibo(a: Aviso) -> str:
     d = a.dados
-    return "Aviso importante: atraso prolongado", [
-        f"{_cobranca_nome(d)}{_moto(d['placa'])} de {formatar_data(d['vencimento'])} está atrasada há "
-        f"{_plural(d['dias_atraso'], 'dia', 'dias')} e seu contrato passa a constar como inadimplente.",
-        f"Total hoje: {formatar_moeda(d['total'])}",
-        f"Fale com {_contato(op)} ainda hoje para regularizar.",
-    ] + _linha_pix(op)
+    referente = f" da parcela de {formatar_data(d['vencimento'])}" if d.get("vencimento") else ""
+    placa = f" ({formatar_placa(d['placa'])})" if d.get("placa") else ""
+    fim = (f"Ainda faltam {formatar_moeda(d['saldo_restante'])}. Obrigado! 🙏"
+           if d["saldo_restante"] > 0 else "Está tudo certo. Obrigado! 🙏")
+    return f"Recebemos {formatar_moeda(d['valor'])}{referente}{placa}. {fim}"
 
 
-def _bloco_recibo(a: Aviso, op: OpcoesTexto):
-    d = a.dados
-    referente = f" referente à parcela de {formatar_data(d['vencimento'])}" if d.get("vencimento") else ""
-    fim = (f"Ainda falta {formatar_moeda(d['saldo_restante'])} desta parcela."
-           if d["saldo_restante"] > 0 else "Está tudo certo com essa parcela. Obrigado!")
-    return "Pagamento recebido", [f"Recebemos {formatar_moeda(d['valor'])}{referente}{_moto(d['placa'])}.", fim]
+def _partes_do_grupo(nome: str, avisos: list[Aviso], op: OpcoesTexto) -> list[str]:
+    inadimplentes = {a.referencia_id for a in avisos if a.tipo == "inadimplencia"}
+    recibos = [a for a in avisos if a.tipo == "recibo_pagamento"]
+    cobrancas = sorted(
+        (a for a in avisos if a.tipo != "recibo_pagamento"
+         and not (a.tipo == "atraso" and a.referencia_id in inadimplentes)),  # a mesma dívida aparece uma vez só
+        key=lambda a: (a.dados["vencimento"], a.referencia_id))
+    saudacao = f"Olá, {_primeiro_nome(nome)}." if inadimplentes else f"Oi, {_primeiro_nome(nome)}! 👋"
+    if op.empresa:
+        saudacao += f" Aqui é da {op.empresa}."
+    partes = [saudacao] + [_recibo(a) for a in recibos]
+    if len(cobrancas) == 1:
+        partes += _uma_cobranca(cobrancas[0], op)
+    elif cobrancas:
+        partes += _varias_cobrancas(cobrancas, op)
+    return partes
+
+
+# ----------------------------------------------------------- outros avisos --
 
 
 def _como_enviar_comprovante(op: OpcoesTexto) -> str:
@@ -201,8 +287,6 @@ def _bloco_portal(a: Aviso, op: OpcoesTexto):
 
 
 _CONSTRUTORES = {
-    "lembrete_vespera": _bloco_lembrete, "lembrete_vencimento": _bloco_lembrete,
-    "atraso": _bloco_atraso, "inadimplencia": _bloco_inadimplencia, "recibo_pagamento": _bloco_recibo,
     "documento_proximo": _bloco_documento, "documento_vencido": _bloco_documento,
     "oleo_proxima": _bloco_oleo, "oleo_vencida": _bloco_oleo,
     "cnh_proxima": _bloco_cnh, "cnh_vencida": _bloco_cnh,
@@ -211,7 +295,7 @@ _CONSTRUTORES = {
 
 
 def texto_bloco(aviso: Aviso, opcoes: OpcoesTexto | None = None) -> tuple[str, list[str]]:
-    """(título, linhas) de um assunto."""
+    """(título, linhas) de um aviso que não é cobrança nem recibo."""
     return _CONSTRUTORES[aviso.tipo](aviso, opcoes or OpcoesTexto())
 
 
@@ -230,21 +314,26 @@ def montar_mensagem(nome: str, avisos, opcoes: OpcoesTexto | None = None) -> tup
     if not avisos:
         raise ValueError("Não há avisos para montar a mensagem.")
     ordenados = sorted(avisos, key=lambda a: (_POSICAO[a.tipo], a.referencia_id))
-    entram, sobram = ordenados[:op.maximo_assuntos], ordenados[op.maximo_assuntos:]
+    do_grupo = [a for a in ordenados if a.tipo in TIPOS_NO_GRUPO]
+    outros = [a for a in ordenados if a.tipo not in TIPOS_NO_GRUPO]
+    vagas = max(op.maximo_assuntos - len(do_grupo), 0)
+    blocos, sobram = outros[:vagas], outros[vagas:]
 
-    saudacao = f"Olá, {_primeiro_nome(nome)}!" + (f" Aqui é da {op.empresa}." if op.empresa else "")
-    n = len(entram)
-    abertura = "Segue um aviso:" if n == 1 else f"Seguem {n} avisos:"
-    partes = [f"{saudacao} {abertura}"]
-    for i, aviso in enumerate(entram, start=1):
+    if do_grupo:
+        partes = _partes_do_grupo(nome, do_grupo, op)
+    else:
+        saudacao = f"Olá, {_primeiro_nome(nome)}!" + (f" Aqui é da {op.empresa}." if op.empresa else "")
+        abertura = "Segue um aviso:" if len(blocos) == 1 else f"Seguem {len(blocos)} avisos:"
+        partes = [f"{saudacao} {abertura}"]
+    for i, aviso in enumerate(blocos, start=1):
         titulo, linhas = texto_bloco(aviso, op)
-        cabecalho = f"*{titulo}*" if n == 1 else f"*{i}. {titulo}*"
+        cabecalho = f"*{titulo}*" if len(blocos) == 1 else f"*{i}. {titulo}*"
         partes.append("\n".join([cabecalho] + linhas))
     if sobram:
         partes.append(f"Há mais {_plural(len(sobram), 'assunto', 'assuntos')} pendente(s). Fale com {_contato(op)} para ver tudo.")
-    else:
+    elif not do_grupo:
         partes.append(f"Dúvidas? Fale com {_contato(op)}.")
-    return "\n\n".join(partes), entram, sobram
+    return "\n\n".join(partes), do_grupo + blocos, sobram
 
 
 def montar_payload(clientes: dict, avisos, momento: datetime, opcoes: OpcoesTexto | None = None) -> list[dict]:
